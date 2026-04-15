@@ -3930,9 +3930,17 @@ function saveFamilyEdit(){
   const name=id('fe-name').value.trim();if(!name){alert('נא למלא שם');return}
   const v=vehicles.find(x=>x.id===_currentVid);if(!v)return;
   const idx=parseInt(id('fe-idx').value);
-  v.family[idx]={name,rel:id('fe-rel').value,id:id('fe-id').value.trim(),phone:id('fe-phone').value.trim(),licenseExp:id('fe-lic').value,email:id('fe-email').value.trim()};
+  const existing = v.family[idx]||{};
+  v.family[idx] = Object.assign({}, existing, {
+    name,
+    rel:id('fe-rel').value,
+    id:id('fe-id').value.trim(),
+    licenseExp:id('fe-lic').value
+  });
+  try{ if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }catch(e){}
   closeModal('family-edit-ov');
-  openDet(_currentVid);vcTab('driver',document.querySelectorAll('.vc-tab-btn')[1]);
+  renderFamilyRows(_currentVid);
+  showToast('✓ נשמר');
 }
 
 function openUpdateModal(vid){
@@ -4717,6 +4725,31 @@ function _persistVehicleHistory(){
   }catch(e){ console.error('persist history error:', e); }
 }
 
+// Render family rows on the driver tab (used by openDet and after add/edit/delete)
+function renderFamilyRows(vid){
+  const v = vehicles.find(x=>x.id===vid);
+  if(!v) return;
+  if(!v.family) v.family = [];
+  const el = document.getElementById('vc-family-rows');
+  if(!el) return;
+  el.innerHTML = v.family.length
+    ? v.family.map((f,fi)=>{
+      const fc = null;
+      return `<div style="border-bottom:1px solid var(--bdr);padding:7px 0;display:flex;align-items:flex-start;gap:8px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:15px;font-weight:500;color:var(--t1)">${f.name}</span>
+            <span style="font-size:11px;color:var(--t3);background:var(--bg2);padding:1px 7px;border-radius:999px">${f.rel}</span>
+          </div>
+          ${f.id?`<div style="font-size:11px;color:var(--t3);direction:ltr;text-align:right">ת.ז. ${f.id}</div>`:''}
+          ${f.licenseExp?`<div style="font-size:11px;${fc?`color:${fc}`:'color:var(--t3)'}">רישיון: ${fd(f.licenseExp)}</div>`:''}
+        </div>
+        <button onclick="openFamilyEdit(${fi})" title="עריכה" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--t2);flex-shrink:0">עריכה</button>
+      </div>`;
+    }).join('')
+    : '<div style="color:var(--t3);font-size:14px;padding:8px 0">אין בני משפחה מורשים</div>';
+}
+
 function openDet(vid){
   const v=vehicles.find(x=>x.id===vid);if(!v)return;
   _currentVid=vid;
@@ -4840,22 +4873,7 @@ function openDet(vid){
       ${v.driver.company?`<div class="ir-vc"><span class="lb">חברה</span><span class="vl">${v.driver.company}</span></div>`:''}
     </div>`;
 
-  id('vc-family-rows').innerHTML=v.family.length
-    ?v.family.map((f,fi)=>{
-      const fc=null;
-      return`<div style="border-bottom:1px solid var(--bdr);padding:7px 0;display:flex;align-items:flex-start;gap:8px">
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
-            <span style="font-size:15px;font-weight:500;color:var(--t1)">${f.name}</span>
-            <span style="font-size:20px;color:var(--t3);background:var(--bg2);padding:1px 7px;border-radius:999px">${f.rel}</span>
-          </div>
-          ${f.phone?`<div style="font-size:20px;color:var(--t2)">${f.phone}</div>`:''}
-          ${f.licenseExp?`<div style="font-size:20px;${fc?`color:${fc}`:'color:var(--t3)'}">רישיון: ${fd(f.licenseExp)}</div>`:''}
-        </div>
-        <button onclick="openFamilyEdit(${fi})" title="עריכה" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:20px;color:var(--t2);flex-shrink:0">עריכה</button>
-      </div>`;
-    }).join('')
-    :`<div style="color:var(--t3);font-size:14px;padding:8px 0">אין בני משפחה מורשים</div>`;
+  renderFamilyRows(vid);
 
   // render extra docs
   renderExtraDocs(vid);
@@ -7045,9 +7063,17 @@ function saveFamilyEdit(){
   const name=id('fe-name').value.trim();if(!name){alert('נא למלא שם');return}
   const v=vehicles.find(x=>x.id===_currentVid);if(!v)return;
   const idx=parseInt(id('fe-idx').value);
-  v.family[idx]={name,rel:id('fe-rel').value,id:id('fe-id').value.trim(),phone:id('fe-phone').value.trim(),licenseExp:id('fe-lic').value,email:id('fe-email').value.trim()};
+  const existing = v.family[idx]||{};
+  v.family[idx] = Object.assign({}, existing, {
+    name,
+    rel:id('fe-rel').value,
+    id:id('fe-id').value.trim(),
+    licenseExp:id('fe-lic').value
+  });
+  try{ if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }catch(e){}
   closeModal('family-edit-ov');
-  openDet(_currentVid);vcTab('driver',document.querySelectorAll('.vc-tab-btn')[1]);
+  renderFamilyRows(_currentVid);
+  showToast('✓ נשמר');
 }
 
 function toggleSidebar(){
@@ -7324,8 +7350,8 @@ function saveFamilyMember(vid){
   // Persist
   try{ if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }catch(e){}
   document.getElementById('add-family-modal').remove();
-  openDet(vid);
-  vcTab('driver',document.querySelectorAll('.vc-tab-btn')[1]);
+  // Refresh ONLY the family rows section, stay on the same tab
+  renderFamilyRows(vid);
   showToast('✓ בן המשפחה נוסף');
 }
 
