@@ -9050,6 +9050,9 @@ function renderMonthReminders(allReminders){
     return {
       id:r.id, kind:'system', icon:r.icon, title:r.title,
       driverName:r.driverName, driverCompany:r.driverCompany||'',
+      isFamily:r.isFamily||false,
+      familyRelation:r.familyRelation||'',
+      primaryDriverName:r.primaryDriverName||'',
       plate:r.plate, detail:r.detail,
       date:r.date, days:r.days,
       action:r.action, sent:false
@@ -9097,13 +9100,14 @@ function renderMonthReminders(allReminders){
       ? 'openSelfReminderModal(null,\''+r.id+'\')'
       : (r.action ? 'openReminderAction(\''+r.id+'\')' : '');
 
-    // Detect if this is a family member reminder (title contains parentheses like "(בן זוג)")
-    const isFamilyReminder = !isSelf && r.title && /\((בן זוג|בת זוג|ילד\/ה|אח|אחות|בן משפחה)/.test(r.title);
+    // Detect if this is a family member reminder (from the explicit flag set in buildReminders)
+    const isFamilyReminder = !isSelf && r.isFamily === true;
     // Clean title (without the relation in parens)
     const cleanTitle = isFamilyReminder ? r.title.replace(/\s*\([^)]*\)/,'').trim() : r.title;
-    // Extract relation for family badge
-    const relMatch = isFamilyReminder ? r.title.match(/\(([^)]*)\)/) : null;
-    const relation = relMatch ? relMatch[1] : '';
+    // Relation (e.g. "בת זוג")
+    const relation = isFamilyReminder ? (r.familyRelation||'') : '';
+    // Primary driver name (for family reminders - to know who the family belongs to)
+    const primaryDriverName = isFamilyReminder ? (r.primaryDriverName||'') : '';
 
     // Build HTML
     if(isSelf){
@@ -9118,7 +9122,8 @@ function renderMonthReminders(allReminders){
       '</div>';
     } else {
       // System reminder - show company badge + driver name + yellow plate + family badge (if applicable)
-      const compBadge = companyBadge(r.driverCompany);
+      // Family members: NO company badge (they don't work for the company)
+      const compBadge = isFamilyReminder ? '' : companyBadge(r.driverCompany);
       const driverLine = r.driverName
         ? '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">'+
             (compBadge ? compBadge : '')+
@@ -9126,8 +9131,10 @@ function renderMonthReminders(allReminders){
             (r.plate?renderPlate(r.plate):'')+
           '</div>'
         : '';
+      // Family badge: includes primary driver name for context
+      // e.g. "👨‍👩‍👧 בן משפחה של יניב שמידט · בת זוג"
       const familyLine = isFamilyReminder
-        ? '<div style="margin-top:6px"><span style="font-size:11px;background:#fce7f3;color:#9f1239;padding:3px 10px;border-radius:999px;font-weight:600">👨‍👩‍👧 בן משפחה'+(relation?' · '+relation:'')+'</span></div>'
+        ? '<div style="margin-top:6px"><span style="font-size:11px;background:#fce7f3;color:#9f1239;padding:3px 10px;border-radius:999px;font-weight:600">👨‍👩‍👧 בן משפחה'+(primaryDriverName?' של '+primaryDriverName:'')+(relation?' · '+relation:'')+'</span></div>'
         : '';
       html+='<div onclick="'+clickHandler+'" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
         '<div style="display:flex;align-items:center;gap:8px">'+
@@ -10512,7 +10519,10 @@ function buildReminders(){
             category:'נהגים',
             icon:'🪪',
             driverName:f.name,
-            driverCompany:v.driver?.company||'',
+            driverCompany:'', // family members don't have company
+            isFamily:true,
+            familyRelation:f.rel||'בן משפחה',
+            primaryDriverName:driverName,
             title:'פקיעת רישיון נהיגה ('+f.rel+')',
             detail:f.name+' · '+v.plate,
             plate:v.plate,
