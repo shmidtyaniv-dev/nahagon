@@ -8720,9 +8720,9 @@ function calNext(){
 function renderCalendar(){
   if(!id('cal-grid-area'))return;
   const manualEvents = getFleetEvents();
-  // Auto events from vehicle data (only within 30 days)
+  // Auto events from vehicle data (only within 30 days) - for calendar grid display only
   const autoEvents = getAutoExpirationEvents();
-  const events = manualEvents.concat(autoEvents);
+  const eventsForGrid = manualEvents.concat(autoEvents);
   // System reminders (that have a date)
   const sysReminders=(typeof buildReminders==='function')?buildReminders().filter(function(r){return r.date;}):[];
   // Personal reminders converted to calendar-event shape (shown purple in grid)
@@ -8740,7 +8740,7 @@ function renderCalendar(){
     };
   });
   // Merge self reminders into events array for calendar grid display
-  const gridEvents = events.concat(selfReminderEvents);
+  const gridEvents = eventsForGrid.concat(selfReminderEvents);
   id('cal-events-count').textContent=gridEvents.length+sysReminders.length;
 
   if(calViewMode==='month'){
@@ -8750,8 +8750,8 @@ function renderCalendar(){
   }else{
     renderCalendarDay(gridEvents,sysReminders,[]);
   }
-  // Upcoming events panel - only regular events, NOT self-reminders
-  renderUpcomingEvents(events);
+  // "Upcoming events" panel - ONLY manual events (avoid duplication with "תזכורות" panel that shows system alerts)
+  renderUpcomingEvents(manualEvents);
   renderMonthReminders(sysReminders);
 }
 
@@ -8922,7 +8922,8 @@ function renderMonthReminders(allReminders){
   }).map(function(r){
     return {
       id:r.id, kind:'system', icon:r.icon, title:r.title,
-      driverName:r.driverName, date:r.date, days:r.days,
+      driverName:r.driverName, plate:r.plate, detail:r.detail,
+      date:r.date, days:r.days,
       action:r.action, sent:false
     };
   });
@@ -8967,17 +8968,27 @@ function renderMonthReminders(allReminders){
     const clickHandler = isSelf
       ? 'openSelfReminderModal(null,\''+r.id+'\')'
       : (r.action ? 'openReminderAction(\''+r.id+'\')' : '');
-    const mainText = r.driverName || r.title;
-    const subText = isSelf
-      ? (r.note || fd(r.date)+(r.time?' · '+r.time:''))
-      : (r.title + ' · ' + fd(r.date));
 
-    html+='<div onclick="'+clickHandler+'" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:7px;padding:8px 10px;margin-bottom:6px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">'+
+    // For system reminders: title on top (big), then driver + plate, then date
+    // For self reminders: title on top, then note/date
+    let mainText, subText, dateText;
+    if(isSelf){
+      mainText = r.title;
+      subText = r.note || '';
+      dateText = fd(r.date)+(r.time?' · '+r.time:'');
+    } else {
+      mainText = r.title;
+      subText = r.detail || r.driverName || '';
+      dateText = fd(r.date);
+    }
+
+    html+='<div onclick="'+clickHandler+'" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:7px;padding:9px 11px;margin-bottom:6px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'+
         '<span style="font-size:14px">'+r.icon+'</span>'+
-        '<span style="font-size:12px;font-weight:600;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+mainText+'</span>'+
+        '<span style="font-size:12px;font-weight:700;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+mainText+'</span>'+
       '</div>'+
-      '<div style="font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+subText+'</div>'+
+      (subText?'<div style="font-size:11px;color:var(--t2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-right:20px">'+subText+'</div>':'')+
+      '<div style="font-size:10px;color:var(--t3);margin-top:3px;margin-right:20px">'+dateText+'</div>'+
     '</div>';
   });
   el.innerHTML=html;
@@ -10202,15 +10213,16 @@ function buildReminders(){
           category:'רכבים',
           icon:'🚗',
           driverName,
-          title:'תוקף רישיון רכב (טסט)',
-          detail:v.plate+' — '+v.make+' '+v.model,
+          title:'פקיעת רישיון רכב',
+          detail:driverName+' · '+v.plate,
+          plate:v.plate,
           date:v.licenseExp,
           days,
           vehicleId:v.id,
           action:{type:'openVehicle',vid:v.id},
           email:v.driver?.email,
           emailSubject:'תזכורת: חידוש רישיון רכב '+v.plate,
-          emailBody:'שלום '+(v.driver?.name||'')+',\n\nתוקף רישיון הרכב '+v.plate+' עומד לפוג בתאריך '+fd(v.licenseExp)+'.\nנא לדאוג לחידוש בהקדם.\n\nתודה,\nכלמוביל'
+          emailBody:'שלום '+(v.driver?.name||'')+',\n\nתוקף רישיון הרכב '+v.plate+' עומד לפוג בתאריך '+fd(v.licenseExp)+'.\nנא לדאוג לחידוש בהקדם.\n\nתודה,\nמרכז הרכב של מור בית השקעות'
         });
       }
     }
@@ -10226,15 +10238,16 @@ function buildReminders(){
           category:'רכבים',
           icon:'🔧',
           driverName,
-          title:'טיפול שנתי הבא',
-          detail:v.plate+' — '+nxt.type,
+          title:'טיפול',
+          detail:driverName+' · '+v.plate,
+          plate:v.plate,
           date:nxt.date,
           days,
           vehicleId:v.id,
           action:{type:'openVehicle',vid:v.id},
           email:v.driver?.email,
           emailSubject:'תזכורת: תיאום טיפול רכב '+v.plate,
-          emailBody:'שלום '+(v.driver?.name||'')+',\n\nהגיע זמן תיאום טיפול לרכב '+v.plate+' ('+nxt.type+').\nנא ליצור קשר לתיאום.\n\nתודה,\nכלמוביל'
+          emailBody:'שלום '+(v.driver?.name||'')+',\n\nהגיע זמן תיאום טיפול לרכב '+v.plate+' ('+nxt.type+').\nנא ליצור קשר לתיאום.\n\nתודה,\nמרכז הרכב של מור בית השקעות'
         });
       }
       // By km
@@ -10311,17 +10324,18 @@ function buildReminders(){
           id:'drv-lic-'+v.id,
           type:'driver',
           category:'נהגים',
-          icon:'👤',
+          icon:'🪪',
           driverName,
-          title:'תוקף רישיון נהיגה',
-          detail:'רכב '+v.plate,
+          title:'פקיעת רישיון נהיגה',
+          detail:driverName+' · '+v.plate,
+          plate:v.plate,
           date:v.driver.licenseExp,
           days,
           vehicleId:v.id,
           action:{type:'openVehicle',vid:v.id},
           email:v.driver.email,
           emailSubject:'תזכורת: חידוש רישיון נהיגה',
-          emailBody:'שלום '+v.driver.name+',\n\nתוקף רישיון הנהיגה שלך עומד לפוג בתאריך '+fd(v.driver.licenseExp)+'.\nנא לדאוג לחידוש בהקדם.\n\nתודה,\nכלמוביל'
+          emailBody:'שלום '+v.driver.name+',\n\nתוקף רישיון הנהיגה שלך עומד לפוג בתאריך '+fd(v.driver.licenseExp)+'.\nנא לדאוג לחידוש בהקדם.\n\nתודה,\nמרכז הרכב של מור בית השקעות'
         });
       }
     }
@@ -10335,10 +10349,11 @@ function buildReminders(){
             id:'fam-lic-'+v.id+'-'+fidx,
             type:'driver',
             category:'נהגים',
-            icon:'👨‍👩‍👧',
+            icon:'🪪',
             driverName:f.name,
-            title:'רישיון בן משפחה ('+f.rel+')',
-            detail:'נהג ראשי: '+driverName+' · רכב '+v.plate,
+            title:'פקיעת רישיון נהיגה ('+f.rel+')',
+            detail:f.name+' · '+v.plate,
+            plate:v.plate,
             date:f.licenseExp,
             days,
             vehicleId:v.id,
