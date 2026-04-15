@@ -2001,8 +2001,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div class="fsl" style="grid-column:unset;margin-bottom:10px">טיפולים</div>
 
       <div id="svc-new-mode" style="display:none;background:var(--gbg);border:1px solid #86efac;border-radius:var(--r);padding:10px 14px;margin-bottom:10px">
-        <div style="font-size:14px;font-weight:600;color:#166534;margin-bottom:4px">רכב חדש — טיפול ראשון אוטומטי</div>
-        <div style="font-size:20px;color:#166534">הטיפול הראשון יהיה ב-15,000 ק"מ <strong>או</strong> שנה מתאריך המסירה — המוקדם מבין השניים.<br>מספיק למלא את תאריך המסירה למעלה.</div>
+        <div style="font-size:14px;font-weight:600;color:#166534;margin-bottom:4px">רכב חדש — טיפול ראשון</div>
+        <div style="font-size:13px;color:#166534">הטיפול הראשון יהיה ב-15,000 ק"מ <strong>או</strong> שנה מתאריך המסירה — המוקדם מבין השניים.<br>מספיק למלא את תאריך המסירה למעלה.</div>
       </div>
 
       <div id="svc-existing-mode">
@@ -2133,6 +2133,16 @@ function calcNextSvc(v){
   }
   // Fallback to vehicle.lastService field
   if(!lastSvcDate && v.lastService) lastSvcDate = v.lastService;
+  // NEW VEHICLE: no service history yet - use delivery date + 1 year, 15,000 km as first service
+  if(!lastSvcDate && v.isNew && v.delivery){
+    const d = new Date(v.delivery);
+    d.setFullYear(d.getFullYear()+1);
+    return {
+      km: 15000,
+      date: d.toISOString().split('T')[0],
+      type: 'טיפול ראשון'
+    };
+  }
   if(!lastSvcDate || !lastSvcKm) return {km:null,date:null,type:null};
   const nextKm = lastSvcKm + 15000;
   const d = new Date(lastSvcDate);
@@ -4863,10 +4873,10 @@ function openDet(vid){
   const insColor=insuranceExp&&dys(insuranceExp)<60?'#d97706':null;
   const insTxt=insuranceExp?fd(insuranceExp):'—';
 
-  // next service - auto-calculated from lastService + serviceKm
+  // next service - auto-calculated from lastService + serviceKm (or from delivery for new vehicles)
   const svcType=nxtSvc.type||'—';
   const svcDate=nxtSvc.date?fd(nxtSvc.date):'';
-  const svcTxt=v.isNew?`15,000 ק"מ`:(nxtSvc.type?svcType+(svcDate?' · '+svcDate:''):'—');
+  const svcTxt=nxtSvc.type?svcType+(svcDate?' · '+svcDate:''):'—';
   const tollsTxt=(v.tolls&&v.tolls.length)?v.tolls.join(', '):'אין';
   const curKm=(v.currentKm||v.curKm)?((v.currentKm||v.curKm)).toLocaleString('he-IL')+' ק"מ':'—';
 
@@ -5458,7 +5468,7 @@ function addVehicle(){
   if(!plate||!dname){alert('נא למלא מספר רכב ושם נהג');return}
   const delivery=id('fa-delivery').value;
   const isNew=id('fa-isnew').checked;
-  let serviceKm=0,lastService='',nextServiceType='15,000 ק"מ',currentKm=0,nextSvcDate='';
+  let serviceKm=0,lastService='',nextServiceType='טיפול ראשון',currentKm=0,nextSvcDate='';
   if(isNew){
     if(delivery){const nd=new Date(delivery);nd.setFullYear(nd.getFullYear()+1);nextSvcDate=nd.toISOString().split('T')[0]}
   }else{
