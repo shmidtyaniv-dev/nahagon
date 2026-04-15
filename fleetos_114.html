@@ -9075,6 +9075,7 @@ function openSelfReminderModal(presetDate, editId){
       </div>
       <div style="display:flex;gap:8px">
         <button onclick="document.getElementById('self-reminder-modal').remove()" style="flex:1;padding:11px;background:var(--bg);color:var(--t2);border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">ביטול</button>
+        <button id="sr-delete-btn" onclick="deleteSelfReminderFromModal()" style="display:none;padding:11px 14px;background:#fef2f2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🗑 מחק</button>
         <button onclick="saveSelfReminder()" style="flex:2;padding:11px;background:#8b5cf6;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">שמור תזכורת</button>
       </div>
     </div>`;
@@ -9088,8 +9089,22 @@ function openSelfReminderModal(presetDate, editId){
       document.getElementById('sr-date').value = sr.date||'';
       document.getElementById('sr-time').value = sr.time||'09:00';
       document.getElementById('sr-note').value = sr.note||'';
+      // Show delete button in edit mode
+      const delBtn = document.getElementById('sr-delete-btn');
+      if(delBtn) delBtn.style.display = 'inline-block';
     }
   }
+}
+
+function deleteSelfReminderFromModal(){
+  const editId = document.getElementById('sr-edit-id').value;
+  if(!editId) return;
+  if(!confirm('למחוק תזכורת זו לצמיתות?')) return;
+  selfReminders = selfReminders.filter(x=>x.id!==editId);
+  localStorage.setItem('selfReminders', JSON.stringify(selfReminders));
+  document.getElementById('self-reminder-modal').remove();
+  if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
+  showToast('✓ התזכורת נמחקה');
 }
 
 var selfReminders = JSON.parse(localStorage.getItem('selfReminders')||'[]');
@@ -9233,6 +9248,7 @@ function openEnhancedEventModal(editId, presetDate){
 
       <div style="display:flex;gap:8px">
         <button onclick="document.getElementById('enh-event-modal').remove()" style="flex:1;padding:11px;background:var(--bg);color:var(--t2);border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">ביטול</button>
+        <button id="enh-ev-delete-btn" onclick="deleteEnhancedEvent()" style="display:none;padding:11px 14px;background:#fef2f2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🗑 מחק</button>
         <button onclick="saveEnhancedEvent()" style="flex:2;padding:11px;background:var(--gd);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">שמור אירוע</button>
       </div>
     </div>`;
@@ -9260,8 +9276,23 @@ function openEnhancedEventModal(editId, presetDate){
         document.getElementById('enh-pre-time').value = e.preReminderTime||'09:00';
         toggleEnhPreReminder();
       }
+      // Show delete button in edit mode
+      const delBtn = document.getElementById('enh-ev-delete-btn');
+      if(delBtn) delBtn.style.display = 'inline-block';
     }
   }
+}
+
+function deleteEnhancedEvent(){
+  const editId = document.getElementById('enh-ev-edit-id').value;
+  if(!editId) return;
+  if(!confirm('למחוק אירוע זה לצמיתות?')) return;
+  const events = getFleetEvents();
+  const filtered = events.filter(x=>x.id!==editId);
+  saveFleetEvents(filtered);
+  document.getElementById('enh-event-modal').remove();
+  if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
+  showToast('✓ האירוע נמחק');
 }
 
 function setEnhEventType(type, btn){
@@ -9752,6 +9783,15 @@ function openEventModal(evId,presetDate){
     const vid2 = parseInt(parts[2]);
     if(!isNaN(vid2)){ openDet(vid2); return; }
     return;
+  }
+  // If event was created with the new enhanced flow (has enhType) - use new modal
+  if(evId){
+    const _events = getFleetEvents();
+    const _e = _events.find(function(x){return x.id===evId;});
+    if(_e && _e.enhType){
+      openEnhancedEventModal(evId);
+      return;
+    }
   }
   id('ev-edit-id').value=evId||'';
   id('ev-vehicle').innerHTML='<option value="">ללא שיוך</option>'+vehicles.map(function(v){return '<option value="'+v.id+'">'+v.plate+' — '+v.driver.name+'</option>';}).join('');
