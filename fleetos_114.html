@@ -3967,7 +3967,7 @@ function addFamilyMember(){
       <div><div style="font-size:12px;color:#666;margin-bottom:3px">קשר</div><select id="fm-rel" style="width:100%;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"><option>בן/בת זוג</option><option>ילד/ה</option><option>הורה</option><option>אח/ות</option><option>אחר</option></select></div>
       <div><div style="font-size:12px;color:#666;margin-bottom:3px">ת.ז.</div><input id="fm-id" type="text" dir="ltr" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
       <div><div style="font-size:12px;color:#666;margin-bottom:3px">טלפון</div><input id="fm-phone" type="text" dir="ltr" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">תוקף רישיון</div><input id="fm-lic" type="date" style="width:100%;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
+      <div><div style="font-size:12px;color:#666;margin-bottom:3px">תוקף רישיון נהיגה</div><input id="fm-lic" type="date" style="width:100%;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button onclick="document.getElementById('add-family-modal').remove()" style="padding:7px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>
@@ -4894,7 +4894,7 @@ function openDet(vid){
       <div class="ir-vc"><span class="lb">ת.ז.</span><span class="vl" dir="ltr">${v.driver.id||'—'}</span></div>
       <div class="ir-vc"><span class="lb">טלפון</span><span class="vl" dir="ltr">${v.driver.phone||'—'}</span></div>
       <div class="ir-vc" style="grid-column:span 2"><span class="lb">אימייל</span><span class="vl" dir="ltr">${v.driver.email||'—'}</span></div>
-      <div class="ir-vc" style="grid-column:span 2"><span class="lb">תוקף רישיון</span><span class="vl"${dLc?` style="color:${dLc}"`:''}>${fd(v.driver.licenseExp)||'—'}</span></div>
+      <div class="ir-vc" style="grid-column:span 2"><span class="lb">תוקף רישיון נהיגה</span><span class="vl"${dLc?` style="color:${dLc}"`:''}>${fd(v.driver.licenseExp)||'—'}</span></div>
       ${v.driver.address?`<div class="ir-vc" style="grid-column:span 2"><span class="lb">כתובת</span><span class="vl">${v.driver.address}</span></div>`:''}
       ${v.driver.company?`<div class="ir-vc" style="grid-column:span 2"><span class="lb">חברה</span><span class="vl">${v.driver.company}</span></div>`:''}
     </div>`;
@@ -7284,7 +7284,7 @@ function addFamilyMember(){
       <div><div style="font-size:12px;color:#666;margin-bottom:3px">קשר</div><select id="fm-rel" style="width:100%;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"><option>בן/בת זוג</option><option>ילד/ה</option><option>הורה</option><option>אח/ות</option><option>אחר</option></select></div>
       <div><div style="font-size:12px;color:#666;margin-bottom:3px">ת.ז.</div><input id="fm-id" type="text" dir="ltr" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
       <div><div style="font-size:12px;color:#666;margin-bottom:3px">טלפון</div><input id="fm-phone" type="text" dir="ltr" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">תוקף רישיון</div><input id="fm-lic" type="date" style="width:100%;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
+      <div><div style="font-size:12px;color:#666;margin-bottom:3px">תוקף רישיון נהיגה</div><input id="fm-lic" type="date" style="width:100%;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button onclick="document.getElementById('add-family-modal').remove()" style="padding:7px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>
@@ -8608,6 +8608,15 @@ var calCurrentDate=(function(){const d=new Date();d.setDate(1);return d;})();
 
 function setCalView(mode){
   calViewMode=mode;
+  // When switching to day or week view, jump to today (current day/week)
+  if(mode==='day' || mode==='week'){
+    calCurrentDate = new Date();
+  } else if(mode==='month'){
+    // For month view, jump to current month
+    const d = new Date();
+    d.setDate(1);
+    calCurrentDate = d;
+  }
   document.querySelectorAll('.cal-view-btn').forEach(function(b){
     b.classList.remove('active');
     b.style.background='transparent';
@@ -8975,22 +8984,26 @@ function renderCalendarMonth(events,reminders,taskEvents){
   id('cal-grid-area').innerHTML=html;
 }
 
-// When clicking on a calendar day - ask if add event or reminder
+// When clicking on a calendar day - jump to day view for that date
 function openDayPicker(iso){
-  const ex=document.getElementById('day-picker-modal');if(ex)ex.remove();
-  const modal=document.createElement('div');
-  modal.id='day-picker-modal';
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
-  modal.onclick=function(e){if(e.target===modal)modal.remove();};
-  modal.innerHTML='<div style="background:#fff;border-radius:14px;padding:20px;max-width:340px;width:100%;direction:rtl" onclick="event.stopPropagation()">'+
-    '<div style="font-size:15px;font-weight:600;color:#1A4A3A;margin-bottom:4px">מה תרצה להוסיף?</div>'+
-    '<div style="font-size:12px;color:#888;margin-bottom:14px">'+fd(iso)+'</div>'+
-    '<div style="display:flex;flex-direction:column;gap:8px">'+
-      '<button onclick="document.getElementById(\'day-picker-modal\').remove();openSelfReminderModal(\''+iso+'\')" style="padding:12px 16px;background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;color:#5b21b6;text-align:right">🔔 תזכורת אישית</button>'+
-      '<button onclick="document.getElementById(\'day-picker-modal\').remove();openEnhancedEventModal(null,\''+iso+'\')" style="padding:12px 16px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;color:#166534;text-align:right">📅 אירוע לנהג (טסט / טיפול / התקנה / אחר)</button>'+
-      '<button onclick="document.getElementById(\'day-picker-modal\').remove()" style="padding:10px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--t2);margin-top:4px">ביטול</button>'+
-    '</div></div>';
-  document.body.appendChild(modal);
+  if(!iso) return;
+  // Parse the iso date and jump to day view
+  const dt = new Date(iso+'T12:00:00');
+  if(isNaN(dt)) return;
+  calCurrentDate = dt;
+  calViewMode = 'day';
+  // Update view buttons
+  document.querySelectorAll('.cal-view-btn').forEach(function(b){
+    b.classList.remove('active');
+    b.style.background='transparent';
+    b.style.color='var(--t2)';
+  });
+  const btn = document.getElementById('cal-view-day');
+  if(btn){ btn.classList.add('active'); btn.style.background='var(--gd)'; btn.style.color='#fff'; }
+  renderCalendar();
+  // Scroll to top of calendar
+  const grid = document.getElementById('cal-grid-area');
+  if(grid && grid.scrollIntoView) grid.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 /* ══════════════════════════════════════════════════════
@@ -9659,10 +9672,16 @@ function renderCalendarDay(events,reminders,taskEvents){
   all.sort(function(a,b){return a.time.localeCompare(b.time);});
 
   let html='<div style="min-height:400px;padding:8px">';
-  html+='<div style="background:'+(isToday?'#fefce8':'var(--bg)')+';border:1.5px solid '+(isToday?'#fde68a':'var(--bdr2)')+';border-radius:10px;padding:14px 18px;margin-bottom:12px">';
+  html+='<div style="background:'+(isToday?'#fefce8':'var(--bg)')+';border:1.5px solid '+(isToday?'#fde68a':'var(--bdr2)')+';border-radius:10px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px">';
+  html+='<div style="flex:1">';
   html+='<div style="font-size:13px;color:var(--t2);margin-bottom:4px">'+(isToday?'📍 היום':'תאריך')+'</div>';
   html+='<div style="font-size:22px;font-weight:700;color:var(--gd)">'+wdays[d.getDay()]+', '+d.getDate()+' '+HEM[d.getMonth()]+' '+d.getFullYear()+'</div>';
   html+='<div style="font-size:12px;color:var(--t3);margin-top:4px">'+all.length+' פריטים ביום זה</div>';
+  html+='</div>';
+  html+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
+  html+='<button onclick="openSelfReminderModal(\''+iso+'\')" style="background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:#5b21b6">🔔 + תזכורת</button>';
+  html+='<button onclick="openEnhancedEventModal(null,\''+iso+'\')" style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:#166534">📅 + אירוע</button>';
+  html+='</div>';
   html+='</div>';
 
   if(!all.length){
