@@ -535,9 +535,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
         <div class="mc" onclick="go('calendar',q('[dp=calendar]'))">
           <div class="mc-bar" style="background:var(--blue)"></div>
-          <div class="mc-lbl">תזכורות פעילות</div>
+          <div class="mc-lbl">טיפולים וטסטים</div>
           <div class="mc-val" style="color:var(--blue)" id="mv-tasks">0</div>
-          <div class="mc-sub">ביומן</div>
+          <div class="mc-sub" id="mv-tasks-sub">ב-30 הימים הקרובים</div>
         </div>
         <div class="mc" id="mc-alt" onclick="showAltDriversModal()">
           <div class="mc-bar" style="background:#d97706"></div>
@@ -7240,10 +7240,43 @@ function go(name,el){
 
 function refresh(){
   id('mv-docs').textContent=vehicles.filter(v=>!v.docs).length;
-  // Count: self-reminders (not sent) + upcoming fleet events (not done)
-  const selfCount = (typeof selfReminders!=='undefined'?selfReminders:[]).filter(r=>!r.sent).length;
-  const eventCount = (typeof getFleetEvents==='function'?getFleetEvents():[]).filter(e=>e.status!=='done').length;
-  id('mv-tasks').textContent = selfCount + eventCount;
+  // Count: treatments (services) + tests (vehicle licenses) within 30 days
+  let treatmentCount = 0;
+  let testCount = 0;
+  const today = new Date(); today.setHours(0,0,0,0);
+  (vehicles||[]).forEach(function(v){
+    // Vehicle license (test) - within 30 days
+    if(v.licenseExp && typeof isWithin30Days==='function' && isWithin30Days(v.licenseExp)){
+      testCount++;
+    }
+    // Annual service - within 30 days from last service anniversary
+    if(typeof getVehicleLastServiceDate==='function'){
+      const lastSvc = getVehicleLastServiceDate(v);
+      if(lastSvc){
+        const anniversary = new Date(lastSvc);
+        while(anniversary<=today) anniversary.setFullYear(anniversary.getFullYear()+1);
+        const annivStr = anniversary.toISOString().split('T')[0];
+        if(typeof isWithin30Days==='function' && isWithin30Days(annivStr)){
+          treatmentCount++;
+        }
+      } else if(v.isNew && v.delivery){
+        // New vehicle - first service is 1 year from delivery
+        const firstSvc = new Date(v.delivery);
+        firstSvc.setFullYear(firstSvc.getFullYear()+1);
+        const firstStr = firstSvc.toISOString().split('T')[0];
+        if(typeof isWithin30Days==='function' && isWithin30Days(firstStr)){
+          treatmentCount++;
+        }
+      }
+    }
+  });
+  const total = treatmentCount + testCount;
+  id('mv-tasks').textContent = total;
+  const subEl = document.getElementById('mv-tasks-sub');
+  if(subEl){
+    if(total===0) subEl.textContent = 'ב-30 הימים הקרובים';
+    else subEl.textContent = treatmentCount+' טיפולים · '+testCount+' טסטים';
+  }
   id('fleet-cnt').textContent=vehicles.length;
   renderCal();renderDash();initLogoSidebar();initRepSidebar();
   // Persist vehicles to Firestore (debounced)
