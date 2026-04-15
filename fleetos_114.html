@@ -1674,38 +1674,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   </div>
 </div>
 
-<!-- FAMILY MEMBER MODAL -->
-<div class="ov" id="family-ov">
-  <div class="modal" style="max-width:520px" onclick="event.stopPropagation()">
-    <div class="mh">
-      <h3>הוספת בן/בת משפחה מורשה</h3>
-      <button class="mc-btn" onclick="closeModal('family-ov')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div class="mb">
-      <div class="fg">
-        <div class="ff"><label>שם מלא *</label><input id="fm-name" placeholder="ישראל ישראלי"></div>
-        <div class="ff"><label>קרבה משפחתית</label>
-          <select id="fm-rel">
-            <option value="אישה">אישה</option>
-            <option value="בעל">בעל</option>
-            <option value="בן/בת">בן/בת</option>
-            <option value="אח/אחות">אח/אחות</option>
-            <option value="הורה">הורה</option>
-            <option value="אחר">אחר</option>
-          </select>
-        </div>
-        <div class="ff"><label>תעודת זהות</label><input id="fm-id" placeholder="012345678" dir="ltr"></div>
-        <div class="ff"><label>טלפון</label><input id="fm-phone" placeholder="050-0000000" dir="ltr"></div>
-        <div class="ff"><label>תוקף רישיון נהיגה</label><input type="date" id="fm-lic"></div>
-        <div class="ff"><label>מייל (אופציונלי)</label><input id="fm-email" placeholder="name@co.il" dir="ltr"></div>
-      </div>
-    </div>
-    <div class="mf">
-      <button class="btn btn-l btn-sm" onclick="closeModal('family-ov')">ביטול</button>
-      <button class="btn btn-p btn-sm" onclick="saveFamilyMember()">הוסף</button>
-    </div>
-  </div>
-</div>
+<!-- Family member modal removed - using dynamic modal in addFamilyMember() instead -->
 
 <!-- EXTRA DOC UPLOAD MODAL -->
 <div class="ov" id="extdoc-ov">
@@ -7285,8 +7254,7 @@ function addFamilyMember(){
         </select>
       </div>
       <div><div style="font-size:12px;color:#666;margin-bottom:3px">ת.ז.</div><input id="fm-id" type="text" dir="ltr" placeholder="012345678" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">טלפון</div><input id="fm-phone" type="text" dir="ltr" placeholder="050-0000000" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-      <div style="grid-column:span 2"><div style="font-size:12px;color:#666;margin-bottom:3px">תוקף רישיון נהיגה</div><input id="fm-lic" type="date" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
+      <div><div style="font-size:12px;color:#666;margin-bottom:3px">תוקף רישיון נהיגה</div><input id="fm-lic" type="date" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button onclick="document.getElementById('add-family-modal').remove();_pendingFamilyDoc=null" style="padding:8px 18px;border:1px solid #ddd;border-radius:7px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>
@@ -7345,7 +7313,6 @@ function saveFamilyMember(vid){
     name,
     rel,
     id: document.getElementById('fm-id').value.trim(),
-    phone: document.getElementById('fm-phone').value.trim(),
     licenseExp: document.getElementById('fm-lic').value||null
   };
   // Attach scanned doc if present
@@ -7628,18 +7595,11 @@ function startFormSubmissionsListener(){
       }catch(e){}
     }
     initial=false;
-    // Update badge
-    const pending=formSubmissionsCache.filter(function(s){return s.status==='new';}).length;
+    // Badge removed - cleaner sidebar without numbers
     const sidebarItem=document.querySelector('[dp=forms]');
     if(sidebarItem){
-      let badge=sidebarItem.querySelector('.nb');
-      if(!badge && pending){
-        badge=document.createElement('span');
-        badge.className='nb';
-        sidebarItem.appendChild(badge);
-      }
-      if(badge)badge.textContent=pending||'';
-      if(badge && !pending)badge.remove();
+      const oldBadge=sidebarItem.querySelector('.nb');
+      if(oldBadge) oldBadge.remove();
     }
     // Re-render if submissions tab is active
     const submissionsEl=id('forms-submissions-list');
