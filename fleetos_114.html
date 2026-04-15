@@ -2109,6 +2109,22 @@ function dys(d){if(!d)return 9999;return Math.ceil((new Date(d)-NOW)/86400000)}
 function fkm(n){return Number(n).toLocaleString('he-IL')}
 function inits(n){return n.split(' ').map(w=>w[0]).join('').slice(0,2)}
 
+// Company badge - returns HTML circle with company abbreviation
+// "י.ד מור השקעות" → "י.ד" (blue circle)
+// "מור קופות גמל" → "גמל" (green circle)
+// other → empty string
+function companyBadge(company){
+  if(!company) return '';
+  const c = company.trim();
+  if(c.indexOf('י.ד')>=0 || c.indexOf('השקעות')>=0){
+    return '<span title="י.ד מור השקעות" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#1e40af;color:#fff;font-size:10px;font-weight:700;flex-shrink:0;letter-spacing:-.02em">י.ד</span>';
+  }
+  if(c.indexOf('גמל')>=0){
+    return '<span title="מור קופות גמל" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#16a34a;color:#fff;font-size:10px;font-weight:700;flex-shrink:0;letter-spacing:-.02em">גמל</span>';
+  }
+  return '';
+}
+
 function parseKm(s){if(!s)return 0;return parseInt(String(s).replace(/[^\d]/g,''))||0}
 
 // Auto-calculate next service (1 year from last service). Prefer historyLog over lastService field.
@@ -9000,7 +9016,8 @@ function renderMonthReminders(allReminders){
   }).map(function(r){
     return {
       id:r.id, kind:'system', icon:r.icon, title:r.title,
-      driverName:r.driverName, plate:r.plate, detail:r.detail,
+      driverName:r.driverName, driverCompany:r.driverCompany||'',
+      plate:r.plate, detail:r.detail,
       date:r.date, days:r.days,
       action:r.action, sent:false
     };
@@ -9058,33 +9075,35 @@ function renderMonthReminders(allReminders){
     // Build HTML
     if(isSelf){
       // Self reminder - simpler layout
-      html+='<div onclick="'+clickHandler+'" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:7px;padding:9px 11px;margin-bottom:6px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
-        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'+
-          '<span style="font-size:14px">'+r.icon+'</span>'+
-          '<span style="font-size:12px;font-weight:700;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.title+'</span>'+
+      html+='<div onclick="'+clickHandler+'" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
+          '<span style="font-size:16px">'+r.icon+'</span>'+
+          '<span style="font-size:13px;font-weight:700;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.title+'</span>'+
         '</div>'+
-        (r.note?'<div style="font-size:11px;color:var(--t2);font-weight:500;margin-right:20px">'+r.note+'</div>':'')+
-        '<div style="font-size:10px;color:var(--t3);margin-top:3px;margin-right:20px">'+fd(r.date)+(r.time?' · '+r.time:'')+'</div>'+
+        (r.note?'<div style="font-size:12px;color:var(--t2);font-weight:500;margin:4px 0 6px">'+r.note+'</div>':'')+
+        '<div style="font-size:12px;color:var(--t2);font-weight:600;text-align:left;direction:ltr">'+fd(r.date)+(r.time?' · '+r.time:'')+'</div>'+
       '</div>';
     } else {
-      // System reminder - show driver name + yellow plate + family badge (if applicable)
+      // System reminder - show company badge + driver name + yellow plate + family badge (if applicable)
+      const compBadge = companyBadge(r.driverCompany);
       const driverLine = r.driverName
-        ? '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;margin-right:20px;flex-wrap:wrap">'+
-            '<span style="font-size:12px;font-weight:600;color:var(--t1)">'+r.driverName+'</span>'+
+        ? '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">'+
+            (compBadge ? compBadge : '')+
+            '<span style="font-size:13px;font-weight:600;color:var(--t1)">'+r.driverName+'</span>'+
             (r.plate?renderPlate(r.plate):'')+
           '</div>'
         : '';
       const familyLine = isFamilyReminder
-        ? '<div style="margin-top:5px;margin-right:20px"><span style="font-size:10px;background:#fce7f3;color:#9f1239;padding:2px 8px;border-radius:999px;font-weight:600">👨‍👩‍👧 בן משפחה'+(relation?' · '+relation:'')+'</span></div>'
+        ? '<div style="margin-top:6px"><span style="font-size:11px;background:#fce7f3;color:#9f1239;padding:3px 10px;border-radius:999px;font-weight:600">👨‍👩‍👧 בן משפחה'+(relation?' · '+relation:'')+'</span></div>'
         : '';
-      html+='<div onclick="'+clickHandler+'" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:7px;padding:10px 11px;margin-bottom:6px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
-        '<div style="display:flex;align-items:center;gap:6px">'+
-          '<span style="font-size:14px">'+r.icon+'</span>'+
-          '<span style="font-size:12px;font-weight:700;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+cleanTitle+'</span>'+
+      html+='<div onclick="'+clickHandler+'" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
+        '<div style="display:flex;align-items:center;gap:8px">'+
+          '<span style="font-size:16px">'+r.icon+'</span>'+
+          '<span style="font-size:13px;font-weight:700;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+cleanTitle+'</span>'+
         '</div>'+
         driverLine+
         familyLine+
-        '<div style="font-size:10px;color:var(--t3);margin-top:5px;margin-right:20px">'+fd(r.date)+'</div>'+
+        '<div style="font-size:12px;color:var(--t2);font-weight:600;margin-top:8px;padding-top:8px;border-top:1px dashed var(--bdr);text-align:left;direction:ltr">'+fd(r.date)+'</div>'+
       '</div>';
     }
   });
@@ -9941,22 +9960,24 @@ function renderUpcomingEvents(events){
     const monthKey=HEM[d.getMonth()]+' '+d.getFullYear();
     if(monthKey!==currentMonth){
       currentMonth=monthKey;
-      html+='<div style="font-size:11px;font-weight:700;color:var(--gd);margin:10px 0 5px;padding-bottom:3px;border-bottom:1px solid var(--bdr)">'+monthKey+'</div>';
+      html+='<div style="font-size:12px;font-weight:700;color:var(--gd);margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--bdr)">'+monthKey+'</div>';
     }
     const v=e.vehicleId?vehicles.find(function(x){return x.id==e.vehicleId;}):null;
     const col=colorMap[e.type]||'#6b7280';
     const isDone=e.status==='done';
+    const compBadge = v ? companyBadge(v.driver?.company) : '';
     const driverLine = v ?
-      '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;margin-right:20px;flex-wrap:wrap">'+
-        '<span style="font-size:12px;font-weight:600;color:var(--t1)">'+(v.driver?.name||'')+'</span>'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">'+
+        (compBadge ? compBadge : '')+
+        '<span style="font-size:13px;font-weight:600;color:var(--t1)">'+(v.driver?.name||'')+'</span>'+
         renderPlate(v.plate)+
       '</div>' : '';
-    const dateLine = '<div style="font-size:10px;color:var(--t3);margin-top:5px;margin-right:20px">'+fd(e.date)+(e.time?' · '+e.time:'')+'</div>';
-    html+='<div onclick="openEventModal(\''+e.id+'\')" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:7px;padding:10px 11px;margin-bottom:6px;cursor:pointer;transition:background .15s'+(isDone?';opacity:.6':'')+'" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
-      '<div style="display:flex;align-items:center;gap:6px">'+
-        '<span style="font-size:14px">'+(iconMap[e.type]||'📅')+'</span>'+
-        '<span style="font-size:12px;font-weight:700;color:var(--t1);flex:1'+(isDone?';text-decoration:line-through':'')+'">'+e.title+'</span>'+
-        (isDone?'<span style="font-size:9px;background:#dcfce7;color:#166534;padding:1px 6px;border-radius:999px;font-weight:600">✓</span>':'')+
+    const dateLine = '<div style="font-size:12px;color:var(--t2);font-weight:600;margin-top:8px;padding-top:8px;border-top:1px dashed var(--bdr);text-align:left;direction:ltr">'+fd(e.date)+(e.time?' · '+e.time:'')+'</div>';
+    html+='<div onclick="openEventModal(\''+e.id+'\')" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s'+(isDone?';opacity:.6':'')+'" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+        '<span style="font-size:16px">'+(iconMap[e.type]||'📅')+'</span>'+
+        '<span style="font-size:13px;font-weight:700;color:var(--t1);flex:1'+(isDone?';text-decoration:line-through':'')+'">'+e.title+'</span>'+
+        (isDone?'<span style="font-size:10px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:999px;font-weight:600">✓</span>':'')+
       '</div>'+
       driverLine+
       dateLine+
@@ -10317,6 +10338,7 @@ function buildReminders(){
           category:'רכבים',
           icon:'🚗',
           driverName,
+          driverCompany:v.driver?.company||'',
           title:'פקיעת רישיון רכב',
           detail:driverName+' · '+v.plate,
           plate:v.plate,
@@ -10342,6 +10364,7 @@ function buildReminders(){
           category:'רכבים',
           icon:'🔧',
           driverName,
+          driverCompany:v.driver?.company||'',
           title:'טיפול',
           detail:driverName+' · '+v.plate,
           plate:v.plate,
@@ -10430,6 +10453,7 @@ function buildReminders(){
           category:'נהגים',
           icon:'🪪',
           driverName,
+          driverCompany:v.driver?.company||'',
           title:'פקיעת רישיון נהיגה',
           detail:driverName+' · '+v.plate,
           plate:v.plate,
@@ -10455,6 +10479,7 @@ function buildReminders(){
             category:'נהגים',
             icon:'🪪',
             driverName:f.name,
+            driverCompany:v.driver?.company||'',
             title:'פקיעת רישיון נהיגה ('+f.rel+')',
             detail:f.name+' · '+v.plate,
             plate:v.plate,
