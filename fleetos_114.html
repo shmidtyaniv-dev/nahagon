@@ -4131,18 +4131,50 @@ function getMonthItems(mo){
   const m=mo.getMonth(),y=mo.getFullYear();
   const items=[];
   vehicles.forEach(v=>{
-    // vehicle test (טסט) - only show if within 30 days
+    const primaryDriverName = v.driver?.name||'';
+    // vehicle test (רישיון רכב / טסט) - only show if within 30 days
     if(inM(v.licenseExp,m,y) && isWithin30Days(v.licenseExp)){
-      items.push({type:'test',plate:v.plate,driver:v.driver.name,model:`${v.make} ${v.model}`,date:v.licenseExp,vid:v.id});
+      items.push({
+        uid:'test-'+v.id,
+        type:'test',
+        subType:'vehicle',
+        plate:v.plate,
+        driver:primaryDriverName,
+        model:`${v.make} ${v.model}`,
+        date:v.licenseExp,
+        vid:v.id
+      });
     }
-    // driver license - only show if within 30 days
+    // driver license (רישיון נהיגה) - only show if within 30 days
     if(inM(v.driver.licenseExp,m,y) && isWithin30Days(v.driver.licenseExp)){
-      items.push({type:'lic',plate:null,driver:v.driver.name,model:null,date:v.driver.licenseExp,vid:v.id});
+      items.push({
+        uid:'lic-drv-'+v.id,
+        type:'lic',
+        subType:'driver',
+        plate:v.plate,
+        driver:primaryDriverName,
+        model:null,
+        date:v.driver.licenseExp,
+        vid:v.id,
+        isFamily:false
+      });
     }
     // family licenses - only show if within 30 days
-    if(v.family) v.family.forEach(f=>{
+    if(v.family) v.family.forEach((f,fi)=>{
       if(inM(f.licenseExp,m,y) && isWithin30Days(f.licenseExp)){
-        items.push({type:'lic',plate:null,driver:f.name,model:null,date:f.licenseExp,vid:v.id});
+        items.push({
+          uid:'lic-fam-'+v.id+'-'+fi,
+          type:'lic',
+          subType:'family',
+          plate:v.plate,
+          driver:f.name,
+          relation:f.rel||'בן משפחה',
+          primaryDriver:primaryDriverName,
+          model:null,
+          date:f.licenseExp,
+          vid:v.id,
+          isFamily:true
+        });
       }
     });
     // services: annual logic — show only if anniversary is within 30 days
@@ -4152,7 +4184,15 @@ function getMonthItems(mo){
       while(anniversary <= NOW) anniversary.setFullYear(anniversary.getFullYear()+1);
       const annivStr = anniversary.toISOString().split('T')[0];
       if(inM(annivStr,m,y) && isWithin30Days(annivStr)){
-        items.push({type:'svc',plate:v.plate,driver:v.driver.name,model:`${v.make} ${v.model}`,date:annivStr,vid:v.id});
+        items.push({
+          uid:'svc-'+v.id,
+          type:'svc',
+          plate:v.plate,
+          driver:primaryDriverName,
+          model:`${v.make} ${v.model}`,
+          date:annivStr,
+          vid:v.id
+        });
       }
     }
   });
@@ -4191,36 +4231,64 @@ function renderCalCard(mo){
   const items=getMonthItems(mo);
   const doneKey=`cal-done-${m}-${y}`;
   const done=JSON.parse(localStorage.getItem(doneKey)||'[]');
-  const activeItems=items.filter((_,i)=>!done.includes(i));
-  const badge=`<span class="cal-tasks-badge">${activeItems.length} משימות</span>`;
+  // Use stable uids for the "done" state
+  const activeItems=items.filter(it=>!done.includes(it.uid));
+  const badge=`<span class="cal-tasks-badge">${activeItems.length} תזכורות</span>`;
   const tagMap={svc:'svc',test:'test',lic:'lic'};
-  const tagLabel={svc:'טיפול',test:'טסט',lic:'רישיון'};
-  let rows=items.map((it,i)=>{
-    const isDone=done.includes(i);
+  // Map label by type + subType
+  function getTagLabel(it){
+    if(it.type==='svc') return 'טיפול';
+    if(it.type==='test') return 'רישיון רכב';
+    if(it.type==='lic' && it.subType==='driver') return 'רישיון נהיגה';
+    if(it.type==='lic' && it.subType==='family') return 'רישיון נהיגה';
+    return 'תזכורת';
+  }
+  let rows=items.map(it=>{
+    const isDone=done.includes(it.uid);
     const dc=calDateClass(it.date);
     const dateHtml=it.date?`<span class="cal-item-date ${dc}" style="margin-right:6px"><div class="cal-item-date-dot" style="display:inline-block;vertical-align:middle;margin-left:3px"></div>עד: ${fds(it.date)}</span>`:'';
-    const mainLine=it.plate
-      ?`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${renderPlate(it.plate)}<span class="cal-item-driver">${it.driver}${it.model?` · ${it.model}`:''}</span>${dateHtml}</div>`
-      :`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="cal-item-driver">${it.driver}</span>${dateHtml}</div>`;
+
+    // Build the main line - include plate for all (even licenses) and family badge if relevant
+    const familyBadge = it.isFamily
+      ? `<span style="font-size:10px;background:#fce7f3;color:#9f1239;padding:1px 7px;border-radius:999px;font-weight:600">👨‍👩‍👧 בן משפחה${it.relation?' - '+it.relation:''}</span>`
+      : '';
+    const mainLine = `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">${it.plate?renderPlate(it.plate):''}<span class="cal-item-driver">${it.driver}${it.model?` · ${it.model}`:''}</span>${familyBadge}${dateHtml}</div>`;
     const doneStyle=isDone?'opacity:.45;text-decoration:line-through;':'';
     return`<div class="cal-item" style="${doneStyle}">
-      <span class="cal-item-tag ${tagMap[it.type]}">${tagLabel[it.type]}</span>
+      <span class="cal-item-tag ${tagMap[it.type]}">${getTagLabel(it)}</span>
       <div class="cal-item-info" onclick="openDet(${it.vid})" style="cursor:pointer;flex:1">${mainLine}</div>
-      <button onclick="calMarkDone('${doneKey}',${i})" title="סמן כבוצע" style="background:${isDone?'#16a34a':'rgba(26,74,58,.08)'};border:1px solid ${isDone?'#16a34a':'var(--bdr2)'};border-radius:5px;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${isDone?'#fff':'var(--t3)'};font-size:13px;transition:all .15s">✓</button>
+      <button onclick="calMarkDone('${doneKey}','${it.uid}')" title="סמן כבוצע" style="background:${isDone?'#16a34a':'rgba(26,74,58,.08)'};border:1px solid ${isDone?'#16a34a':'var(--bdr2)'};border-radius:5px;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${isDone?'#fff':'var(--t3)'};font-size:13px;transition:all .15s">✓</button>
     </div>`;
   }).join('');
-  if(!rows)rows=`<div class="cal-empty-msg">אין משימות</div>`;
+  if(!rows)rows=`<div class="cal-empty-msg">אין תזכורות</div>`;
   return`<div class="cal-card${isCur?' cur':''}">
     <div class="cal-card-head"><span class="cal-month-name">${HEM[m]} ${y}</span>${badge}</div>
     <div class="cal-items-wrap">${rows}</div>
   </div>`;
 }
-function calMarkDone(key,idx){
+function calMarkDone(key,uid){
   const done=JSON.parse(localStorage.getItem(key)||'[]');
-  const pos=done.indexOf(idx);
-  if(pos===-1)done.push(idx);else done.splice(pos,1);
+  const pos=done.indexOf(uid);
+  if(pos===-1)done.push(uid);else done.splice(pos,1);
   localStorage.setItem(key,JSON.stringify(done));
+  // Also sync with dismissedReminders for the main calendar panel
+  try{
+    const dismissed = JSON.parse(localStorage.getItem('dismissedReminders')||'{}');
+    // Map mini-cal uid to main reminder id
+    const remId = uid.startsWith('test-') ? 'veh-lic-'+uid.slice(5)
+                 : uid.startsWith('lic-drv-') ? 'drv-lic-'+uid.slice(8)
+                 : uid.startsWith('lic-fam-') ? 'fam-lic-'+uid.slice(8)
+                 : uid.startsWith('svc-') ? 'veh-svc-date-'+uid.slice(4)
+                 : null;
+    if(remId){
+      if(pos===-1) dismissed[remId] = new Date().toISOString();
+      else delete dismissed[remId];
+      localStorage.setItem('dismissedReminders', JSON.stringify(dismissed));
+    }
+  }catch(e){}
   renderCal();
+  // Re-render main calendar reminders panel if visible
+  if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
 }
 function renderCal(){
   const base=new Date(NOW.getFullYear(),NOW.getMonth()+calOffset,1);
