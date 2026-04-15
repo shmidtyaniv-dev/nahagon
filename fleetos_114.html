@@ -4981,9 +4981,31 @@ function startVehiclesListener(){
     // Refresh UI
     if(typeof refresh==='function')refresh();
     if(typeof renderV==='function')renderV();
-    if(_currentVid && typeof openDet==='function'){
+    if(_currentVid){
       const stillExists=vehicles.find(function(v){return v.id===_currentVid;});
-      if(stillExists)openDet(_currentVid);
+      if(stillExists){
+        // Detect which vehicle-card tab is currently active to preserve user context
+        const activeTabBtn = document.querySelector('.vc-tab-btn.active');
+        let activeTabName = null;
+        if(activeTabBtn){
+          // Map button onclick to tab name
+          const onclickStr = activeTabBtn.getAttribute('onclick')||'';
+          const m = onclickStr.match(/vcTab\('([^']+)'/);
+          if(m) activeTabName = m[1];
+        }
+        // Re-render current vehicle card
+        if(typeof openDet==='function') openDet(_currentVid);
+        // Restore active tab if it wasn't overview
+        if(activeTabName && activeTabName!=='overview'){
+          const targetBtn = Array.from(document.querySelectorAll('.vc-tab-btn')).find(function(b){
+            const oc = b.getAttribute('onclick')||'';
+            return oc.indexOf("vcTab('"+activeTabName+"'")>=0;
+          });
+          if(targetBtn){
+            try{ vcTab(activeTabName, targetBtn); }catch(e){}
+          }
+        }
+      }
     }
   },function(err){console.error('vehicles listener error:',err);});
 }
