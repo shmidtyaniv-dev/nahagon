@@ -8661,18 +8661,19 @@ function renderCalendar(){
   });
   // Build task "events" for calendar display (tasks with scheduledDate or due)
   const taskEvents = getTaskCalendarEvents();
-  // Merge self reminders into events array so they appear in calendar grid
-  const allEvents = events.concat(selfReminderEvents);
-  id('cal-events-count').textContent=allEvents.length+sysReminders.length+taskEvents.length;
+  // Merge self reminders into events array ONLY for calendar grid display (not for "upcoming events" panel)
+  const gridEvents = events.concat(selfReminderEvents);
+  id('cal-events-count').textContent=gridEvents.length+sysReminders.length+taskEvents.length;
 
   if(calViewMode==='month'){
-    renderCalendarMonth(allEvents,sysReminders,taskEvents);
+    renderCalendarMonth(gridEvents,sysReminders,taskEvents);
   }else if(calViewMode==='week'){
-    renderCalendarWeek(allEvents,sysReminders,taskEvents);
+    renderCalendarWeek(gridEvents,sysReminders,taskEvents);
   }else{
-    renderCalendarDay(allEvents,sysReminders,taskEvents);
+    renderCalendarDay(gridEvents,sysReminders,taskEvents);
   }
-  renderUpcomingEvents(allEvents);
+  // Upcoming events panel - only regular events, NOT self-reminders (they appear in reminders panel)
+  renderUpcomingEvents(events);
   renderMonthReminders(sysReminders);
   renderCalendarTasks();
 }
