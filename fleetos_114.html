@@ -535,8 +535,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
         <div class="mc" onclick="go('calendar',q('[dp=calendar]'))">
           <div class="mc-bar" style="background:var(--blue)"></div>
-          <div class="mc-lbl">משימות פתוחות</div>
-          <div class="mc-val" style="color:var(--blue)" id="mv-tasks">3</div>
+          <div class="mc-lbl">תזכורות פעילות</div>
+          <div class="mc-val" style="color:var(--blue)" id="mv-tasks">0</div>
           <div class="mc-sub">ביומן</div>
         </div>
         <div class="mc" id="mc-alt" onclick="showAltDriversModal()">
@@ -763,25 +763,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div id="cal-reminders-list" style="max-height:480px;overflow-y:auto"></div>
           </div>
 
-          <!-- Tasks -->
-          <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:14px">
-            <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-              <span>משימות</span>
-              <span id="cal-tasks-count" style="display:none"></span>
-              <span style="flex:1"></span>
-              <select id="cal-tasks-filter" onchange="renderCalendarTasks()" style="font-size:11px;padding:3px 6px;border:1px solid var(--bdr2);border-radius:5px;background:var(--bg);color:var(--t1);font-family:inherit">
-                <option value="active">פתוחות</option>
-                <option value="open">חדש</option>
-                <option value="inprogress">בטיפול</option>
-                <option value="waiting">ממתין</option>
-                <option value="done">הושלמו</option>
-                <option value="late">באיחור</option>
-                <option value="all">הכל</option>
-              </select>
-            </div>
-            <div id="cal-tasks-list" style="max-height:320px;overflow-y:auto"></div>
-          </div>
         </div>
 
         <!-- Monthly/Weekly/Daily Calendar (second = left in RTL) -->
@@ -796,7 +777,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#d97706;border-radius:2px"></span>טיפול</div>
             <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#2563eb;border-radius:2px"></span>טסט</div>
             <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#6b7280;border-radius:2px"></span>אחר</div>
-            <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#8b5cf6;border-radius:2px"></span>תזכורת</div>
+            <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#8b5cf6;border-radius:2px"></span>תזכורת אישית</div>
+            <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#dc2626;border-radius:2px"></span>תזכורת מערכת</div>
           </div>
         </div>
       </div>
@@ -4452,11 +4434,21 @@ function globalSearch(query){
            (veh?.driver?.name||'').toLowerCase().includes(q);
   });
 
-  // Tasks
-  const taskMatches = (typeof tasks!=='undefined'?tasks:[]).filter(function(t){
-    return (t.title||'').toLowerCase().includes(q) ||
-           (t.desc||'').toLowerCase().includes(q) ||
-           (t.type||'').toLowerCase().includes(q);
+  // Self-reminders
+  const reminderMatches = (typeof selfReminders!=='undefined'?selfReminders:[]).filter(function(r){
+    return (r.title||'').toLowerCase().includes(q) ||
+           (r.note||'').toLowerCase().includes(q);
+  });
+
+  // Fleet events (from new "+ חדש" button)
+  const eventMatches = (typeof getFleetEvents==='function'?getFleetEvents():[]).filter(function(e){
+    if(!e.enhType && !e.title) return false;
+    const veh = vehicles.find(function(v){return v.id===e.vehicleId;});
+    return (e.title||'').toLowerCase().includes(q) ||
+           (e.desc||'').toLowerCase().includes(q) ||
+           (e.otherText||'').toLowerCase().includes(q) ||
+           (veh?.plate||'').toLowerCase().includes(q) ||
+           (veh?.driver?.name||'').toLowerCase().includes(q);
   });
 
   let html='';
@@ -4515,18 +4507,29 @@ function globalSearch(query){
       '</div>';
     });
   }
-  // Tasks
-  if(taskMatches.length){
-    html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:var(--gd);border-bottom:1px solid var(--bdr);background:var(--bg)">📋 משימות ('+taskMatches.length+')</div>';
-    taskMatches.slice(0,6).forEach(function(t){
-      html += '<div onclick="openTaskModal('+t.id+');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
-        '<div style="font-size:18px">📋</div>'+
-        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+t.title+'</div><div style="font-size:11px;color:var(--t3)">'+t.type+'</div></div>'+
+  // Self-reminders
+  if(reminderMatches.length){
+    html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:var(--gd);border-bottom:1px solid var(--bdr);background:var(--bg)">🔔 תזכורות אישיות ('+reminderMatches.length+')</div>';
+    reminderMatches.slice(0,6).forEach(function(r){
+      html += '<div onclick="openSelfReminderModal(null,\''+r.id+'\');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
+        '<div style="font-size:18px">🔔</div>'+
+        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+r.title+'</div><div style="font-size:11px;color:var(--t3)">'+fd(r.date)+(r.time?' · '+r.time:'')+'</div></div>'+
+      '</div>';
+    });
+  }
+  // Events
+  if(eventMatches.length){
+    html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:var(--gd);border-bottom:1px solid var(--bdr);background:var(--bg)">📅 אירועים ('+eventMatches.length+')</div>';
+    eventMatches.slice(0,6).forEach(function(e){
+      const veh = vehicles.find(function(v){return v.id===e.vehicleId;});
+      html += '<div onclick="openEventModal(\''+e.id+'\');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
+        '<div style="font-size:18px">📅</div>'+
+        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+e.title+'</div><div style="font-size:11px;color:var(--t3)">'+(veh?veh.plate+' · '+(veh.driver?.name||''):'')+' · '+fd(e.date)+'</div></div>'+
       '</div>';
     });
   }
 
-  const totalCount = mfrKeys.length + vehicleMatches.length + driverMatches.length + violMatches.length + accMatches.length + taskMatches.length;
+  const totalCount = mfrKeys.length + vehicleMatches.length + driverMatches.length + violMatches.length + accMatches.length + reminderMatches.length + eventMatches.length;
   if(!totalCount){
     html = '<div style="padding:28px 16px;text-align:center;color:var(--t3);font-size:13px"><div style="font-size:32px;margin-bottom:6px">🔍</div>לא נמצאו תוצאות עבור "'+query+'"</div>';
   }
@@ -5554,13 +5557,9 @@ function saveUpdate(){
   openDet(vid);
 }
 
-/* ── TASKS DATA ── */
-let tasks=[
-  {id:1,title:'לחדש ביטוח צד ג׳ לכל הצי',type:'מסמכים ורישיונות',priority:'urgent',status:'waiting',due:'2025-04-18',remindDate:'2025-04-16',desc:'לסיים עד סוף החודש',created:'2025-03-20'},
-  {id:2,title:'לתאם טסט ליונדאי i35',type:'טיפולים ושירות',priority:'high',status:'inprogress',due:'2025-05-01',desc:'תוקף רישיון רכב עומד לפוג',created:'2025-03-15'},
-  {id:3,title:'לבדוק הצעת מחיר לליסינג חדש',type:'כללי',priority:'normal',status:'open',due:'2025-04-30',desc:'השוואה בין 3 חברות',created:'2025-03-10'},
-];
-let taskIdSeq=10;
+/* ── TASKS DATA (deprecated - kept for backward compatibility with any old code paths) ── */
+let tasks=[];
+let taskIdSeq=1;
 
 const TASK_STATUS_LABELS={open:'חדש',inprogress:'בטיפול',waiting:'ממתין',done:'הושלם',cancelled:'בוטל',late:'באיחור'};
 const TASK_STATUS_COLORS={open:'var(--blue)',inprogress:'var(--amber)',waiting:'var(--t2)',done:'var(--green)',cancelled:'var(--t3)',late:'var(--red)'};
@@ -7158,7 +7157,10 @@ function go(name,el){
 
 function refresh(){
   id('mv-docs').textContent=vehicles.filter(v=>!v.docs).length;
-  id('mv-tasks').textContent=tasks.filter(t=>getTaskStatus(t)!=='done'&&getTaskStatus(t)!=='cancelled').length;
+  // Count: self-reminders (not sent) + upcoming fleet events (not done)
+  const selfCount = (typeof selfReminders!=='undefined'?selfReminders:[]).filter(r=>!r.sent).length;
+  const eventCount = (typeof getFleetEvents==='function'?getFleetEvents():[]).filter(e=>e.status!=='done').length;
+  id('mv-tasks').textContent = selfCount + eventCount;
   id('fleet-cnt').textContent=vehicles.length;
   renderCal();renderDash();initLogoSidebar();initRepSidebar();
   // Persist vehicles to Firestore (debounced)
@@ -8659,23 +8661,20 @@ function renderCalendar(){
       isSelfReminder: true
     };
   });
-  // Build task "events" for calendar display (tasks with scheduledDate or due)
-  const taskEvents = getTaskCalendarEvents();
-  // Merge self reminders into events array ONLY for calendar grid display (not for "upcoming events" panel)
+  // Merge self reminders into events array for calendar grid display
   const gridEvents = events.concat(selfReminderEvents);
-  id('cal-events-count').textContent=gridEvents.length+sysReminders.length+taskEvents.length;
+  id('cal-events-count').textContent=gridEvents.length+sysReminders.length;
 
   if(calViewMode==='month'){
-    renderCalendarMonth(gridEvents,sysReminders,taskEvents);
+    renderCalendarMonth(gridEvents,sysReminders,[]);
   }else if(calViewMode==='week'){
-    renderCalendarWeek(gridEvents,sysReminders,taskEvents);
+    renderCalendarWeek(gridEvents,sysReminders,[]);
   }else{
-    renderCalendarDay(gridEvents,sysReminders,taskEvents);
+    renderCalendarDay(gridEvents,sysReminders,[]);
   }
-  // Upcoming events panel - only regular events, NOT self-reminders (they appear in reminders panel)
+  // Upcoming events panel - only regular events, NOT self-reminders
   renderUpcomingEvents(events);
   renderMonthReminders(sysReminders);
-  renderCalendarTasks();
 }
 
 // Build automatic calendar events from vehicle expiration data - only within 30 days
