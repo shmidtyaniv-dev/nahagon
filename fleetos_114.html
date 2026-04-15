@@ -214,10 +214,10 @@ tbody td{padding:6px 10px;font-size:20px;color:var(--t1);vertical-align:middle}
 .sum-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
 .sum-card-lbl{font-size:20px;color:var(--t3)}
 .sum-card-val{font-size:20px;font-weight:700;color:var(--t1);line-height:1.2}
-.ir-vc{display:flex;align-items:center;padding:5px 0;border-bottom:1px solid var(--bdr);gap:8px}
+.ir-vc{display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bdr);gap:8px;justify-content:space-between}
 .ir-vc:last-child{border-bottom:none}
-.ir-vc .lb{font-size:20px;color:var(--t3);min-width:110px;flex-shrink:0}
-.ir-vc .vl{font-size:20px;color:var(--t1);font-weight:500}
+.ir-vc .lb{font-size:13px;color:var(--t3);min-width:auto;flex-shrink:0;font-weight:500}
+.ir-vc .vl{font-size:13px;color:var(--t1);font-weight:600;text-align:left}
 .doc-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:6px}
 .doc-card.missing{border-color:#fca5a5;background:#fff5f5}
 .doc-card.ok{border-color:#86efac;background:#f0fdf4}
@@ -3955,35 +3955,7 @@ function renderExtraDocs(vid){
 
 function deleteExtraDoc(id,vid){const v=vehicles.find(x=>x.id==vid);if(!v)return;v.extraDocs=(v.extraDocs||[]).filter(d=>d.id!==id);renderExtraDocs(vid);}
 
-function addFamilyMember(){
-  const vid=_currentVid;const v=vehicles.find(x=>x.id===vid);if(!v)return;
-  const ex=document.getElementById('add-family-modal');if(ex)ex.remove();
-  const m=document.createElement('div');m.id='add-family-modal';
-  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
-  m.innerHTML=`<div style="background:#fff;border-radius:12px;padding:20px;width:100%;max-width:360px;direction:rtl" onclick="event.stopPropagation()">
-    <div style="font-size:15px;font-weight:600;color:var(--gd);margin-bottom:14px">הוספת בן/בת משפחה</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <div style="grid-column:span 2"><div style="font-size:12px;color:#666;margin-bottom:3px">שם מלא *</div><input id="fm-name" type="text" placeholder="ישראל ישראלי" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">קשר</div><select id="fm-rel" style="width:100%;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"><option>בן/בת זוג</option><option>ילד/ה</option><option>הורה</option><option>אח/ות</option><option>אחר</option></select></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">ת.ז.</div><input id="fm-id" type="text" dir="ltr" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">טלפון</div><input id="fm-phone" type="text" dir="ltr" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">תוקף רישיון נהיגה</div><input id="fm-lic" type="date" style="width:100%;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="document.getElementById('add-family-modal').remove()" style="padding:7px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>
-      <button onclick="saveFamilyMember(${vid})" style="padding:7px 16px;background:var(--gd);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit">הוסף</button>
-    </div>
-  </div>`;
-  document.body.appendChild(m);setTimeout(()=>document.getElementById('fm-name').focus(),100);
-}
-
-function saveFamilyMember(vid){
-  const name=document.getElementById('fm-name').value.trim();if(!name){alert('יש להזין שם');return;}
-  const v=vehicles.find(x=>x.id===vid);if(!v)return;
-  v.family.push({name,rel:document.getElementById('fm-rel').value,id:document.getElementById('fm-id').value.trim(),phone:document.getElementById('fm-phone').value.trim(),licenseExp:document.getElementById('fm-lic').value||null});
-  document.getElementById('add-family-modal').remove();
-  openDet(vid);vcTab('driver',document.querySelectorAll('.vc-tab-btn')[1]);
-}
+// addFamilyMember and saveFamilyMember are defined later in the file (the new version with AI scan)
 
 function saveFamilyEdit(){
   const name=id('fe-name').value.trim();if(!name){alert('נא למלא שם');return}
@@ -4883,20 +4855,20 @@ function openDet(vid){
   const dLic=dys(v.driver.licenseExp);
   const dLc=dLic<0?'#dc2626':dLic<60?'#d97706':null;
   id('vc-driver-rows').innerHTML=`
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--bdr)">
-      <div style="width:44px;height:44px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${inits(v.driver.name)}</div>
+    <div style="display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--bdr);background:#f0fdf4">
+      <div style="width:48px;height:48px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0">${inits(v.driver.name)}</div>
       <div>
-        <div style="font-size:16px;font-weight:600;color:var(--gd)">${v.driver.name}</div>
-        
+        <div style="font-size:17px;font-weight:700;color:var(--gd)">${v.driver.name}</div>
+        ${v.driver.dept?`<div style="font-size:11px;color:var(--t3);margin-top:2px">${v.driver.dept}</div>`:''}
       </div>
     </div>
-    <div style="padding:8px 14px;display:grid;grid-template-columns:1fr 1fr;gap:0">
+    <div>
       <div class="ir-vc"><span class="lb">ת.ז.</span><span class="vl" dir="ltr">${v.driver.id||'—'}</span></div>
       <div class="ir-vc"><span class="lb">טלפון</span><span class="vl" dir="ltr">${v.driver.phone||'—'}</span></div>
-      <div class="ir-vc" style="grid-column:span 2"><span class="lb">אימייל</span><span class="vl" dir="ltr">${v.driver.email||'—'}</span></div>
-      <div class="ir-vc" style="grid-column:span 2"><span class="lb">תוקף רישיון נהיגה</span><span class="vl"${dLc?` style="color:${dLc}"`:''}>${fd(v.driver.licenseExp)||'—'}</span></div>
-      ${v.driver.address?`<div class="ir-vc" style="grid-column:span 2"><span class="lb">כתובת</span><span class="vl">${v.driver.address}</span></div>`:''}
-      ${v.driver.company?`<div class="ir-vc" style="grid-column:span 2"><span class="lb">חברה</span><span class="vl">${v.driver.company}</span></div>`:''}
+      <div class="ir-vc"><span class="lb">אימייל</span><span class="vl" dir="ltr">${v.driver.email||'—'}</span></div>
+      <div class="ir-vc"><span class="lb">תוקף רישיון נהיגה</span><span class="vl"${dLc?` style="color:${dLc}"`:''}>${fd(v.driver.licenseExp)||'—'}</span></div>
+      ${v.driver.address?`<div class="ir-vc"><span class="lb">כתובת</span><span class="vl">${v.driver.address}</span></div>`:''}
+      ${v.driver.company?`<div class="ir-vc"><span class="lb">חברה</span><span class="vl">${v.driver.company}</span></div>`:''}
     </div>`;
 
   id('vc-family-rows').innerHTML=v.family.length
@@ -7277,28 +7249,117 @@ function addFamilyMember(){
   const ex=document.getElementById('add-family-modal');if(ex)ex.remove();
   const m=document.createElement('div');m.id='add-family-modal';
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
-  m.innerHTML=`<div style="background:#fff;border-radius:12px;padding:20px;width:100%;max-width:360px;direction:rtl" onclick="event.stopPropagation()">
-    <div style="font-size:15px;font-weight:600;color:var(--gd);margin-bottom:14px">הוספת בן/בת משפחה</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-      <div style="grid-column:span 2"><div style="font-size:12px;color:#666;margin-bottom:3px">שם מלא *</div><input id="fm-name" type="text" placeholder="ישראל ישראלי" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">קשר</div><select id="fm-rel" style="width:100%;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"><option>בן/בת זוג</option><option>ילד/ה</option><option>הורה</option><option>אח/ות</option><option>אחר</option></select></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">ת.ז.</div><input id="fm-id" type="text" dir="ltr" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">טלפון</div><input id="fm-phone" type="text" dir="ltr" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-      <div><div style="font-size:12px;color:#666;margin-bottom:3px">תוקף רישיון נהיגה</div><input id="fm-lic" type="date" style="width:100%;padding:7px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
+  m.innerHTML=`<div style="background:#fff;border-radius:12px;padding:22px;width:100%;max-width:440px;direction:rtl;max-height:90vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div style="font-size:15px;font-weight:700;color:var(--gd);margin-bottom:14px">הוספת בן משפחה מורשה</div>
+
+    <!-- AI SCAN ZONE -->
+    <div id="fm-scan-zone" style="margin-bottom:14px;background:linear-gradient(135deg,#f0fdf4 0%,#dbeafe 100%);border:2px dashed #7DC242;border-radius:10px;padding:12px;text-align:center;transition:all .25s">
+      <label for="fm-driver-doc" style="cursor:pointer;display:block">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:5px">
+          <div style="font-size:24px">🪪</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#166534">סריקת AI - רישיון נהיגה</div>
+            <div style="font-size:10px;color:#16a34a;margin-top:2px">העלה PDF/JPG והשדות יתמלאו אוטומטית</div>
+          </div>
+        </div>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#7DC242;color:#fff;padding:6px 14px;border-radius:7px;font-size:11px;font-weight:600;margin-top:4px">
+          📤 העלה רישיון נהיגה
+        </div>
+        <div id="fm-scan-status" style="margin-top:6px;font-size:11px;font-weight:600"></div>
+        <div id="fm-scan-spinner" style="display:none;margin-top:6px">
+          <div style="display:inline-block;width:16px;height:16px;border:2.5px solid #bbf7d0;border-top-color:#16a34a;border-radius:50%;animation:spin 1s linear infinite"></div>
+        </div>
+      </label>
+      <input type="file" id="fm-driver-doc" accept="image/*,application/pdf" style="display:none" onchange="scanFamilyDriverDoc(this)">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="grid-column:span 2"><div style="font-size:12px;color:#666;margin-bottom:3px">שם מלא *</div><input id="fm-name" type="text" placeholder="ישראל ישראלי" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
+      <div style="grid-column:span 2"><div style="font-size:12px;color:#666;margin-bottom:3px">קשר *</div>
+        <select id="fm-rel" style="width:100%;padding:8px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          <option value="בן זוג">בן זוג</option>
+          <option value="בת זוג">בת זוג</option>
+          <option value="ילד/ה">ילד/ה</option>
+          <option value="אח">אח</option>
+          <option value="אחות">אחות</option>
+        </select>
+      </div>
+      <div><div style="font-size:12px;color:#666;margin-bottom:3px">ת.ז.</div><input id="fm-id" type="text" dir="ltr" placeholder="012345678" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
+      <div><div style="font-size:12px;color:#666;margin-bottom:3px">טלפון</div><input id="fm-phone" type="text" dir="ltr" placeholder="050-0000000" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
+      <div style="grid-column:span 2"><div style="font-size:12px;color:#666;margin-bottom:3px">תוקף רישיון נהיגה</div><input id="fm-lic" type="date" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="document.getElementById('add-family-modal').remove()" style="padding:7px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>
-      <button onclick="saveFamilyMember(${vid})" style="padding:7px 16px;background:var(--gd);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit">הוסף</button>
+      <button onclick="document.getElementById('add-family-modal').remove();_pendingFamilyDoc=null" style="padding:8px 18px;border:1px solid #ddd;border-radius:7px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>
+      <button onclick="saveFamilyMember(${vid})" style="padding:8px 18px;background:var(--gd);color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600">הוסף</button>
     </div>
   </div>`;
   document.body.appendChild(m);setTimeout(()=>document.getElementById('fm-name').focus(),100);
 }
+
+// Pending scanned driver doc to attach when family member is saved
+var _pendingFamilyDoc = null;
+
+async function scanFamilyDriverDoc(input){
+  const file=input.files[0];if(!file)return;
+  const zone=document.getElementById('fm-scan-zone');
+  const st=document.getElementById('fm-scan-status');
+  const sp=document.getElementById('fm-scan-spinner');
+  sp.style.display='block';st.textContent='סורק...';st.style.color='#666';
+  try{
+    // Save file as base64 for later attachment
+    const reader = new FileReader();
+    reader.onload = e => {
+      _pendingFamilyDoc = { name:file.name, type:file.type, data:e.target.result };
+    };
+    reader.readAsDataURL(file);
+
+    const p=await callClaudeWithDoc(file,
+`זהו רישיון נהיגה ישראלי רשמי ממשרד התחבורה.
+חלץ:
+1. שם מלא בעברית (שם פרטי + שם משפחה)
+2. תוקף הרישיון (תאריך DD/MM/YYYY)
+3. מספר תעודת זהות
+
+החזר JSON בלבד:
+{"fullName":"שם מלא","licenseExp":"DD/MM/YYYY","id":"מספר-תז"}`
+    );
+    if(p.fullName) document.getElementById('fm-name').value=p.fullName;
+    if(p.id) document.getElementById('fm-id').value=p.id;
+    const d=toIsoDate(p.licenseExp);
+    if(d) document.getElementById('fm-lic').value=d;
+    if(zone) zone.style.borderColor='#16a34a';
+    st.textContent='✓ פרטים מולאו אוטומטית';st.style.color='#16a34a';
+  }catch(e){
+    st.textContent='שגיאה: '+e.message.slice(0,80);st.style.color='#dc2626';
+    console.error('scanFamilyDriver:',e.message);
+  }finally{sp.style.display='none';}
+}
+
 function saveFamilyMember(vid){
-  const name=document.getElementById('fm-name').value.trim();if(!name){alert('יש להזין שם');return;}
+  const name=document.getElementById('fm-name').value.trim();
+  if(!name){alert('יש להזין שם מלא');return;}
   const v=vehicles.find(x=>x.id===vid);if(!v)return;
-  v.family.push({name,rel:document.getElementById('fm-rel').value,id:document.getElementById('fm-id').value.trim(),phone:document.getElementById('fm-phone').value.trim(),licenseExp:document.getElementById('fm-lic').value||null});
+  if(!v.family) v.family = [];
+  const rel = document.getElementById('fm-rel').value;
+  const familyMember = {
+    name,
+    rel,
+    id: document.getElementById('fm-id').value.trim(),
+    phone: document.getElementById('fm-phone').value.trim(),
+    licenseExp: document.getElementById('fm-lic').value||null
+  };
+  // Attach scanned doc if present
+  if(_pendingFamilyDoc){
+    familyMember.licenseDoc = _pendingFamilyDoc;
+    _pendingFamilyDoc = null;
+  }
+  v.family.push(familyMember);
+  // Persist
+  try{ if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }catch(e){}
   document.getElementById('add-family-modal').remove();
-  openDet(vid);vcTab('driver',document.querySelectorAll('.vc-tab-btn')[1]);
+  openDet(vid);
+  vcTab('driver',document.querySelectorAll('.vc-tab-btn')[1]);
+  showToast('✓ בן המשפחה נוסף');
 }
 
 /* ── LOG / HISTORY ── */
