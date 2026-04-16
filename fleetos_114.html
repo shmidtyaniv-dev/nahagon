@@ -5131,10 +5131,13 @@ function registerSyncCollection(name, getArr, setArr, onRefresh){
 
 // Persist a single item to Firestore
 function syncPersistItem(name, item){
-  if(!db || !item || !item.id) return;
+  if(!db){ console.warn('⚠️ syncPersistItem('+name+'): db not ready'); return; }
+  if(!item || !item.id){ console.warn('⚠️ syncPersistItem('+name+'): missing id', item); return; }
   try{
-    db.collection(name).doc(String(item.id)).set(JSON.parse(JSON.stringify(item))).catch(function(e){console.error(name+' persist error:',e);});
-  }catch(e){console.error(name+' persist serialize error:',e);}
+    db.collection(name).doc(String(item.id)).set(JSON.parse(JSON.stringify(item))).then(function(){
+      console.log('✅ '+name+' synced:', item.id);
+    }).catch(function(e){console.error('❌ '+name+' persist error:',e.message,e);});
+  }catch(e){console.error('❌ '+name+' persist serialize error:',e);}
 }
 
 // Persist entire collection (bulk)
@@ -5160,11 +5163,15 @@ function syncRemoveItem(name, id){
 
 // Start real-time listener for a collection
 function syncStartListener(name){
-  if(!db) return;
-  const reg = _syncRegistry[name]; if(!reg || reg.started) return;
+  if(!db){ console.warn('⚠️ syncStartListener('+name+'): db not ready'); return; }
+  const reg = _syncRegistry[name];
+  if(!reg){ console.warn('⚠️ syncStartListener('+name+'): not registered'); return; }
+  if(reg.started) return;
   reg.started = true;
+  console.log('🔄 Starting sync listener for: '+name);
 
   db.collection(name).onSnapshot(function(snap){
+    console.log('📥 '+name+' snapshot received, docs:', snap.size);
     const current = reg.getArr() || [];
 
     if(!reg.loaded){
