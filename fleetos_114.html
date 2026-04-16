@@ -5110,6 +5110,111 @@ function removeVehicleFromFirestore(vid){
   db.collection('vehicles').doc(String(vid)).delete().catch(function(e){console.error(e);});
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   GENERIC FIRESTORE SYNC HELPER
+   Syncs arrays of objects (with id field) between devices via Firestore.
+   ═══════════════════════════════════════════════════════════════════ */
+
+// Map of sync configs
+var _syncRegistry = {};
+
+/**
+ * Register a data collection for cross-device sync.
+ * @param {string} name - Firestore collection name
+ * @param {function} getArr - returns current array reference
+ * @param {function} setArr - receives merged array, should replace local state and persist
+ * @param {function} onRefresh - called after sync updates (e.g. re-render UI)
+ */
+function registerSyncCollection(name, getArr, setArr, onRefresh){
+  _syncRegistry[name] = { name, getArr, setArr, onRefresh, started:false, loaded:false, timer:null };
+}
+
+// Persist a single item to Firestore
+function syncPersistItem(name, item){
+  if(!db || !item || !item.id) return;
+  try{
+    db.collection(name).doc(String(item.id)).set(JSON.parse(JSON.stringify(item))).catch(function(e){console.error(name+' persist error:',e);});
+  }catch(e){console.error(name+' persist serialize error:',e);}
+}
+
+// Persist entire collection (bulk)
+function syncPersistAll(name){
+  if(!db) return;
+  const reg = _syncRegistry[name]; if(!reg) return;
+  const arr = reg.getArr() || [];
+  arr.forEach(function(item){ syncPersistItem(name, item); });
+}
+
+// Debounced persist
+function syncPersistDebounced(name){
+  const reg = _syncRegistry[name]; if(!reg) return;
+  if(reg.timer) clearTimeout(reg.timer);
+  reg.timer = setTimeout(function(){ syncPersistAll(name); }, 600);
+}
+
+// Remove item from Firestore
+function syncRemoveItem(name, id){
+  if(!db || !id) return;
+  db.collection(name).doc(String(id)).delete().catch(function(e){console.error(name+' remove error:',e);});
+}
+
+// Start real-time listener for a collection
+function syncStartListener(name){
+  if(!db) return;
+  const reg = _syncRegistry[name]; if(!reg || reg.started) return;
+  reg.started = true;
+
+  db.collection(name).onSnapshot(function(snap){
+    const current = reg.getArr() || [];
+
+    if(!reg.loaded){
+      // FIRST LOAD: merge local + remote (union - prefer remote on id conflict)
+      const remoteArr = [];
+      snap.forEach(function(doc){ remoteArr.push(doc.data()); });
+      const merged = [];
+      const seenIds = new Set();
+      // Add remote first (authority)
+      remoteArr.forEach(function(r){ if(r.id!==undefined && !seenIds.has(String(r.id))){ seenIds.add(String(r.id)); merged.push(r); } });
+      // Add local items that aren't in remote (new on this device)
+      current.forEach(function(l){ if(l.id!==undefined && !seenIds.has(String(l.id))){ seenIds.add(String(l.id)); merged.push(l); } });
+      reg.setArr(merged);
+      reg.loaded = true;
+      // Push local-only items to Firestore so other devices get them
+      current.forEach(function(l){
+        if(l.id!==undefined && !remoteArr.find(function(r){return String(r.id)===String(l.id);})){
+          syncPersistItem(name, l);
+        }
+      });
+    } else {
+      // SUBSEQUENT CHANGES: merge incrementally
+      let changed = false;
+      snap.docChanges().forEach(function(change){
+        const data = change.doc.data();
+        const arr = reg.getArr() || [];
+        const idx = arr.findIndex(function(x){ return String(x.id)===String(data.id); });
+        if(change.type==='added' || change.type==='modified'){
+          if(idx>=0){
+            if(JSON.stringify(arr[idx])!==JSON.stringify(data)){
+              arr[idx] = data; changed = true;
+            }
+          } else {
+            arr.push(data); changed = true;
+          }
+        } else if(change.type==='removed'){
+          if(idx>=0){ arr.splice(idx,1); changed = true; }
+        }
+        if(changed) reg.setArr(arr);
+      });
+    }
+    if(reg.onRefresh){ try{ reg.onRefresh(); }catch(e){console.error(name+' onRefresh error:',e);} }
+  }, function(err){ console.error(name+' listener error:',err); });
+}
+
+// Start all registered sync collections (call once after Firebase is initialized)
+function startAllSyncListeners(){
+  Object.keys(_syncRegistry).forEach(function(name){ syncStartListener(name); });
+}
+
 // Reset ALL vehicles data (for fresh start)
 function clearAllVehiclesData(){
   if(!confirm('⚠️ למחוק את כל הנתונים של הרכבים? פעולה זו לא ניתנת לשחזור!'))return;
@@ -6067,6 +6172,18 @@ function confirmTaskDone(tid){
 
 /* ── VIOLATIONS DATA ── */
 let violationsList=[];
+var _lastViolationIds = new Set();
+
+// Persist violations list to Firestore
+function persistViolationsList(){
+  if(!db) return;
+  (violationsList||[]).forEach(function(v){ syncPersistItem('violations', v); });
+  const currentIds = new Set((violationsList||[]).map(v=>String(v.id)));
+  _lastViolationIds.forEach(function(id){
+    if(!currentIds.has(id)){ syncRemoveItem('violations', id); }
+  });
+  _lastViolationIds = currentIds;
+}
 let violIdSeq=10;
 const VIOL_STATUS={sent:'נשלחה בקשה להסב',waiting:'ממתין אישור הסבה',done:'נהג עודכן - טופל'};
 const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'};
@@ -6346,6 +6463,7 @@ function changeViolStatus(vid,newStatus){
 function deleteViolation(vid){
   if(!confirm('למחוק את הדוח? פעולה זו אינה ניתנת לשחזור.'))return;
   violationsList=violationsList.filter(function(v){return v.id!==vid;});
+  if(typeof persistViolationsList==='function') persistViolationsList();
   renderViolations();
   if(_currentVid && typeof renderVcViolations==='function')renderVcViolations(_currentVid);
   showToast('הדוח נמחק');
@@ -6373,6 +6491,7 @@ function saveViolation(){
     };
     if(editId){Object.assign(violationsList.find(v=>v.id===editId),data);}
     else{violationsList.unshift({id:++violIdSeq,...data});}
+    if(typeof persistViolationsList==='function') persistViolationsList();
     // reset file input
     if(fileInput)fileInput.value='';
     const fnEl=document.getElementById('viol-file-name');
@@ -6884,6 +7003,18 @@ let accidentsList=[
   {id:1,num:'ACC-2025-001',vehicleId:1,date:'2025-03-05',reportDate:'2025-03-05',fault:'third',status:'inprogress',desc:'פגיעה קלה בחנייה — נהג אחר פגע בפגוש האחורי',logs:[{date:'05/03/2025 10:30',text:'האירוע דווח — ממתין לאומדן נזק'},{date:'08/03/2025 14:15',text:'התקבל טופס הצהרה מהצד השני — בדרך לחברת ביטוח'}]},
 ];
 let accIdSeq=10;
+var _lastAccidentIds = new Set();
+
+// Persist accidents list to Firestore
+function persistAccidentsList(){
+  if(!db) return;
+  (accidentsList||[]).forEach(function(a){ syncPersistItem('accidents', a); });
+  const currentIds = new Set((accidentsList||[]).map(a=>String(a.id)));
+  _lastAccidentIds.forEach(function(id){
+    if(!currentIds.has(id)){ syncRemoveItem('accidents', id); }
+  });
+  _lastAccidentIds = currentIds;
+}
 const ACC_STATUS={inprogress:'בטיפול',done:'אירוע טופל'};
 const ACC_COLORS={inprogress:'var(--amber)',done:'var(--green)'};
 const ACC_FAULT_LABELS={self:'עצמי',third:'צד ג׳'};
@@ -7006,6 +7137,7 @@ function changeAccStatus(aid,newStatus){
 function deleteAccident(aid){
   if(!confirm('למחוק את האירוע?'))return;
   accidentsList=accidentsList.filter(function(a){return a.id!==aid;});
+  if(typeof persistAccidentsList==='function') persistAccidentsList();
   renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);
   showToast('האירוע נמחק');
 }
@@ -7108,6 +7240,7 @@ function saveAccident(){
     }else{
       accidentsList.unshift(Object.assign({id:++accIdSeq,logs:[]},data));
     }
+    if(typeof persistAccidentsList==='function') persistAccidentsList();
     accPendingFile=null;
     closeModal('acc-ov');
     renderAccidents();
@@ -7293,6 +7426,43 @@ if(checkViolApproval()){
   if(typeof startFormSubmissionsListener==='function')startFormSubmissionsListener();
   // Start vehicles real-time sync with Firestore
   if(typeof startVehiclesListener==='function')startVehiclesListener();
+  // Register and start sync for all other data collections (cross-device sync)
+  if(typeof registerSyncCollection==='function'){
+    try{
+      // Self reminders
+      registerSyncCollection('selfReminders',
+        function(){ return selfReminders; },
+        function(arr){ selfReminders.length=0; arr.forEach(function(r){ selfReminders.push(r); }); try{localStorage.setItem('selfReminders',JSON.stringify(selfReminders));}catch(e){} _lastSelfReminderIds = new Set(selfReminders.map(r=>String(r.id))); },
+        function(){ if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}} }
+      );
+      // Fleet events (user-created events in calendar)
+      registerSyncCollection('fleetEvents',
+        function(){ return JSON.parse(localStorage.getItem('fleetEvents')||'[]'); },
+        function(arr){ try{localStorage.setItem('fleetEvents',JSON.stringify(arr));}catch(e){} _lastFleetEventIds = new Set((arr||[]).map(e=>String(e.id))); },
+        function(){ if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}} }
+      );
+      // Violations (traffic reports)
+      registerSyncCollection('violations',
+        function(){ return violationsList; },
+        function(arr){ violationsList.length=0; (arr||[]).forEach(function(v){ violationsList.push(v); }); _lastViolationIds = new Set(violationsList.map(v=>String(v.id))); },
+        function(){
+          if(typeof renderViolations==='function'){try{renderViolations();}catch(e){}}
+          if(_currentVid && typeof renderVcViolations==='function'){try{renderVcViolations(_currentVid);}catch(e){}}
+        }
+      );
+      // Accidents
+      registerSyncCollection('accidents',
+        function(){ return accidentsList; },
+        function(arr){ accidentsList.length=0; (arr||[]).forEach(function(a){ accidentsList.push(a); }); _lastAccidentIds = new Set(accidentsList.map(a=>String(a.id))); },
+        function(){
+          if(typeof renderAccidents==='function'){try{renderAccidents();}catch(e){}}
+          if(_currentVid && typeof renderVcAccidents==='function'){try{renderVcAccidents(_currentVid);}catch(e){}}
+        }
+      );
+      // Start listeners on all registered collections
+      if(typeof startAllSyncListeners==='function'){ startAllSyncListeners(); }
+    }catch(e){ console.error('sync setup error:', e); }
+  }
 }
 refresh();
 
@@ -8796,7 +8966,18 @@ function submitFormFill(){
 
 /* ── CALENDAR / FLEET EVENTS ── */
 function getFleetEvents(){return JSON.parse(localStorage.getItem('fleetEvents')||'[]');}
-function saveFleetEvents(arr){localStorage.setItem('fleetEvents',JSON.stringify(arr));}
+var _lastFleetEventIds = new Set((JSON.parse(localStorage.getItem('fleetEvents')||'[]')).map(e=>String(e.id)));
+
+function saveFleetEvents(arr){
+  try{ localStorage.setItem('fleetEvents', JSON.stringify(arr)); }catch(e){}
+  if(!db) return;
+  (arr||[]).forEach(function(e){ syncPersistItem('fleetEvents', e); });
+  const currentIds = new Set((arr||[]).map(e=>String(e.id)));
+  _lastFleetEventIds.forEach(function(id){
+    if(!currentIds.has(id)){ syncRemoveItem('fleetEvents', id); }
+  });
+  _lastFleetEventIds = currentIds;
+}
 
 // Calendar state - start with current month
 var calViewMode='month';
@@ -9349,13 +9530,28 @@ function deleteSelfReminderFromModal(){
   if(!editId) return;
   if(!confirm('למחוק תזכורת זו לצמיתות?')) return;
   selfReminders = selfReminders.filter(x=>x.id!==editId);
-  localStorage.setItem('selfReminders', JSON.stringify(selfReminders));
+  persistSelfReminders();
   document.getElementById('self-reminder-modal').remove();
   if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
   showToast('✓ התזכורת נמחקה');
 }
 
 var selfReminders = JSON.parse(localStorage.getItem('selfReminders')||'[]');
+var _lastSelfReminderIds = new Set((selfReminders||[]).map(r=>String(r.id)));
+
+// Persist self reminders: localStorage + Firestore (with deletion tracking)
+function persistSelfReminders(){
+  try{ localStorage.setItem('selfReminders', JSON.stringify(selfReminders)); }catch(e){}
+  if(!db) return;
+  // Push all current items
+  selfReminders.forEach(function(r){ syncPersistItem('selfReminders', r); });
+  // Detect deletions
+  const currentIds = new Set((selfReminders||[]).map(r=>String(r.id)));
+  _lastSelfReminderIds.forEach(function(id){
+    if(!currentIds.has(id)){ syncRemoveItem('selfReminders', id); }
+  });
+  _lastSelfReminderIds = currentIds;
+}
 
 function saveSelfReminder(){
   const title = document.getElementById('sr-title').value.trim();
@@ -9377,7 +9573,7 @@ function saveSelfReminder(){
       sent: false
     });
   }
-  localStorage.setItem('selfReminders', JSON.stringify(selfReminders));
+  persistSelfReminders();
   document.getElementById('self-reminder-modal').remove();
   renderSelfReminders();
   if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
@@ -9387,7 +9583,7 @@ function saveSelfReminder(){
 function deleteSelfReminder(id){
   if(!confirm('למחוק תזכורת זו?')) return;
   selfReminders = selfReminders.filter(x=>x.id!==id);
-  localStorage.setItem('selfReminders', JSON.stringify(selfReminders));
+  persistSelfReminders();
   renderSelfReminders();
   if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
   showToast('התזכורת נמחקה');
@@ -9410,7 +9606,7 @@ function sendSelfReminderNow(id){
   window.open('mailto:'+email+'?subject='+subj+'&body='+body);
   r.sent = true;
   r.sentAt = new Date().toISOString();
-  localStorage.setItem('selfReminders', JSON.stringify(selfReminders));
+  persistSelfReminders();
   renderSelfReminders();
   showToast('✓ נפתח לקוח מייל');
 }
@@ -9802,7 +9998,7 @@ function fireSelfReminderMail(id){
   window.open('mailto:'+email+'?subject='+subj+'&body='+body);
   r.sent = true;
   r.sentAt = new Date().toISOString();
-  localStorage.setItem('selfReminders', JSON.stringify(selfReminders));
+  persistSelfReminders();
   renderSelfReminders();
 }
 
