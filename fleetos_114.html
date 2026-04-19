@@ -2103,6 +2103,144 @@ try{
   console.error('⚠️ Firebase לא זמין:',e);
 }
 
+// ── PUBLIC DOC UPLOAD PAGE ──
+(function(){
+  const params = new URLSearchParams(location.search);
+  const token = params.get('docupload');
+  if(!token || !db) return;
+  // Hide entire app and show upload page
+  document.addEventListener('DOMContentLoaded', function(){
+    document.body.innerHTML = '';
+    document.body.style.cssText = 'margin:0;padding:0;background:#f5f5f0;font-family:Heebo,sans-serif;direction:rtl';
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'max-width:460px;margin:0 auto;padding:20px 16px;min-height:100vh';
+    wrap.innerHTML = '<div style="text-align:center;padding:40px 0;color:#666;font-size:14px">טוען...</div>';
+    document.body.appendChild(wrap);
+    // Load request from Firestore
+    db.collection('docRequests').doc(token).get().then(function(snap){
+      if(!snap.exists){
+        wrap.innerHTML = '<div style="text-align:center;padding:60px 20px"><div style="font-size:48px;margin-bottom:16px">❌</div><div style="font-size:16px;font-weight:600;color:#991b1b">קישור לא תקין או שפג תוקפו</div></div>';
+        return;
+      }
+      const req = snap.data();
+      if(req.status==='uploaded'){
+        wrap.innerHTML = '<div style="text-align:center;padding:60px 20px"><div style="font-size:48px;margin-bottom:16px">✅</div><div style="font-size:16px;font-weight:600;color:#166534">המסמך כבר הועלה בהצלחה!</div><div style="font-size:13px;color:#666;margin-top:8px">תודה רבה.</div></div>';
+        return;
+      }
+      wrap.innerHTML = `
+        <div style="background:#fff;border-radius:14px;padding:24px 20px;box-shadow:0 2px 12px rgba(0,0,0,.08);border:1px solid #e5e5e5">
+          <div style="text-align:center;margin-bottom:20px">
+            <div style="font-size:40px;margin-bottom:8px">📄</div>
+            <div style="font-size:18px;font-weight:700;color:#1a4a3a">העלאת מסמך</div>
+            <div style="font-size:13px;color:#666;margin-top:4px">מרכז הרכב של מור</div>
+          </div>
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:20px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+              <div><span style="color:#999">נהג:</span> <strong>${req.driverName||'—'}</strong></div>
+              <div><span style="color:#999">רכב:</span> <strong>${req.plate||'—'}</strong></div>
+            </div>
+            <div style="margin-top:10px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:13px;color:#92400e;font-weight:600;text-align:center">
+              חסר: ${req.docLabel}
+            </div>
+          </div>
+          <div id="dup-upload-area" style="border:2.5px dashed #d1d5db;border-radius:12px;padding:30px 16px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px" onclick="document.getElementById('dup-file-input').click()">
+            <div style="font-size:36px;margin-bottom:8px">📷</div>
+            <div style="font-size:14px;font-weight:600;color:#374151">לחץ כאן לצילום או בחירת קובץ</div>
+            <div style="font-size:11px;color:#9ca3af;margin-top:4px">PDF, JPG, PNG</div>
+            <input type="file" id="dup-file-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="dupPreview(this)">
+          </div>
+          <div id="dup-preview" style="display:none;margin-bottom:16px;text-align:center">
+            <img id="dup-preview-img" style="max-width:100%;max-height:300px;border-radius:8px;border:1px solid #e5e7eb">
+            <div id="dup-preview-name" style="font-size:11px;color:#666;margin-top:6px"></div>
+          </div>
+          <button id="dup-submit-btn" onclick="dupSubmit('${token}',${req.vid},'${req.docKey}')" disabled style="width:100%;background:#d1d5db;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:not-allowed;font-family:inherit;transition:all .2s">
+            שלח מסמך
+          </button>
+          <div id="dup-status" style="text-align:center;margin-top:12px;font-size:13px;display:none"></div>
+        </div>`;
+    }).catch(function(e){
+      wrap.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#991b1b">שגיאה בטעינה</div>';
+    });
+  });
+  // Prevent the rest of the app from initializing
+  window._docUploadMode = true;
+})();
+
+function dupPreview(input){
+  const file = input.files[0]; if(!file) return;
+  window._dupFile = file;
+  const prev = document.getElementById('dup-preview');
+  const img = document.getElementById('dup-preview-img');
+  const name = document.getElementById('dup-preview-name');
+  const btn = document.getElementById('dup-submit-btn');
+  if(file.type.startsWith('image/')){
+    const reader = new FileReader();
+    reader.onload = function(e){ img.src = e.target.result; prev.style.display = 'block'; };
+    reader.readAsDataURL(file);
+  } else {
+    img.src = ''; prev.style.display = 'block';
+    img.style.display = 'none';
+  }
+  name.textContent = file.name;
+  btn.disabled = false;
+  btn.style.background = '#1a4a3a';
+  btn.style.cursor = 'pointer';
+  document.getElementById('dup-upload-area').style.borderColor = '#16a34a';
+  document.getElementById('dup-upload-area').style.background = '#f0fdf4';
+}
+
+function dupSubmit(token, vid, docKey){
+  const file = window._dupFile; if(!file) return;
+  const btn = document.getElementById('dup-submit-btn');
+  const status = document.getElementById('dup-status');
+  btn.disabled = true; btn.textContent = 'מעלה...'; btn.style.background = '#9ca3af';
+  status.style.display = 'block'; status.style.color = '#666'; status.textContent = 'מעלה את המסמך...';
+  const reader = new FileReader();
+  reader.onload = function(e){
+    var data = e.target.result;
+    // Compress images
+    if(file.type.startsWith('image/')){
+      var img = new Image();
+      img.onload = function(){
+        var canvas = document.createElement('canvas');
+        var w = img.width, h = img.height, max = 1400;
+        if(w>max||h>max){var ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        data = canvas.toDataURL('image/jpeg',.85);
+        doUpload(data);
+      };
+      img.src = data;
+    } else {
+      doUpload(data);
+    }
+    function doUpload(fileData){
+      if(!db){status.textContent='שגיאה: אין חיבור';status.style.color='#dc2626';return;}
+      db.collection('docUploads').doc(token).set({
+        vid: vid,
+        docKey: docKey,
+        fileName: file.name,
+        fileType: file.type,
+        data: fileData,
+        uploadedAt: new Date().toISOString()
+      }).then(function(){
+        // Mark request as uploaded
+        db.collection('docRequests').doc(token).update({status:'uploaded'});
+        btn.textContent = '✅ הועלה בהצלחה!';
+        btn.style.background = '#16a34a';
+        status.textContent = 'המסמך נשלח בהצלחה. תודה!';
+        status.style.color = '#16a34a';
+      }).catch(function(err){
+        btn.disabled = false; btn.textContent = 'שלח מסמך'; btn.style.background = '#1a4a3a';
+        status.textContent = 'שגיאה בהעלאה, נסה שוב';
+        status.style.color = '#dc2626';
+        console.error('upload error:', err);
+      });
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
 const HEM=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const NOW=new Date();
 const q=s=>document.querySelector(s);
@@ -5085,6 +5223,7 @@ function openDet(vid){
         </div>
         ${hasData?`<button onclick="viewDoc(${vid},'${doc.key}')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0">צפה</button>`:''}
         <div style="font-size:11px;color:${uploaded?'#16a34a':'#dc2626'};flex-shrink:0">${uploaded?'הועלה':'חסר'}</div>
+        ${!uploaded?`<button onclick="sendDocRequest(${vid},'${doc.key}','${doc.label}')" style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;color:#166534;font-weight:500;flex-shrink:0;display:flex;align-items:center;gap:4px">📩 שלח בקשה</button>`:''}
         <label style="display:flex;align-items:center;gap:5px;cursor:pointer;background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--t2);flex-shrink:0">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           ${uploaded?'החלף':'העלה'}
@@ -5318,6 +5457,29 @@ function syncStartListener(name){
 // Start all registered sync collections (call once after Firebase is initialized)
 function startAllSyncListeners(){
   Object.keys(_syncRegistry).forEach(function(name){ syncStartListener(name); });
+  // Listen for incoming doc uploads from drivers
+  startDocUploadsListener();
+}
+
+function startDocUploadsListener(){
+  if(!db) return;
+  db.collection('docUploads').onSnapshot(function(snap){
+    snap.docChanges().forEach(function(change){
+      if(change.type==='added'||change.type==='modified'){
+        var d = change.doc.data();
+        if(!d.vid||!d.docKey||!d.data) return;
+        // Apply to vehicleDocs
+        if(!vehicleDocs[d.vid]) vehicleDocs[d.vid]={};
+        if(vehicleDocs[d.vid][d.docKey]) return; // already has this doc
+        vehicleDocs[d.vid][d.docKey] = {name:d.fileName||d.docKey, type:d.fileType||'', data:d.data};
+        // Refresh docs tab if currently viewing this vehicle
+        if(_currentVid===d.vid){
+          try{ openDet(d.vid); vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]); }catch(e){}
+        }
+        showToast('📄 מסמך חדש התקבל: '+(d.fileName||d.docKey));
+      }
+    });
+  });
 }
 
 // Reset ALL vehicles data (for fresh start)
@@ -7855,6 +8017,54 @@ function updateLog(vid,idx){
 }
 
 /* ── DOCS ── */
+function sendDocRequest(vid, docKey, docLabel){
+  const v = vehicles.find(x=>x.id===vid);
+  if(!v){alert('רכב לא נמצא');return;}
+  const driverName = v.driver?.name||'';
+  const driverPhone = v.driver?.phone||'';
+  const driverEmail = v.driver?.email||'';
+  const plate = v.plate||'';
+  // Build upload token: vid_docKey_timestamp
+  const token = btoa(vid+'|'+docKey+'|'+Date.now()).replace(/=/g,'');
+  // Save token to Firestore so the upload page can validate
+  if(db){
+    db.collection('docRequests').doc(token).set({
+      vid: vid,
+      docKey: docKey,
+      docLabel: docLabel,
+      plate: plate,
+      driverName: driverName,
+      createdAt: new Date().toISOString(),
+      status: 'pending'
+    }).catch(function(e){console.error('docRequest save error:',e);});
+  }
+  const uploadUrl = location.origin + location.pathname + '?docupload=' + token;
+  const msg = 'שלום ' + driverName + ',\nחסר מסמך: *' + docLabel + '*\nרכב: ' + plate + '\n\nנא להעלות את המסמך דרך הקישור:\n' + uploadUrl;
+  // Show modal with options
+  const m = document.createElement('div');
+  m.id = 'doc-req-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.onclick = function(e){if(e.target===m)m.remove();};
+  m.innerHTML = `
+    <div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:400px;direction:rtl">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:15px;font-weight:700;color:var(--gd)">📩 שליחת בקשה למסמך</div>
+        <button onclick="document.getElementById('doc-req-modal').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">×</button>
+      </div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:14px;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);line-height:1.7;white-space:pre-wrap">${msg.replace(/\*/g,'')}</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="window.open('https://wa.me/${driverPhone.replace(/[^0-9]/g,'').replace(/^0/,'972')}?text='+encodeURIComponent(\`${msg.replace(/`/g,"'")}\`),'_blank');document.getElementById('doc-req-modal').remove()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span style="font-size:18px">💬</span> וואצאפ
+        </button>
+        <button onclick="window.open('mailto:${driverEmail}?subject='+encodeURIComponent('בקשה להשלמת מסמך - '+docLabel)+'&body='+encodeURIComponent(\`${msg.replace(/`/g,"'").replace(/\*/g,'')}\`),'_blank');document.getElementById('doc-req-modal').remove()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span style="font-size:18px">✉️</span> מייל
+        </button>
+      </div>
+      <button onclick="navigator.clipboard.writeText('${uploadUrl}');showToast('✓ קישור הועתק');document.getElementById('doc-req-modal').remove()" style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2)">📋 העתק קישור</button>
+    </div>`;
+  document.body.appendChild(m);
+}
+
 function uploadMandatoryDoc(vid,key,input){
   const file=input.files[0];if(!file)return;
   if(!vehicleDocs[vid])vehicleDocs[vid]={};
