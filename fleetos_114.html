@@ -2102,6 +2102,9 @@ const HEM=['ינואר','פברואר','מרץ','אפריל','מאי','יוני'
 const NOW=new Date();
 const q=s=>document.querySelector(s);
 const id=s=>document.getElementById(s);
+// Global mutable state (declared early to avoid ReferenceError in listeners that fire before these get values)
+var _currentVid = null;
+var _currentLogId = null;
 function fd(d){if(!d)return'—';return new Date(d).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'})}
 function fds(d){if(!d)return'';return new Date(d).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})}
 function addY(d,y){const dt=new Date(d);dt.setFullYear(dt.getFullYear()+y);return dt.toISOString().split('T')[0]}
@@ -4120,7 +4123,6 @@ function removeExtraDoc(id, vid){ deleteExtraDoc(id, vid); }
 
 function saveExtDoc(){ saveExtraDoc(); }
 
-let _currentLogId = null;
 
 
 
