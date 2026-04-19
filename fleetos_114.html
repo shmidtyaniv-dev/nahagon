@@ -6830,6 +6830,7 @@ function persistViolationsList(){
   });
   _lastViolationIds = currentIds;
 }
+var _violFileCache = {};
 let violIdSeq=10;
 const VIOL_STATUS={sent:'נשלחה בקשה להסב',waiting:'ממתין אישור הסבה',done:'נהג עודכן - טופל'};
 const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'};
@@ -7184,9 +7185,10 @@ function onViolFileChange(input){
 function viewViolationDoc(vid){
   const v=violationsList.find(x=>x.id===vid);
   if(!v){alert('דוח לא נמצא');return;}
-  var data = v.fileData || localStorage.getItem('violFile_'+vid);
-  if(!data){alert('אין קובץ מצורף לדוח זה');return;}
-  openDocViewer(data, v.fileType||v._fileType||'', v.fileName||v._fileName||'דוח תנועה');
+  var cached = _violFileCache[vid];
+  var data = v.fileData || (cached && cached.data);
+  if(!data){alert('הקובץ זמין רק בסשן הנוכחי. נא להעלות שוב.');return;}
+  openDocViewer(data, v.fileType||v._fileType||(cached&&cached.type)||'', v.fileName||v._fileName||(cached&&cached.name)||'דוח תנועה');
 }
 
 function changeViolStatus(vid,newStatus){
@@ -7225,31 +7227,23 @@ function saveViolation(){
     };
     if(editId){Object.assign(violationsList.find(v=>v.id===editId),data);}
     else{violationsList.unshift({id:++violIdSeq,...data});}
-    // Save file separately to avoid localStorage/Firestore size limits
+    // Store file in memory cache (not localStorage - too large)
     var savedVid = editId || violIdSeq;
     var savedV = violationsList.find(x=>x.id===savedVid);
     if(savedV && savedV.fileData){
-      try{ localStorage.setItem('violFile_'+savedVid, savedV.fileData); }catch(e){ console.warn('file too large for localStorage'); }
+      _violFileCache[savedVid] = {data:savedV.fileData, type:savedV.fileType, name:savedV.fileName};
       savedV._hasFile = true;
       savedV._fileType = savedV.fileType;
       savedV._fileName = savedV.fileName;
+      delete savedV.fileData; // remove from object to keep list light
     }
-    // Persist to Firestore without fileData
+    // Persist to Firestore (without file)
     try{
-      if(savedV && db){
-        var syncData = Object.assign({}, savedV);
-        delete syncData.fileData;
-        syncPersistItem('violations', syncData);
-      }
+      if(savedV && db) syncPersistItem('violations', savedV);
     }catch(e){console.error('persist error:',e);}
-    // Save list to localStorage without fileData
+    // Save list to localStorage (without file data)
     try{
-      var stripped = violationsList.map(function(v){
-        var copy = Object.assign({}, v);
-        delete copy.fileData;
-        return copy;
-      });
-      localStorage.setItem('violationsList', JSON.stringify(stripped));
+      localStorage.setItem('violationsList', JSON.stringify(violationsList));
     }catch(e){console.error('localStorage save error:',e);}
     // reset file input
     if(fileInput)fileInput.value='';
