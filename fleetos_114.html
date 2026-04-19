@@ -1643,7 +1643,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <input type="hidden" id="viol-edit-id">
       <div class="fg">
         <div class="ff"><label>מספר דוח</label><input id="viol-num" placeholder="D-2025-003" dir="ltr"></div>
-        <div class="ff"><label>תאריך העבירה</label><input type="date" id="viol-date"></div>
+        <div class="ff"><label>תאריך הסבה</label><input type="date" id="viol-date"></div>
         <div class="ff"><label>מקור הדוח</label>
           <select id="viol-issuer-type" onchange="toggleViolIssuer()">
             <option value="police">משטרת ישראל</option>
@@ -2776,7 +2776,7 @@ function renderVcViolations(vid){
     el.innerHTML='<div style="text-align:center;padding:28px 0;color:var(--t3);font-size:14px">אין דוחות תנועה לרכב זה</div>';
     return;
   }
-  el.innerHTML='<div class="tw" style="border-radius:var(--r)"><table><thead><tr><th>מ. דוח</th><th>מקור הדוח</th><th>תאריך עבירה</th><th>סטטוס</th><th>תיעודים</th><th></th></tr></thead><tbody>'+
+  el.innerHTML='<div class="tw" style="border-radius:var(--r)"><table><thead><tr><th>מ. דוח</th><th>מקור הדוח</th><th>תאריך הסבה</th><th>סטטוס</th><th>תיעודים</th><th></th></tr></thead><tbody>'+
     vViols.map(function(v){
       const logsCount=(v.logs||[]).length;
       return '<tr>'+
@@ -6840,7 +6840,7 @@ function renderViolations(){
   // count removed from UI
   if(!list.length){id('violations-list').innerHTML=`<div style="text-align:center;padding:28px 0;color:var(--t3);font-size:15px">אין דוחות</div>`;return}
   id('violations-list').innerHTML=`<div class="tw"><table><thead><tr>
-    <th>מ. דוח</th><th>שם הנהג</th><th>רכב בציר</th><th>מקור הדוח</th><th>תאריך עבירה</th><th>סטטוס</th><th>תיעודים</th><th></th>
+    <th>מ. דוח</th><th>שם הנהג</th><th>רכב בציר</th><th>מקור הדוח</th><th>תאריך הסבה</th><th>סטטוס</th><th>תיעודים</th><th></th>
   </tr></thead><tbody>`+
     list.map(v=>{
       const veh=vehicles.find(x=>x.id===v.vehicleId);
@@ -7730,7 +7730,7 @@ function renderApprovalPageInner(page,token,info,alreadyApproved){
       '<div style="background:#f8f9f8;border-radius:10px;padding:14px 18px;margin-bottom:18px">'+
         '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">מספר דוח</span><span style="font-weight:600;font-size:14px;font-family:monospace;color:#1A4A3A">'+info.num+'</span></div>'+
         '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">רכב</span><span style="font-weight:600;font-size:14px">'+info.plate+'</span></div>'+
-        '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">תאריך עבירה</span><span style="font-weight:600;font-size:14px">'+fd(info.date)+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">תאריך הסבה</span><span style="font-weight:600;font-size:14px">'+fd(info.date)+'</span></div>'+
         '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">מקור הדוח</span><span style="font-weight:600;font-size:14px">'+(info.issuer||'—')+'</span></div>'+
         '<div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:#888;font-size:13px">נהג</span><span style="font-weight:600;font-size:14px">'+info.driverName+'</span></div>'+
       '</div>'+
@@ -12009,7 +12009,7 @@ function exportToExcel(type){
         'מספר רכב':veh?veh.plate:'',
         'שם הנהג':veh?veh.driver.name:'',
         'מקור הדוח':v.issuer||'',
-        'תאריך עבירה':v.date||'',
+        'תאריך הסבה':v.date||'',
         'סטטוס':(VIOL_STATUS[v.status]||v.status||''),
         'נשלח עדכון על דוח':v.noticeSentAt||'',
         'אושר עדכון על דוח':v.noticeApprovedAt||'',
