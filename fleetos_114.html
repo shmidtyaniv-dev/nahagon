@@ -2857,6 +2857,7 @@ function hoDeletePair(ids){
   localStorage.setItem('hoForms2', JSON.stringify(hoForms2));
   removedIds.forEach(function(rid){ try{ syncRemoveItem('hoForms2', rid); }catch(e){} });
   hoRenderList(hoCurrentVid);
+  hoUpdateReturnBtns(hoCurrentVid);
   showToast('המשימה נמחקה');
 }
 
@@ -3059,6 +3060,11 @@ function hoOpenForm(type, mode){
   }
   hoFormType = type; hoFormMode = mode;
   hoDamages = {}; hoPhotos = []; hoFuel = ''; hoNoDmg = false; hoCurrentView = 'front';
+  // Reset text fields from previous form
+  var _hp = document.getElementById('ho-purpose'); if(_hp) _hp.value='';
+  var _hsn = document.getElementById('ho-sig-name'); if(_hsn) _hsn.value='';
+  // Clear signature canvas
+  if(hoSigCtx){ var _hsc = document.getElementById('ho-sig-canvas'); if(_hsc) hoSigCtx.clearRect(0,0,_hsc.width,_hsc.height); hoSigEmpty=true; }
 
   // If return — pre-load damages from the linked take form
   if(mode==='return' && hoLinkedTakeId){
