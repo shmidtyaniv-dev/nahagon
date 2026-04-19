@@ -6784,20 +6784,99 @@ function saveViolation(){
 const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך}.\nגורם נותן הדוח: {מקור}\n\n{תשלום}\n{קובץ}\nלאישור קבלת ידיעת הדוח: {לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך} הוסב על שמך.\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאישור קבלת הסבת הדוח: {לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
-// Payment links by issuer
+// Payment links - direct URLs for Israeli municipalities
+const CITY_PAYMENT_MAP = {
+'תל אביב':'https://www.tel-aviv.gov.il/Residents/Transportation/Pages/fines.aspx',
+'ירושלים':'https://pay.jerusalem.muni.il/',
+'חיפה':'https://www.haifa.muni.il/fine-payment/',
+'באר שבע':'https://www.beer-sheva.muni.il/Residents/arnona/Pages/PayFine.aspx',
+'רמת גן':'https://www.ramat-gan.muni.il/residents/Transportation/Pages/Fines.aspx',
+'פתח תקווה':'https://www.petah-tikva.muni.il/Residents/parking/Pages/default.aspx',
+'ראשון לציון':'https://www.rishonlezion.muni.il/Residents/Parking/Pages/PayFine.aspx',
+'נתניה':'https://www.netanya.muni.il/Residents/Parking/Pages/PayFine.aspx',
+'אשדוד':'https://www.ashdod.muni.il/Residents/Parking/Pages/default.aspx',
+'בני ברק':'https://www.bnei-brak.muni.il/',
+'חולון':'https://www.holon.muni.il/Residents/transportation/Pages/fines.aspx',
+'בת ים':'https://www.bat-yam.muni.il/residents/parking/',
+'הרצליה':'https://www.herzliya.muni.il/residents/parking/pages/default.aspx',
+'כפר סבא':'https://www.kfar-saba.muni.il/Residents/Pages/Parking.aspx',
+'רעננה':'https://www.raanana.muni.il/Residents/Parking/Pages/default.aspx',
+'מודיעין':'https://www.modiin.muni.il/residents/parking/',
+'מודיעין מכבים רעות':'https://www.modiin.muni.il/residents/parking/',
+'רחובות':'https://www.rehovot.muni.il/Residents/Parking/Pages/default.aspx',
+'אשקלון':'https://www.ashkelon.muni.il/Residents/Pages/Parking.aspx',
+'לוד':'https://www.lod.muni.il/',
+'רמלה':'https://www.ramla.muni.il/',
+'נצרת':'https://www.nazareth.muni.il/',
+'עכו':'https://www.akko.muni.il/',
+'נהריה':'https://www.nahariya.muni.il/',
+'כרמיאל':'https://www.karmiel.muni.il/residents/parking/',
+'עפולה':'https://www.afula.muni.il/',
+'טבריה':'https://www.tiberias.muni.il/',
+'צפת':'https://www.zefat.muni.il/',
+'אילת':'https://www.eilat.muni.il/',
+'דימונה':'https://www.dimona.muni.il/',
+'ערד':'https://www.arad.muni.il/',
+'קרית שמונה':'https://www.qiryat-shemona.muni.il/',
+'קרית גת':'https://www.kiryat-gat.muni.il/',
+'קרית ביאליק':'https://www.qiryat-bialik.muni.il/',
+'קרית מוצקין':'https://www.qiryat-motzkin.muni.il/',
+'קרית ים':'https://www.kiryat-yam.muni.il/',
+'קרית אתא':'https://www.qiryat-ata.muni.il/',
+'קרית מלאכי':'https://www.k-malachi.muni.il/',
+'גבעתיים':'https://www.givatayim.muni.il/',
+'אור יהודה':'https://www.or-yehuda.muni.il/',
+'יהוד מונוסון':'https://www.yehud.muni.il/',
+'נס ציונה':'https://www.nes-ziona.muni.il/',
+'לוד':'https://www.lod.muni.il/',
+'יבנה':'https://www.yavne.muni.il/',
+'שדרות':'https://www.sderot.muni.il/',
+'עראבה':'https://www.araba.muni.il/',
+'טירה':'https://www.tire.muni.il/',
+'טייבה':'https://www.taybe.muni.il/',
+'אום אל פחם':'https://www.ummelfahem.muni.il/',
+'סכנין':'https://www.sakhnin.muni.il/',
+'רהט':'https://www.rahat.muni.il/',
+'נוף הגליל':'https://www.nof-hagalil.muni.il/',
+'מגדל העמק':'https://www.migdal-haemek.muni.il/',
+'יקנעם':'https://www.yokneam.muni.il/',
+'אור עקיבא':'https://www.or-akiva.muni.il/',
+'חדרה':'https://www.hadera.muni.il/',
+'זכרון יעקב':'https://www.zikhron.muni.il/',
+'קיסריה':'https://www.hof-hacarmel.muni.il/',
+'טירת כרמל':'https://www.tirat-carmel.muni.il/',
+'נשר':'https://www.nesher.muni.il/',
+'גבעת שמואל':'https://www.givat-shmuel.muni.il/',
+'קרית אונו':'https://www.kiryat-ono.muni.il/',
+'רמת השרון':'https://www.ramat-hasharon.muni.il/',
+'הוד השרון':'https://www.hod-hasharon.muni.il/',
+'כפר יונה':'https://www.kfar-yona.muni.il/',
+'זכרון יעקב':'https://www.zikhron.muni.il/',
+'פרדס חנה כרכור':'https://www.pardeshana.muni.il/',
+'בית שמש':'https://www.bet-shemesh.muni.il/',
+'בית שאן':'https://www.bet-shean.muni.il/',
+};
+
 function getViolPaymentInfo(issuer){
   if(!issuer || issuer==='—') return null;
   // Police
   if(issuer.includes('משטר')||issuer.toLowerCase()==='police'||issuer==='משטרת ישראל'){
     return {url:'https://ecom.gov.il/voucherspa/input/318', label:'תשלום דוח משטרתי'};
   }
-  // Any issuer that's not police - assume municipal/local authority
-  // Works for: "עיריית כרמיאל", "כרמיאל", "מועצת חוף הכרמל", etc.
-  var searchTerm = issuer;
-  if(!issuer.includes('עירי')&&!issuer.includes('מועצ')&&!issuer.includes('רשות')){
-    searchTerm = 'עיריית '+issuer;
+  // Extract city name (remove עיריית/מועצת/רשות prefix)
+  var city = issuer.replace(/^(עיריית|עירית|מועצת|מועצה מקומית|רשות)\s*/,'').trim();
+  // Try direct match
+  if(CITY_PAYMENT_MAP[city]){
+    return {url:CITY_PAYMENT_MAP[city], label:'תשלום דוח - '+city};
   }
-  return {url:'https://www.google.com/search?q='+encodeURIComponent('תשלום דוח חניה '+searchTerm), label:'תשלום דוח - '+issuer};
+  // Try partial match
+  for(var k in CITY_PAYMENT_MAP){
+    if(city.includes(k)||k.includes(city)){
+      return {url:CITY_PAYMENT_MAP[k], label:'תשלום דוח - '+k};
+    }
+  }
+  // Fallback: construct muni.il URL
+  return {url:'https://www.gov.il/he/service/paying-a-parking-ticket', label:'תשלום דוח - אתר ממשלתי'};
 }
 const SVC_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} טיפול בתאריך {תאריך}.\nסוג: {סוג}\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const TEST_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} טסט בתאריך {תאריך}.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
