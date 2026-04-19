@@ -6775,8 +6775,38 @@ function saveViolation(){
   }
 }
 
-const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך}.\nגורם נותן הדוח: {מקור}\n\nנא לאשר קבלת ההודעה בלינק הבא:\n\n{לינק}\n\n{קובץ}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
-const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך} הוסב על שמך.\nגורם נותן הדוח: {מקור}\n\nבאחריותך ליצור קשר עם הגורם המוציא ולשלם את הדוח.\n\nנא לאשר קבלת ההודעה על הסבת הדוח בלינק הבא:\n\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך}.\nגורם נותן הדוח: {מקור}\n\nלאישור קבלת ההודעה, לחץ כאן:\n{לינק}\n\n{תשלום}\n{קובץ}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך} הוסב על שמך.\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאישור קבלת ההודעה על הסבת הדוח, לחץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+
+// Payment links by issuer
+const VIOL_PAYMENT_LINKS = {
+  'משטרת ישראל': {url:'https://www.police.gov.il/menupay.aspx', label:'תשלום דוח משטרתי'},
+  'עיריית תל אביב': {url:'https://www.tel-aviv.gov.il/Residents/Transportation/Pages/fines.aspx', label:'תשלום דוח עירוני - תל אביב'},
+  'עיריית ירושלים': {url:'https://www.jerusalem.muni.il/he/residents/transportation/fines/', label:'תשלום דוח עירוני - ירושלים'},
+  'עיריית חיפה': {url:'https://www.haifa.muni.il/fine-payment/', label:'תשלום דוח עירוני - חיפה'},
+  'עיריית באר שבע': {url:'https://www.beer-sheva.muni.il/', label:'תשלום דוח עירוני - באר שבע'},
+  'עיריית רמת גן': {url:'https://www.ramat-gan.muni.il/', label:'תשלום דוח עירוני - רמת גן'},
+  'עיריית פתח תקווה': {url:'https://www.petah-tikva.muni.il/', label:'תשלום דוח עירוני - פתח תקווה'},
+  'עיריית ראשון לציון': {url:'https://www.rishonlezion.muni.il/', label:'תשלום דוח עירוני - ראשון לציון'},
+  'עיריית נתניה': {url:'https://www.netanya.muni.il/', label:'תשלום דוח עירוני - נתניה'},
+  'עיריית אשדוד': {url:'https://www.ashdod.muni.il/', label:'תשלום דוח עירוני - אשדוד'},
+};
+
+function getViolPaymentInfo(issuer){
+  if(!issuer) return null;
+  // Exact match
+  if(VIOL_PAYMENT_LINKS[issuer]) return VIOL_PAYMENT_LINKS[issuer];
+  // Partial match
+  const lower = issuer.toLowerCase();
+  if(lower.includes('משטרה')||lower.includes('משטרת ישראל')||lower==='police') return VIOL_PAYMENT_LINKS['משטרת ישראל'];
+  // Try city match
+  for(var key in VIOL_PAYMENT_LINKS){
+    if(key!=='משטרת ישראל' && lower.includes(key.replace('עיריית ','').toLowerCase())) return VIOL_PAYMENT_LINKS[key];
+  }
+  // Generic municipal
+  if(lower.includes('עירי')||lower.includes('מועצ')) return {url:'https://www.gov.il/he/service/paying-a-parking-ticket', label:'תשלום דוח חניה - אתר ממשלתי'};
+  return null;
+}
 const SVC_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} טיפול בתאריך {תאריך}.\nסוג: {סוג}\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const TEST_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} טסט בתאריך {תאריך}.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
@@ -6809,6 +6839,7 @@ function fillViolMsgTemplate(tpl,data){
     .replace(/\{מקור\}/g,data.issuer||'—')
     .replace(/\{לינק\}/g,data.link||'')
     .replace(/\{קובץ\}/g,data.fileLine||'')
+    .replace(/\{תשלום\}/g,data.paymentLine||'')
     .replace(/\n{3,}/g,'\n\n').trim();
 }
 
@@ -6910,8 +6941,11 @@ function sendViolToDriver(vid,stage){
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
 
+  // Payment link
+  const payInfo = getViolPaymentInfo(v.issuer);
+  const paymentLine = payInfo ? ('לתשלום הדוח באינטרנט:\n' + payInfo.url) : '';
   // Preview message (without file line - file handled separately)
-  const previewData={driverName,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine:hasFile&&includeFileDefault?'הקובץ של הדוח מצורף.':''};
+  const previewData={driverName,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine:hasFile&&includeFileDefault?'הקובץ של הדוח מצורף.':'',paymentLine};
   const msgPreview=fillViolMsgTemplate(tpl,previewData);
 
   const stageTitle=stage==='transfer'?'עדכון הסבת דוח '+v.num+' לנהג':'עדכון ראשוני על דוח '+v.num+' לנהג';
@@ -6981,7 +7015,9 @@ function violSendWhatsApp(token){
   const attachCb=document.getElementById('viol-send-attach-file');
   const attachFile=attachCb?attachCb.checked:false;
   const fileLine=attachFile&&v.fileData?'* קובץ הדוח יישלח בנפרד (הורד והעלה ידנית בוואטסאפ)':'';
-  const msg=fillViolMsgTemplate(tpl,{driverName:veh.driver.name,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine});
+  const payInfo=getViolPaymentInfo(v.issuer);
+  const paymentLine=payInfo?('לתשלום הדוח באינטרנט:\n'+payInfo.url):'';
+  const msg=fillViolMsgTemplate(tpl,{driverName:veh.driver.name,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine,paymentLine});
 
   // Build WhatsApp URL - Israeli format
   const phone=(veh.driver.phone||'').replace(/[^0-9]/g,'');
@@ -7022,7 +7058,9 @@ function violSendEmail(token){
   const attachCb=document.getElementById('viol-send-attach-file');
   const attachFile=attachCb?attachCb.checked:false;
   const fileLine=attachFile&&v.fileData?'* אנא צרף/י את קובץ הדוח המצורף למייל זה':'';
-  const body=fillViolMsgTemplate(tpl,{driverName:veh.driver.name,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine});
+  const payInfo=getViolPaymentInfo(v.issuer);
+  const paymentLine=payInfo?('לתשלום הדוח באינטרנט:\n'+payInfo.url):'';
+  const body=fillViolMsgTemplate(tpl,{driverName:veh.driver.name,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine,paymentLine});
   const subjectStr=stage==='transfer'?('הסבת דוח תנועה '+v.num+' על שמך — נדרש אישור'):('הודעה על דוח תנועה '+v.num+' — נדרש אישור קבלה');
   const subject=encodeURIComponent(subjectStr);
   const mailUrl='mailto:'+email+'?subject='+subject+'&body='+encodeURIComponent(body);
