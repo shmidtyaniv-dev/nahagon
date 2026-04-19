@@ -7231,9 +7231,29 @@ function saveViolation(){
     closeModal('viol-ov');renderViolations();if(_currentVid)renderVcViolations(_currentVid);
   };
   if(file){
-    const reader=new FileReader();
-    reader.onload=e=>doSave(e.target.result,file.type,file.name);
-    reader.readAsDataURL(file);
+    if(file.type.startsWith('image/')){
+      // Compress images before saving
+      const reader=new FileReader();
+      reader.onload=function(e){
+        const img=new Image();
+        img.onload=function(){
+          const canvas=document.createElement('canvas');
+          let w=img.width,h=img.height;const max=1400;
+          if(w>max||h>max){const ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
+          canvas.width=w;canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          doSave(canvas.toDataURL('image/jpeg',.82),file.type,file.name);
+        };
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // PDF - check size
+      if(file.size>5*1024*1024){alert('הקובץ גדול מדי (מקסימום 5MB)');return;}
+      const reader=new FileReader();
+      reader.onload=e=>doSave(e.target.result,file.type,file.name);
+      reader.readAsDataURL(file);
+    }
   }else{
     doSave(null,null,null);
   }
