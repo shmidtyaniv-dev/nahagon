@@ -6973,7 +6973,7 @@ function sendViolToDriver(vid,stage){
       '</div>'+
       (v.approvedAt?'<div style="background:#dcfce7;border-radius:8px;padding:10px 14px;margin-bottom:14px;color:#166534;font-size:13px">✅ הנהג כבר אישר בתאריך '+v.approvedAt+'</div>':'')+
       '<div style="font-size:12px;color:#666;margin-bottom:6px">תצוגת ההודעה:</div>'+
-      '<div style="background:#fefefe;border:1px dashed var(--bdr2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--t1);white-space:pre-wrap;max-height:160px;overflow-y:auto;direction:rtl">'+msgPreview.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>'+
+      '<div style="background:#fefefe;border:1px dashed var(--bdr2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--t1);white-space:pre-wrap;max-height:160px;overflow-y:auto;direction:rtl">'+msgPreview.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" style="color:#1a4a3a;font-weight:600">לחץ כאן</a>')+'</div>'+
       (hasFile?'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--t2);margin-bottom:12px;padding:8px 10px;background:var(--bg);border-radius:6px;border:1px solid var(--bdr2)">'+
         '<input type="checkbox" id="viol-send-attach-file"'+(includeFileDefault?' checked':'')+' style="accent-color:var(--gd);width:15px;height:15px">'+
         '<span>צרף קובץ הדוח (פתיחת מייל עם הקובץ)</span></label>':'')+
