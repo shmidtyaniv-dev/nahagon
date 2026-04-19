@@ -2641,6 +2641,7 @@ function renderVcViolations(vid){
             v.noticeApprovedAt?'<button onclick="sendViolTransferToDriver('+v.id+')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#991b1b;font-family:inherit">⚖️ הסבת דוח</button>':
             '<button onclick="sendViolNoticeToDriver('+v.id+')" style="background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#92400e;font-family:inherit">📢 עדכון על דוח</button>')+
           (v.fileData?'<button onclick="viewViolationDoc('+v.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px">📄 צפה</button>':'')+
+          '<button onclick="uploadPaymentReceipt('+v.id+')" title="אסמכתא תשלום" style="background:'+(v.paymentReceipt?'#dcfce7':'#fef3c7')+';border:1px solid '+(v.paymentReceipt?'#bbf7d0':'#fde68a')+';border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:'+(v.paymentReceipt?'#166534':'#92400e')+';font-family:inherit">'+(v.paymentReceipt?'✅ שולם':'💳 אסמכתא')+'</button>'+
           '<button onclick="openViolationModal('+v.id+')" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--t2)">עריכה</button>'+
         '</div></td></tr>';
     }).join('')+'</tbody></table></div>';
@@ -6493,11 +6494,96 @@ function renderViolations(){
             `<button onclick="sendViolNoticeToDriver(${v.id})" style="background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#92400e;font-family:inherit">📢 עדכון על דוח</button>`}
           <button onclick="openViolationModal(${v.id})" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--t2)">עריכה</button>
           ${v.fileData?`<button onclick="viewViolationDoc(${v.id})" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px">📄 צפה</button>`:''}
+          <button onclick="uploadPaymentReceipt(${v.id})" title="אסמכתא תשלום" style="background:${v.paymentReceipt?'#dcfce7':'#fef3c7'};border:1px solid ${v.paymentReceipt?'#bbf7d0':'#fde68a'};border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:${v.paymentReceipt?'#166534':'#92400e'};font-family:inherit">${v.paymentReceipt?'✅ שולם':'💳 אסמכתא'}</button>
           <button onclick="openViolAttachmentsModal(${v.id})" title="מסמכים מצורפים" style="background:#eff6ff;border:1px solid #93c5fd;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:#1e40af">📎${(v.attachments||[]).length?' '+v.attachments.length:''}</button>
           <button onclick="deleteViolation(${v.id})" title="מחק" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:13px;color:#dc2626">🗑</button>
         </div></td>
       </tr>`;
     }).join('')+`</tbody></table></div>`;
+}
+
+function uploadPaymentReceipt(vid){
+  const v = violationsList.find(function(x){return x.id===vid;});
+  if(!v) return;
+  const ex = document.getElementById('pay-receipt-modal');
+  if(ex) ex.remove();
+  const modal = document.createElement('div');
+  modal.id = 'pay-receipt-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+  const hasReceipt = v.paymentReceipt && v.paymentReceipt.data;
+  modal.innerHTML =
+    '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:420px;direction:rtl">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
+        '<div style="font-size:15px;font-weight:700;color:var(--gd)">💳 אסמכתא תשלום - דוח '+v.num+'</div>'+
+        '<button onclick="document.getElementById(\'pay-receipt-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">×</button>'+
+      '</div>'+
+      (hasReceipt?
+        '<div style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">'+
+          '<div style="font-size:28px;margin-bottom:6px">✅</div>'+
+          '<div style="font-size:14px;font-weight:600;color:#166534">דוח שולם</div>'+
+          '<div style="font-size:11px;color:#166534;margin-top:4px">'+v.paymentReceipt.name+'</div>'+
+          '<div style="font-size:10px;color:#15803d;margin-top:2px">'+new Date(v.paymentReceipt.uploadedAt).toLocaleDateString('he-IL')+'</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;margin-bottom:14px">'+
+          '<button onclick="viewPaymentReceipt('+vid+')" style="flex:1;background:var(--gd);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📄 צפה באסמכתא</button>'+
+          '<button onclick="removePaymentReceipt('+vid+')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;font-family:inherit;color:#dc2626">🗑</button>'+
+        '</div>'
+      :
+        '<div style="text-align:center;padding:16px;color:var(--t3);font-size:13px;margin-bottom:14px">טרם הועלתה אסמכתא</div>'
+      )+
+      '<label for="pay-receipt-file" style="display:block;text-align:center;padding:16px;background:linear-gradient(135deg,#f0fdf4,#fefce8);border:2px dashed #7DC242;border-radius:10px;cursor:pointer">'+
+        '<div style="font-size:28px;margin-bottom:4px">📤</div>'+
+        '<div style="font-size:13px;font-weight:600;color:#166534">'+(hasReceipt?'החלף אסמכתא':'העלה אסמכתא תשלום')+'</div>'+
+        '<div style="font-size:10px;color:#16a34a;margin-top:3px">PDF, JPG, PNG</div>'+
+      '</label>'+
+      '<input type="file" id="pay-receipt-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="savePaymentReceipt('+vid+',this)">'+
+    '</div>';
+  document.body.appendChild(modal);
+}
+
+function savePaymentReceipt(vid, input){
+  const file = input.files[0];
+  if(!file) return;
+  const v = violationsList.find(function(x){return x.id===vid;});
+  if(!v) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    v.paymentReceipt = {
+      name: file.name,
+      type: file.type,
+      data: e.target.result,
+      uploadedAt: new Date().toISOString()
+    };
+    if(!v.logs) v.logs=[];
+    v.logs.push({date:new Date().toLocaleDateString('he-IL')+' '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}), text:'💳 הועלתה אסמכתא תשלום: '+file.name});
+    try{ syncPersistItem('violations', v); }catch(e){}
+    renderViolations();
+    try{ renderVcViolations(_currentVid); }catch(e){}
+    document.getElementById('pay-receipt-modal')?.remove();
+    showToast('✅ אסמכתא תשלום הועלתה');
+  };
+  reader.readAsDataURL(file);
+}
+
+function viewPaymentReceipt(vid){
+  const v = violationsList.find(function(x){return x.id===vid;});
+  if(!v||!v.paymentReceipt||!v.paymentReceipt.data) return;
+  openDocViewer(v.paymentReceipt.data, v.paymentReceipt.type||'', v.paymentReceipt.name||'אסמכתא');
+}
+
+function removePaymentReceipt(vid){
+  if(!confirm('להסיר את אסמכתא התשלום?')) return;
+  const v = violationsList.find(function(x){return x.id===vid;});
+  if(!v) return;
+  v.paymentReceipt = null;
+  if(!v.logs) v.logs=[];
+  v.logs.push({date:new Date().toLocaleDateString('he-IL')+' '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}), text:'🗑 אסמכתא תשלום הוסרה'});
+  try{ syncPersistItem('violations', v); }catch(e){}
+  renderViolations();
+  try{ renderVcViolations(_currentVid); }catch(e){}
+  document.getElementById('pay-receipt-modal')?.remove();
+  showToast('אסמכתא הוסרה');
 }
 
 function openViolAttachmentsModal(vid){
