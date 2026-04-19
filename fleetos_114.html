@@ -2852,8 +2852,10 @@ function hoUpdateReturnBtns(vid){
 
 function hoDeletePair(ids){
   if(!confirm('למחוק משימה זו לצמיתות?')) return;
+  const removedIds = ids;
   hoForms2 = hoForms2.filter(f=>!ids.includes(f.id));
   localStorage.setItem('hoForms2', JSON.stringify(hoForms2));
+  removedIds.forEach(function(rid){ try{ syncRemoveItem('hoForms2', rid); }catch(e){} });
   hoRenderList(hoCurrentVid);
   showToast('המשימה נמחקה');
 }
@@ -3416,6 +3418,7 @@ function hoSaveForm(){
 
   hoForms2.unshift(formData);
   localStorage.setItem('hoForms2', JSON.stringify(hoForms2));
+  try{ syncPersistItem('hoForms2', formData); }catch(e){}
   hoLastForm = formData;
 
   // Refresh dashboard & vehicles tables if they exist (sync alt vehicle badges/KPI)
@@ -4840,7 +4843,10 @@ function renderFamilyRows(vid){
           ${f.id?`<div style="font-size:11px;color:var(--t3);direction:ltr;text-align:right">ת.ז. ${f.id}</div>`:''}
           ${f.licenseExp?`<div style="font-size:11px;${fc?`color:${fc}`:'color:var(--t3)'}">רישיון: ${fd(f.licenseExp)}</div>`:''}
         </div>
-        <button onclick="openFamilyEdit(${fi})" title="עריכה" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--t2);flex-shrink:0">עריכה</button>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button onclick="openFamilyEdit(${fi})" title="עריכה" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--t2)">עריכה</button>
+          <button onclick="removeFamilyMember(${fi})" title="הסרה" style="background:var(--bg);border:1px solid #fca5a5;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:#dc2626">הסר</button>
+        </div>
       </div>`;
     }).join('')
     : '<div style="color:var(--t3);font-size:14px;padding:8px 0">אין בני משפחה מורשים</div>';
@@ -7334,6 +7340,15 @@ function saveFamilyEdit(){
   showToast('✓ נשמר');
 }
 
+function removeFamilyMember(idx){
+  const v=vehicles.find(x=>x.id===_currentVid);if(!v||!v.family||!v.family[idx])return;
+  if(!confirm('להסיר את '+v.family[idx].name+'?'))return;
+  v.family.splice(idx,1);
+  try{ if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }catch(e){}
+  renderFamilyRows(_currentVid);
+  showToast('✓ בן משפחה הוסר');
+}
+
 function toggleSidebar(){
   document.querySelector('.sb').classList.toggle('open');
 }
@@ -7467,6 +7482,12 @@ if(checkViolApproval()){
           if(typeof renderAccidents==='function'){try{renderAccidents();}catch(e){}}
           if(_currentVid && typeof renderVcAccidents==='function'){try{renderVcAccidents(_currentVid);}catch(e){}}
         }
+      );
+      // Handover forms (מסירה וקבלה)
+      registerSyncCollection('hoForms2',
+        function(){ return JSON.parse(localStorage.getItem('hoForms2')||'[]'); },
+        function(arr){ hoForms2 = arr||[]; try{localStorage.setItem('hoForms2',JSON.stringify(hoForms2));}catch(e){} },
+        function(){ if(_currentVid && typeof hoRenderList==='function'){try{hoRenderList(_currentVid);}catch(e){}} }
       );
       // Start listeners on all registered collections
       if(typeof startAllSyncListeners==='function'){ startAllSyncListeners(); }
