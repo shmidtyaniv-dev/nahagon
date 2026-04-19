@@ -5634,7 +5634,7 @@ function checkKmRequest(){
           '</div>'+
           '<div style="margin-bottom:18px;text-align:right">'+
             '<label style="font-size:13px;color:#666;display:block;margin-bottom:6px">ק"מ נוכחי במד המרחק</label>'+
-            '<input id="km-pub-input" type="number" inputmode="numeric" placeholder="לדוגמה: 45000" style="width:100%;padding:14px;border:2px solid #ddd;border-radius:10px;font-size:18px;font-family:inherit;text-align:center;direction:ltr" onfocus="this.style.borderColor=\'#7DC242\'" onblur="this.style.borderColor=\'#ddd\'">'+
+            '<input id="km-pub-input" type="text" inputmode="numeric" placeholder="לדוגמה: 45,000" style="width:100%;padding:14px;border:2px solid #ddd;border-radius:10px;font-size:18px;font-family:inherit;text-align:center;direction:ltr" onfocus="this.style.borderColor=\'#7DC242\'" onblur="this.style.borderColor=\'#ddd\'" oninput="fmtKmInput(this)">'+
           '</div>'+
           '<button id="km-pub-btn" onclick="submitKmUpdate(\''+token+'\','+req.vid+')" style="width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">שלח עדכון ק"מ</button>'+
           '<div id="km-pub-status" style="text-align:center;margin-top:10px;font-size:13px"></div>'+
@@ -5646,9 +5646,14 @@ function checkKmRequest(){
   return true;
 }
 
+function fmtKmInput(el){
+  var raw=el.value.replace(/[^0-9]/g,'');
+  if(raw) el.value=parseInt(raw).toLocaleString('en-US');
+}
+
 function submitKmUpdate(token, vid){
   var input=document.getElementById('km-pub-input');
-  var km=parseInt((input.value||'').replace(/[^0-9]/g,''));
+  var km=parseInt((input.value||'').replace(/[^0-9,]/g,'').replace(/,/g,''));
   if(!km||km<100){
     var st=document.getElementById('km-pub-status');
     if(st){st.textContent='נא להזין ק"מ תקין';st.style.color='#dc2626';}
