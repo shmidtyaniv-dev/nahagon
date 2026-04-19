@@ -1249,7 +1249,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </button>
           <button class="btn btn-sm" onclick="openArchiveModal(_currentVid)" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
-            הסרה מציר
+            הסרת רכב
           </button>
         </div>
       </div>
@@ -3013,7 +3013,7 @@ function deleteVehicleTask(idx,vid){
   renderVcMissions(vid);
 }
 
-/* ─ ARCHIVE (הסרה מציר) ─ */
+/* ─ ARCHIVE (הסרת רכב) ─ */
 function openArchiveModal(vid){
   const v=vehicles.find(x=>x.id===vid);
   if(!v)return;
@@ -3024,7 +3024,7 @@ function openArchiveModal(vid){
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
   modal.innerHTML=`
     <div style="background:#fff;border-radius:12px;padding:22px;width:100%;max-width:400px;direction:rtl">
-      <div style="font-size:15px;font-weight:600;color:#dc2626;margin-bottom:6px">הסרה מציר</div>
+      <div style="font-size:15px;font-weight:600;color:#dc2626;margin-bottom:6px">הסרת רכב</div>
       <div style="font-size:13px;color:#555;margin-bottom:16px">${v.make} ${v.model} · ${v.plate} · נהג: ${v.driver.name}</div>
       <div style="margin-bottom:14px">
         <div style="font-size:12px;color:#666;margin-bottom:8px;font-weight:500">סיבת הסרה:</div>
@@ -8450,7 +8450,7 @@ function openArchiveModal(vid){
   const m=document.createElement('div');m.id='archive-modal';
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
   m.innerHTML=`<div style="background:#fff;border-radius:12px;padding:22px;width:100%;max-width:400px;direction:rtl" onclick="event.stopPropagation()">
-    <div style="font-size:15px;font-weight:600;color:#dc2626;margin-bottom:6px">הסרה מציר</div>
+    <div style="font-size:15px;font-weight:600;color:#dc2626;margin-bottom:6px">הסרת רכב</div>
     <div style="font-size:13px;color:#555;margin-bottom:16px">${v.make} ${v.model} · ${v.plate} · נהג: ${v.driver.name}</div>
     <div style="margin-bottom:14px">
       <div style="font-size:12px;font-weight:500;color:#666;margin-bottom:8px">סיבת הסרה:</div>
