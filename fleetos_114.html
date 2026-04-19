@@ -5222,6 +5222,7 @@ function openDet(vid){
           ${fname?`<div style="font-size:11px;color:var(--t3)">${fname}</div>`:''}
         </div>
         ${hasData?`<button onclick="viewDoc(${vid},'${doc.key}')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0">צפה</button>`:''}
+        ${hasData?`<button onclick="renameDoc(${vid},'${doc.key}')" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;color:var(--t2)">שנה שם</button>`:''}
         <div style="font-size:11px;color:${uploaded?'#16a34a':'#dc2626'};flex-shrink:0">${uploaded?'הועלה':'חסר'}</div>
         ${!uploaded?`<button onclick="sendDocRequest(${vid},'${doc.key}','${doc.label}')" style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;color:#166534;font-weight:500;flex-shrink:0;display:flex;align-items:center;gap:4px">📩 שלח בקשה</button>`:''}
         <label style="display:flex;align-items:center;gap:5px;cursor:pointer;background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--t2);flex-shrink:0">
@@ -8039,7 +8040,9 @@ function sendDocRequest(vid, docKey, docLabel){
     }).catch(function(e){console.error('docRequest save error:',e);});
   }
   const uploadUrl = location.origin + location.pathname + '?docupload=' + token;
-  const msg = 'שלום ' + driverName + ',\nחסר מסמך: *' + docLabel + '*\nרכב: ' + plate + '\n\nנא להעלות את המסמך דרך הקישור:\n' + uploadUrl;
+  const waMsg = 'שלום ' + driverName + ',\nחסר מסמך: *' + docLabel + '*\nרכב: ' + plate + '\n\nלהעלאת המסמך, לחץ כאן:\n' + uploadUrl;
+  const emailMsg = 'שלום ' + driverName + ',\nחסר מסמך: ' + docLabel + '\nרכב: ' + plate;
+  const emailBody = emailMsg + '\n\nלהעלאת המסמך, לחץ כאן:\n' + uploadUrl;
   // Show modal with options
   const m = document.createElement('div');
   m.id = 'doc-req-modal';
@@ -8051,18 +8054,34 @@ function sendDocRequest(vid, docKey, docLabel){
         <div style="font-size:15px;font-weight:700;color:var(--gd)">📩 שליחת בקשה למסמך</div>
         <button onclick="document.getElementById('doc-req-modal').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">×</button>
       </div>
-      <div style="font-size:12px;color:var(--t2);margin-bottom:14px;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);line-height:1.7;white-space:pre-wrap">${msg.replace(/\*/g,'')}</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:14px;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);line-height:1.7">
+        <div>שלום ${driverName},</div>
+        <div>חסר מסמך: <strong>${docLabel}</strong></div>
+        <div>רכב: ${plate}</div>
+        <div style="margin-top:6px"><a href="${uploadUrl}" target="_blank" style="color:var(--gd);font-weight:600">להעלאת המסמך, לחץ כאן</a></div>
+      </div>
       <div style="display:flex;gap:8px">
-        <button onclick="window.open('https://wa.me/${driverPhone.replace(/[^0-9]/g,'').replace(/^0/,'972')}?text='+encodeURIComponent(\`${msg.replace(/`/g,"'")}\`),'_blank');document.getElementById('doc-req-modal').remove()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
+        <button onclick="window.open('https://wa.me/${driverPhone.replace(/[^0-9]/g,'').replace(/^0/,'972')}?text='+encodeURIComponent(\`${waMsg.replace(/`/g,"'")}\`),'_blank');document.getElementById('doc-req-modal').remove()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
           <span style="font-size:18px">💬</span> וואצאפ
         </button>
-        <button onclick="window.open('mailto:${driverEmail}?subject='+encodeURIComponent('בקשה להשלמת מסמך - '+docLabel)+'&body='+encodeURIComponent(\`${msg.replace(/`/g,"'").replace(/\*/g,'')}\`),'_blank');document.getElementById('doc-req-modal').remove()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
+        <button onclick="window.open('mailto:${driverEmail}?subject='+encodeURIComponent('בקשה להשלמת מסמך - '+docLabel)+'&body='+encodeURIComponent(\`${emailBody.replace(/`/g,"'")}\`),'_blank');document.getElementById('doc-req-modal').remove()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
           <span style="font-size:18px">✉️</span> מייל
         </button>
       </div>
       <button onclick="navigator.clipboard.writeText('${uploadUrl}');showToast('✓ קישור הועתק');document.getElementById('doc-req-modal').remove()" style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2)">📋 העתק קישור</button>
     </div>`;
   document.body.appendChild(m);
+}
+
+function renameDoc(vid, key){
+  const vd = vehicleDocs[vid];
+  if(!vd||!vd[key]) return;
+  const current = vd[key].name||key;
+  const newName = prompt('שם חדש למסמך:', current);
+  if(!newName || newName===current) return;
+  vd[key].name = newName;
+  openDet(vid); vcTab('docs', document.querySelectorAll('.vc-tab-btn')[2]);
+  showToast('✓ שם המסמך עודכן');
 }
 
 function uploadMandatoryDoc(vid,key,input){
