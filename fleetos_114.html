@@ -2732,15 +2732,15 @@ function saveKmUpdate(vid){
   if(typeof renderReminders==='function')renderReminders();
   showToast('ק"מ עודכן');
 }
+var _kmReqData={};
 function sendKmRequest(vid){
   var v=vehicles.find(function(x){return x.id===vid;});
   if(!v){showToast('רכב לא נמצא');return;}
   var driverName=v.driver?.name||'';
-  var driverPhone=v.driver?.phone||'';
+  var driverPhone=(v.driver?.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'972');
   var driverEmail=v.driver?.email||'';
   var plate=v.plate||'';
   var token='KM-'+vid+'-'+Date.now().toString(36).slice(-5);
-  // Save request to Firestore
   if(db){
     db.collection('kmRequests').doc(token).set({
       vid:vid, plate:plate, driverName:driverName,
@@ -2749,6 +2749,8 @@ function sendKmRequest(vid){
   }
   var kmUrl=location.origin+'/?km='+token;
   var waMsg='שלום '+driverName+',\n\nנא לעדכן ק"מ נוכחי ברכב '+plate+'.\n\nלעדכון ק"מ, לחץ כאן:\n'+kmUrl+'\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+  _kmReqData={waUrl:'https://wa.me/'+driverPhone+'?text='+encodeURIComponent(waMsg), mailUrl:'mailto:'+driverEmail+'?subject='+encodeURIComponent('בקשת עדכון ק"מ - '+plate)+'&body='+encodeURIComponent(waMsg), copyUrl:kmUrl};
+  var ex=document.getElementById('km-req-modal');if(ex)ex.remove();
   var m=document.createElement('div');
   m.id='km-req-modal';
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
@@ -2765,15 +2767,16 @@ function sendKmRequest(vid){
         '<div style="margin-top:6px"><a href="'+kmUrl+'" target="_blank" style="color:var(--gd);font-weight:600">לעדכון ק"מ, לחץ כאן</a></div>'+
       '</div>'+
       '<div style="display:flex;gap:8px">'+
-        '<button onclick="window.open(\'https://wa.me/'+driverPhone.replace(/[^0-9]/g,'').replace(/^0/,'972')+'?text=\'+encodeURIComponent(\''+waMsg.replace(/'/g,"\\'")+'\'),\'_blank\');document.getElementById(\'km-req-modal\').remove()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
-          '<span style="font-size:18px">💬</span> וואצאפ</button>'+
-        '<button onclick="window.open(\'mailto:'+driverEmail+'?subject=\'+encodeURIComponent(\'בקשת עדכון ק\\\"מ - '+plate+'\')+\'&body=\'+encodeURIComponent(\''+waMsg.replace(/'/g,"\\'")+'\'),\'_blank\');document.getElementById(\'km-req-modal\').remove()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
-          '<span style="font-size:18px">✉️</span> מייל</button>'+
+        '<button onclick="kmReqSendWA()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">💬</span> וואצאפ</button>'+
+        '<button onclick="kmReqSendEmail()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">✉️</span> מייל</button>'+
       '</div>'+
-      '<button onclick="navigator.clipboard.writeText(\''+kmUrl+'\');showToast(\'✓ קישור הועתק\');document.getElementById(\'km-req-modal\').remove()" style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2)">📋 העתק קישור</button>'+
+      '<button onclick="kmReqCopy()" style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2)">📋 העתק קישור</button>'+
     '</div>';
   document.body.appendChild(m);
 }
+function kmReqSendWA(){window.open(_kmReqData.waUrl,'_blank');document.getElementById('km-req-modal')?.remove();}
+function kmReqSendEmail(){window.open(_kmReqData.mailUrl,'_blank');document.getElementById('km-req-modal')?.remove();}
+function kmReqCopy(){navigator.clipboard.writeText(_kmReqData.copyUrl);showToast('✓ קישור הועתק');document.getElementById('km-req-modal')?.remove();}
 
 function openAddVehicleTask(vid){
   if(!vid)return;
