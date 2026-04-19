@@ -426,7 +426,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .ho-view-btn.active{background:var(--gd)!important;color:#fff!important;border-color:var(--gd)!important}
 </style>
 <script>
-(function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')){document.documentElement.style.visibility='hidden';}})();
+(function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')||p.get('book')){document.documentElement.style.visibility='hidden';}})();
 </script>
 </head>
 <body>
@@ -467,6 +467,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     </div>
     <div class="ni" dp="calendar" onclick="go('calendar',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>יומן
+    </div>
+    <div class="ni" dp="scheduling" onclick="go('scheduling',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="17" cy="17" r="4" fill="#7DC242" stroke="#7DC242"/><path d="M15.5 17l1 1 2-2" stroke="#fff" stroke-width="1.5" fill="none"/></svg>לוח טיפולים
     </div>
     <div class="ni" dp="forms" onclick="go('forms',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>טפסים דיגיטליים
@@ -890,6 +893,12 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   </div>
 </div>
 
+<div class="page" id="page-scheduling" style="display:none">
+  <div style="padding:16px;max-width:1200px" id="scheduling-content">
+    <!-- scheduling content rendered dynamically -->
+  </div>
+</div>
+
 <div class="page" id="page-settings">
   <div style="padding:16px;max-width:1200px">
     <div class="sect-title" style="font-size:15px;font-weight:600;color:var(--t1);margin-bottom:16px">הגדרות מערכת</div>
@@ -1158,6 +1167,31 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <button onclick="resetSvcMsgTemplate()" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);padding:7px 14px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">ברירת מחדל</button>
         <span id="svc-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
       </div>
+    </div>
+
+    <!-- SCHEDULING SETTINGS -->
+    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
+      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        הגדרות לוח טיפולים
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <label style="font-size:12px;color:var(--t2);white-space:nowrap">כמות טיפולים ליום:</label>
+        <input type="number" id="sched-daily-capacity" min="1" max="20" value="2" style="width:60px;padding:5px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;text-align:center">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <label style="font-size:12px;color:var(--t2);white-space:nowrap">ימים פתוחים לשיבוץ:</label>
+        <div style="display:flex;gap:4px;flex-wrap:wrap" id="sched-days-checkboxes">
+          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="0" checked style="accent-color:var(--gd)">א</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="1" checked style="accent-color:var(--gd)">ב</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="2" checked style="accent-color:var(--gd)">ג</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="3" checked style="accent-color:var(--gd)">ד</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="4" checked style="accent-color:var(--gd)">ה</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="5" style="accent-color:var(--gd)">ו</label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="6" style="accent-color:var(--gd)">ש</label>
+        </div>
+      </div>
+      <button onclick="saveSchedulingSettings()" style="background:var(--gd);color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">שמור הגדרות</button>
     </div>
 
     </div>
@@ -2510,6 +2544,7 @@ function initSettingsPage(){
   document.getElementById('prev-col').src  = 'data:image/png;base64,'+colB64;
   updateRepPreview();
   applyLogoSettings();
+  if(typeof initSchedulingSettings==='function') initSchedulingSettings();
 }
 
 function applyLogoSettings(){
@@ -7893,7 +7928,7 @@ document.addEventListener('click',e=>{
 });
 
 /* ── NAV ── */
-const PT={dashboard:'דשבורד',vehicles:'רכבים ונהגים','vehicle-card':'כרטיס רכב',tasks:'משימות',violations:'דוחות תנועה',accidents:'תאונות',calendar:'יומן',forms:'טפסים דיגיטליים',reminders:'תזכורות',settings:'הגדרות'};
+const PT={dashboard:'דשבורד',vehicles:'רכבים ונהגים','vehicle-card':'כרטיס רכב',tasks:'משימות',violations:'דוחות תנועה',accidents:'תאונות',calendar:'יומן',scheduling:'לוח טיפולים',forms:'טפסים דיגיטליים',reminders:'תזכורות',settings:'הגדרות'};
 function go(name,el){
   // Reset ALL vc-tab-panels when navigating away from vehicle card
   document.querySelectorAll('.vc-tab-panel').forEach(function(p){p.style.display='none';});
@@ -7922,6 +7957,7 @@ function go(name,el){
   if(name==='forms')renderForms();
   if(name==='reminders')renderReminders();
   if(name==='archive')renderArchivePage();
+  if(name==='scheduling')renderScheduling();
   if(name==='settings'){setTimeout(initSettingsPage,10);}
 }
 
@@ -7974,6 +8010,8 @@ if(checkViolApproval()){
   // Approval page shown
 }else if(typeof checkFormFillPage==='function' && checkFormFillPage()){
   // Form fill page shown
+}else if(typeof checkServiceBooking==='function' && checkServiceBooking()){
+  // Service booking page shown
 }else{
   syncViolApprovals();
   startViolApprovalsListener();
@@ -8011,6 +8049,18 @@ if(checkViolApproval()){
         function(){
           if(typeof renderAccidents==='function'){try{renderAccidents();}catch(e){}}
           if(_currentVid && typeof renderVcAccidents==='function'){try{renderVcAccidents(_currentVid);}catch(e){}}
+        }
+      );
+      // Service bookings (לוח טיפולים)
+      registerSyncCollection('serviceBookings',
+        function(){ return JSON.parse(localStorage.getItem('serviceBookings')||'[]'); },
+        function(arr){ try{localStorage.setItem('serviceBookings',JSON.stringify(arr||[]));}catch(e){} _lastBookingIds = new Set((arr||[]).map(b=>String(b.id))); },
+        function(){
+          if(typeof renderScheduling==='function'){try{renderScheduling();}catch(e){}}
+          // Check for new driver bookings and show toast
+          var bks=JSON.parse(localStorage.getItem('serviceBookings')||'[]');
+          bks.forEach(function(b){if(b.status==='booked'&&!b._toasted){showToast('נהג קבע תור: '+fd(b.bookedDate));b._toasted=true;}});
+          try{localStorage.setItem('serviceBookings',JSON.stringify(bks));}catch(e){}
         }
       );
       // Handover forms (מסירה וקבלה)
@@ -11777,6 +11827,695 @@ function exportToExcel(type){
 
 /* ── TASKS EXTRA ── */
 function quickRemoveTask(tid){const idx=tasks.findIndex(x=>x.id===tid);if(idx<0)return;const vid=tasks[idx].vehicleId;tasks.splice(idx,1);renderTasks();if(_currentVid===vid)renderVcMissions(vid);}
+
+/* ══════════════════════════════════════════════════════════════════
+   SERVICE SCHEDULING (לוח טיפולים)
+   ══════════════════════════════════════════════════════════════════ */
+
+var _lastBookingIds = new Set();
+
+const BOOK_MSG_DEFAULT = 'שלום {נהג},\n\nרכב {רכב} צריך {סוג}.\n\nלקביעת תור לטיפול, לחץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const BOOK_CONFIRM_DEFAULT = 'שלום {נהג},\n\nנקבע {סוג} לרכב {רכב} בתאריך {תאריך}.\nמוסך: {מוסך}\n{רכב_חלופי}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+
+function getSchedulingSettings(){
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  return {
+    dailyCapacity: s.schedDailyCapacity||2,
+    openDays: s.schedOpenDays||[0,1,2,3,4] // Sun-Thu by default
+  };
+}
+
+function saveSchedulingSettings(){
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  var capEl=document.getElementById('sched-daily-capacity');
+  if(capEl) s.schedDailyCapacity=parseInt(capEl.value)||2;
+  var daysCbs=document.querySelectorAll('.sched-day-cb');
+  var days=[];
+  daysCbs.forEach(function(cb){if(cb.checked) days.push(parseInt(cb.value));});
+  s.schedOpenDays=days;
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
+  showToast('✓ הגדרות לוח טיפולים נשמרו');
+}
+
+function initSchedulingSettings(){
+  var s=getSchedulingSettings();
+  var capEl=document.getElementById('sched-daily-capacity');
+  if(capEl) capEl.value=s.dailyCapacity;
+  var daysCbs=document.querySelectorAll('.sched-day-cb');
+  daysCbs.forEach(function(cb){
+    cb.checked=s.openDays.indexOf(parseInt(cb.value))>=0;
+  });
+}
+
+function getVehiclesNeedingService(withinDays){
+  withinDays=withinDays||60;
+  var today=new Date();today.setHours(0,0,0,0);
+  var results=[];
+  (vehicles||[]).forEach(function(v){
+    // Check annual service
+    var lastSvc=typeof getVehicleLastServiceDate==='function'?getVehicleLastServiceDate(v):null;
+    var nextSvcDate=null;
+    var svcType='טיפול שנתי';
+    if(lastSvc){
+      var anniv=new Date(lastSvc);
+      while(anniv<=today) anniv.setFullYear(anniv.getFullYear()+1);
+      nextSvcDate=anniv;
+    } else if(v.isNew && v.delivery){
+      var first=new Date(v.delivery);
+      first.setFullYear(first.getFullYear()+1);
+      if(first>today) nextSvcDate=first;
+      else {
+        while(first<=today) first.setFullYear(first.getFullYear()+1);
+        nextSvcDate=first;
+      }
+    }
+    if(nextSvcDate){
+      var diff=Math.round((nextSvcDate-today)/(1000*60*60*24));
+      if(diff<=withinDays){
+        results.push({vid:v.id, plate:v.plate||'', driver:v.driver?.name||'', driverPhone:v.driver?.phone||'', driverEmail:v.driver?.email||'', type:svcType, dueDate:nextSvcDate.toISOString().split('T')[0], daysLeft:diff, vehicle:v});
+      }
+    }
+    // Check vehicle license (test)
+    if(v.licenseExp){
+      var ld=new Date(v.licenseExp);ld.setHours(0,0,0,0);
+      var ldiff=Math.round((ld-today)/(1000*60*60*24));
+      if(ldiff<=withinDays){
+        results.push({vid:v.id, plate:v.plate||'', driver:v.driver?.name||'', driverPhone:v.driver?.phone||'', driverEmail:v.driver?.email||'', type:'טסט רישוי', dueDate:v.licenseExp, daysLeft:ldiff, vehicle:v});
+      }
+    }
+  });
+  results.sort(function(a,b){return a.daysLeft-b.daysLeft;});
+  return results;
+}
+
+function getServiceBookings(){
+  return JSON.parse(localStorage.getItem('serviceBookings')||'[]');
+}
+function saveServiceBookings(arr){
+  try{localStorage.setItem('serviceBookings',JSON.stringify(arr));}catch(e){}
+}
+
+function renderScheduling(){
+  var el=document.getElementById('scheduling-content');
+  if(!el) return;
+  var needs=getVehiclesNeedingService(60);
+  var bookings=getServiceBookings();
+  var settings=getSchedulingSettings();
+
+  // Build calendar data - next 60 days
+  var today=new Date();today.setHours(0,0,0,0);
+  var calMonth=new Date(today.getFullYear(),today.getMonth(),1);
+
+  // Get bookings by date
+  var bookingsByDate={};
+  bookings.forEach(function(b){
+    if(b.bookedDate){
+      if(!bookingsByDate[b.bookedDate]) bookingsByDate[b.bookedDate]=[];
+      bookingsByDate[b.bookedDate].push(b);
+    }
+  });
+
+  var html='';
+
+  // Stats bar
+  var pending=bookings.filter(function(b){return b.status==='pending';}).length;
+  var booked=bookings.filter(function(b){return b.status==='booked';}).length;
+  var confirmed=bookings.filter(function(b){return b.status==='confirmed';}).length;
+  html+='<div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">';
+  html+='<div style="background:var(--card);border-radius:10px;padding:12px 18px;border:1px solid var(--bdr);flex:1;min-width:120px;text-align:center">';
+  html+='<div style="font-size:22px;font-weight:700;color:var(--gd)">'+needs.length+'</div><div style="font-size:11px;color:var(--t3)">דורשים טיפול</div></div>';
+  html+='<div style="background:var(--card);border-radius:10px;padding:12px 18px;border:1px solid var(--bdr);flex:1;min-width:120px;text-align:center">';
+  html+='<div style="font-size:22px;font-weight:700;color:#f59e0b">'+pending+'</div><div style="font-size:11px;color:var(--t3)">ממתינים לשיבוץ</div></div>';
+  html+='<div style="background:var(--card);border-radius:10px;padding:12px 18px;border:1px solid var(--bdr);flex:1;min-width:120px;text-align:center">';
+  html+='<div style="font-size:22px;font-weight:700;color:#3b82f6">'+booked+'</div><div style="font-size:11px;color:var(--t3)">נקבע תור</div></div>';
+  html+='<div style="background:var(--card);border-radius:10px;padding:12px 18px;border:1px solid var(--bdr);flex:1;min-width:120px;text-align:center">';
+  html+='<div style="font-size:22px;font-weight:700;color:#16a34a">'+confirmed+'</div><div style="font-size:11px;color:var(--t3)">אושרו</div></div>';
+  html+='</div>';
+
+  // Mini calendar
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">';
+  for(var cm=0;cm<2;cm++){
+    var mo=new Date(calMonth.getFullYear(),calMonth.getMonth()+cm,1);
+    html+=renderSchedulingMiniCal(mo,bookingsByDate,settings);
+  }
+  html+='</div>';
+
+  // Vehicles needing service table
+  html+='<div style="background:var(--card);border-radius:10px;padding:16px;border:1px solid var(--bdr)">';
+  html+='<div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">🔧 רכבים הדורשים טיפול (60 יום)</div>';
+
+  if(needs.length===0){
+    html+='<div style="text-align:center;padding:24px;color:var(--t3);font-size:13px">אין רכבים שדורשים טיפול בתקופה הקרובה ✓</div>';
+  } else {
+    html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+    html+='<thead><tr style="background:var(--bg);border-bottom:1px solid var(--bdr)">';
+    html+='<th style="padding:8px 10px;text-align:right;font-weight:600;color:var(--t2)">לוחית</th>';
+    html+='<th style="padding:8px 10px;text-align:right;font-weight:600;color:var(--t2)">נהג</th>';
+    html+='<th style="padding:8px 10px;text-align:right;font-weight:600;color:var(--t2)">סוג טיפול</th>';
+    html+='<th style="padding:8px 10px;text-align:right;font-weight:600;color:var(--t2)">תאריך יעד</th>';
+    html+='<th style="padding:8px 10px;text-align:right;font-weight:600;color:var(--t2)">סטטוס</th>';
+    html+='<th style="padding:8px 10px;text-align:center;font-weight:600;color:var(--t2)">פעולה</th>';
+    html+='</tr></thead><tbody>';
+
+    needs.forEach(function(n){
+      var booking=bookings.find(function(b){return b.vid===n.vid && b.serviceType===n.type && b.status!=='cancelled';});
+      var statusHtml='';
+      var actionHtml='';
+      if(!booking){
+        statusHtml='<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:11px">לא נשלח</span>';
+        actionHtml='<button onclick="sendServiceBooking(\''+n.vid+'\',\''+n.type+'\',\''+n.dueDate+'\')" style="background:var(--gd);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap">📩 שלח לשיבוץ</button>';
+      } else if(booking.status==='pending'){
+        statusHtml='<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:11px">⏳ ממתין</span>';
+        actionHtml='<button onclick="resendServiceBooking(\''+booking.id+'\')" style="background:#f59e0b;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap">🔄 שלח שוב</button>';
+      } else if(booking.status==='booked'){
+        statusHtml='<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-size:11px">📅 '+fd(booking.bookedDate)+'</span>';
+        actionHtml='<button onclick="openBookingDetails(\''+booking.id+'\')" style="background:#3b82f6;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap">📋 פרטים ואישור</button>';
+      } else if(booking.status==='confirmed'){
+        statusHtml='<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px">✅ אושר '+fd(booking.bookedDate)+'</span>';
+        actionHtml='<button onclick="openBookingDetails(\''+booking.id+'\')" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap">צפה</button>';
+      }
+      var urgClass=n.daysLeft<0?'color:#dc2626;font-weight:600':n.daysLeft<14?'color:#f59e0b;font-weight:600':'color:var(--t1)';
+      html+='<tr style="border-bottom:1px solid var(--bdr)">';
+      html+='<td style="padding:8px 10px;font-weight:600;font-family:monospace;color:var(--gd)">'+n.plate+'</td>';
+      html+='<td style="padding:8px 10px;color:var(--t1)">'+n.driver+'</td>';
+      html+='<td style="padding:8px 10px;color:var(--t1)">'+n.type+'</td>';
+      html+='<td style="padding:8px 10px;'+urgClass+'">'+fd(n.dueDate)+(n.daysLeft<0?' (איחור!)':n.daysLeft===0?' (היום)':' ('+n.daysLeft+' ימים)')+'</td>';
+      html+='<td style="padding:8px 10px">'+statusHtml+'</td>';
+      html+='<td style="padding:8px 10px;text-align:center">'+actionHtml+'</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div>';
+  }
+  html+='</div>';
+
+  // Booked list
+  var activeBookings=bookings.filter(function(b){return b.status==='booked'||b.status==='confirmed';});
+  if(activeBookings.length>0){
+    html+='<div style="background:var(--card);border-radius:10px;padding:16px;border:1px solid var(--bdr);margin-top:14px">';
+    html+='<div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:12px">📅 תורים קבועים</div>';
+    activeBookings.sort(function(a,b){return (a.bookedDate||'').localeCompare(b.bookedDate||'');});
+    activeBookings.forEach(function(b){
+      var stColor=b.status==='confirmed'?'#16a34a':'#3b82f6';
+      var stText=b.status==='confirmed'?'אושר':'נקבע';
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr);flex-wrap:wrap">';
+      html+='<span style="background:'+stColor+';color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600">'+stText+'</span>';
+      html+='<span style="font-weight:600;font-family:monospace;color:var(--gd);font-size:13px">'+fd(b.bookedDate)+'</span>';
+      html+='<span style="font-size:12px;color:var(--t1)">'+b.plate+' — '+(b.driverName||'')+'</span>';
+      html+='<span style="font-size:11px;color:var(--t3)">'+b.serviceType+'</span>';
+      if(b.garage) html+='<span style="font-size:11px;color:var(--t2)">מוסך: '+b.garage+'</span>';
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+
+  el.innerHTML=html;
+}
+
+function renderSchedulingMiniCal(mo,bookingsByDate,settings){
+  var dayNames=['א','ב','ג','ד','ה','ו','ש'];
+  var mName=mo.toLocaleDateString('he-IL',{month:'long',year:'numeric'});
+  var html='<div style="background:var(--card);border-radius:10px;padding:14px;border:1px solid var(--bdr)">';
+  html+='<div style="text-align:center;font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px">'+mName+'</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:10px">';
+  dayNames.forEach(function(d){html+='<div style="color:var(--t3);font-weight:600;padding:3px 0">'+d+'</div>';});
+  var first=mo.getDay();
+  var daysInMonth=new Date(mo.getFullYear(),mo.getMonth()+1,0).getDate();
+  var today=new Date();today.setHours(0,0,0,0);
+  for(var i=0;i<first;i++) html+='<div></div>';
+  for(var d=1;d<=daysInMonth;d++){
+    var dt=new Date(mo.getFullYear(),mo.getMonth(),d);
+    var isoD=dt.toISOString().split('T')[0];
+    var bks=bookingsByDate[isoD]||[];
+    var cnt=bks.length;
+    var cap=settings.dailyCapacity;
+    var isOpen=settings.openDays.indexOf(dt.getDay())>=0;
+    var isPast=dt<today;
+    var bg='transparent';var clr='var(--t1)';
+    if(!isOpen||isPast){bg='var(--bg)';clr='var(--t3)';}
+    else if(cnt>=cap){bg='#fecaca';clr='#991b1b';}
+    else if(cnt>0){bg='#dbeafe';clr='#1e40af';}
+    var isToday=dt.getTime()===today.getTime();
+    var border=isToday?'border:1.5px solid var(--gd)':'';
+    var title=cnt>0?cnt+'/'+cap+(cnt>=cap?' — מלא':''):isOpen?'פנוי':'סגור';
+    html+='<div title="'+title+'" style="padding:3px 0;border-radius:4px;'+border+';background:'+bg+';color:'+clr+';font-size:10px;cursor:default;position:relative">';
+    html+=d;
+    if(cnt>0) html+='<div style="font-size:7px;color:'+clr+'">'+cnt+'/'+cap+'</div>';
+    html+='</div>';
+  }
+  html+='</div></div>';
+  return html;
+}
+
+function sendServiceBooking(vid, serviceType, dueDate){
+  var v=vehicles.find(function(x){return x.id===vid;});
+  if(!v){showToast('רכב לא נמצא');return;}
+  var driverName=v.driver?.name||'';
+  var driverPhone=v.driver?.phone||'';
+  var driverEmail=v.driver?.email||'';
+  var plate=v.plate||'';
+  var token='BK-'+vid+'-'+Date.now().toString(36);
+
+  var booking={
+    id:token,
+    vid:vid,
+    plate:plate,
+    driverName:driverName,
+    driverPhone:driverPhone,
+    driverEmail:driverEmail,
+    serviceType:serviceType,
+    dueDate:dueDate,
+    status:'pending',
+    createdAt:new Date().toISOString(),
+    bookedDate:null,
+    garage:null,
+    pickupDriver:null,
+    altVehicle:null,
+    notes:null
+  };
+
+  // Save to local
+  var bks=getServiceBookings();
+  bks.push(booking);
+  saveServiceBookings(bks);
+
+  // Save to Firestore
+  if(db){
+    db.collection('serviceBookings').doc(token).set(booking).catch(function(e){console.error('booking save error:',e);});
+  }
+
+  var bookUrl=location.origin+'/?book='+token;
+  var msg=BOOK_MSG_DEFAULT
+    .replace('{נהג}',driverName)
+    .replace('{רכב}',plate)
+    .replace('{סוג}',serviceType)
+    .replace('{לינק}',bookUrl);
+
+  // Show send modal (same pattern as sendDocRequest)
+  var m=document.createElement('div');
+  m.id='book-req-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.onclick=function(e){if(e.target===m)m.remove();};
+  var waNum=driverPhone.replace(/[^0-9]/g,'').replace(/^0/,'972');
+  m.innerHTML=
+    '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:400px;direction:rtl">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
+        '<div style="font-size:15px;font-weight:700;color:var(--gd)">📅 שליחת בקשה לשיבוץ טיפול</div>'+
+        '<button onclick="document.getElementById(\'book-req-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">&times;</button>'+
+      '</div>'+
+      '<div style="font-size:12px;color:var(--t2);margin-bottom:14px;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);line-height:1.7;white-space:pre-wrap">'+msg+'</div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="window.open(\'https://wa.me/'+waNum+'?text=\'+encodeURIComponent(\''+msg.replace(/'/g,"\\'")+'\'),\'_blank\');document.getElementById(\'book-req-modal\').remove()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
+          '<span style="font-size:18px">💬</span> וואצאפ</button>'+
+        '<button onclick="window.open(\'mailto:'+driverEmail+'?subject=\'+encodeURIComponent(\'קביעת תור ל'+serviceType+' - '+plate+'\')+\'&body=\'+encodeURIComponent(\''+msg.replace(/'/g,"\\'")+'\'),\'_blank\');document.getElementById(\'book-req-modal\').remove()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
+          '<span style="font-size:18px">✉️</span> מייל</button>'+
+      '</div>'+
+      '<button onclick="navigator.clipboard.writeText(\''+bookUrl+'\');showToast(\'✓ קישור הועתק\');document.getElementById(\'book-req-modal\').remove()" style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2)">📋 העתק קישור</button>'+
+    '</div>';
+  document.body.appendChild(m);
+  renderScheduling();
+}
+
+function resendServiceBooking(bookingId){
+  var bks=getServiceBookings();
+  var b=bks.find(function(x){return x.id===bookingId;});
+  if(!b){showToast('שיבוץ לא נמצא');return;}
+  var bookUrl=location.origin+'/?book='+bookingId;
+  var msg=BOOK_MSG_DEFAULT
+    .replace('{נהג}',b.driverName||'')
+    .replace('{רכב}',b.plate||'')
+    .replace('{סוג}',b.serviceType||'')
+    .replace('{לינק}',bookUrl);
+  var waNum=(b.driverPhone||'').replace(/[^0-9]/g,'').replace(/^0/,'972');
+  var m=document.createElement('div');
+  m.id='book-req-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.onclick=function(e){if(e.target===m)m.remove();};
+  m.innerHTML=
+    '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:400px;direction:rtl">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
+        '<div style="font-size:15px;font-weight:700;color:#f59e0b">🔄 שליחה חוזרת</div>'+
+        '<button onclick="document.getElementById(\'book-req-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">&times;</button>'+
+      '</div>'+
+      '<div style="font-size:12px;color:var(--t2);margin-bottom:14px;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);line-height:1.7;white-space:pre-wrap">'+msg+'</div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="window.open(\'https://wa.me/'+waNum+'?text=\'+encodeURIComponent(\''+msg.replace(/'/g,"\\'")+'\'),\'_blank\');document.getElementById(\'book-req-modal\').remove()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
+          '<span style="font-size:18px">💬</span> וואצאפ</button>'+
+        '<button onclick="window.open(\'mailto:'+(b.driverEmail||'')+'?subject=\'+encodeURIComponent(\'קביעת תור ל'+(b.serviceType||'')+' - '+(b.plate||'')+'\')+\'&body=\'+encodeURIComponent(\''+msg.replace(/'/g,"\\'")+'\'),\'_blank\');document.getElementById(\'book-req-modal\').remove()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
+          '<span style="font-size:18px">✉️</span> מייל</button>'+
+      '</div>'+
+      '<button onclick="navigator.clipboard.writeText(\''+bookUrl+'\');showToast(\'✓ קישור הועתק\');document.getElementById(\'book-req-modal\').remove()" style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2)">📋 העתק קישור</button>'+
+    '</div>';
+  document.body.appendChild(m);
+}
+
+function openBookingDetails(bookingId){
+  var bks=getServiceBookings();
+  var b=bks.find(function(x){return x.id===bookingId;});
+  if(!b){showToast('שיבוץ לא נמצא');return;}
+
+  var ex=document.getElementById('booking-details-modal');
+  if(ex) ex.remove();
+
+  var m=document.createElement('div');
+  m.id='booking-details-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.onclick=function(e){if(e.target===m)m.remove();};
+
+  var isConfirmed=b.status==='confirmed';
+  var stLabel=b.status==='booked'?'📅 נקבע תור':'✅ אושר';
+  var stColor=b.status==='booked'?'#3b82f6':'#16a34a';
+
+  m.innerHTML=
+    '<div style="background:var(--card);border-radius:14px;padding:0;width:100%;max-width:460px;direction:rtl;overflow:hidden">'+
+      '<div style="background:'+stColor+';padding:16px 20px;display:flex;align-items:center;justify-content:space-between">'+
+        '<div style="color:#fff;font-size:15px;font-weight:700">'+stLabel+'</div>'+
+        '<button onclick="document.getElementById(\'booking-details-modal\').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px">&times;</button>'+
+      '</div>'+
+      '<div style="padding:20px">'+
+        '<div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:14px">'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3);font-size:12px">רכב</span><span style="font-weight:600;font-size:13px">'+b.plate+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3);font-size:12px">נהג</span><span style="font-weight:600;font-size:13px">'+(b.driverName||'—')+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3);font-size:12px">סוג טיפול</span><span style="font-weight:600;font-size:13px">'+b.serviceType+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3);font-size:12px">תאריך יעד</span><span style="font-weight:600;font-size:13px">'+fd(b.dueDate)+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--t3);font-size:12px">תאריך תור</span><span style="font-weight:700;font-size:13px;color:'+stColor+'">'+fd(b.bookedDate)+'</span></div>'+
+        '</div>'+
+        '<div style="display:grid;gap:10px;margin-bottom:14px">'+
+          '<div><label style="font-size:11px;color:var(--t3);display:block;margin-bottom:3px">שם מוסך</label>'+
+            '<input type="text" id="bd-garage" value="'+(b.garage||'')+'" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box" '+(isConfirmed?'readonly':'')+'></div>'+
+          '<div><label style="font-size:11px;color:var(--t3);display:block;margin-bottom:3px">נהג לאיסוף</label>'+
+            '<input type="text" id="bd-pickup" value="'+(b.pickupDriver||'')+'" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box" '+(isConfirmed?'readonly':'')+'></div>'+
+          '<div><label style="font-size:11px;color:var(--t3);display:block;margin-bottom:3px">רכב חלופי</label>'+
+            '<input type="text" id="bd-alt" value="'+(b.altVehicle||'')+'" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box" '+(isConfirmed?'readonly':'')+'></div>'+
+          '<div><label style="font-size:11px;color:var(--t3);display:block;margin-bottom:3px">הערות</label>'+
+            '<textarea id="bd-notes" rows="2" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box;resize:vertical" '+(isConfirmed?'readonly':'')+'>'+(b.notes||'')+'</textarea></div>'+
+        '</div>'+
+        (isConfirmed
+          ?'<div style="text-align:center;padding:8px;color:#16a34a;font-size:13px;font-weight:600">✅ טיפול אושר ונשלח לנהג</div>'
+          :'<button onclick="confirmBooking(\''+bookingId+'\')" style="width:100%;padding:12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✓ אשר ושלח אישור לנהג</button>')+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(m);
+}
+
+function confirmBooking(bookingId){
+  var bks=getServiceBookings();
+  var idx=bks.findIndex(function(x){return x.id===bookingId;});
+  if(idx<0){showToast('שיבוץ לא נמצא');return;}
+  var b=bks[idx];
+
+  // Get form values
+  var garageEl=document.getElementById('bd-garage');
+  var pickupEl=document.getElementById('bd-pickup');
+  var altEl=document.getElementById('bd-alt');
+  var notesEl=document.getElementById('bd-notes');
+  b.garage=garageEl?garageEl.value:'';
+  b.pickupDriver=pickupEl?pickupEl.value:'';
+  b.altVehicle=altEl?altEl.value:'';
+  b.notes=notesEl?notesEl.value:'';
+  b.status='confirmed';
+  b.confirmedAt=new Date().toISOString();
+
+  bks[idx]=b;
+  saveServiceBookings(bks);
+
+  // Update Firestore
+  if(db){
+    db.collection('serviceBookings').doc(bookingId).update({
+      status:'confirmed',
+      confirmedAt:b.confirmedAt,
+      garage:b.garage,
+      pickupDriver:b.pickupDriver,
+      altVehicle:b.altVehicle,
+      notes:b.notes
+    }).catch(function(e){console.error('booking confirm error:',e);});
+  }
+
+  // Send confirmation message
+  var altLine=b.altVehicle?'רכב חלופי: '+b.altVehicle:'';
+  var confirmMsg=BOOK_CONFIRM_DEFAULT
+    .replace('{נהג}',b.driverName||'')
+    .replace('{רכב}',b.plate||'')
+    .replace('{סוג}',b.serviceType||'')
+    .replace('{תאריך}',fd(b.bookedDate))
+    .replace('{מוסך}',b.garage||'—')
+    .replace('{רכב_חלופי}',altLine);
+
+  var waNum=(b.driverPhone||'').replace(/[^0-9]/g,'').replace(/^0/,'972');
+
+  // Close details modal
+  var dm=document.getElementById('booking-details-modal');
+  if(dm) dm.remove();
+
+  // Show confirmation send modal
+  var m=document.createElement('div');
+  m.id='book-confirm-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.onclick=function(e){if(e.target===m)m.remove();};
+  m.innerHTML=
+    '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:400px;direction:rtl">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
+        '<div style="font-size:15px;font-weight:700;color:#16a34a">✅ אושר! שלח הודעה לנהג</div>'+
+        '<button onclick="document.getElementById(\'book-confirm-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">&times;</button>'+
+      '</div>'+
+      '<div style="font-size:12px;color:var(--t2);margin-bottom:14px;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);line-height:1.7;white-space:pre-wrap">'+confirmMsg+'</div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="window.open(\'https://wa.me/'+waNum+'?text=\'+encodeURIComponent(\''+confirmMsg.replace(/'/g,"\\'")+'\'),\'_blank\');document.getElementById(\'book-confirm-modal\').remove()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
+          '<span style="font-size:18px">💬</span> וואצאפ</button>'+
+        '<button onclick="window.open(\'mailto:'+(b.driverEmail||'')+'?subject=\'+encodeURIComponent(\'אישור תור ל'+(b.serviceType||'')+' - '+(b.plate||'')+'\')+\'&body=\'+encodeURIComponent(\''+confirmMsg.replace(/'/g,"\\'")+'\'),\'_blank\');document.getElementById(\'book-confirm-modal\').remove()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">'+
+          '<span style="font-size:18px">✉️</span> מייל</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(m);
+
+  showToast('✓ הטיפול אושר');
+  renderScheduling();
+}
+
+/* ── PUBLIC BOOKING PAGE ── */
+function checkServiceBooking(){
+  var params=new URLSearchParams(location.search);
+  var token=params.get('book');
+  if(!token) return false;
+
+  // Show booking page (hide app)
+  document.querySelector('.app').style.display='none';
+  document.documentElement.style.visibility='visible';
+  var page=document.createElement('div');
+  page.id='booking-page';
+  page.style.cssText='min-height:100vh;background:#f2f5f2;display:flex;align-items:center;justify-content:center;direction:rtl;font-family:Heebo,Arial,sans-serif;padding:16px';
+  page.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px;max-width:400px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1)"><div style="font-size:32px;margin-bottom:12px">&#9203;</div><div style="font-size:14px;color:#666">טוען את פרטי הטיפול...</div></div>';
+  document.body.appendChild(page);
+
+  if(db){
+    db.collection('serviceBookings').doc(token).get().then(function(doc){
+      if(doc.exists){
+        renderPublicBookingPage(page,token,doc.data());
+      } else {
+        renderPublicBookingPage(page,token,null);
+      }
+    }).catch(function(e){
+      console.error('booking load error:',e);
+      // Try localStorage fallback
+      var bks=JSON.parse(localStorage.getItem('serviceBookings')||'[]');
+      var b=bks.find(function(x){return x.id===token;});
+      renderPublicBookingPage(page,token,b||null);
+    });
+  } else {
+    var bks=JSON.parse(localStorage.getItem('serviceBookings')||'[]');
+    var b=bks.find(function(x){return x.id===token;});
+    renderPublicBookingPage(page,token,b||null);
+  }
+
+  return true;
+}
+
+function renderPublicBookingPage(page,token,info){
+  if(!info){
+    page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1)">'+
+      '<div style="font-size:40px;margin-bottom:12px">&#9888;&#65039;</div>'+
+      '<div style="font-size:18px;font-weight:600;color:#333;margin-bottom:8px">לינק לא תקין</div>'+
+      '<div style="font-size:14px;color:#888">הלינק אינו פעיל או שפג תוקפו.</div></div>';
+    return;
+  }
+
+  if(info.status==='booked'||info.status==='confirmed'){
+    var doneTitle=info.status==='confirmed'?'הטיפול אושר':'התור נקבע בהצלחה';
+    var doneIcon=info.status==='confirmed'?'&#9989;':'&#128197;';
+    page.innerHTML='<div style="background:#fff;border-radius:16px;padding:0;max-width:420px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.1);overflow:hidden">'+
+      '<div style="background:#1A4A3A;padding:18px 24px;text-align:center">'+
+        '<div style="color:#7DC242;font-size:18px;font-weight:700;margin-bottom:2px">מרכז הרכב של מור</div>'+
+        '<div style="color:rgba(255,255,255,.7);font-size:12px">קביעת תור לטיפול</div></div>'+
+      '<div style="padding:24px;text-align:center">'+
+        '<div style="font-size:48px;margin-bottom:10px">'+doneIcon+'</div>'+
+        '<div style="font-size:16px;font-weight:600;color:#166534;margin-bottom:4px">'+doneTitle+'</div>'+
+        '<div style="font-size:14px;color:#666;margin-bottom:14px">תאריך: <b>'+fd(info.bookedDate)+'</b></div>'+
+        '<div style="background:#f8f9f8;border-radius:10px;padding:14px;text-align:right">'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">רכב</span><span style="font-weight:600;font-size:13px">'+info.plate+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">סוג טיפול</span><span style="font-weight:600;font-size:13px">'+info.serviceType+'</span></div>'+
+          (info.garage?'<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">מוסך</span><span style="font-weight:600;font-size:13px">'+info.garage+'</span></div>':'')+
+        '</div>'+
+        '<div style="margin-top:18px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
+      '</div></div>';
+    return;
+  }
+
+  // Active booking - show calendar for driver to pick a date
+  var settings=getSchedulingSettings();
+  var allBookings=[];
+
+  // Load all bookings to check capacity
+  function renderCal(existingBookings){
+    allBookings=existingBookings||[];
+    var today=new Date();today.setHours(0,0,0,0);
+    var calHtml='';
+
+    // Show 2 months
+    for(var cm=0;cm<2;cm++){
+      var mo=new Date(today.getFullYear(),today.getMonth()+cm,1);
+      calHtml+=renderPublicMiniCal(mo,allBookings,settings,token,info);
+    }
+
+    page.innerHTML='<div style="background:#fff;border-radius:16px;padding:0;max-width:460px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.1);overflow:hidden">'+
+      '<div style="background:#1A4A3A;padding:18px 24px;text-align:center">'+
+        '<div style="color:#7DC242;font-size:18px;font-weight:700;margin-bottom:2px">מרכז הרכב של מור</div>'+
+        '<div style="color:rgba(255,255,255,.7);font-size:12px">קביעת תור לטיפול</div></div>'+
+      '<div style="padding:20px">'+
+        '<div style="background:#f8f9f8;border-radius:10px;padding:14px;margin-bottom:16px">'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">רכב</span><span style="font-weight:600;font-size:13px">'+info.plate+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">סוג טיפול</span><span style="font-weight:600;font-size:13px">'+info.serviceType+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">תאריך יעד</span><span style="font-weight:600;font-size:13px">'+fd(info.dueDate)+'</span></div>'+
+        '</div>'+
+        '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:12px;text-align:center">בחר תאריך לטיפול:</div>'+
+        calHtml+
+        '<div id="booking-selected-info" style="display:none;margin-top:14px;text-align:center">'+
+          '<div style="font-size:14px;color:#333;margin-bottom:10px">תאריך נבחר: <b id="booking-selected-date"></b></div>'+
+          '<button id="booking-confirm-btn" onclick="submitPublicBooking(\''+token+'\')" style="width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:Heebo,Arial,sans-serif">&#10003; אישור קביעת תור</button>'+
+        '</div>'+
+        '<div style="text-align:center;margin-top:18px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
+      '</div></div>';
+  }
+
+  // Load all bookings from Firestore to check capacity
+  if(db){
+    db.collection('serviceBookings').get().then(function(snap){
+      var all=[];
+      snap.forEach(function(doc){all.push(doc.data());});
+      renderCal(all);
+    }).catch(function(e){renderCal([]);});
+  } else {
+    renderCal([]);
+  }
+}
+
+var _publicSelectedDate=null;
+
+function renderPublicMiniCal(mo,allBookings,settings,token,info){
+  var dayNames=['א','ב','ג','ד','ה','ו','ש'];
+  var mName=mo.toLocaleDateString('he-IL',{month:'long',year:'numeric'});
+  var today=new Date();today.setHours(0,0,0,0);
+
+  // Count bookings per date
+  var countByDate={};
+  allBookings.forEach(function(b){
+    if(b.bookedDate && (b.status==='booked'||b.status==='confirmed'||b.status==='pending')){
+      countByDate[b.bookedDate]=(countByDate[b.bookedDate]||0)+1;
+    }
+  });
+
+  var html='<div style="background:#f8f9f8;border-radius:10px;padding:14px;margin-bottom:10px">';
+  html+='<div style="text-align:center;font-size:14px;font-weight:600;color:#333;margin-bottom:8px">'+mName+'</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:12px">';
+  dayNames.forEach(function(d){html+='<div style="color:#888;font-weight:600;padding:4px 0;font-size:11px">'+d+'</div>';});
+
+  var first=mo.getDay();
+  var daysInMonth=new Date(mo.getFullYear(),mo.getMonth()+1,0).getDate();
+
+  for(var i=0;i<first;i++) html+='<div></div>';
+  for(var d=1;d<=daysInMonth;d++){
+    var dt=new Date(mo.getFullYear(),mo.getMonth(),d);
+    var isoD=dt.toISOString().split('T')[0];
+    var cnt=countByDate[isoD]||0;
+    var cap=settings.dailyCapacity;
+    var isOpen=settings.openDays.indexOf(dt.getDay())>=0;
+    var isPast=dt<today;
+    var isFull=cnt>=cap;
+
+    if(isPast||!isOpen||isFull){
+      var label=isPast?'':'';
+      if(!isOpen) label='סגור';
+      else if(isFull) label=cnt+'/'+cap;
+      html+='<div style="padding:6px 2px;border-radius:6px;background:'+(isFull?'#fecaca':'#f3f4f6')+';color:#aaa;font-size:12px;cursor:not-allowed">';
+      html+=d;
+      if(isFull) html+='<div style="font-size:8px;color:#991b1b">מלא</div>';
+      html+='</div>';
+    } else {
+      var avail=cap-cnt;
+      html+='<div onclick="selectBookingDate(\''+isoD+'\')" style="padding:6px 2px;border-radius:6px;background:#dcfce7;color:#166534;font-size:12px;cursor:pointer;transition:all .2s" onmouseover="this.style.background=\'#16a34a\';this.style.color=\'#fff\'" onmouseout="if(!this.classList.contains(\'bk-sel\')){this.style.background=\'#dcfce7\';this.style.color=\'#166534\'}">';
+      html+=d;
+      html+='<div style="font-size:8px">'+cnt+'/'+cap+'</div>';
+      html+='</div>';
+    }
+  }
+  html+='</div></div>';
+  return html;
+}
+
+function selectBookingDate(isoDate){
+  _publicSelectedDate=isoDate;
+  var info=document.getElementById('booking-selected-info');
+  var dateLabel=document.getElementById('booking-selected-date');
+  if(info) info.style.display='block';
+  if(dateLabel) dateLabel.textContent=fd(isoDate);
+  // Highlight selected day (reset others)
+  document.querySelectorAll('#booking-page [onclick^="selectBookingDate"]').forEach(function(el){
+    el.classList.remove('bk-sel');
+    el.style.background='#dcfce7';
+    el.style.color='#166534';
+  });
+  var clicked=document.querySelector('#booking-page [onclick="selectBookingDate(\''+isoDate+'\')"]');
+  if(clicked){
+    clicked.classList.add('bk-sel');
+    clicked.style.background='#16a34a';
+    clicked.style.color='#fff';
+  }
+}
+
+function submitPublicBooking(token){
+  if(!_publicSelectedDate){return;}
+  var btn=document.getElementById('booking-confirm-btn');
+  if(btn){btn.disabled=true;btn.textContent='שומר...';}
+
+  if(db){
+    db.collection('serviceBookings').doc(token).update({
+      status:'booked',
+      bookedDate:_publicSelectedDate,
+      bookedAt:new Date().toISOString()
+    }).then(function(){
+      showBookingSuccess(_publicSelectedDate);
+    }).catch(function(e){
+      console.error('booking submit error:',e);
+      if(btn){btn.disabled=false;btn.textContent='&#10003; אישור קביעת תור';}
+    });
+  } else {
+    showBookingSuccess(_publicSelectedDate);
+  }
+}
+
+function showBookingSuccess(date){
+  var page=document.getElementById('booking-page');
+  if(!page) return;
+  page.innerHTML='<div style="background:#fff;border-radius:16px;padding:0;max-width:420px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.1);overflow:hidden">'+
+    '<div style="background:#1A4A3A;padding:18px 24px;text-align:center">'+
+      '<div style="color:#7DC242;font-size:18px;font-weight:700;margin-bottom:2px">מרכז הרכב של מור</div>'+
+      '<div style="color:rgba(255,255,255,.7);font-size:12px">קביעת תור לטיפול</div></div>'+
+    '<div style="padding:30px;text-align:center">'+
+      '<div style="font-size:56px;margin-bottom:14px">&#9989;</div>'+
+      '<div style="font-size:20px;font-weight:700;color:#166534;margin-bottom:6px">התור נקבע בהצלחה!</div>'+
+      '<div style="font-size:15px;color:#555;margin-bottom:6px">תאריך: <b>'+fd(date)+'</b></div>'+
+      '<div style="font-size:13px;color:#888;margin-top:16px">תודה רבה! נשלח אליך אישור בהקדם.</div>'+
+      '<div style="margin-top:24px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
+    '</div></div>';
+}
 
 </script>
 </body>
