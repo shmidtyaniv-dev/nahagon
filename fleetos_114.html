@@ -2905,12 +2905,15 @@ function hoSelectTake(takeId, type){
 function hoOpenFormDirect(type, mode){
   hoFormType = type; hoFormMode = mode;
   hoPhotos = []; hoFuel = ''; hoNoDmg = false; hoCurrentView = 'front';
-  // Load damages from linked take form
+  hoDamages = {};
+  // Load damages, photos from linked take form
   if(hoLinkedTakeId){
     const takeFrm = hoForms2.find(x=>x.id===hoLinkedTakeId);
-    hoDamages = takeFrm ? JSON.parse(JSON.stringify(takeFrm.damages||{})) : {};
-  } else {
-    hoDamages = {};
+    if(takeFrm){
+      hoDamages = JSON.parse(JSON.stringify(takeFrm.damages||{}));
+      if(takeFrm.noDamage) hoNoDmg = true;
+      if(takeFrm.photos && takeFrm.photos.length) hoPhotos = takeFrm.photos.slice();
+    }
   }
   const v = vehicles.find(x=>x.id===hoCurrentVid);
   const label = HO_TYPE_LABELS[type+'_'+mode];
@@ -2959,6 +2962,9 @@ function hoOpenFormDirect(type, mode){
   }
   document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active'));
   hoSetView('front', document.querySelector('.ho-view-btn'));
+  hoRenderDmgList();
+  var _noDmgCb = document.getElementById('ho-no-damage');
+  if(_noDmgCb) _noDmgCb.checked = hoNoDmg;
   hoRenderPhotosGrid();
   setTimeout(hoInitSig, 100);
   document.getElementById('ho-list-screen').style.display='none';
@@ -3071,14 +3077,19 @@ function hoOpenForm(type, mode){
   // Clear signature canvas
   if(hoSigCtx){ var _hsc = document.getElementById('ho-sig-canvas'); if(_hsc) hoSigCtx.clearRect(0,0,_hsc.width,_hsc.height); hoSigEmpty=true; }
 
-  // If return — pre-load damages from the linked take form
+  // If return — pre-load damages, photos, and fuel from the linked take form
   if(mode==='return' && hoLinkedTakeId){
     const takeForm = hoForms2.find(function(x){ return x.id===hoLinkedTakeId; });
-    if(takeForm && takeForm.damages){
-      hoDamages = JSON.parse(JSON.stringify(takeForm.damages));
-    }
-    if(takeForm && takeForm.noDamage){
-      hoNoDmg = true;
+    if(takeForm){
+      if(takeForm.damages){
+        hoDamages = JSON.parse(JSON.stringify(takeForm.damages));
+      }
+      if(takeForm.noDamage){
+        hoNoDmg = true;
+      }
+      if(takeForm.photos && takeForm.photos.length){
+        hoPhotos = takeForm.photos.slice();
+      }
     }
   }
 
