@@ -11895,14 +11895,7 @@ function getVehiclesNeedingService(withinDays){
         results.push({vid:v.id, plate:v.plate||'', driver:v.driver?.name||'', driverPhone:v.driver?.phone||'', driverEmail:v.driver?.email||'', type:svcType, dueDate:nextSvcDate.toISOString().split('T')[0], daysLeft:diff, vehicle:v});
       }
     }
-    // Check vehicle license (test)
-    if(v.licenseExp){
-      var ld=new Date(v.licenseExp);ld.setHours(0,0,0,0);
-      var ldiff=Math.round((ld-today)/(1000*60*60*24));
-      if(ldiff<=withinDays){
-        results.push({vid:v.id, plate:v.plate||'', driver:v.driver?.name||'', driverPhone:v.driver?.phone||'', driverEmail:v.driver?.email||'', type:'טסט רישוי', dueDate:v.licenseExp, daysLeft:ldiff, vehicle:v});
-      }
-    }
+    // Test (טסט) removed from scheduling - only services
   });
   results.sort(function(a,b){return a.daysLeft-b.daysLeft;});
   return results;
