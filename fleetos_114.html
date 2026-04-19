@@ -4745,10 +4745,10 @@ function renderCal(){
 let vFilter='all',vSearch='';
 function docsIcon(vid){
   const vd=vehicleDocs[vid]||{};
-  const missing=MANDATORY_DOCS.filter(d=>!vd[d.key]).length;
-  return missing===0
-    ?'<span style="color:#16a34a;font-size:16px;font-weight:700">✓</span>'
-    :`<span style="color:#dc2626;font-size:14px">✗ חסרים ${missing}</span>`;
+  const missingDocs=MANDATORY_DOCS.filter(d=>!vd[d.key]);
+  if(missingDocs.length===0) return '<span style="color:#16a34a;font-size:14px;font-weight:700">✓ תקין</span>';
+  const names=missingDocs.map(d=>'<span style="display:inline-block;background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:500;margin:1px">✗ '+d.label+'</span>').join('');
+  return '<div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">'+names+'</div>';
 }
 function altBadge(vid){
   const s = getAltVehicleStatus(vid);
