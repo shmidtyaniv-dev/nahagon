@@ -538,12 +538,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div class="mc-val" style="color:var(--red)">1</div>
           <div class="mc-sub">במעקב</div>
         </div>
-        <div class="mc" onclick="showDocsModal()">
-          <div class="mc-bar" style="background:var(--t3)"></div>
-          <div class="mc-lbl">חסרי מסמכים</div>
-          <div class="mc-val" style="color:var(--t2)" id="mv-docs">2</div>
-          <div class="mc-sub">נהגים</div>
-        </div>
         <div class="mc" onclick="go('calendar',q('[dp=calendar]'))">
           <div class="mc-bar" style="background:var(--blue)"></div>
           <div class="mc-lbl">טיפולים וטסטים</div>
@@ -4768,7 +4762,8 @@ function altBadge(vid){
 }
 function dRow(v){return`<tr onclick="openDet(${v.id})" style="cursor:pointer"><td><div class="dc"><div class="av">${inits(v.driver.name)}</div>${v.driver.name}${altBadge(v.id)}</div></td><td>${renderPlate(v.plate)}</td><td>${v.make} ${v.model}</td><td>${kmS(v)}</td><td>${lcS(v.licenseExp)}</td><td>${docsIcon(v.id)}</td></tr>`}
 function fRow(v){return`<tr onclick="openDet(${v.id})" style="cursor:pointer"><td><div class="dc"><div class="av">${inits(v.driver.name)}</div>${v.driver.name}${altBadge(v.id)}</div></td><td>${renderPlate(v.plate)}</td><td>${v.make} ${v.model}</td><td>${kmS(v)}</td><td>${lcS(v.licenseExp)}</td><td>${docsIcon(v.id)}</td><td><button class="btn btn-l btn-sm" onclick="event.stopPropagation();openDet(${v.id})">פרטים ←</button></td></tr>`}
-function fil(){let r=vehicles;if(vSearch)r=r.filter(v=>v.plate.toLowerCase().includes(vSearch)||v.driver.name.toLowerCase().includes(vSearch)||v.make.toLowerCase().includes(vSearch));return r}
+function fil(){let r=vehicles.slice();if(vSearch)r=r.filter(v=>v.plate.toLowerCase().includes(vSearch)||v.driver.name.toLowerCase().includes(vSearch)||v.make.toLowerCase().includes(vSearch));r.sort(function(a,b){var aMissing=hasMissingDocs(a)?0:1;var bMissing=hasMissingDocs(b)?0:1;return aMissing-bMissing;});return r}
+function hasMissingDocs(v){if(!v)return false;var vd=vehicleDocs[v.id]||{};var missing=MANDATORY_DOCS.filter(function(d){return!vd[d.key];});return missing.length>0;}
 function renderDash(){
   const r=fil();
   id('dash-cnt').textContent=r.length;
@@ -8318,7 +8313,7 @@ function go(name,el){
 }
 
 function refresh(){
-  id('mv-docs').textContent=vehicles.filter(v=>!v.docs).length;
+  // mv-docs removed from dashboard
   // Count: treatments (services) + tests (vehicle licenses) within 30 days
   let treatmentCount = 0;
   let testCount = 0;
