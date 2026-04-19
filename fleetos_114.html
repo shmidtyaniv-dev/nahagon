@@ -6782,32 +6782,30 @@ const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספ�
 
 // Payment links by issuer
 function getViolPaymentInfo(issuer){
-  if(!issuer) return null;
+  if(!issuer || issuer==='—') return null;
   // Police
-  if(issuer.includes('משטר')||issuer==='police'||issuer==='משטרת ישראל'){
+  if(issuer.includes('משטר')||issuer.toLowerCase()==='police'||issuer==='משטרת ישראל'){
     return {url:'https://ecom.gov.il/voucherspa/input/318', label:'תשלום דוח משטרתי'};
   }
-  // Any municipality or council - generate search link for their payment page
-  if(issuer.includes('עירי')||issuer.includes('מועצ')||issuer.includes('רשות')){
-    var cityName = issuer.replace(/עיריית\s*/,'').replace(/עירית\s*/,'').replace(/מועצת\s*/,'').replace(/מועצה\s*/,'').replace(/רשות\s*/,'').trim();
-    return {url:'https://www.google.com/search?q='+encodeURIComponent('תשלום דוח חניה '+issuer), label:'תשלום דוח - '+issuer};
+  // Any issuer that's not police - assume municipal/local authority
+  // Works for: "עיריית כרמיאל", "כרמיאל", "מועצת חוף הכרמל", etc.
+  var searchTerm = issuer;
+  if(!issuer.includes('עירי')&&!issuer.includes('מועצ')&&!issuer.includes('רשות')){
+    searchTerm = 'עיריית '+issuer;
   }
-  return null;
+  return {url:'https://www.google.com/search?q='+encodeURIComponent('תשלום דוח חניה '+searchTerm), label:'תשלום דוח - '+issuer};
 }
 const SVC_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} טיפול בתאריך {תאריך}.\nסוג: {סוג}\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const TEST_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} טסט בתאריך {תאריך}.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
-// Auto-migrate old saved templates that still have long link text
+// Auto-migrate: always reset saved templates to use latest defaults (v2)
 (function(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  var changed=false;
-  if(s.violMsgTemplate && (s.violMsgTemplate.indexOf('בלינק הבא')!==-1 || s.violMsgTemplate.indexOf('לחץ כאן')!==-1 || s.violMsgTemplate.indexOf('👉')!==-1)){
-    delete s.violMsgTemplate; changed=true;
-  }
-  if(s.violMsgTransferTemplate && (s.violMsgTransferTemplate.indexOf('בלינק הבא')!==-1 || s.violMsgTransferTemplate.indexOf('לחץ כאן')!==-1 || s.violMsgTransferTemplate.indexOf('👉')!==-1)){
-    delete s.violMsgTransferTemplate; changed=true;
-  }
-  if(changed) localStorage.setItem('fleetSettings',JSON.stringify(s));
+  if(s._tplVersion!==2){
+    delete s.violMsgTemplate;
+    delete s.violMsgTransferTemplate;
+    s._tplVersion=2;
+    localStorage.setItem('fleetSettings',JSON.stringify(s));
 })();
 
 function getViolApproveUrl(token){
