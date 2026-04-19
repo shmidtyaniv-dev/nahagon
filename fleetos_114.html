@@ -425,6 +425,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .ho-fuel-btn.active{background:var(--gd)!important;color:#fff!important;border-color:var(--gd)!important;font-weight:700!important}
 .ho-view-btn.active{background:var(--gd)!important;color:#fff!important;border-color:var(--gd)!important}
 </style>
+<script>
+(function(){var q=window.location.search;if(q.indexOf('a=')>0||q.indexOf('approve=')>0||q.indexOf('du=')>0||q.indexOf('docupload=')>0){document.documentElement.style.visibility='hidden';}})();
+</script>
 </head>
 <body>
 <div class="sb-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
@@ -2111,6 +2114,7 @@ try{
   // Hide entire app and show upload page
   document.addEventListener('DOMContentLoaded', function(){
     document.body.innerHTML = '';
+    document.documentElement.style.visibility = 'visible';
     document.body.style.cssText = 'margin:0;padding:0;background:#f5f5f0;font-family:Heebo,sans-serif;direction:rtl';
     const wrap = document.createElement('div');
     wrap.style.cssText = 'max-width:460px;margin:0 auto;padding:20px 16px;min-height:100vh';
@@ -7107,8 +7111,9 @@ function checkViolApproval(){
   const token=params.get('a')||params.get('approve');
   if(!token)return false;
 
-  // Show approval page
+  // Show approval page (hide app, reveal body)
   document.querySelector('.app').style.display='none';
+  document.documentElement.style.visibility='visible';
   const page=document.createElement('div');
   page.id='approval-page';
   page.style.cssText='min-height:100vh;background:#f2f5f2;display:flex;align-items:center;justify-content:center;direction:rtl;font-family:Heebo,Arial,sans-serif;padding:16px';
