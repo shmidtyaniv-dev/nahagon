@@ -1976,6 +1976,15 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </label>
       </div>
 
+      <!-- Vehicle photo -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div id="fa-photo-preview" onclick="document.getElementById('fa-photo-input').click()" style="width:52px;height:52px;background:var(--bg2);border:2px dashed var(--bdr2);border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;flex-shrink:0" title="העלה תמונת רכב">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="1.5" width="22" height="22"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <div style="font-size:11px;color:var(--t3)">לחץ להעלאת תמונת רכב (אופציונלי)</div>
+        <input type="file" id="fa-photo-input" accept="image/*" style="display:none" onchange="previewAddVehiclePhoto(this)">
+      </div>
+
       <!-- AI SCAN: רישיון רכב -->
       <div id="scan-vehicle-zone" class="scan-zone" style="margin-bottom:12px;background:linear-gradient(135deg,#f0fdf4 0%,#dbeafe 100%);border:2px dashed #7DC242;border-radius:10px;padding:14px;text-align:center;transition:all .25s">
         <label for="fa-vehicle-doc" style="cursor:pointer;display:block">
@@ -2449,7 +2458,8 @@ function renderBrandIcon(make){
   if(v && v.photo){
     el.style.background='transparent';
     el.style.padding='0';
-    el.innerHTML=`<img src="${v.photo}" style="width:52px;height:52px;object-fit:cover;border-radius:12px">`;
+    el.innerHTML=`<img src="${v.photo}" style="width:52px;height:52px;object-fit:cover;border-radius:12px"><div onclick="event.stopPropagation();removeVehiclePhoto()" style="position:absolute;top:-4px;left:-4px;width:16px;height:16px;background:rgba(220,38,38,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:10px;line-height:1">×</div>`;
+    el.style.position='relative';
     return;
   }
   const svg=getBrandLogo(make);
@@ -2471,13 +2481,7 @@ function uploadVehiclePhoto(){
   inp.type='file';inp.accept='image/*';inp.style.display='none';
   inp.onchange=function(){
     var file=inp.files[0];if(!file)return;
-    createImageBitmap(file).then(function(bmp){
-      var canvas=document.createElement('canvas');
-      var w=bmp.width,h=bmp.height,max=400;
-      if(w>max||h>max){var ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
-      canvas.width=w;canvas.height=h;
-      canvas.getContext('2d').drawImage(bmp,0,0,w,h);
-      var data=canvas.toDataURL('image/jpeg',.8);
+    compressVehiclePhoto(file,function(data){
       var v=vehicles.find(function(x){return x.id===_currentVid;});
       if(v){
         v.photo=data;
@@ -2485,11 +2489,47 @@ function uploadVehiclePhoto(){
         renderBrandIcon(v.make);
         showToast('✓ תמונת רכב עודכנה');
       }
-    }).catch(function(){showToast('שגיאה בהעלאת תמונה');});
+    });
     try{document.body.removeChild(inp);}catch(e){}
   };
   document.body.appendChild(inp);
   inp.click();
+}
+
+function removeVehiclePhoto(){
+  var v=vehicles.find(function(x){return x.id===_currentVid;});
+  if(!v) return;
+  v.photo=null;
+  try{if(typeof persistVehiclesDebounced==='function')persistVehiclesDebounced();}catch(e){}
+  renderBrandIcon(v.make);
+  showToast('תמונה הוסרה');
+}
+
+function compressVehiclePhoto(file,cb){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      var w=img.width,h=img.height,max=400;
+      if(w>max||h>max){var ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      cb(canvas.toDataURL('image/jpeg',.8));
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+var _pendingVehiclePhoto=null;
+function previewAddVehiclePhoto(input){
+  var file=input.files[0];if(!file)return;
+  compressVehiclePhoto(file,function(data){
+    _pendingVehiclePhoto=data;
+    var el=document.getElementById('fa-photo-preview');
+    if(el) el.innerHTML='<img src="'+data+'" style="width:52px;height:52px;object-fit:cover;border-radius:10px">';
+  });
 }
 
 /* ─ SETTINGS / LOGO / REP ─ */
@@ -6230,8 +6270,10 @@ function addVehicle(){
     nextServiceType,nextSvcDate,tolls,
     dealEnd:delivery?addY(delivery,3):'',
     driver:{name:dname,id:id('fa-did').value.trim(),phone:id('fa-dphone').value.trim(),email:id('fa-demail').value.trim(),licenseExp:id('fa-dlic').value,address:id('fa-daddress').value.trim()},
-    family:[],history:histEntry,historyLog:hLog,docs:false
+    family:[],history:histEntry,historyLog:hLog,docs:false,
+    photo:_pendingVehiclePhoto||null
   });
+  _pendingVehiclePhoto=null;
   // Attach scanned license files to vehicleDocs (sync from AI scan)
   if(_pendingScannedVehicleDoc || _pendingScannedDriverDoc){
     if(!vehicleDocs[newVid]) vehicleDocs[newVid] = {};
