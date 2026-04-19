@@ -11917,7 +11917,8 @@ function saveServiceBookings(arr){
 
 function renderScheduling(){
   var el=document.getElementById('scheduling-content');
-  if(!el) return;
+  if(!el){console.error('scheduling-content not found');return;}
+  try{
   var needs=getVehiclesNeedingService(60);
   var bookings=getServiceBookings();
   var settings=getSchedulingSettings();
@@ -11978,7 +11979,7 @@ function renderScheduling(){
     html+='</tr></thead><tbody>';
 
     needs.forEach(function(n){
-      var booking=bookings.find(function(b){return b.vid===n.vid && b.serviceType===n.type && b.status!=='cancelled';});
+      var booking=bookings.find(function(b){return String(b.vid)===String(n.vid) && b.serviceType===n.type && b.status!=='cancelled';});
       var statusHtml='';
       var actionHtml='';
       if(!booking){
@@ -12029,6 +12030,7 @@ function renderScheduling(){
   }
 
   el.innerHTML=html;
+  }catch(err){console.error('renderScheduling error:',err);el.innerHTML='<div style="padding:20px;color:#dc2626">שגיאה בטעינת לוח טיפולים: '+err.message+'</div>';}
 }
 
 function renderSchedulingMiniCal(mo,bookingsByDate,settings){
@@ -12067,7 +12069,8 @@ function renderSchedulingMiniCal(mo,bookingsByDate,settings){
 }
 
 function sendServiceBooking(vid, serviceType, dueDate){
-  var v=vehicles.find(function(x){return x.id===vid;});
+  vid=typeof vid==='string'?parseInt(vid)||vid:vid;
+  var v=vehicles.find(function(x){return x.id===vid||String(x.id)===String(vid);});
   if(!v){showToast('רכב לא נמצא');return;}
   var driverName=v.driver?.name||'';
   var driverPhone=v.driver?.phone||'';
