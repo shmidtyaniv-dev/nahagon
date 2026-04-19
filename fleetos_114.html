@@ -6892,8 +6892,8 @@ function saveViolation(){
   }
 }
 
-const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך}.\nגורם נותן הדוח: {מקור}\n\n{תשלום}\n{קובץ}\nלאישור קבלת ידיעת הדוח: {לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
-const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך} הוסב על שמך.\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום: {לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך}.\nגורם נותן הדוח: {מקור}\n\n{תשלום}\n{קובץ}\nלאישור על קיום הדוח, חובה ללחוץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך} הוסב על שמך.\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאישור על הסבת הדוח על שמך, חובה ללחוץ כאן:\n{לינק}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום בקישור למעלה.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
 // Payment links - direct URLs for Israeli municipalities
 const CITY_PAYMENT_MAP = {
@@ -6995,10 +6995,10 @@ const TEST_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} 
 // Auto-migrate: always reset saved templates to use latest defaults (v2)
 (function(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  if(s._tplVersion!==3){
+  if(s._tplVersion!==4){
     delete s.violMsgTemplate;
     delete s.violMsgTransferTemplate;
-    s._tplVersion=3;
+    s._tplVersion=4;
     localStorage.setItem('fleetSettings',JSON.stringify(s));
   }
 })();
@@ -7009,17 +7009,13 @@ function getViolApproveUrl(token){
   if(!base){
     // If running on a proper web URL (http/https), use it; otherwise fallback to Netlify
     if(location.protocol==='http:'||location.protocol==='https:'){
-      base=location.origin+location.pathname;
+      base=location.origin+'/';
     }else{
       base='https://celebrated-rugelach-b2952e.netlify.app/';
     }
   }
-  // Strip existing query/hash from base
   base=base.replace(/[?#].*$/,'');
-  // Ensure trailing slash before the query
-  if(!base.endsWith('/') && !base.endsWith('.html')){
-    base+='/';
-  }
+  if(!base.endsWith('/')) base+='/';
   return base+'?a='+token;
 }
 
@@ -8320,7 +8316,7 @@ function sendDocRequest(vid, docKey, docLabel){
       status: 'pending'
     }).catch(function(e){console.error('docRequest save error:',e);});
   }
-  const uploadUrl = location.origin + location.pathname + '?du=' + token;
+  const uploadUrl = location.origin + '/?du=' + token;
   const waMsg = 'שלום ' + driverName + ',\nחסר מסמך: *' + docLabel + '*\nרכב: ' + plate + '\n\nלהעלאת המסמך, לחץ כאן:\n' + uploadUrl;
   const emailMsg = 'שלום ' + driverName + ',\nחסר מסמך: ' + docLabel + '\nרכב: ' + plate;
   const emailBody = emailMsg + '\n\nלהעלאת המסמך, לחץ כאן:\n' + uploadUrl;
