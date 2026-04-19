@@ -2748,7 +2748,7 @@ function sendKmRequest(vid){
     }).catch(function(e){console.error('kmRequest save error:',e);});
   }
   var kmUrl=location.origin+'/?km='+token;
-  var waMsg='שלום '+driverName+',\n\nנא לעדכן ק"מ נוכחי ברכב '+plate+'.\n\nלעדכון ק"מ, לחץ כאן:\n'+kmUrl+'\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+  var waMsg='שלום '+driverName+',\n\nנא לעדכן ק"מ נוכחי ברכב '+plate+'.\n\nלעדכון ק"מ:\n'+kmUrl+'\n\nתודה,\nמרכז הרכב של מור בית השקעות';
   _kmReqData={waUrl:'https://wa.me/'+driverPhone+'?text='+encodeURIComponent(waMsg), mailUrl:'mailto:'+driverEmail+'?subject='+encodeURIComponent('בקשת עדכון ק"מ - '+plate)+'&body='+encodeURIComponent(waMsg), copyUrl:kmUrl};
   var ex=document.getElementById('km-req-modal');if(ex)ex.remove();
   var m=document.createElement('div');
