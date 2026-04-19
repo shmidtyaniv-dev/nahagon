@@ -2106,7 +2106,7 @@ try{
 // ── PUBLIC DOC UPLOAD PAGE ──
 (function(){
   const params = new URLSearchParams(location.search);
-  const token = params.get('docupload');
+  const token = params.get('du')||params.get('docupload');
   if(!token || !db) return;
   // Hide entire app and show upload page
   document.addEventListener('DOMContentLoaded', function(){
@@ -6775,8 +6775,8 @@ function saveViolation(){
   }
 }
 
-const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך}.\nגורם נותן הדוח: {מקור}\n\nלאישור קבלת ההודעה, לחץ כאן:\n{לינק}\n\n{תשלום}\n{קובץ}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
-const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך} הוסב על שמך.\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאישור קבלת ההודעה על הסבת הדוח, לחץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך}.\nגורם נותן הדוח: {מקור}\n\n{תשלום}\n{קובץ}\n👉 *לאישור קבלת ידיעת הדוח, אני מאשר:*\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך} הוסב על שמך.\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\n👉 *לאישור קבלת הסבת הדוח, אני מאשר:*\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
 // Payment links by issuer
 const VIOL_PAYMENT_LINKS = {
@@ -6827,7 +6827,7 @@ function getViolApproveUrl(token){
   if(!base.endsWith('/') && !base.endsWith('.html')){
     base+='/';
   }
-  return base+'?approve='+token;
+  return base+'?a='+token;
 }
 
 function fillViolMsgTemplate(tpl,data){
@@ -6900,7 +6900,7 @@ function sendViolToDriver(vid,stage){
   const sentAtField=stage==='transfer'?'transferSentAt':'noticeSentAt';
   const now=new Date();
   const sentDateStr=now.toLocaleDateString('he-IL')+' '+now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-  v[tokenField]='APR-'+stage+'-'+v.id+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  v[tokenField]='APR-'+stage+'-'+v.id+'-'+Date.now().toString(36).slice(-4)+Math.random().toString(36).slice(2,4);
   v[approvedField]=null; // Clear any previous approval for this stage
   v[sentAtField]=sentDateStr; // Track when we sent the notice
   // Keep legacy field in sync for backwards compatibility
@@ -7106,7 +7106,7 @@ function violCopyLink(token){
 // Check for approval on page load
 function checkViolApproval(){
   const params=new URLSearchParams(location.search);
-  const token=params.get('approve');
+  const token=params.get('a')||params.get('approve');
   if(!token)return false;
 
   // Show approval page
@@ -8064,7 +8064,7 @@ function sendDocRequest(vid, docKey, docLabel){
   const driverEmail = v.driver?.email||'';
   const plate = v.plate||'';
   // Build upload token: vid_docKey_timestamp
-  const token = btoa(vid+'|'+docKey+'|'+Date.now()).replace(/=/g,'');
+  const token = vid+'_'+docKey+'_'+Date.now().toString(36).slice(-5);
   // Save token to Firestore so the upload page can validate
   if(db){
     db.collection('docRequests').doc(token).set({
@@ -8077,7 +8077,7 @@ function sendDocRequest(vid, docKey, docLabel){
       status: 'pending'
     }).catch(function(e){console.error('docRequest save error:',e);});
   }
-  const uploadUrl = location.origin + location.pathname + '?docupload=' + token;
+  const uploadUrl = location.origin + location.pathname + '?du=' + token;
   const waMsg = 'שלום ' + driverName + ',\nחסר מסמך: *' + docLabel + '*\nרכב: ' + plate + '\n\nלהעלאת המסמך, לחץ כאן:\n' + uploadUrl;
   const emailMsg = 'שלום ' + driverName + ',\nחסר מסמך: ' + docLabel + '\nרכב: ' + plate;
   const emailBody = emailMsg + '\n\nלהעלאת המסמך, לחץ כאן:\n' + uploadUrl;
