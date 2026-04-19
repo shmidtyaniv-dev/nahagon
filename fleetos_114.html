@@ -1207,7 +1207,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <button class="vc-tab-btn" onclick="vcTab('violations',this)">דוחות תנועה <span id="vc-viol-badge" style="display:none;background:var(--col-red,#E2001A);color:#fff;font-size:14px;font-weight:700;padding:1px 5px;border-radius:999px;margin-right:3px"></span></button>
         <button class="vc-tab-btn" onclick="vcTab('accidents',this)">תאונות</button>
         <button class="vc-tab-btn" onclick="vcTab('handover',this)">📋 מסירה וקבלה</button>
-        <button class="vc-tab-btn" onclick="vcTab('history',this)">🔧 טיפולים</button>
+        <button class="vc-tab-btn" onclick="vcTab('history',this)">📜 היסטוריה</button>
       </div>
 
       <!-- OVERVIEW TAB -->
@@ -1263,8 +1263,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <!-- TREATMENTS TAB -->
       <div id="vct-history" class="vc-tab-panel" style="display:none">
         <div class="sh" style="margin-bottom:10px">
-          <h2>טיפולים ותיעוד</h2>
-          <span class="cp" id="vc-history-count">0</span>
+          <h2>היסטוריה</h2>
           <span class="sp"></span>
           <button class="btn btn-p btn-sm" onclick="openAddHistoryModal(_currentVid)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1275,6 +1274,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           ℹ️ רשימת הטיפולים והטסטים שבוצעו ברכב. סוגי טיפול וטסט נוספים אוטומטית כשמשימה מסומנת כבוצעה.
         </div>
         <div id="vc-history-list"></div>
+        <div id="vc-handover-history" style="margin-top:18px"></div>
       </div>
 
 
@@ -4641,8 +4641,6 @@ function renderVcHistory(vid){
   if(!v.historyLog) v.historyLog = [];
   // Sort by createdAt desc
   const list = v.historyLog.slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
-  const cnt = document.getElementById('vc-history-count');
-  if(cnt) cnt.textContent = list.length;
   const el = document.getElementById('vc-history-list');
   if(!el) return;
   if(!list.length){
@@ -4676,6 +4674,62 @@ function renderVcHistory(vid){
       </div>
     </div>`;
   }).join('');
+  // Render handover history below
+  renderVcHandoverHistory(vid);
+}
+
+function renderVcHandoverHistory(vid){
+  const el = document.getElementById('vc-handover-history');
+  if(!el) return;
+  const v = vehicles.find(x=>x.id===vid);
+  if(!v) return;
+  // Find all handover forms for this vehicle
+  const vForms = hoForms2.filter(f=>f.vehicleId===vid).slice().sort((a,b)=>new Date(b.createdAt||b.date||0)-new Date(a.createdAt||a.date||0));
+  if(!vForms.length){ el.innerHTML=''; return; }
+  // Pair take+return forms
+  const pairs = [];
+  const used = new Set();
+  const takes = vForms.filter(f=>f.mode==='take');
+  takes.forEach(tk=>{
+    const ret = vForms.find(f=>f.mode==='return'&&f.type===tk.type&&f.linkedTakeId===tk.id&&!used.has(f.id));
+    if(ret) used.add(ret.id);
+    used.add(tk.id);
+    pairs.push({take:tk, ret:ret||null});
+  });
+  // Add orphan returns
+  vForms.filter(f=>f.mode==='return'&&!used.has(f.id)).forEach(f=>{ pairs.push({take:null,ret:f}); });
+
+  const typeIcon = {mission:'🚗',loaner:'🔄',bridge:'🌉'};
+  const typeName = {mission:'משימה',loaner:'רכב חלופי',bridge:'רכב גישור'};
+  const rows = pairs.map(p=>{
+    const type = (p.take||p.ret).type;
+    const icon = typeIcon[type]||'📋';
+    const name = typeName[type]||'מסירה';
+    const fromDate = p.take ? fd(p.take.date) : '—';
+    const toDate = p.ret ? fd(p.ret.date) : '<span style="color:#d97706">פתוח</span>';
+    const isClosed = !!(p.take && p.ret);
+    const statusBg = isClosed ? '#dcfce7' : '#fef3c7';
+    const statusClr = isClosed ? '#166534' : '#92400e';
+    const statusTxt = isClosed ? 'הושלם' : 'פתוח';
+    const altPlate = (p.take&&p.take.altPlate) ? ` · לוחית: ${p.take.altPlate}` : '';
+    const purpose = (p.take&&p.take.purpose) ? `<div style="font-size:11px;color:var(--t2);margin-top:3px">${p.take.purpose}</div>` : '';
+    return `<div style="background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:11px;padding:3px 9px;border-radius:999px;background:#e0e7ff;color:#3730a3;font-weight:600">${icon} ${name}</span>
+        <span style="font-size:10px;padding:2px 7px;border-radius:999px;background:${statusBg};color:${statusClr};font-weight:600">${statusTxt}</span>
+        <span style="font-size:11px;color:var(--t3)">${altPlate}</span>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:6px;font-size:12px">
+        <div><span style="color:var(--t3)">מ:</span> <span style="color:var(--t1);font-weight:500">${fromDate}</span></div>
+        <div><span style="color:var(--t3)">עד:</span> <span style="color:var(--t1);font-weight:500">${toDate}</span></div>
+      </div>
+      ${purpose}
+    </div>`;
+  }).join('');
+  el.innerHTML = `<div style="margin-top:6px;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+    <span style="font-size:13px;font-weight:600;color:var(--t1)">היסטוריית מסירות</span>
+    <span style="font-size:11px;color:var(--t3)">(${pairs.length})</span>
+  </div>${rows}`;
 }
 
 function openAddHistoryModal(vid){
