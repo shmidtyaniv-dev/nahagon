@@ -6178,6 +6178,7 @@ async function scanVehicleDoc(input){
 החזר JSON בלבד ללא שום טקסט נוסף:
 {"plate":"מספר הרכב","licenseExp":"DD/MM/YYYY","make":"יצרן","model":"דגם"}`
     );
+    if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה — הגדר מפתח API)';st.style.color='var(--t3)';sp.style.display='none';return;}
     if(p.plate)id('fa-plate').value=p.plate;
     if(p.make)id('fa-make').value=p.make;
     if(p.model)id('fa-model').value=p.model;
@@ -6216,6 +6217,7 @@ async function scanDriverDoc(input){
 החזר JSON בלבד ללא שום טקסט נוסף:
 {"fullName":"שם מלא","licenseExp":"DD/MM/YYYY","id":"מספר-תז"}`
     );
+    if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה — הגדר מפתח API)';st.style.color='var(--t3)';sp.style.display='none';return;}
     if(p.fullName)id('fa-dname').value=p.fullName;
     if(p.id)id('fa-did').value=p.id;
     const d=toIsoDate(p.licenseExp);
@@ -8606,6 +8608,7 @@ async function scanFamilyDriverDoc(input){
 החזר JSON בלבד:
 {"fullName":"שם מלא","licenseExp":"DD/MM/YYYY","id":"מספר-תז"}`
     );
+    if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה)';st.style.color='#666';sp.style.display='none';return;}
     if(p.fullName) document.getElementById('fm-name').value=p.fullName;
     if(p.id) document.getElementById('fm-id').value=p.id;
     const d=toIsoDate(p.licenseExp);
@@ -11955,6 +11958,7 @@ async function scanInsuranceDoc(vid,file){
   const toast=document.createElement('div');toast.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1A4A3A;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;z-index:9999;direction:rtl';toast.textContent='🔍 סורק מסמך ביטוח...';document.body.appendChild(toast);
   try{
     const p=await callClaudeWithDoc(file,'זהו מסמך ביטוח רכב. חלץ תאריך תפוגה. החזר JSON בלבד: {"insuranceExp":"DD/MM/YYYY"} אם לא נמצא: {"insuranceExp":null}');
+    if(!p){toast.textContent='המסמך הועלה (סריקה לא זמינה)';setTimeout(()=>toast.remove(),3500);openDet(vid);vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]);return;}
     if(p.insuranceExp){const iso=toIsoDate(p.insuranceExp);if(iso){if(!vehicleDocs[vid])vehicleDocs[vid]={};vehicleDocs[vid]['insurance_exp']=iso;toast.textContent='✓ תוקף ביטוח זוהה: '+fd(iso);}else toast.textContent='⚠️ לא זוהה תאריך — בדוק ידנית';}
     else toast.textContent='⚠️ לא זוהה תאריך — בדוק ידנית';
   }catch(e){toast.textContent='שגיאה בסריקה: '+e.message;console.error(e);}
