@@ -7509,7 +7509,7 @@ function sendViolToDriver(vid,stage){
   const s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   const tpl=stage==='transfer'?(s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT):(s.violMsgTemplate||VIOL_MSG_DEFAULT);
   const includeFileDefault=s.violIncludeFile!==false;
-  const hasFile=!!v.fileData;
+  const hasFile=!!(v.fileData||v._hasFile||_violFileCache[v.id]);
 
   // Show send modal
   const ex=document.getElementById('viol-send-modal');if(ex)ex.remove();
@@ -7591,7 +7591,8 @@ function violSendWhatsApp(token){
   const tpl=stage==='transfer'?(s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT):(s.violMsgTemplate||VIOL_MSG_DEFAULT);
   const attachCb=document.getElementById('viol-send-attach-file');
   const attachFile=attachCb?attachCb.checked:false;
-  const fileLine=attachFile&&v.fileData?'* קובץ הדוח יישלח בנפרד (הורד והעלה ידנית בוואטסאפ)':'';
+  const hasFile=!!(v.fileData||v._hasFile||_violFileCache[v.id]);
+  const fileLine=attachFile&&hasFile?'* קובץ הדוח יישלח בנפרד':'';
   const payInfo=getViolPaymentInfo(v.issuer);
   const paymentLine=payInfo?('לתשלום הדוח באינטרנט:\n'+payInfo.url):'';
   const msg=fillViolMsgTemplate(tpl,{driverName:veh.driver.name,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine,paymentLine});
@@ -7616,8 +7617,9 @@ function violSendWhatsApp(token){
   openExternalUrl(waUrl);
   showToast('נפתח וואטסאפ');
 
-  if(attachFile&&v.fileData){
-    setTimeout(function(){violDownloadFile(v.id);},800);
+  // Auto-download file so user can attach it in WhatsApp
+  if(attachFile&&hasFile){
+    setTimeout(function(){violDownloadFile(v.id);showToast('📥 קובץ הדוח הורד — צרף אותו בוואצאפ');},800);
   }
 }
 
@@ -7634,7 +7636,8 @@ function violSendEmail(token){
   const tpl=stage==='transfer'?(s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT):(s.violMsgTemplate||VIOL_MSG_DEFAULT);
   const attachCb=document.getElementById('viol-send-attach-file');
   const attachFile=attachCb?attachCb.checked:false;
-  const fileLine=attachFile&&v.fileData?'* אנא צרף/י את קובץ הדוח המצורף למייל זה':'';
+  const hasFileE=!!(v.fileData||v._hasFile||_violFileCache[v.id]);
+  const fileLine=attachFile&&hasFileE?'* אנא צרף/י את קובץ הדוח המצורף למייל זה':'';
   const payInfo=getViolPaymentInfo(v.issuer);
   const paymentLine=payInfo?('לתשלום הדוח באינטרנט:\n'+payInfo.url):'';
   const body=fillViolMsgTemplate(tpl,{driverName:veh.driver.name,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine,paymentLine});
@@ -7655,19 +7658,21 @@ function violSendEmail(token){
 
   showToast('נפתח לקוח מייל');
 
-  if(attachFile&&v.fileData){
-    setTimeout(function(){violDownloadFile(v.id);showToast('הקובץ הורד - צרף אותו ידנית למייל');},800);
+  if(attachFile&&hasFileE){
+    setTimeout(function(){violDownloadFile(v.id);showToast('📥 קובץ הדוח הורד — צרף אותו למייל');},800);
   }
 }
 
 function violDownloadFile(vid){
   const v=violationsList.find(function(x){return x.id===vid;});
-  if(!v||!v.fileData){showToast('אין קובץ מצורף');return;}
+  if(!v){showToast('דוח לא נמצא');return;}
+  var cached=_violFileCache[vid];
+  var data=v.fileData||(cached&&cached.data);
+  if(!data){showToast('אין קובץ מצורף (זמין רק בסשן הנוכחי)');return;}
   const a=document.createElement('a');
-  a.href=v.fileData;
-  a.download=v.fileName||('דוח-'+v.num);
+  a.href=data;
+  a.download=v.fileName||v._fileName||(cached&&cached.name)||('דוח-'+v.num);
   document.body.appendChild(a);a.click();document.body.removeChild(a);
-  showToast('הקובץ הורד');
 }
 
 function violCopyLink(token){
