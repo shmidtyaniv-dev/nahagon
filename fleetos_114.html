@@ -426,7 +426,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .ho-view-btn.active{background:var(--gd)!important;color:#fff!important;border-color:var(--gd)!important}
 </style>
 <script>
-(function(){var q=window.location.search;if(q.indexOf('a=')>0||q.indexOf('approve=')>0||q.indexOf('du=')>0||q.indexOf('docupload=')>0){document.documentElement.style.visibility='hidden';}})();
+(function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')){document.documentElement.style.visibility='hidden';}})();
 </script>
 </head>
 <body>
