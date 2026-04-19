@@ -603,7 +603,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
     <!-- VIOLATIONS -->
     <div class="page" id="page-violations">
-      <div class="sh"><h2>דוחות תנועה</h2><span class="cp" id="viol-count">0</span><span class="sp"></span>
+      <div class="sh"><h2>דוחות תנועה</h2><span class="sp"></span>
         <div style="display:flex;gap:6px;align-items:center">
           <select id="viol-filter" onchange="renderViolations()" style="font-size:14px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:var(--rs);background:var(--card);color:var(--t1);font-family:inherit">
             <option value="all">הכל</option>
@@ -6459,7 +6459,7 @@ const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'
 function renderViolations(){
   const filter=id('viol-filter').value;
   const list=filter==='all'?violationsList:violationsList.filter(v=>v.status===filter);
-  id('viol-count').textContent=list.length;
+  // count removed from UI
   if(!list.length){id('violations-list').innerHTML=`<div style="text-align:center;padding:28px 0;color:var(--t3);font-size:15px">אין דוחות</div>`;return}
   id('violations-list').innerHTML=`<div class="tw"><table><thead><tr>
     <th>מ. דוח</th><th>שם הנהג</th><th>רכב בציר</th><th>מקור הדוח</th><th>תאריך עבירה</th><th>סטטוס</th><th>תיעודים</th><th></th>
