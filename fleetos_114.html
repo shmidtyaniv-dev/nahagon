@@ -7223,7 +7223,18 @@ function saveViolation(){
     };
     if(editId){Object.assign(violationsList.find(v=>v.id===editId),data);}
     else{violationsList.unshift({id:++violIdSeq,...data});}
-    if(typeof persistViolationsList==='function') persistViolationsList();
+    // Persist without fileData to Firestore (too large), keep locally
+    try{
+      var vid = editId || violIdSeq;
+      var v = violationsList.find(x=>x.id===vid);
+      if(v && db){
+        var syncData = Object.assign({}, v);
+        delete syncData.fileData; // too large for Firestore
+        syncPersistItem('violations', syncData);
+      }
+    }catch(e){console.error('persist error:',e);}
+    // Save full data to localStorage
+    try{localStorage.setItem('violationsList',JSON.stringify(violationsList));}catch(e){}
     // reset file input
     if(fileInput)fileInput.value='';
     const fnEl=document.getElementById('viol-file-name');
