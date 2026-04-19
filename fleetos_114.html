@@ -2641,7 +2641,7 @@ function renderVcViolations(vid){
             v.noticeApprovedAt?'<button onclick="sendViolTransferToDriver('+v.id+')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#991b1b;font-family:inherit">⚖️ הסבת דוח</button>':
             '<button onclick="sendViolNoticeToDriver('+v.id+')" style="background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#92400e;font-family:inherit">📢 עדכון על דוח</button>')+
           (v.fileData?'<button onclick="viewViolationDoc('+v.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px">📄 צפה</button>':'')+
-          '<button onclick="uploadPaymentReceipt('+v.id+')" title="אסמכתא תשלום" style="background:'+(v.paymentReceipt?'#dcfce7':'#fef3c7')+';border:1px solid '+(v.paymentReceipt?'#bbf7d0':'#fde68a')+';border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:'+(v.paymentReceipt?'#166534':'#92400e')+';font-family:inherit">'+(v.paymentReceipt?'✅ שולם':'💳 אסמכתא')+'</button>'+
+          (v.paymentReceipt?'<button onclick="viewPaymentReceipt('+v.id+')" style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-family:inherit">✅ שולם</button>':'')+
           '<button onclick="openViolationModal('+v.id+')" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--t2)">עריכה</button>'+
         '</div></td></tr>';
     }).join('')+'</tbody></table></div>';
@@ -5466,6 +5466,31 @@ function startAllSyncListeners(){
   Object.keys(_syncRegistry).forEach(function(name){ syncStartListener(name); });
   // Listen for incoming doc uploads from drivers
   startDocUploadsListener();
+  // Listen for payment receipts from drivers
+  startPaymentReceiptsListener();
+}
+
+function startPaymentReceiptsListener(){
+  if(!db) return;
+  db.collection('paymentReceipts').onSnapshot(function(snap){
+    snap.docChanges().forEach(function(change){
+      if(change.type==='added'||change.type==='modified'){
+        var d = change.doc.data();
+        var token = d.token || change.doc.id;
+        if(!d.data) return;
+        // Find violation by token
+        var v = violationsList.find(function(x){return x.approvalToken===token||x.noticeToken===token||x.transferToken===token;});
+        if(!v) return;
+        if(v.paymentReceipt) return; // already has receipt
+        v.paymentReceipt = {name:d.fileName||'אישור תשלום', type:d.fileType||'', data:d.data, uploadedAt:d.uploadedAt||new Date().toISOString()};
+        if(!v.logs) v.logs=[];
+        v.logs.push({date:new Date().toLocaleDateString('he-IL'), text:'💳 נהג העלה אישור תשלום: '+v.paymentReceipt.name});
+        try{ renderViolations(); }catch(e){}
+        try{ renderVcViolations(_currentVid); }catch(e){}
+        showToast('💳 אישור תשלום התקבל לדוח '+v.num);
+      }
+    });
+  });
 }
 
 function startDocUploadsListener(){
@@ -6494,7 +6519,7 @@ function renderViolations(){
             `<button onclick="sendViolNoticeToDriver(${v.id})" style="background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#92400e;font-family:inherit">📢 עדכון על דוח</button>`}
           <button onclick="openViolationModal(${v.id})" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--t2)">עריכה</button>
           ${v.fileData?`<button onclick="viewViolationDoc(${v.id})" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px">📄 צפה</button>`:''}
-          <button onclick="uploadPaymentReceipt(${v.id})" title="אסמכתא תשלום" style="background:${v.paymentReceipt?'#dcfce7':'#fef3c7'};border:1px solid ${v.paymentReceipt?'#bbf7d0':'#fde68a'};border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:${v.paymentReceipt?'#166534':'#92400e'};font-family:inherit">${v.paymentReceipt?'✅ שולם':'💳 אסמכתא'}</button>
+          ${v.paymentReceipt?`<button onclick="viewPaymentReceipt(${v.id})" style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-family:inherit">✅ שולם</button>`:''}
           <button onclick="openViolAttachmentsModal(${v.id})" title="מסמכים מצורפים" style="background:#eff6ff;border:1px solid #93c5fd;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:#1e40af">📎${(v.attachments||[]).length?' '+v.attachments.length:''}</button>
           <button onclick="deleteViolation(${v.id})" title="מחק" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:13px;color:#dc2626">🗑</button>
         </div></td>
@@ -6868,7 +6893,7 @@ function saveViolation(){
 }
 
 const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך}.\nגורם נותן הדוח: {מקור}\n\n{תשלום}\n{קובץ}\nלאישור קבלת ידיעת הדוח: {לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
-const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך} הוסב על שמך.\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאישור קבלת הסבת הדוח: {לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך} הוסב על שמך.\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום: {לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
 // Payment links - direct URLs for Israeli municipalities
 const CITY_PAYMENT_MAP = {
@@ -6970,10 +6995,10 @@ const TEST_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} 
 // Auto-migrate: always reset saved templates to use latest defaults (v2)
 (function(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  if(s._tplVersion!==2){
+  if(s._tplVersion!==3){
     delete s.violMsgTemplate;
     delete s.violMsgTransferTemplate;
-    s._tplVersion=2;
+    s._tplVersion=3;
     localStorage.setItem('fleetSettings',JSON.stringify(s));
   }
 })();
@@ -7355,8 +7380,57 @@ function renderApprovalPageInner(page,token,info,alreadyApproved){
         :'<div id="approve-action" style="text-align:center">'+
           '<div style="font-size:13px;color:#666;margin-bottom:14px;line-height:1.6">'+confirmText+'</div>'+
           '<button onclick="confirmViolApproval(\''+token+'\')" style="width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">'+buttonText+'</button></div>')+
+      '<div id="pay-receipt-section" style="margin-top:18px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;text-align:center">'+
+        '<div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:8px">💳 שילמת את הדוח? צרף אישור תשלום</div>'+
+        '<label for="driver-pay-file" style="display:inline-block;padding:10px 20px;background:#16a34a;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">📤 העלה אישור תשלום</label>'+
+        '<input type="file" id="driver-pay-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="driverUploadReceipt(this,\''+token+'\')">'+
+        '<div id="driver-pay-status" style="margin-top:8px;font-size:12px"></div>'+
+      '</div>'+
       '<div style="text-align:center;margin-top:18px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
     '</div></div>';
+}
+
+function driverUploadReceipt(input, token){
+  var file = input.files[0]; if(!file) return;
+  var status = document.getElementById('driver-pay-status');
+  if(status){ status.textContent='מעלה...'; status.style.color='#666'; }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var data = e.target.result;
+    // Compress images
+    if(file.type.startsWith('image/')){
+      var img = new Image();
+      img.onload = function(){
+        var canvas = document.createElement('canvas');
+        var w=img.width,h=img.height,max=1400;
+        if(w>max||h>max){var ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        doUpload(canvas.toDataURL('image/jpeg',.85));
+      };
+      img.src=data;
+    } else { doUpload(data); }
+    function doUpload(fileData){
+      if(!db){if(status){status.textContent='שגיאה';status.style.color='#dc2626';}return;}
+      db.collection('paymentReceipts').doc(token).set({
+        token:token,
+        fileName:file.name,
+        fileType:file.type,
+        data:fileData,
+        uploadedAt:new Date().toISOString()
+      }).then(function(){
+        var section=document.getElementById('pay-receipt-section');
+        if(section){
+          section.style.background='#dcfce7';
+          section.style.borderColor='#bbf7d0';
+          section.innerHTML='<div style="font-size:28px;margin-bottom:6px">✅</div><div style="font-size:14px;font-weight:600;color:#166534">אישור תשלום הועלה בהצלחה!</div><div style="font-size:11px;color:#15803d;margin-top:4px">'+file.name+'</div>';
+        }
+      }).catch(function(err){
+        if(status){status.textContent='שגיאה בהעלאה, נסה שוב';status.style.color='#dc2626';}
+      });
+    }
+  };
+  reader.readAsDataURL(file);
 }
 
 function confirmViolApproval(token){
