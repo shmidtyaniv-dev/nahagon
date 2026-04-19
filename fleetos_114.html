@@ -6810,6 +6810,19 @@ function getViolPaymentInfo(issuer){
 const SVC_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} טיפול בתאריך {תאריך}.\nסוג: {סוג}\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const TEST_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} טסט בתאריך {תאריך}.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
+// Auto-migrate old saved templates that still have long link text
+(function(){
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  var changed=false;
+  if(s.violMsgTemplate && (s.violMsgTemplate.indexOf('בלינק הבא')!==-1 || s.violMsgTemplate.indexOf('לחץ כאן')!==-1 || s.violMsgTemplate.indexOf('👉')!==-1)){
+    delete s.violMsgTemplate; changed=true;
+  }
+  if(s.violMsgTransferTemplate && (s.violMsgTransferTemplate.indexOf('בלינק הבא')!==-1 || s.violMsgTransferTemplate.indexOf('לחץ כאן')!==-1 || s.violMsgTransferTemplate.indexOf('👉')!==-1)){
+    delete s.violMsgTransferTemplate; changed=true;
+  }
+  if(changed) localStorage.setItem('fleetSettings',JSON.stringify(s));
+})();
+
 function getViolApproveUrl(token){
   const s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   let base=(s.violApprovalBaseUrl||'').trim();
