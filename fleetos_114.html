@@ -6121,7 +6121,7 @@ function toIsoDate(val){
 async function callClaudeWithDoc(file,prompt){
   const apiKey = (JSON.parse(localStorage.getItem('fleetSettings')||'{}').aiApiKey)||'';
   if(!apiKey){
-    throw new Error('חסר מפתח API של Anthropic — לך להגדרות והגדר מפתח');
+    return null;
   }
   const b64=await fileToBase64(file);
   const isImg=file.type.startsWith('image/');
