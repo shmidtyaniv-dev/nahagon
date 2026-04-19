@@ -1031,15 +1031,15 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         סריקת AI - רישיון רכב ונהיגה
       </div>
       <div style="font-size:12px;color:var(--t2);margin-bottom:10px;line-height:1.5">
-        הגדר מפתח Anthropic API כדי להפעיל סריקה אוטומטית של רישיון רכב ורישיון נהיגה בעת הוספת רכב חדש.
+        הגדר מפתח Google Gemini API (חינמי) כדי להפעיל סריקה אוטומטית של רישיון רכב ורישיון נהיגה בעת הוספת רכב חדש.
       </div>
       <div style="background:#fffbf0;border:1px solid #fde68a;border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:#92400e;line-height:1.5">
         ⚠️ <b>הערה חשובה:</b> המפתח נשמר מקומית בדפדפן שלך (localStorage) ונשלח ישירות מהדפדפן ל-Anthropic. בפרודקשן בשרת אמיתי, ה-API Key צריך להיות מאחורי proxy בצד שרת. זה מתאים רק לדמו מקומי שלך.
       </div>
       <div style="display:flex;gap:8px;align-items:flex-end">
         <div style="flex:1">
-          <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">Anthropic API Key</label>
-          <input id="ai-api-key" type="password" dir="ltr" placeholder="sk-ant-api03-..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:monospace;background:var(--bg);color:var(--t1)">
+          <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">Google Gemini API Key (חינמי)</label>
+          <input id="ai-api-key" type="password" dir="ltr" placeholder="AIzaSy..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:monospace;background:var(--bg);color:var(--t1)">
         </div>
         <button onclick="saveAiApiKey()" style="padding:9px 16px;background:var(--gd);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">שמור מפתח</button>
       </div>
@@ -6125,27 +6125,23 @@ async function callClaudeWithDoc(file,prompt){
   }
   const b64=await fileToBase64(file);
   const isImg=file.type.startsWith('image/');
-  const mediaType=isImg?file.type:'application/pdf';
-  const cb=isImg
-    ?{type:'image',source:{type:'base64',media_type:mediaType,data:b64}}
-    :{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}};
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+  const mimeType=isImg?file.type:'application/pdf';
+
+  // Use Google Gemini API (free tier)
+  const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+apiKey,{
     method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':apiKey,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    },
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      model:'claude-sonnet-4-5',
-      max_tokens:600,
-      messages:[{role:'user',content:[cb,{type:'text',text:prompt}]}]
+      contents:[{parts:[
+        {inline_data:{mime_type:mimeType,data:b64}},
+        {text:prompt}
+      ]}],
+      generationConfig:{temperature:0,maxOutputTokens:600}
     })
   });
   if(!resp.ok){const t=await resp.text();throw new Error(`${resp.status}: ${t.slice(0,200)}`)}
   const data=await resp.json();
-  const txt=(data.content||[]).map(c=>c.text||'').join('');
+  const txt=(data.candidates||[])[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
   const m=txt.match(/\{[\s\S]*?\}/);
   if(!m)throw new Error('no JSON: '+txt.slice(0,100));
   return JSON.parse(m[0]);
