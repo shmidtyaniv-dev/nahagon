@@ -2633,8 +2633,9 @@ function renderVcViolations(vid){
           (v.noticeApprovedAt?'<span style="font-size:10px;color:#166534;background:#dcfce7;padding:2px 7px;border-radius:999px;white-space:nowrap" title="'+v.noticeApprovedAt+'">✅ הודעה אושרה</span>':'')+
           (v.transferSentAt&&!v.transferApprovedAt?'<span style="font-size:10px;color:#991b1b;background:#fee2e2;padding:2px 7px;border-radius:999px;white-space:nowrap" title="נשלח: '+v.transferSentAt+'">📤 נשלח הסבה</span>':'')+
           (v.transferApprovedAt?'<span style="font-size:10px;color:#166534;background:#dcfce7;padding:2px 7px;border-radius:999px;white-space:nowrap" title="'+v.transferApprovedAt+'">✅ הסבה אושרה</span>':'')+
-          (!v.transferApprovedAt?'<button onclick="sendViolNoticeToDriver('+v.id+')" style="background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#92400e;font-family:inherit">📢 עדכון על דוח</button>':'')+
-          (v.noticeApprovedAt && !v.transferApprovedAt?'<button onclick="sendViolTransferToDriver('+v.id+')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#991b1b;font-family:inherit">⚖️ עדכון על הסבה</button>':'')+
+          (v.transferApprovedAt?'':
+            v.noticeApprovedAt?'<button onclick="sendViolTransferToDriver('+v.id+')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#991b1b;font-family:inherit">⚖️ הסבת דוח</button>':
+            '<button onclick="sendViolNoticeToDriver('+v.id+')" style="background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#92400e;font-family:inherit">📢 עדכון על דוח</button>')+
           (v.fileData?'<button onclick="viewViolationDoc('+v.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px">📄 צפה</button>':'')+
           '<button onclick="openViolationModal('+v.id+')" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--t2)">עריכה</button>'+
         '</div></td></tr>';
@@ -6483,8 +6484,9 @@ function renderViolations(){
           ${v.noticeApprovedAt?`<span style="font-size:10px;color:#166534;background:#dcfce7;padding:2px 7px;border-radius:999px;white-space:nowrap" title="${v.noticeApprovedAt}">✅ הודעה אושרה</span>`:''}
           ${v.transferSentAt&&!v.transferApprovedAt?`<span style="font-size:10px;color:#991b1b;background:#fee2e2;padding:2px 7px;border-radius:999px;white-space:nowrap" title="נשלח: ${v.transferSentAt}">📤 נשלח הסבה</span>`:''}
           ${v.transferApprovedAt?`<span style="font-size:10px;color:#166534;background:#dcfce7;padding:2px 7px;border-radius:999px;white-space:nowrap" title="${v.transferApprovedAt}">✅ הסבה אושרה</span>`:''}
-          ${!v.transferApprovedAt?`<button onclick="sendViolNoticeToDriver(${v.id})" style="background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#92400e;font-family:inherit">📢 עדכון על דוח</button>`:''}
-          ${v.noticeApprovedAt && !v.transferApprovedAt?`<button onclick="sendViolTransferToDriver(${v.id})" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#991b1b;font-family:inherit">⚖️ עדכון על הסבה</button>`:''}
+          ${v.transferApprovedAt?'':
+            v.noticeApprovedAt?`<button onclick="sendViolTransferToDriver(${v.id})" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#991b1b;font-family:inherit">⚖️ הסבת דוח</button>`:
+            `<button onclick="sendViolNoticeToDriver(${v.id})" style="background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#92400e;font-family:inherit">📢 עדכון על דוח</button>`}
           <button onclick="openViolationModal(${v.id})" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--t2)">עריכה</button>
           ${v.fileData?`<button onclick="viewViolationDoc(${v.id})" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px">📄 צפה</button>`:''}
           <button onclick="openViolAttachmentsModal(${v.id})" title="מסמכים מצורפים" style="background:#eff6ff;border:1px solid #93c5fd;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:#1e40af">📎${(v.attachments||[]).length?' '+v.attachments.length:''}</button>
