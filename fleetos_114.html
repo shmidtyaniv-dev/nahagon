@@ -244,7 +244,6 @@ tbody td{padding:6px 10px;font-size:20px;color:var(--t1);vertical-align:middle}
   .cal-item .il-plate{transform:scale(.85);transform-origin:right center}
   #vc-summary-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   #vc-summary-cards2,#vc-summary-cards3{grid-template-columns:1fr 1fr!important}
-  #vc-overview-columns{grid-template-columns:1fr!important}
   .mg{grid-template-columns:1fr!important}
   .modal{max-width:100vw!important;border-radius:14px 14px 0 0;margin:0;position:fixed;bottom:0;left:0;right:0;max-height:92vh}
   .ov{align-items:flex-end}
@@ -1269,25 +1268,19 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
 
       <!-- vehicle identity header -->
-      <div id="vc-header-block" style="background:var(--bg);border:1px solid var(--bdr);border-radius:14px;padding:20px 22px 16px;margin-bottom:14px">
-        <div style="display:flex;align-items:flex-start;gap:18px">
-          <!-- Right side: vehicle info -->
-          <div style="flex:1;min-width:0">
-            <div id="vc-car-line" style="font-size:22px;font-weight:800;color:var(--gd);margin-bottom:4px;line-height:1.3"></div>
-            <div id="vc-code-line" style="font-size:13px;color:var(--t3);margin-bottom:8px"></div>
-            <div id="vc-plate-big" style="margin-bottom:10px"></div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <span id="vc-status-pill" style="font-size:12px;font-weight:600;padding:4px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:5px"></span>
-            </div>
-            <div id="vc-status-reason" style="font-size:11px;color:var(--t3);margin-top:5px;line-height:1.5"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div id="vc-brand-icon" onclick="uploadVehiclePhoto()" title="לחץ להעלאת תמונה" style="width:52px;height:52px;background:var(--gd);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;cursor:pointer"></div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span id="vc-plate-big"></span>
+            <span id="vc-car-line" style="font-size:13px;color:var(--t2)"></span>
           </div>
-          <!-- Left side: vehicle photo / icon -->
-          <div id="vc-brand-icon" onclick="uploadVehiclePhoto()" title="לחץ להעלאת תמונה" style="width:80px;height:80px;background:var(--gl);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.1)"></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+            <span id="vc-status-pill" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px"></span>
+            <span id="vc-code-line" style="font-size:11px;color:var(--t3)"></span>
+          </div>
         </div>
       </div>
-
-      <!-- urgent items banner (rendered dynamically) -->
-      <div id="vc-urgent-banner" style="margin-bottom:14px"></div>
 
       <!-- tabs -->
       <div style="display:flex;gap:3px;margin-bottom:16px;border-bottom:1px solid var(--bdr);padding-bottom:0;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap">
@@ -1302,12 +1295,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
       <!-- OVERVIEW TAB -->
       <div id="vct-overview" class="vc-tab-panel">
-        <div id="vc-overview-columns" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px"></div>
+        <div id="vc-summary-cards" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px;width:100%"></div>
+        <div id="vc-summary-cards2" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px"></div>
         <div id="vc-summary-alt" style="margin-bottom:10px"></div>
-        <!-- keep hidden legacy containers for any external references -->
-        <div id="vc-summary-cards" style="display:none"></div>
-        <div id="vc-summary-cards2" style="display:none"></div>
-        <div id="vc-summary-cards3" style="display:none"></div>
+        <div id="vc-summary-cards3" style="display:grid;grid-template-columns:1fr;gap:10px"></div>
       </div>
 
       <!-- DRIVER TAB -->
@@ -2480,13 +2471,13 @@ function renderBrandIcon(make){
   if(v && v.photo){
     el.style.background='transparent';
     el.style.border='none';
-    el.innerHTML=`<img src="${v.photo}" style="width:80px;height:80px;object-fit:cover;border-radius:50%">`;
+    el.innerHTML=`<img src="${v.photo}" style="width:52px;height:52px;object-fit:cover;border-radius:12px">`;
     return;
   }
-  el.style.background='var(--gl)';
-  el.style.border='none';
-  el.style.borderRadius='50%';
-  el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" width="36" height="36"><path d="M5 17h14M5 17a2 2 0 01-2-2V9a2 2 0 012-2h1l1.5-3h9L18 7h1a2 2 0 012 2v6a2 2 0 01-2 2M7 17v1a1 1 0 001 1h1a1 1 0 001-1v-1M14 17v1a1 1 0 001 1h1a1 1 0 001-1v-1"/></svg>`;
+  el.style.background='var(--bg2)';
+  el.style.border='2px dashed var(--bdr2)';
+  el.style.borderRadius='12px';
+  el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="1.5" width="22" height="22"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
 }
 function uploadVehiclePhoto(){
   if(!_currentVid) return;
@@ -5410,37 +5401,12 @@ function openDet(vid){
   id('vc-plate-big').innerHTML=renderPlate(v.plate,true);
   renderBrandIcon(v.make);
   id('vc-car-line').textContent=`${v.make} ${v.model}`;
-  // code line: model year + code
-  const codeLineParts=[];
-  if(v.year) codeLineParts.push('שנת '+v.year);
-  if(v.code) codeLineParts.push('קוד: '+v.code);
-  id('vc-code-line').textContent=codeLineParts.join(' · ')||'';
+  id('vc-code-line').textContent='';
   const sl=slvl(v);
   const pillColor=sl==='danger'?'#fee2e2':sl==='warn'?'#fef3c7':'#dcfce7';
-  const pillDot=sl==='danger'?'#dc2626':sl==='warn'?'#d97706':'#16a34a';
-  const pillText=sl==='danger'?'דורש טיפול':sl==='warn'?'שים לב':'פעיל';
-  const pillTextColor=sl==='danger'?'#dc2626':sl==='warn'?'#d97706':'#16a34a';
+  const pillText=sl==='danger'?'<span style="color:#dc2626">דורש טיפול</span>':sl==='warn'?'<span style="color:#d97706">שים לב</span>':'<span style="color:#16a34a">פעיל</span>';
   id('vc-status-pill').style.background=pillColor;
-  id('vc-status-pill').innerHTML=`<span style="width:8px;height:8px;border-radius:50%;background:${pillDot};display:inline-block"></span><span style="color:${pillTextColor}">${pillText}</span>`;
-
-  // Status reason subtitle
-  const statusReasons=[];
-  {
-    const _nxtSvc=calcNextSvc(v);
-    const _kmN=_nxtSvc.km?(_nxtSvc.km-(v.currentKm||0)):null;
-    if(_kmN!==null&&_kmN<=0) statusReasons.push('טיפול חורג');
-    else if(_kmN!==null&&_kmN<2000) statusReasons.push('טיפול מתקרב');
-    const _vd=vehicleDocs[vid]||{};
-    const _docsMissing=MANDATORY_DOCS.filter(d=>!_vd[d.key]).length;
-    if(_docsMissing>0) statusReasons.push('מסמכים חסרים');
-    const _licDays=dys(v.licenseExp);
-    if(_licDays<0) statusReasons.push('רישיון רכב פג');
-    else if(_licDays<60) statusReasons.push('רישיון רכב עומד לפוג');
-    const _dLicDays=dys(v.driver.licenseExp);
-    if(_dLicDays<0) statusReasons.push('רישיון נהיגה פג');
-    else if(_dLicDays<60) statusReasons.push('רישיון נהיגה עומד לפוג');
-  }
-  id('vc-status-reason').textContent=statusReasons.length?statusReasons.join(' + '):'';
+  id('vc-status-pill').innerHTML=pillText;
 
   // violations badge
   const vViolations=violations.filter(x=>x.plate===v.plate);
@@ -5468,8 +5434,7 @@ function openDet(vid){
   // insurance expiry from uploaded doc (stored in vd)
   const insuranceExp=vd['insurance_exp']||null;
   const insColor=insuranceExp&&dys(insuranceExp)<60?'#d97706':null;
-  const insTxt=insuranceExp?fd(insuranceExp):'— חסר —';
-  const insIsMissing=!insuranceExp;
+  const insTxt=insuranceExp?fd(insuranceExp):'—';
 
   // next service - auto-calculated from lastService + serviceKm (or from delivery for new vehicles)
   const svcType=nxtSvc.type||'—';
@@ -5478,126 +5443,20 @@ function openDet(vid){
   const tollsTxt=(v.tolls&&v.tolls.length)?v.tolls.join(', '):'אין';
   const curKm=(v.currentKm||v.curKm)?((v.currentKm||v.curKm)).toLocaleString('he-IL')+' ק"מ':'—';
 
-  // deal remaining time
-  const dealRemaining=(function(){
-    if(!v.dealEnd) return '';
-    const d=dys(v.dealEnd);
-    if(d<0) return '<span style="color:#dc2626;font-weight:600">פג תוקף</span>';
-    if(d<60) return '<span style="color:#d97706">'+d+' ימים</span>';
-    const m=Math.round(d/30);
-    return m>0?m+' חודשים':'';
-  })();
+  // Row 1: נהג (+ קוד) · עסקה (מסירה + סיום) · ק"מ נוכחי · מועד טסט הבא
+  id('vc-summary-cards').innerHTML=
+    `<div class="sum-card"><div class="sum-card-lbl">נהג נוכחי</div><div class="sum-card-val">${v.driver.name}</div><div style="font-size:11px;color:var(--t3);margin-top:2px">${v.driver.dept||''}</div></div>`+
+    `<div class="sum-card"><div class="sum-card-lbl">קוד רכב</div><div class="sum-card-val" style="font-family:monospace">${v.code||'—'}</div></div>`+
+    `<div class="sum-card"><div class="sum-card-lbl">חברה</div><div class="sum-card-val">${v.driver.company||'—'}</div></div>`+
+    `<div class="sum-card" style="padding:0;overflow:hidden"><div style="padding:6px 10px 4px;border-bottom:1px solid var(--bdr);font-size:11px;font-weight:600;color:var(--t2);text-align:center">עסקה</div><div style="display:flex"><div style="flex:1;padding:6px 10px;border-left:1px solid var(--bdr)"><div style="font-size:10px;color:var(--t3);margin-bottom:2px">תאריך מסירה</div><div style="font-size:13px;font-weight:500;color:var(--t1)">${fd(v.delivery)||'—'}</div></div><div style="flex:1;padding:6px 10px"><div style="font-size:10px;color:var(--t3);margin-bottom:2px">סיום עסקה</div><div style="font-size:13px;font-weight:500;color:var(--t1)">${fd(v.dealEnd)||'—'}</div></div></div></div>`+
+    `<div class="sum-card" style="position:relative"><div class="sum-card-lbl">ק"מ נוכחי</div><div style="display:flex;align-items:center;gap:6px"><div class="sum-card-val" id="vc-ckm-display">${curKm}</div><button onclick="openKmUpdate(${vid})" title="עדכן ק\"מ" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;font-family:inherit">עדכן</button><button onclick="sendKmRequest(${vid})" title="בקש מנהג" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;font-family:inherit">📩 בקש</button></div></div>`+
+    `<div class="sum-card"><div class="sum-card-lbl">תוקף רישיון רכב</div><div class="sum-card-val">${fd(v.licenseExp)||'—'}</div><div style="font-size:11px;color:var(--t3);margin-top:2px">מועד טסט הבא</div></div>`;
 
-  // ── URGENT BANNER ──
-  const urgentItems=[];
-  if(kmN!==null&&kmN<=0) urgentItems.push('טיפול חורג — '+svcType);
-  else if(kmN!==null&&kmN<2000) urgentItems.push('טיפול מתקרב — '+svcType);
-  if(docsMissing>0) urgentItems.push(docsMissing+' מסמכי חובה חסרים');
-  if(vLic<0) urgentItems.push('רישיון רכב פג תוקף');
-  else if(vLic<60) urgentItems.push('רישיון רכב עומד לפוג ('+vLic+' ימים)');
-  const urgentEl=id('vc-urgent-banner');
-  if(urgentEl){
-    if(urgentItems.length){
-      urgentEl.innerHTML=`<div style="background:#fef3c7;border:1.5px solid #fde68a;border-radius:12px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px">
-        <div style="flex-shrink:0;width:36px;height:36px;background:#fbbf24;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">⚠️</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700;color:#92400e;margin-bottom:6px">פריטים דחופים לטיפול</div>
-          <div style="display:flex;flex-direction:column;gap:3px">
-            ${urgentItems.map(it=>'<div style="font-size:12px;color:#78350f;display:flex;align-items:center;gap:5px"><span style="color:#dc2626;font-weight:700">●</span> '+it+'</div>').join('')}
-          </div>
-        </div>
-        <button onclick="vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2])" style="background:var(--gd);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0;white-space:nowrap">טפל עכשיו</button>
-      </div>`;
-    } else {
-      urgentEl.innerHTML='';
-    }
-  }
-
-  // ── 3 COLUMN OVERVIEW ──
-  // helper for row inside column card
-  const _row=(lbl,val,extra)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr)"><span style="font-size:12px;color:var(--t3)">${lbl}</span><span style="font-size:13px;font-weight:500;color:var(--t1)">${val}</span></div>${extra||''}`;
-
-  // RIGHT CARD: נהג ושימוש
-  const colRight=`<div style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden">
-    <div style="padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--bdr);font-size:13px;font-weight:700;color:var(--gd)">נהג ושימוש</div>
-    <div style="padding:6px 14px">
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr)">
-        <div style="width:36px;height:36px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${inits(v.driver.name)}</div>
-        <div>
-          <div style="font-size:14px;font-weight:600;color:var(--t1)">${v.driver.name}</div>
-          <div style="font-size:11px;color:var(--t3)">${v.driver.dept||''}</div>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr)">
-        <span style="font-size:12px;color:var(--t3)">ק"מ נוכחי</span>
-        <div style="display:flex;align-items:center;gap:5px">
-          <span id="vc-ckm-display" style="font-size:13px;font-weight:600;color:var(--t1)">${curKm}</span>
-          <button onclick="openKmUpdate(${vid})" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;font-family:inherit">עדכן</button>
-          <button onclick="sendKmRequest(${vid})" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;font-family:inherit">📩 בקש</button>
-        </div>
-      </div>
-      ${_row('כבישי אגרה',tollsTxt)}
-      ${_row('חברה',v.driver.company||'—')}
-    </div>
-  </div>`;
-
-  // MIDDLE CARD: עסקה ולוז
-  const svcDateColor=kmColor||'var(--t1)';
-  const colMiddle=`<div style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden">
-    <div style="padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--bdr);font-size:13px;font-weight:700;color:var(--gd)">עסקה ולוז</div>
-    <div style="padding:6px 14px">
-      ${_row('תאריך מסירה',fd(v.delivery)||'—')}
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr)">
-        <span style="font-size:12px;color:var(--t3)">סיום עסקה</span>
-        <div style="text-align:left">
-          <div style="font-size:13px;font-weight:500;color:var(--t1)">${fd(v.dealEnd)||'—'}</div>
-          ${dealRemaining?'<div style="font-size:10px;margin-top:1px">'+dealRemaining+'</div>':''}
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bdr)">
-        <span style="font-size:12px;color:var(--t3)">טיפול הבא</span>
-        <div style="text-align:left">
-          <div style="font-size:13px;font-weight:500;color:${svcDateColor}">${svcDate||'—'}</div>
-          <div style="font-size:10px;color:var(--t3)">${svcType!=='—'?svcType:''}</div>
-        </div>
-      </div>
-      ${_row('רישיון רכב',fd(v.licenseExp)||'—')}
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
-        <span style="font-size:12px;color:var(--t3)">תוקף ביטוח</span>
-        <span style="font-size:13px;font-weight:500;color:${insIsMissing?'#dc2626':(insColor||'var(--t1)')}">${insTxt}</span>
-      </div>
-    </div>
-  </div>`;
-
-  // LEFT CARD: מסמכי חובה
-  const docsHeaderBg=docsMissing>0?'#fef2f2':'#f0fdf4';
-  const docsHeaderClr=docsMissing>0?'#dc2626':'#16a34a';
-  const docsHeaderTxt=docsMissing>0?'חסרים '+docsMissing+' מסמכים':'✓ כל המסמכים תקינים';
-  const docsSubtitle='מתוך '+MANDATORY_DOCS.length+' נדרשים';
-  const docsList=MANDATORY_DOCS.map(d=>{
-    const up=vd[d.key];
-    const icon=up?'<span style="color:#16a34a;font-weight:700">✓</span>':'<span style="color:#dc2626;font-weight:700">✗</span>';
-    const actionBtn=up
-      ?`<button onclick="viewDoc(${vid},'${d.key}')" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:inherit;color:var(--t2)">הצג</button>`
-      :`<label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;background:#dcfce7;border:1px solid #bbf7d0;border-radius:5px;padding:2px 8px;font-size:10px;color:#166534;font-weight:500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>העלה<input type="file" style="display:none" accept=".pdf,.jpg,.jpeg,.png" onchange="uploadMandatoryDoc(${vid},'${d.key}',this)"></label>`;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bdr)">
-      <div style="width:20px;text-align:center;flex-shrink:0">${icon}</div>
-      <span style="flex:1;font-size:12px;color:var(--t1)">${d.label}</span>
-      ${actionBtn}
-    </div>`;
-  }).join('');
-
-  const colLeft=`<div style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;overflow:hidden">
-    <div style="padding:10px 14px;background:${docsHeaderBg};border-bottom:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:700;color:${docsHeaderClr}">${docsHeaderTxt}</div>
-      <div style="font-size:11px;color:var(--t3);margin-top:2px">${docsSubtitle}</div>
-    </div>
-    <div style="padding:6px 14px">
-      ${docsList}
-    </div>
-  </div>`;
-
-  id('vc-overview-columns').innerHTML=colRight+colMiddle+colLeft;
+  // Row 2: טיפול הבא (תאריך + סוג) · תוקף ביטוח · כבישי אגרה
+  id('vc-summary-cards2').innerHTML=
+    `<div class="sum-card" style="padding:0;overflow:hidden"><div style="padding:6px 10px 4px;border-bottom:1px solid var(--bdr);font-size:11px;font-weight:600;color:var(--t2);text-align:center">טיפול הבא</div><div style="display:flex"><div style="flex:1;padding:6px 10px;border-left:1px solid var(--bdr)"><div style="font-size:10px;color:var(--t3);margin-bottom:2px">תאריך</div><div style="font-size:13px;font-weight:500;${kmColor?'color:'+kmColor:'color:var(--t1)'};">${svcDate||'—'}</div></div><div style="flex:1;padding:6px 10px"><div style="font-size:10px;color:var(--t3);margin-bottom:2px">סוג טיפול</div><div style="font-size:12px;font-weight:500;color:var(--t1)">${svcType!=='טיפול שגרתי'?svcType:'—'}</div></div></div></div>`+
+    sumCard('תוקף ביטוח',insTxt,insColor)+
+    sumCard('כבישי אגרה',tollsTxt);
 
   // Row 2.5: סטטוס רכב חלופי/גישור (רק אם יש טופס מסירה פתוח)
   const altStatus = getAltVehicleStatus(vid);
@@ -5611,7 +5470,7 @@ function openDet(vid){
       const ttl = isBridge?'הנהג נוהג כעת על רכב גישור':'הנהג נוהג כעת על רכב חלופי';
       const icn = isBridge?'🌉':'🔄';
       const since = new Date(altStatus.createdAt).toLocaleDateString('he-IL');
-      altEl.innerHTML = `<div style="background:${bg};border:1.5px solid ${bdr};border-radius:12px;padding:12px 16px;cursor:pointer" onclick="vcTab('handover',document.querySelectorAll('.vc-tab-btn')[5])">
+      altEl.innerHTML = `<div class="sum-card" style="background:${bg};border:1.5px solid ${bdr};padding:10px 14px;cursor:pointer" onclick="vcTab('handover',document.querySelectorAll('.vc-tab-btn')[5])">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="font-size:22px">${icn}</div>
           <div style="flex:1">
@@ -5624,6 +5483,16 @@ function openDet(vid){
       altEl.innerHTML='';
     }
   }
+
+  // Row 3: מסמכי חובה (full width)
+  id('vc-summary-cards3').innerHTML=
+    `<div class="sum-card" style="grid-column:span 3;cursor:pointer" onclick="vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2])">
+      <div class="sum-card-lbl">מסמכי חובה</div>
+      <div class="sum-card-val" style="color:${docsColor}">${docsStatus}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        ${MANDATORY_DOCS.map(d=>{const up=vd[d.key];return`<span style="font-size:20px;padding:2px 8px;border-radius:999px;background:${up?'#dcfce7':'#fee2e2'};color:${up?'#166534':'#991b1b'}">${up?'✓':'✗'} ${d.label}</span>`}).join('')}
+      </div>
+    </div>`;
 
   // ── DRIVER TAB ──
   const dLic=dys(v.driver.licenseExp);
