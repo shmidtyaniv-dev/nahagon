@@ -494,28 +494,28 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <button class="mobile-menu-btn" onclick="toggleSidebar()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
-    <button class="btn btn-p" onclick="openAdd()" style="min-width:max-content">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוסף רכב
-    </button>
+    <div class="pt" id="page-title" style="min-width:80px;text-align:right;font-size:13px">דשבורד</div>
     <span style="flex:1"></span>
-    <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:14px;flex-shrink:0">
       <div style="position:relative">
-        <div class="srch" style="width:280px;position:relative">
+        <div class="srch" style="width:340px;position:relative">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" placeholder="חיפוש: רכב / נהג / יצרן / דוח..." id="srch-inp" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off">
         </div>
         <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;color:#fff">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7DC242" stroke-width="2.2"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
-        <div style="line-height:1.2">
-          <div style="font-size:13px;font-weight:700;color:#fff;white-space:nowrap">מרכז הרכב</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.65);white-space:nowrap">מור בית השקעות</div>
-        </div>
-      </div>
     </div>
     <span style="flex:1"></span>
-    <div class="pt" id="page-title" style="min-width:80px;text-align:left">דשבורד</div>
+    <div style="display:flex;align-items:center;gap:10px;color:#fff">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7DC242" stroke-width="2.2"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"/></svg>
+      <div style="line-height:1.2">
+        <div style="font-size:15px;font-weight:700;color:#fff;white-space:nowrap">מרכז הרכב</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.65);white-space:nowrap">מור בית השקעות</div>
+      </div>
+    </div>
+    <button class="btn btn-p" onclick="openAdd()" style="min-width:max-content">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוסף רכב
+    </button>
 
   </div>
 
