@@ -158,8 +158,8 @@ tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:var(--bg)}
 tbody td{padding:6px 10px;font-size:20px;color:var(--t1);vertical-align:middle}
 .vn{font-weight:600;font-family:monospace;font-size:12px;color:var(--gd);letter-spacing:.04em}
-.dc{display:flex;align-items:center;gap:7px}
-.av{width:24px;height:24px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fff;flex-shrink:0}
+.dc{display:flex;align-items:center;gap:10px}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
 
 /* ─ TABS ─ */
 .tabs{display:flex;gap:3px;margin-bottom:10px}
@@ -4798,8 +4798,10 @@ function altBadge(vid){
   const tip = (isBridge?'רכב גישור':'רכב חלופי')+(s.plate?' · '+s.plate:'');
   return `<span title="${tip}" style="display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;background:${bg};color:${clr};margin-right:6px;vertical-align:middle">${txt}</span>`;
 }
-function dRow(v){return`<tr onclick="openDet(${v.id})" style="cursor:pointer"><td><div class="dc"><div class="av">${inits(v.driver.name)}</div>${v.driver.name}${altBadge(v.id)}</div></td><td>${renderPlate(v.plate)}</td><td>${v.make} ${v.model}</td><td>${kmS(v)}</td><td>${lcS(v.licenseExp)}</td><td>${docsIcon(v.id)}</td></tr>`}
-function fRow(v){return`<tr onclick="openDet(${v.id})" style="cursor:pointer"><td><div class="dc"><div class="av">${inits(v.driver.name)}</div>${v.driver.name}${altBadge(v.id)}</div></td><td>${renderPlate(v.plate)}</td><td>${v.make} ${v.model}</td><td>${kmS(v)}</td><td>${lcS(v.licenseExp)}</td><td>${docsIcon(v.id)}</td><td><button class="btn btn-l btn-sm" onclick="event.stopPropagation();openDet(${v.id})">פרטים ←</button></td></tr>`}
+function avatarColor(name){var colors=['#16a34a','#3b82f6','#f59e0b','#ec4899','#06b6d4','#8b5cf6','#ef4444','#14b8a6','#f97316','#6366f1'];var h=0;for(var i=0;i<(name||'').length;i++)h=((h<<5)-h)+(name||'').charCodeAt(i);return colors[Math.abs(h)%colors.length];}
+function driverCell(v){return`<div class="dc"><div class="av" style="background:${avatarColor(v.driver.name)}">${inits(v.driver.name)}</div><div><div style="font-weight:600;font-size:13px;color:var(--t1)">${v.driver.name}</div><div style="font-size:10px;color:var(--t3)">${v.driver.company||v.driver.address||''}</div></div>${altBadge(v.id)}</div>`;}
+function dRow(v){return`<tr onclick="openDet(${v.id})" style="cursor:pointer"><td>${driverCell(v)}</td><td>${renderPlate(v.plate)}</td><td>${v.make} ${v.model}</td><td>${kmS(v)}</td><td>${lcS(v.licenseExp)}</td><td>${docsIcon(v.id)}</td></tr>`}
+function fRow(v){return`<tr onclick="openDet(${v.id})" style="cursor:pointer"><td>${driverCell(v)}</td><td>${renderPlate(v.plate)}</td><td>${v.make} ${v.model}</td><td>${kmS(v)}</td><td>${lcS(v.licenseExp)}</td><td>${docsIcon(v.id)}</td><td><button class="btn btn-l btn-sm" onclick="event.stopPropagation();openDet(${v.id})">פרטים ←</button></td></tr>`}
 function fil(){let r=vehicles.slice();if(vSearch)r=r.filter(v=>v.plate.toLowerCase().includes(vSearch)||v.driver.name.toLowerCase().includes(vSearch)||v.make.toLowerCase().includes(vSearch));r.sort(function(a,b){var aMissing=hasMissingDocs(a)?0:1;var bMissing=hasMissingDocs(b)?0:1;return aMissing-bMissing;});return r}
 function hasMissingDocs(v){if(!v)return false;var vd=vehicleDocs[v.id]||{};var missing=MANDATORY_DOCS.filter(function(d){return!vd[d.key];});return missing.length>0;}
 function renderDash(){
