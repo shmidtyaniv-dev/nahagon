@@ -622,17 +622,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
     <!-- VIOLATIONS -->
     <div class="page" id="page-violations">
-      <div class="sh"><h2>דוחות תנועה</h2><span class="sp"></span>
-        <div style="display:flex;gap:6px;align-items:center">
-          <select id="viol-filter" onchange="renderViolations()" style="font-size:14px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:var(--rs);background:var(--card);color:var(--t1);font-family:inherit">
-            <option value="all">הכל</option>
-            <option value="sent">נשלחה בקשה להסב</option>
-            <option value="waiting">ממתין אישור הסבה</option>
-            <option value="done">נהג עודכן - טופל</option>
-          </select>
-          <button class="btn btn-p btn-sm" onclick="openViolationModal()">+ דוח חדש</button>
-        </div>
-      </div>
       <div id="violations-list"></div>
     </div>
 
@@ -2165,6 +2154,38 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .fb-tool{padding:10px 8px;border:1.5px solid var(--bdr2);background:var(--bg);color:var(--t2);border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s;font-weight:500}
 .fb-tool:hover{border-color:var(--gd);color:var(--gd)}
 .fb-tool.active{background:var(--gd);color:#fff;border-color:var(--gd)}
+
+/* ── Violations grid redesign ── */
+.viol-container{background:var(--card);border-radius:14px;border:1px solid var(--bdr);overflow:hidden}
+.viol-row{display:grid;grid-template-columns:minmax(160px,0.9fr) 120px 110px 140px 130px 150px 130px;align-items:center;padding:14px 20px;gap:16px;direction:rtl}
+.viol-header{background:#F1EFE8;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:.3px}
+.viol-data-row{border-top:1px solid var(--bdr);transition:background .15s}
+.viol-data-row:hover{background:#FAFAF7}
+.viol-driver{display:flex;align-items:center;gap:10px}
+.viol-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+.viol-driver-name{font-size:13px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.viol-mono{font-family:'Courier New',monospace;font-size:13px;color:var(--t2);font-weight:600}
+.viol-muted{font-size:13px;color:var(--t2)}
+.viol-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:600;white-space:nowrap}
+.viol-badge::before{content:'';width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.viol-badge-sent{background:#fef3c7;color:#92400e}.viol-badge-sent::before{background:#f59e0b}
+.viol-badge-waiting{background:#dbeafe;color:#1e40af}.viol-badge-waiting::before{background:#3b82f6}
+.viol-badge-done{background:#dcfce7;color:#166534}.viol-badge-done::before{background:#16a34a}
+.viol-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.viol-icon-btn{width:32px;height:32px;border-radius:8px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:opacity .15s}
+.viol-icon-btn:hover{opacity:.8}
+.viol-icon-btn.v-green{background:#dcfce7;color:#16a34a}
+.viol-icon-btn.v-blue{background:#dbeafe;color:#2563eb}
+.viol-icon-btn.v-red{background:#fee2e2;color:#dc2626}
+.viol-icon-btn.v-amber{background:#fef3c7;color:#92400e}
+.viol-icon-btn.v-purple{background:#f3e8ff;color:#7c3aed}
+.viol-status-pills{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.viol-status-pill{font-size:9px;padding:2px 7px;border-radius:999px;white-space:nowrap;font-weight:500}
+.viol-top-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--bdr)}
+.viol-top-bar h2{margin:0;font-size:17px;font-weight:700;color:var(--t1)}
+.viol-top-right{display:flex;gap:8px;align-items:center}
+.viol-count{background:var(--gd);color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;margin-inline-start:10px}
+@media(max-width:900px){.viol-row{grid-template-columns:1fr;gap:6px;padding:12px 14px}.viol-header{display:none}}
 </style>
 
 <!-- Firebase SDK -->
@@ -7003,43 +7024,93 @@ const VIOL_STATUS={sent:'נשלחה בקשה להסב',waiting:'ממתין אי�
 const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'};
 
 function renderViolations(){
-  const filter=id('viol-filter').value;
+  const filterEl=document.getElementById('viol-filter');
+  const filter=filterEl?filterEl.value:'all';
   const list=filter==='all'?violationsList:violationsList.filter(v=>v.status===filter);
-  // count removed from UI
-  if(!list.length){id('violations-list').innerHTML=`<div style="text-align:center;padding:28px 0;color:var(--t3);font-size:15px">אין דוחות</div>`;return}
-  id('violations-list').innerHTML=`<div class="tw"><table><thead><tr>
-    <th>מ. דוח</th><th>שם הנהג</th><th>רכב בציר</th><th>מקור הדוח</th><th>תאריך הסבה</th><th>סטטוס</th><th>תיעודים</th><th></th>
-  </tr></thead><tbody>`+
-    list.map(v=>{
-      const veh=vehicles.find(x=>x.id===v.vehicleId);
-      const driverName=veh?veh.driver.name:'—';
-      const logsCount=(v.logs||[]).length;
-      return`<tr>
-        <td style="font-size:13px;font-family:monospace;color:var(--gd);font-weight:600">${v.num}</td>
-        <td style="font-size:13px;font-weight:500">${driverName}</td>
-        <td style="font-size:13px">${veh?`<span class="vn">${veh.plate}</span>`:'-'}</td>
-        <td style="font-size:13px;color:var(--t2)">${v.issuer||'—'}</td>
-        <td style="font-size:13px">${fd(v.date)}</td>
-        <td><select onchange="changeViolStatus(${v.id},this.value);renderViolations();if(_currentVid)renderVcViolations(_currentVid)" style="font-size:13px;padding:3px 7px;border-radius:6px;border:1px solid var(--bdr2);background:var(--bg);color:var(--t1);font-family:inherit;cursor:pointer">
+  const totalCount=violationsList.length;
+
+  let html=`<div class="viol-container">
+    <div class="viol-top-bar">
+      <div style="display:flex;align-items:center">
+        <h2>דוחות תנועה</h2>
+        <span class="viol-count">${totalCount}</span>
+      </div>
+      <div class="viol-top-right">
+        <select id="viol-filter" onchange="renderViolations()" style="font-size:13px;padding:6px 12px;border:1px solid var(--bdr2);border-radius:8px;background:var(--card);color:var(--t1);font-family:inherit;cursor:pointer">
+          <option value="all"${filter==='all'?' selected':''}>הכל</option>
+          <option value="sent"${filter==='sent'?' selected':''}>נשלחה בקשה להסב</option>
+          <option value="waiting"${filter==='waiting'?' selected':''}>ממתין אישור הסבה</option>
+          <option value="done"${filter==='done'?' selected':''}>נהג עודכן - טופל</option>
+        </select>
+        <button class="btn btn-p btn-sm" onclick="openViolationModal()" style="border-radius:8px">+ דוח חדש</button>
+      </div>
+    </div>`;
+
+  if(!list.length){
+    html+=`<div style="text-align:center;padding:40px 0;color:var(--t3);font-size:15px">אין דוחות</div></div>`;
+    id('violations-list').innerHTML=html;return;
+  }
+
+  html+=`<div class="viol-row viol-header">
+    <div>שם הנהג</div><div>מס׳ דוח</div><div>רכב</div><div>מקור הדוח</div><div>תאריך הסבה</div><div>סטטוס</div><div>פעולות</div>
+  </div>`;
+
+  list.forEach(v=>{
+    const veh=vehicles.find(x=>x.id===v.vehicleId);
+    const driverName=veh?veh.driver.name:'—';
+    const ac=avatarColor(driverName);
+    const ini=driverName!=='—'?inits(driverName):'—';
+    const logsCount=(v.logs||[]).length;
+    const badgeClass=v.status==='sent'?'viol-badge-sent':v.status==='waiting'?'viol-badge-waiting':'viol-badge-done';
+    const badgeLabel=v.status==='sent'?'בקשה להסב':v.status==='waiting'?'ממתין אישור':'טופל';
+
+    // Build status pills for workflow
+    let pills='';
+    if(v.noticeSentAt&&!v.noticeApprovedAt) pills+=`<span class="viol-status-pill" style="color:#92400e;background:#fef3c7" title="נשלח: ${v.noticeSentAt}">📤 הודעה</span>`;
+    if(v.noticeApprovedAt) pills+=`<span class="viol-status-pill" style="color:#166534;background:#dcfce7" title="${v.noticeApprovedAt}">✅ הודעה</span>`;
+    if(v.transferSentAt&&!v.transferApprovedAt) pills+=`<span class="viol-status-pill" style="color:#991b1b;background:#fee2e2" title="נשלח: ${v.transferSentAt}">📤 הסבה</span>`;
+    if(v.transferApprovedAt) pills+=`<span class="viol-status-pill" style="color:#166534;background:#dcfce7" title="${v.transferApprovedAt}">✅ הסבה</span>`;
+
+    // Build action button for workflow
+    let workflowBtn='';
+    if(!v.transferApprovedAt){
+      if(v.noticeApprovedAt){
+        workflowBtn=`<button onclick="sendViolTransferToDriver(${v.id})" class="viol-icon-btn v-red" title="הסבת דוח">⚖️</button>`;
+      } else {
+        workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="עדכון על דוח">📢</button>`;
+      }
+    }
+
+    html+=`<div class="viol-row viol-data-row">
+      <div class="viol-driver">
+        <div class="viol-avatar" style="background:${ac}">${ini}</div>
+        <span class="viol-driver-name">${driverName}</span>
+      </div>
+      <div class="viol-mono" style="color:var(--gd)">${v.num}</div>
+      <div class="viol-mono">${veh?veh.plate:'—'}</div>
+      <div class="viol-muted">${v.issuer||'—'}</div>
+      <div class="viol-muted">${fd(v.date)}</div>
+      <div>
+        <span class="viol-badge ${badgeClass}" style="cursor:pointer" onclick="this.style.display='none';this.nextElementSibling.style.display='inline-block'">${badgeLabel}</span>
+        <select onchange="changeViolStatus(${v.id},this.value);renderViolations();if(_currentVid)renderVcViolations(_currentVid)" style="display:none;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--bdr2);background:var(--bg);color:var(--t1);font-family:inherit;cursor:pointer">
           ${Object.keys(VIOL_STATUS).map(k=>`<option value="${k}"${v.status===k?' selected':''}>${VIOL_STATUS[k]}</option>`).join('')}
-        </select></td>
-        <td><button onclick="openViolLogsModal(${v.id})" style="background:var(--bg2);border:1px solid var(--bdr2);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:13px;color:var(--gd);font-family:inherit;font-weight:500">📋 ${logsCount} תיעודים</button></td>
-        <td><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap">
-          ${v.noticeSentAt&&!v.noticeApprovedAt?`<span style="font-size:10px;color:#92400e;background:#fef3c7;padding:2px 7px;border-radius:999px;white-space:nowrap" title="נשלח: ${v.noticeSentAt}">📤 נשלח הודעה</span>`:''}
-          ${v.noticeApprovedAt?`<span style="font-size:10px;color:#166534;background:#dcfce7;padding:2px 7px;border-radius:999px;white-space:nowrap" title="${v.noticeApprovedAt}">✅ הודעה אושרה</span>`:''}
-          ${v.transferSentAt&&!v.transferApprovedAt?`<span style="font-size:10px;color:#991b1b;background:#fee2e2;padding:2px 7px;border-radius:999px;white-space:nowrap" title="נשלח: ${v.transferSentAt}">📤 נשלח הסבה</span>`:''}
-          ${v.transferApprovedAt?`<span style="font-size:10px;color:#166534;background:#dcfce7;padding:2px 7px;border-radius:999px;white-space:nowrap" title="${v.transferApprovedAt}">✅ הסבה אושרה</span>`:''}
-          ${v.transferApprovedAt?'':
-            v.noticeApprovedAt?`<button onclick="sendViolTransferToDriver(${v.id})" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#991b1b;font-family:inherit">⚖️ הסבת דוח</button>`:
-            `<button onclick="sendViolNoticeToDriver(${v.id})" style="background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#92400e;font-family:inherit">📢 עדכון על דוח</button>`}
-          <button onclick="openViolationModal(${v.id})" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--t2)">עריכה</button>
-          ${(v.fileData||v._hasFile)?`<button onclick="viewViolationDoc(${v.id})" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px">📄 צפה</button>`:''}
-          ${v.paymentReceipt?`<button onclick="viewPaymentReceipt(${v.id})" style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-family:inherit">✅ שולם</button>`:''}
-          <button onclick="openViolAttachmentsModal(${v.id})" title="מסמכים מצורפים" style="background:#eff6ff;border:1px solid #93c5fd;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:12px;color:#1e40af">📎${(v.attachments||[]).length?' '+v.attachments.length:''}</button>
-          <button onclick="deleteViolation(${v.id})" title="מחק" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:13px;color:#dc2626">🗑</button>
-        </div></td>
-      </tr>`;
-    }).join('')+`</tbody></table></div>`;
+        </select>
+        ${pills?`<div class="viol-status-pills" style="margin-top:4px">${pills}</div>`:''}
+      </div>
+      <div class="viol-actions">
+        ${workflowBtn}
+        <button onclick="openViolationModal(${v.id})" class="viol-icon-btn v-green" title="עריכה / צפייה">✏️</button>
+        ${(v.fileData||v._hasFile)?`<button onclick="viewViolationDoc(${v.id})" class="viol-icon-btn v-green" title="צפה במסמך">👁</button>`:''}
+        ${v.paymentReceipt?`<button onclick="viewPaymentReceipt(${v.id})" class="viol-icon-btn v-green" title="שולם">✅</button>`:''}
+        <button onclick="openViolLogsModal(${v.id})" class="viol-icon-btn v-purple" title="${logsCount} תיעודים">📋</button>
+        <button onclick="openViolAttachmentsModal(${v.id})" class="viol-icon-btn v-blue" title="מסמכים מצורפים${(v.attachments||[]).length?' ('+v.attachments.length+')':''}">📎</button>
+        <button onclick="deleteViolation(${v.id})" class="viol-icon-btn v-red" title="מחק">🗑</button>
+      </div>
+    </div>`;
+  });
+
+  html+=`</div>`;
+  id('violations-list').innerHTML=html;
 }
 
 function uploadPaymentReceipt(vid){
