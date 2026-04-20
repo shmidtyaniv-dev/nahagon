@@ -7030,20 +7030,21 @@ function renderViolations(){
   const totalCount=violationsList.length;
 
   let html=`<div class="viol-container">
-    <div class="viol-top-bar">
-      <div style="display:flex;align-items:center">
-        <h2>דוחות תנועה</h2>
-        <span class="viol-count">${totalCount}</span>
-      </div>
-      <div class="viol-top-right">
+    <div class="viol-top-bar" style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:18px 22px;border-bottom:1px solid var(--bdr)">
+      <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
+        <button class="btn btn-p btn-sm" onclick="openViolationModal()" style="border-radius:8px">+ דוח חדש</button>
         <select id="viol-filter" onchange="renderViolations()" style="font-size:13px;padding:6px 12px;border:1px solid var(--bdr2);border-radius:8px;background:var(--card);color:var(--t1);font-family:inherit;cursor:pointer">
           <option value="all"${filter==='all'?' selected':''}>הכל</option>
           <option value="sent"${filter==='sent'?' selected':''}>נשלחה בקשה להסב</option>
           <option value="waiting"${filter==='waiting'?' selected':''}>ממתין אישור הסבה</option>
           <option value="done"${filter==='done'?' selected':''}>נהג עודכן - טופל</option>
         </select>
-        <button class="btn btn-p btn-sm" onclick="openViolationModal()" style="border-radius:8px">+ דוח חדש</button>
       </div>
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center">
+        <h2 style="margin:0;font-size:17px;font-weight:700;color:var(--t1)">דוחות תנועה</h2>
+        <span class="viol-count">${totalCount}</span>
+      </div>
+      <div></div>
     </div>`;
 
   if(!list.length){
