@@ -1635,44 +1635,78 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <!-- VIOLATION MODAL -->
 <div class="ov" id="viol-ov">
-  <div class="modal" style="max-width:580px" onclick="event.stopPropagation()">
-    <div class="mh"><h3 id="viol-modal-title">פתיחת דוח תנועה</h3>
-      <button class="mc-btn" onclick="closeModal('viol-ov')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal" style="max-width:560px;border-radius:12px;overflow:hidden" onclick="event.stopPropagation()">
+    <!-- Green header -->
+    <div style="background:#1D9E75;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        </div>
+        <h3 id="viol-modal-title" style="margin:0;color:#fff;font-size:16px;font-weight:500">פתיחת דוח תנועה</h3>
+      </div>
+      <button onclick="closeModal('viol-ov')" style="background:rgba(255,255,255,.15);border:none;width:30px;height:30px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <div class="mb">
+    <!-- Form body -->
+    <div style="padding:22px 20px">
       <input type="hidden" id="viol-edit-id">
-      <div class="fg">
-        <div class="ff"><label>מספר דוח</label><input id="viol-num" placeholder="D-2025-003" dir="ltr"></div>
-        <div class="ff"><label>תאריך הסבה</label><input type="date" id="viol-date"></div>
-        <div class="ff"><label>מקור הדוח</label>
-          <select id="viol-issuer-type" onchange="toggleViolIssuer()">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">מספר דוח <span style="color:#E24B4A">*</span></label>
+          <input id="viol-num" placeholder="D-2025-003" dir="ltr" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-family:monospace;font-size:14px;background:#fff;color:#1A1A1A">
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">תאריך הסבה <span style="color:#E24B4A">*</span></label>
+          <input type="date" id="viol-date" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A">
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">מקור הדוח <span style="color:#E24B4A">*</span></label>
+          <select id="viol-issuer-type" onchange="toggleViolIssuer()" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer">
             <option value="police">משטרת ישראל</option>
             <option value="city">עירייה / מועצה</option>
           </select>
         </div>
-        <div class="ff" id="viol-city-wrap" style="display:none"><label>שם הרשות</label><input id="viol-city" placeholder="תל אביב, ירושלים..."></div>
-        <div class="ff" id="viol-vehicle-row"><label>רכב בציר</label><select id="viol-vehicle"><option value="">בחר רכב</option></select></div>
-        <div class="ff"><label>סטטוס הסבה</label>
-          <select id="viol-status">
+        <div id="viol-city-wrap" style="display:none">
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">שם הרשות</label>
+          <input id="viol-city" placeholder="תל אביב, ירושלים..." style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A">
+        </div>
+        <div id="viol-vehicle-row">
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">רכב בציר <span style="color:#E24B4A">*</span></label>
+          <select id="viol-vehicle" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer"><option value="">בחר רכב</option></select>
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">סטטוס הסבה</label>
+          <select id="viol-status" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer">
             <option value="sent">נשלחה בקשה להסב</option>
             <option value="waiting">ממתין אישור הסבה</option>
             <option value="done">נהג עודכן - טופל</option>
           </select>
         </div>
-        <div class="ff full">
-          <label>העלאת קובץ דוח</label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;border:1.5px dashed var(--bdr2);border-radius:var(--rs);padding:9px 12px;background:var(--bg);transition:border-color .2s" id="viol-upload-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <span id="viol-file-name" style="font-size:12px;color:var(--t3)">בחר קובץ PDF / תמונה...</span>
-            <input type="file" id="viol-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="onViolFileChange(this)">
-          </label>
-        </div>
-        <div class="ff full"><label>הערות</label><textarea id="viol-notes" rows="2" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:var(--rs);padding:7px 10px;font-family:inherit;font-size:13px;color:var(--t1);resize:vertical;width:100%;direction:rtl" placeholder="הערות..."></textarea></div>
+      </div>
+      <!-- File upload -->
+      <div style="margin-top:18px">
+        <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">העלאת קובץ דוח</label>
+        <label id="viol-upload-label" style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:1.5px dashed #9FE1CB;border-radius:8px;padding:20px;background:#F5FBF8;text-align:center;transition:all .15s" onmouseover="this.style.background='#E1F5EE';this.style.borderColor='#1D9E75'" onmouseout="this.style.background='#F5FBF8';this.style.borderColor='#9FE1CB'">
+          <div style="width:40px;height:40px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <span style="font-size:13px;font-weight:500;color:#0F6E56">גרור קובץ לכאן או לחץ לבחירה</span>
+          <span id="viol-file-name" style="font-size:11px;color:#5F5E5A">PDF, JPG, PNG</span>
+          <input type="file" id="viol-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="onViolFileChange(this)">
+        </label>
+      </div>
+      <!-- Notes -->
+      <div style="margin-top:16px">
+        <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">הערות <span style="font-weight:400;color:#5F5E5A;font-size:11px">אופציונלי</span></label>
+        <textarea id="viol-notes" rows="2" style="width:100%;min-height:72px;padding:10px 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;resize:vertical;direction:rtl" placeholder="הערות..."></textarea>
       </div>
     </div>
-    <div class="mf">
-      <button class="btn btn-l btn-sm" onclick="closeModal('viol-ov')">ביטול</button>
-      <button class="btn btn-p btn-sm" onclick="saveViolation()">שמור</button>
+    <!-- Footer -->
+    <div style="padding:16px 20px;background:#F1EFE8;border-top:0.5px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:11px;color:#5F5E5A"><span style="color:#E24B4A">*</span> שדה חובה</span>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeModal('viol-ov')" style="padding:8px 18px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;border:0.5px solid rgba(0,0,0,.15);background:#fff;color:#1A1A1A">ביטול</button>
+        <button onclick="saveViolation()" style="padding:8px 20px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;border:none;background:#1D9E75;color:#fff">שמור דוח</button>
+      </div>
     </div>
   </div>
 </div>
