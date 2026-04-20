@@ -7030,7 +7030,7 @@ function renderViolations(){
   const totalCount=violationsList.length;
 
   let html=`<div class="viol-container">
-    <div class="viol-top-bar" style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:18px 22px;border-bottom:1px solid var(--bdr)">
+    <div class="viol-top-bar" style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:18px 22px;border-bottom:1px solid var(--bdr);gap:20px">
       <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">
         <button class="btn btn-p btn-sm" onclick="openViolationModal()" style="border-radius:8px">+ דוח חדש</button>
         <select id="viol-filter" onchange="renderViolations()" style="font-size:13px;padding:6px 12px;border:1px solid var(--bdr2);border-radius:8px;background:var(--card);color:var(--t1);font-family:inherit;cursor:pointer">
