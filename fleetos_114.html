@@ -1299,6 +1299,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div id="vc-summary-cards2" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px"></div>
         <div id="vc-summary-alt" style="margin-bottom:10px"></div>
         <div id="vc-summary-cards3" style="display:grid;grid-template-columns:1fr;gap:10px"></div>
+        <div id="vc-vehicle-timeline" style="margin-top:18px"></div>
       </div>
 
       <!-- DRIVER TAB -->
@@ -5152,6 +5153,107 @@ function renderVcHistory(vid){
   renderVcHandoverHistory(vid);
 }
 
+function renderVehicleTimeline(vid){
+  var el=document.getElementById('vc-vehicle-timeline');
+  if(!el) return;
+  var v=vehicles.find(function(x){return x.id===vid;});
+  if(!v){el.innerHTML='';return;}
+  var events=[];
+  var today=new Date();
+
+  // 1. History log entries (services, notes)
+  (v.historyLog||[]).forEach(function(h){
+    var icon=h.kind==='service'?'🔧':h.kind==='test'?'📋':'📝';
+    var iconBg=h.kind==='service'?'#dbeafe':h.kind==='test'?'#fef3c7':'#e0e7ff';
+    var iconClr=h.kind==='service'?'#1e40af':h.kind==='test'?'#854d0e':'#3730a3';
+    events.push({date:h.createdAt||h.date||'',icon:icon,bg:iconBg,clr:iconClr,title:h.serviceType||h.kind||'תיעוד',desc:h.desc||'',source:'manual'});
+  });
+
+  // 2. Violations
+  (typeof violationsList!=='undefined'?violationsList:[]).filter(function(vl){return vl.vehicleId===vid;}).forEach(function(vl){
+    events.push({date:vl.date||'',icon:'⚠️',bg:'#fee2e2',clr:'#991b1b',title:'דוח תנועה · '+(vl.issuer||''),desc:'מספר דוח: '+vl.num+(vl.status==='done'?' · נהג עודכן':''),source:'auto'});
+    if(vl.noticeSentAt) events.push({date:vl.noticeSentAt,icon:'📤',bg:'#fef3c7',clr:'#92400e',title:'הודעה על דוח נשלחה לנהג',desc:'דוח '+vl.num,source:'auto',isDate:true});
+    if(vl.noticeApprovedAt) events.push({date:vl.noticeApprovedAt,icon:'✅',bg:'#dcfce7',clr:'#166534',title:'נהג אישר קבלת דוח',desc:'דוח '+vl.num,source:'auto',isDate:true});
+    if(vl.transferSentAt) events.push({date:vl.transferSentAt,icon:'📤',bg:'#fee2e2',clr:'#991b1b',title:'הסבת דוח נשלחה לנהג',desc:'דוח '+vl.num,source:'auto',isDate:true});
+    if(vl.transferApprovedAt) events.push({date:vl.transferApprovedAt,icon:'✅',bg:'#dcfce7',clr:'#166534',title:'נהג אישר הסבת דוח',desc:'דוח '+vl.num,source:'auto',isDate:true});
+    if(vl.paymentReceipt) events.push({date:vl.paymentReceipt.uploadedAt||'',icon:'💳',bg:'#dcfce7',clr:'#166534',title:'אישור תשלום הועלה',desc:'דוח '+vl.num,source:'auto'});
+  });
+
+  // 3. Handover forms
+  var hoForms=JSON.parse(localStorage.getItem('hoForms2')||'[]');
+  hoForms.filter(function(f){return f.vehicleId===vid;}).forEach(function(f){
+    var typeN={mission:'משימה',loaner:'רכב חלופי',bridge:'רכב גישור'}[f.type]||f.type;
+    var modeN=f.mode==='take'?'מסירה':'החזרה';
+    events.push({date:f.createdAt||f.date||'',icon:f.mode==='take'?'🚗':'🏁',bg:f.mode==='take'?'#dbeafe':'#dcfce7',clr:f.mode==='take'?'#1e40af':'#166534',title:typeN+' — '+modeN,desc:(f.altPlate?'לוחית: '+f.altPlate:''),source:'auto'});
+  });
+
+  // 4. Delivery
+  if(v.delivery) events.push({date:v.delivery,icon:'📦',bg:'#e0e7ff',clr:'#3730a3',title:'מסירת רכב',desc:'נמסר ל'+(v.driver?.name||''),source:'auto'});
+
+  // 5. Document uploads
+  var vd=vehicleDocs[vid]||{};
+  MANDATORY_DOCS.forEach(function(d){
+    if(vd[d.key]) events.push({date:'',icon:'📄',bg:'#dcfce7',clr:'#166534',title:d.label+' הועלה',desc:vd[d.key].name||'',source:'auto'});
+  });
+
+  // Sort by date descending
+  events.sort(function(a,b){
+    var da=a.date?new Date(a.date):new Date(0);
+    var db=b.date?new Date(b.date):new Date(0);
+    return db-da;
+  });
+
+  if(!events.length){el.innerHTML='';return;}
+
+  // Render timeline
+  var html='<div style="font-size:16px;font-weight:700;color:var(--t1);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">'+
+    '<span>היסטוריית הרכב</span>'+
+    '<span style="font-size:11px;color:var(--t3);font-weight:400">'+events.length+' אירועים</span></div>';
+  html+='<div style="position:relative;padding-right:24px">';
+  // Vertical line
+  html+='<div style="position:absolute;right:11px;top:0;bottom:0;width:2px;background:var(--bdr)"></div>';
+  var showAll=el.dataset.showAll==='1';
+  var maxShow=showAll?events.length:Math.min(events.length,10);
+  for(var i=0;i<maxShow;i++){
+    var ev=events[i];
+    var evDate=ev.date?new Date(ev.date):null;
+    var dateStr=evDate?evDate.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+    var ago='';
+    if(evDate){
+      var diff=Math.round((today-evDate)/(1000*60*60*24));
+      if(diff===0) ago='היום';
+      else if(diff===1) ago='אתמול';
+      else if(diff<30) ago='לפני '+diff+' ימים';
+      else if(diff<60) ago='לפני חודש';
+      else if(diff<365) ago='לפני '+Math.round(diff/30)+' חודשים';
+      else ago='לפני '+Math.round(diff/365)+' שנים';
+    }
+    html+='<div style="display:flex;gap:12px;margin-bottom:16px;position:relative;align-items:flex-start">';
+    // Icon circle
+    html+='<div style="width:28px;height:28px;border-radius:50%;background:'+ev.bg+';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;z-index:1;border:2px solid var(--card)">'+ev.icon+'</div>';
+    // Content
+    html+='<div style="flex:1;min-width:0">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">';
+    html+='<div style="font-size:13px;font-weight:600;color:var(--t1)">'+ev.title+'</div>';
+    html+='<div style="font-size:11px;color:var(--t3)">'+dateStr+'</div>';
+    html+='</div>';
+    if(ev.desc) html+='<div style="font-size:11px;color:var(--t2);margin-top:2px">'+ev.desc+'</div>';
+    if(ago) html+='<span style="display:inline-block;font-size:10px;color:var(--t3);background:var(--bg);padding:1px 8px;border-radius:999px;margin-top:3px;border:1px solid var(--bdr)">'+ago+'</span>';
+    html+='</div></div>';
+  }
+  if(events.length>maxShow){
+    html+='<div style="text-align:center;padding:8px"><button onclick="showFullTimeline('+vid+')" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;padding:6px 18px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2)">הצג הכל ('+events.length+') ←</button></div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+function showFullTimeline(vid){
+  // Expand to show all - just re-render with higher limit
+  var el=document.getElementById('vc-vehicle-timeline');
+  if(el) el.dataset.showAll='1';
+  renderVehicleTimeline(vid);
+}
+
 function renderVcHandoverHistory(vid){
   const el = document.getElementById('vc-handover-history');
   if(!el) return;
@@ -5521,6 +5623,7 @@ function openDet(vid){
   renderVcMissions(vid);
   renderVcViolations(vid);
   renderVcAccidents(vid);
+  if(typeof renderVehicleTimeline==='function') renderVehicleTimeline(vid);
   id('vc-mandatory-docs').innerHTML=`<div class="tw" style="border-radius:var(--r)">`+
     MANDATORY_DOCS.map((doc,i)=>{
       const uploaded=vd[doc.key];
