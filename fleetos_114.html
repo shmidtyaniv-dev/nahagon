@@ -40,14 +40,14 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--t1);font-si
 .logo-name{font-size:15px;font-weight:700;color:#fff}
 .logo-sub{font-size:12px;color:rgba(255,255,255,.42);margin-top:1px}
 
-.sb-chip{margin:8px 10px 0;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09);border-radius:var(--rs);padding:8px 11px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .15s}
-.sb-chip:hover{background:rgba(255,255,255,.11)}
-.chip-lbl{font-size:12px;color:rgba(255,255,255,.42)}
-.chip-val{font-size:20px;font-weight:700;color:#fff;line-height:1}
+.sb-chip{margin:8px 14px 0;background:#fff;border:0.5px solid rgba(0,0,0,.15);border-radius:12px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .15s}
+.sb-chip:hover{background:#F1EFE8}
+.chip-lbl{font-size:11px;color:#5F5E5A}
+.chip-val{font-size:18px;font-weight:500;color:#0F6E56;line-height:1}
 .chip-sub{font-size:11px;color:rgba(255,255,255,.32);margin-top:1px}
-.chip-ico svg{width:26px;height:26px;color:rgba(255,255,255,.16)}
+.chip-ico svg{width:26px;height:26px;color:#1D9E75}
 
-.nav{padding:8px 8px;flex:1;overflow-y:auto}
+.nav{padding:8px 14px;flex:1;overflow-y:auto}
 .nav-sec{font-size:11px;font-weight:700;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;padding:0 9px;margin:11px 0 4px}
 .ni{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:8px;cursor:pointer;color:#1A1A1A;font-size:14px;transition:all .15s;margin-bottom:2px;user-select:none}
 .ni:hover{background:#F1EFE8}
@@ -1271,6 +1271,33 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <button onclick="saveRequestTemplates()" style="background:var(--gd);color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">שמור תבניות</button>
         <button onclick="resetRequestTemplates()" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);padding:7px 14px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">ברירת מחדל</button>
         <span id="req-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
+      </div>
+    </div>
+
+    <!-- THEME COLORS -->
+    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
+      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+        🎨 צבעי ממשק
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:4px">צבע Topbar</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="theme-topbar-color" value="#ffffff" oninput="document.querySelector('.topbar').style.background=this.value" style="width:40px;height:32px;border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="theme-topbar-hex" value="#ffffff" oninput="document.querySelector('.topbar').style.background=this.value;document.getElementById('theme-topbar-color').value=this.value" style="width:80px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:monospace;direction:ltr">
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:4px">צבע תפריט צד</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="theme-sidebar-color" value="#ffffff" oninput="document.querySelector('.sb').style.background=this.value" style="width:40px;height:32px;border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="theme-sidebar-hex" value="#ffffff" oninput="document.querySelector('.sb').style.background=this.value;document.getElementById('theme-sidebar-color').value=this.value" style="width:80px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:monospace;direction:ltr">
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button onclick="saveThemeColors()" style="background:var(--gd);color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">שמור צבעים</button>
+        <button onclick="resetThemeColors()" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">ברירת מחדל</button>
       </div>
     </div>
 
@@ -6759,6 +6786,37 @@ function openAdd(){
   ['scan-vehicle-zone','scan-driver-zone'].forEach(x=>{id(x).classList.remove('scan-filled')});
   ['toll-6','toll-6n','toll-carmel','toll-fastlane'].forEach(x=>{id(x).checked=false});
 }
+
+function saveThemeColors(){
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  s.themeTopbar=document.getElementById('theme-topbar-color')?.value||'#ffffff';
+  s.themeSidebar=document.getElementById('theme-sidebar-color')?.value||'#ffffff';
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
+  showToast('✓ צבעים נשמרו');
+}
+function resetThemeColors(){
+  document.querySelector('.topbar').style.background='#ffffff';
+  document.querySelector('.sb').style.background='#ffffff';
+  var tc=document.getElementById('theme-topbar-color');if(tc)tc.value='#ffffff';
+  var th=document.getElementById('theme-topbar-hex');if(th)th.value='#ffffff';
+  var sc=document.getElementById('theme-sidebar-color');if(sc)sc.value='#ffffff';
+  var sh=document.getElementById('theme-sidebar-hex');if(sh)sh.value='#ffffff';
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  delete s.themeTopbar;delete s.themeSidebar;
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
+  showToast('צבעים אופסו');
+}
+function applyThemeColors(){
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  if(s.themeTopbar) document.querySelector('.topbar').style.background=s.themeTopbar;
+  if(s.themeSidebar) document.querySelector('.sb').style.background=s.themeSidebar;
+  var tc=document.getElementById('theme-topbar-color');if(tc&&s.themeTopbar)tc.value=s.themeTopbar;
+  var th=document.getElementById('theme-topbar-hex');if(th&&s.themeTopbar)th.value=s.themeTopbar;
+  var sc=document.getElementById('theme-sidebar-color');if(sc&&s.themeSidebar)sc.value=s.themeSidebar;
+  var sh=document.getElementById('theme-sidebar-hex');if(sh&&s.themeSidebar)sh.value=s.themeSidebar;
+}
+// Apply saved colors on load
+document.addEventListener('DOMContentLoaded',function(){setTimeout(applyThemeColors,100);});
 
 function toggleAccSection(header){
   var body=header.nextElementSibling;
