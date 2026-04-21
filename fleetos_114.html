@@ -2305,11 +2305,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 #acc-ov .modal div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
 #acc-ov .modal>div:last-child{position:sticky;bottom:0;z-index:2}
 .acc-row.viol-header{display:none!important}
-.acc-row.viol-data-row{display:block!important;grid-template-columns:none!important;padding:10px 14px!important;text-align:right}
-.acc-row .viol-driver{margin-bottom:6px}
-.acc-row .viol-mono{font-size:13px}
-.acc-row>div{margin:3px 0}
-.acc-row>div:last-child{display:flex!important;justify-content:center!important;margin-top:8px;gap:6px}
+.acc-row.viol-data-row{display:block!important;padding:12px 14px!important;text-align:right}
 }
 </style>
 
@@ -8417,13 +8413,13 @@ function renderAccidents(){
     if(a.status==='done') statusBadge='<span class="viol-badge viol-badge-done">טופל</span>';
     else statusBadge='<span class="viol-badge viol-badge-sent">בטיפול</span>';
     html+='<div class="viol-row viol-data-row acc-row">';
-    html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(driverName)+'">'+inits(driverName)+'</div><span style="font-weight:500;font-size:13px">'+driverName+'</span></div>';
-    html+='<div class="viol-mono" style="color:var(--gd)">'+(a.num||'—')+'</div>';
-    html+='<div class="viol-mono">'+plate+'</div>';
-    html+='<div>'+faultBadge+'</div>';
-    html+='<div style="font-size:13px;color:var(--t2)">'+(a.date?fd(a.date):'—')+'</div>';
-    html+='<div>'+statusBadge+'</div>';
-    html+='<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">';
+    html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(driverName)+'">'+inits(driverName)+'</div><span style="font-weight:500;font-size:14px">'+driverName+'</span></div>';
+    html+='<div class="viol-cell" data-label="מס׳ אירוע"><span class="viol-mono" style="color:var(--gd)">'+(a.num||'—')+'</span></div>';
+    html+='<div class="viol-cell" data-label="רכב"><span class="viol-mono">'+plate+'</span></div>';
+    html+='<div class="viol-cell" data-label="אשם">'+faultBadge+'</div>';
+    html+='<div class="viol-cell" data-label="תאריך"><span class="viol-muted">'+(a.date?fd(a.date):'—')+'</span></div>';
+    html+='<div class="viol-cell">'+statusBadge+'</div>';
+    html+='<div class="viol-actions" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">';
     html+='<button class="viol-icon-btn v-green" onclick="openAccidentModal('+a.id+')" title="עריכה"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>';
     if(a.fileData) html+='<button class="viol-icon-btn v-blue" onclick="viewAccidentDoc('+a.id+')" title="צפה בקובץ"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>';
     html+='<button class="viol-icon-btn v-amber" onclick="openAccLogsModal('+a.id+')" title="תיעודים"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#854F0B" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>';
