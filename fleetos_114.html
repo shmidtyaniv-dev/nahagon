@@ -5332,7 +5332,16 @@ function renderVehicleTimeline(vid){
     var icon=h.kind==='service'?'🔧':h.kind==='test'?'📋':'📝';
     var iconBg=h.kind==='service'?'#dbeafe':h.kind==='test'?'#fef3c7':'#e0e7ff';
     var iconClr=h.kind==='service'?'#1e40af':h.kind==='test'?'#854d0e':'#3730a3';
-    events.push({date:h.createdAt||h.date||'',icon:icon,bg:iconBg,clr:iconClr,title:h.serviceType||h.kind||'תיעוד',desc:h.desc||'',source:'manual'});
+    var autoTitle=h.serviceType||'';
+    if(!autoTitle && h.desc){
+      if(h.desc.includes('נהג שונה')) autoTitle='עדכון נהג';
+      else if(h.desc.includes('ק"מ עודכן')) autoTitle='עדכון ק"מ';
+      else if(h.desc.includes('רישיון')) autoTitle='עדכון רישיון';
+      else if(h.desc.includes('מסירה')) autoTitle='עדכון מסירה';
+      else autoTitle='עדכון פרטים';
+    }
+    if(!autoTitle) autoTitle=h.kind==='service'?'טיפול':h.kind==='test'?'טסט':'עדכון';
+    events.push({date:h.createdAt||h.date||'',icon:icon,bg:iconBg,clr:iconClr,title:autoTitle,desc:h.desc||'',source:h.source||'manual'});
   });
 
   // 2. Violations
