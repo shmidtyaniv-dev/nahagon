@@ -2180,7 +2180,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </label>
           <input type="file" id="fa-driver-doc" accept="image/*,application/pdf" style="display:none" onchange="scanDriverDoc(this)">
         </div>
-      </div>
 
       <div class="fg">
         <div class="ff"><label>שם מלא *</label><input id="fa-dname" placeholder="ישראל ישראלי"></div>
@@ -2244,7 +2243,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
     </div>
     <!-- Footer -->
-    <div style="padding:16px 20px;background:#F1EFE8;border-top:0.5px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between">
+    <div style="padding:16px 20px;background:#F1EFE8;border-top:0.5px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;position:sticky;bottom:0;z-index:3">
       <span style="font-size:11px;color:#5F5E5A"><span style="color:#E24B4A">*</span> שדה חובה</span>
       <div style="display:flex;gap:8px">
         <button onclick="closeModal('add-ov')" style="padding:8px 18px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;border:0.5px solid rgba(0,0,0,.15);background:#fff;color:#1A1A1A">ביטול</button>
