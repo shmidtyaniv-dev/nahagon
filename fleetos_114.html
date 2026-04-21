@@ -7083,8 +7083,8 @@ function renderViolations(){
     id('violations-list').innerHTML=html;return;
   }
 
-  html+=`<div class="viol-row viol-header" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.8fr 1.1fr">
-    <div>שם הנהג</div><div>מס׳ דוח</div><div>רכב</div><div>מקור הדוח</div><div>תאריך עבירה</div><div>סוג טיפול</div><div>סטטוס</div><div style="text-align:center">פעולות</div>
+  html+=`<div class="viol-row viol-header" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 1fr 1.1fr">
+    <div>שם הנהג</div><div>מס׳ דוח</div><div>רכב</div><div>מקור הדוח</div><div>תאריך עבירה</div><div>סטטוס</div><div style="text-align:center">פעולות</div>
   </div>`;
 
   list.forEach(v=>{
@@ -7123,7 +7123,7 @@ function renderViolations(){
       }
     }
 
-    html+=`<div class="viol-row viol-data-row" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.8fr 1.1fr">
+    html+=`<div class="viol-row viol-data-row" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 1fr 1.1fr">
       <div class="viol-driver">
         <div class="viol-avatar" style="background:${ac}">${ini}</div>
         <div><div class="viol-driver-name">${driverName}</div>${v.transferDate?`<div style="font-size:10px;color:#5F5E5A;margin-top:1px">הסבה: ${fd(v.transferDate)}</div>`:''}</div>
@@ -7132,7 +7132,6 @@ function renderViolations(){
       <div class="viol-mono">${veh?veh.plate:'—'}</div>
       <div class="viol-muted">${v.issuer||'—'}</div>
       <div class="viol-muted">${fd(v.date)}</div>
-      <div>${typeBadge}</div>
       <div>
         <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:500;${autoStyle};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${autoDot};flex-shrink:0"></span>${autoStatus}</span>
       </div>
