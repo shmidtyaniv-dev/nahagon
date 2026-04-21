@@ -2057,7 +2057,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <!-- ADD MODAL -->
 <div class="ov" id="add-ov">
-  <div class="modal" style="max-width:560px;border-radius:12px" onclick="event.stopPropagation()">
+  <div class="modal" style="max-width:560px;border-radius:12px;display:flex;flex-direction:column;overflow:hidden" onclick="event.stopPropagation()">
     <!-- Green header -->
     <div style="background:#1D9E75;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div style="display:flex;align-items:center;gap:10px">
@@ -2068,7 +2068,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
       <button onclick="closeModal('add-ov')" style="background:rgba(255,255,255,.15);border:none;width:30px;height:30px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <div class="mb" style="padding:0">
+    <div class="mb" style="padding:0;overflow-y:auto;flex:1;min-height:0">
 
       <!-- ACCORDION: פרטי רכב -->
       <div style="border-bottom:1px solid rgba(0,0,0,.08)">
