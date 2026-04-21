@@ -2068,16 +2068,20 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
       <button onclick="closeModal('add-ov')" style="background:rgba(255,255,255,.15);border:none;width:30px;height:30px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <div class="mb">
+    <div class="mb" style="padding:0">
 
-      <!-- SECTION: רכב -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="fsl" style="grid-column:unset;margin:0">פרטי רכב</div>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--t2)">
-          <input type="checkbox" id="fa-isnew" onchange="toggleNewVehicle()" style="width:15px;height:15px;accent-color:var(--gl)">
-          רכב חדש
-        </label>
-      </div>
+      <!-- ACCORDION: פרטי רכב -->
+      <div style="border-bottom:1px solid rgba(0,0,0,.08)">
+        <div onclick="toggleAccSection(this)" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🚗</span><span style="font-size:14px;font-weight:600;color:var(--t1)">פרטי רכב</span></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--t2)" onclick="event.stopPropagation()">
+              <input type="checkbox" id="fa-isnew" onchange="toggleNewVehicle()" style="width:14px;height:14px;accent-color:var(--gl)"> רכב חדש
+            </label>
+            <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
+          </div>
+        </div>
+        <div class="acc-body" style="padding:0 20px 16px">
 
       <!-- Vehicle photo -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
@@ -2119,9 +2123,16 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div class="ff"><label>תוקף רישיון רכב</label><input type="date" id="fa-lic"></div>
       </div>
 
-      <!-- כבישי אגרה -->
-      <div style="margin-top:10px;background:var(--bg);border:1px solid var(--bdr2);border-radius:var(--r);padding:10px 14px">
-        <div style="font-size:20px;font-weight:600;color:var(--t2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">מנויי כבישי אגרה</div>
+        </div>
+      </div>
+
+      <!-- ACCORDION: כבישי אגרה -->
+      <div style="border-bottom:1px solid rgba(0,0,0,.08)">
+        <div onclick="toggleAccSection(this)" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🛣️</span><span style="font-size:14px;font-weight:600;color:var(--t1)">כבישי אגרה</span></div>
+          <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
+        </div>
+        <div class="acc-body" style="padding:0 20px 16px;display:none">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
           <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)">
             <input type="checkbox" id="toll-6" style="accent-color:var(--gl);width:14px;height:14px"> כביש 6
@@ -2138,11 +2149,16 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
       </div>
 
-      <hr class="fsep" style="margin:12px 0">
+        </div>
+      </div>
 
-      <!-- SECTION: נהג -->
-      <div style="margin-bottom:10px">
-        <div class="fsl" style="grid-column:unset;margin:0 0 10px">פרטי נהג</div>
+      <!-- ACCORDION: פרטי נהג -->
+      <div style="border-bottom:1px solid rgba(0,0,0,.08)">
+        <div onclick="toggleAccSection(this)" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">👤</span><span style="font-size:14px;font-weight:600;color:var(--t1)">פרטי נהג</span></div>
+          <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
+        </div>
+        <div class="acc-body" style="padding:0 20px 16px">
         <!-- AI SCAN: רישיון נהיגה -->
         <div id="scan-driver-zone" class="scan-zone" style="margin-bottom:12px;background:linear-gradient(135deg,#f0fdf4 0%,#dbeafe 100%);border:2px dashed #7DC242;border-radius:10px;padding:14px;text-align:center;transition:all .25s">
           <label for="fa-driver-doc" style="cursor:pointer;display:block">
@@ -2182,10 +2198,16 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
       </div>
 
-      <hr class="fsep" style="margin:12px 0">
+        </div>
+      </div>
 
-      <!-- SECTION: טיפולים -->
-      <div class="fsl" style="grid-column:unset;margin-bottom:10px">טיפולים</div>
+      <!-- ACCORDION: טיפולים -->
+      <div style="border-bottom:1px solid rgba(0,0,0,.08)">
+        <div onclick="toggleAccSection(this)" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🔧</span><span style="font-size:14px;font-weight:600;color:var(--t1)">טיפולים</span></div>
+          <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
+        </div>
+        <div class="acc-body" style="padding:0 20px 16px;display:none">
 
       <div id="svc-new-mode" style="display:none;background:var(--gbg);border:1px solid #86efac;border-radius:var(--r);padding:10px 14px;margin-bottom:10px">
         <div style="font-size:14px;font-weight:600;color:#166534;margin-bottom:4px">רכב חדש — טיפול ראשון</div>
@@ -2215,6 +2237,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div id="svc-calc-result" style="display:none;background:var(--bg);border:1px solid var(--bdr2);border-radius:var(--r);padding:9px 14px;margin-top:6px;font-size:14px">
           <div style="font-weight:600;color:var(--gd);margin-bottom:4px">חישוב אוטומטי לטיפול הבא:</div>
           <div id="svc-calc-text" style="color:var(--t2)"></div>
+        </div>
+      </div>
         </div>
       </div>
 
@@ -6469,6 +6493,19 @@ function openAdd(){
   ['scan-v-status','scan-d-status'].forEach(x=>{id(x).textContent=''});
   ['scan-vehicle-zone','scan-driver-zone'].forEach(x=>{id(x).classList.remove('scan-filled')});
   ['toll-6','toll-6n','toll-carmel','toll-fastlane'].forEach(x=>{id(x).checked=false});
+}
+
+function toggleAccSection(header){
+  var body=header.nextElementSibling;
+  var arrow=header.querySelector('.acc-arrow');
+  if(!body)return;
+  if(body.style.display==='none'){
+    body.style.display='';
+    if(arrow)arrow.style.transform='rotate(0deg)';
+  } else {
+    body.style.display='none';
+    if(arrow)arrow.style.transform='rotate(-90deg)';
+  }
 }
 
 function toggleNewVehicle(){
