@@ -8947,22 +8947,47 @@ function setUpdateMode(mode){
 function renderArchivePage(){
   const el=id('archive-list');if(!el)return;
   if(!archivedVehicles.length){el.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--t3);font-size:14px">הארכיון ריק</div>';return;}
-  el.innerHTML=archivedVehicles.slice().reverse().map(r=>`
-    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-        <div><div style="font-size:14px;font-weight:600;color:var(--t1)">${r.make} ${r.model} · ${r.plate}</div><div style="font-size:12px;color:var(--t3)">קוד: ${r.code||'—'}</div></div>
-        <span style="font-size:11px;color:#fff;background:${r.reason==='driver_left'?'#d97706':'#dc2626'};padding:3px 9px;border-radius:999px">${r.reason==='driver_left'?'נהג עזב':'רכב הוחזר'}</span>
+  var reasonLabels={driver_left:'נהג עזב',driver_quit:'נהג ויתר',deal_ended:'סיום עסקה',vehicle_returned:'רכב הוחזר'};
+  var reasonColors={driver_left:'#d97706',driver_quit:'#d97706',deal_ended:'#3b82f6',vehicle_returned:'#dc2626'};
+  el.innerHTML=archivedVehicles.slice().reverse().map(function(r,idx){
+    var revIdx=archivedVehicles.length-1-idx;
+    var reasonLabel=reasonLabels[r.reason]||'הוסר';
+    var reasonColor=reasonColors[r.reason]||'#dc2626';
+    return `<div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:11px;color:#fff;background:${reasonColor};padding:3px 10px;border-radius:999px;font-weight:500">${reasonLabel}</span>
+          <button onclick="restoreFromArchive(${revIdx})" style="font-size:11px;color:var(--gd);background:#f0fdf4;border:1px solid #bbf7d0;padding:3px 10px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:500">↩ החזר לציר</button>
+        </div>
+        <div style="font-size:16px;font-weight:700;color:var(--t1)">${r.plate} · ${r.driver.name}</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:12px;color:var(--t2)">
-        <div><span style="color:var(--t3)">נהג: </span><b>${r.driver.name}</b></div>
+        <div><span style="color:var(--t3)">רכב: </span><b>${r.make} ${r.model}</b></div>
+        <div><span style="color:var(--t3)">קוד: </span>${r.code||'—'}</div>
         <div><span style="color:var(--t3)">ת.ז.: </span>${r.driver.id||'—'}</div>
         <div><span style="color:var(--t3)">טלפון: </span>${r.driver.phone||'—'}</div>
         <div><span style="color:var(--t3)">מייל: </span>${r.driver.email||'—'}</div>
         <div><span style="color:var(--t3)">תחילת עסקה: </span>${fd(r.periodFrom)||'—'}</div>
-        <div><span style="color:var(--t3)">סיום: </span>${fd(r.periodTo)||'—'}</div>
-        <div style="grid-column:span 2"><span style="color:var(--t3)">הוסר: </span>${fd(r.archivedAt)||'—'}${r.note?' · '+r.note:''}</div>
+        <div><span style="color:var(--t3)">הוסר: </span>${fd(r.archivedAt)||'—'}</div>
+        ${r.note?`<div><span style="color:var(--t3)">הערה: </span>${r.note}</div>`:''}
       </div>
-    </div>`).join('');
+    </div>`;}).join('');
+}
+function restoreFromArchive(idx){
+  if(!confirm('להחזיר את הרכב לציר הפעיל?'))return;
+  var r=archivedVehicles[idx];if(!r)return;
+  vehicles.unshift({
+    id:r.vehicleId||Date.now(),plate:r.plate,code:r.code||'',
+    make:r.make,model:r.model,delivery:r.periodFrom||'',
+    licenseExp:'',dealEnd:r.dealEnd||'',currentKm:0,
+    driver:{name:r.driver.name,id:r.driver.id||'',phone:r.driver.phone||'',email:r.driver.email||'',licenseExp:r.driver.licenseExp||''},
+    family:[],historyLog:[{id:'h'+Date.now(),kind:'note',desc:'הוחזר מארכיון',createdAt:new Date().toISOString(),source:'auto'}],docs:false
+  });
+  archivedVehicles.splice(idx,1);
+  localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
+  try{if(typeof persistVehiclesDebounced==='function')persistVehiclesDebounced();}catch(e){}
+  renderArchivePage();refresh();
+  showToast('✓ '+r.plate+' הוחזר לציר');
 }
 // openArchiveModal and confirmArchive defined earlier (line ~3173)
 
