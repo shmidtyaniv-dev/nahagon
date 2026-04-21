@@ -6501,13 +6501,11 @@ function toggleAccSection(header){
   var body=header.nextElementSibling;
   if(!body)return;
   var isOpen=body.style.display!=='none';
-  // Close all accordion sections in same modal
-  var parent=header.closest('.mb')||header.parentElement.parentElement;
-  if(parent){
-    parent.querySelectorAll('.acc-body').forEach(function(b){b.style.display='none';});
-    parent.querySelectorAll('.acc-arrow').forEach(function(a){a.style.transform='rotate(-90deg)';});
-  }
-  // Toggle clicked one
+  // Close ALL accordion sections in the entire modal
+  var modal=header.closest('.modal')||header.closest('.ov')||document;
+  modal.querySelectorAll('.acc-body').forEach(function(b){b.style.display='none';});
+  modal.querySelectorAll('.acc-arrow').forEach(function(a){a.style.transform='rotate(-90deg)';});
+  // Open clicked one if it was closed
   if(!isOpen){
     body.style.display='';
     var arrow=header.querySelector('.acc-arrow');
