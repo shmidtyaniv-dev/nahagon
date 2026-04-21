@@ -2245,7 +2245,20 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .viol-top-bar h2{margin:0;font-size:17px;font-weight:700;color:var(--t1)}
 .viol-top-right{display:flex;gap:8px;align-items:center}
 .viol-count{background:var(--gd);color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;margin-inline-start:10px}
-@media(max-width:900px){.viol-row{grid-template-columns:1fr;gap:6px;padding:12px 14px}.viol-header{display:none}}
+@media(max-width:900px){
+.viol-row{grid-template-columns:1fr!important;gap:4px;padding:14px 16px}
+.viol-header{display:none}
+.viol-data-row{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--bdr);padding:14px 16px}
+.viol-data-row .viol-driver{margin-bottom:4px}
+.viol-data-row .viol-mono,.viol-data-row .viol-muted{font-size:13px;text-align:right}
+.viol-data-row .viol-actions{justify-content:flex-start!important;flex-wrap:wrap}
+.viol-top-bar{grid-template-columns:1fr!important;gap:12px!important;text-align:center}
+.viol-top-bar>div{justify-content:center!important}
+}
+@media(max-width:480px){
+#viol-type-selector{grid-template-columns:1fr!important}
+#viol-ov .modal>div:nth-child(2) div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+}
 </style>
 
 <!-- Firebase SDK -->
