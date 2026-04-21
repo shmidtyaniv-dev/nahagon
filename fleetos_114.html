@@ -8965,42 +8965,7 @@ function renderArchivePage(){
       </div>
     </div>`).join('');
 }
-function openArchiveModal(vid){
-  const v=vehicles.find(x=>x.id===vid);if(!v)return;
-  const ex=document.getElementById('archive-modal');if(ex)ex.remove();
-  const m=document.createElement('div');m.id='archive-modal';
-  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
-  m.innerHTML=`<div style="background:#fff;border-radius:12px;padding:22px;width:100%;max-width:400px;direction:rtl" onclick="event.stopPropagation()">
-    <div style="font-size:15px;font-weight:600;color:#dc2626;margin-bottom:6px">הסרת רכב</div>
-    <div style="font-size:13px;color:#555;margin-bottom:16px">${v.make} ${v.model} · ${v.plate} · נהג: ${v.driver.name}</div>
-    <div style="margin-bottom:14px">
-      <div style="font-size:12px;font-weight:500;color:#666;margin-bottom:8px">סיבת הסרה:</div>
-      <label style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid #ddd;border-radius:7px;cursor:pointer;margin-bottom:6px"><input type="radio" name="archive-reason" value="driver_left" style="margin-top:2px;accent-color:#dc2626"><div><div style="font-size:13px;font-weight:500">נהג עזב את החברה</div><div style="font-size:11px;color:#888">הרכב יסומן כ"פנוי"</div></div></label>
-      <label style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid #ddd;border-radius:7px;cursor:pointer"><input type="radio" name="archive-reason" value="vehicle_returned" style="margin-top:2px;accent-color:#dc2626"><div><div style="font-size:13px;font-weight:500">רכב הוחזר (סיום חוזה)</div><div style="font-size:11px;color:#888">הרכב והנהג יוסרו</div></div></label>
-    </div>
-    <div style="margin-bottom:14px"><div style="font-size:12px;color:#666;margin-bottom:4px">הערה (אופציונלי)</div><input id="archive-note" type="text" placeholder="סיבה, הערות..." style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit"></div>
-    <div style="background:#fef3c7;border-radius:6px;padding:8px 10px;font-size:11px;color:#92400e;margin-bottom:14px">⚠️ הפעולה תישמר בארכיון לצורך מעקב עתידי</div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button onclick="document.getElementById('archive-modal').remove()" style="padding:7px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>
-      <button onclick="confirmArchive(${vid})" style="padding:7px 16px;background:#dc2626;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit">אשר הסרה</button>
-    </div>
-  </div>`;
-  document.body.appendChild(m);
-}
-function confirmArchive(vid){
-  const reason=document.querySelector('input[name="archive-reason"]:checked')?.value;
-  if(!reason){alert('יש לבחור סיבת הסרה');return;}
-  const note=document.getElementById('archive-note').value.trim();
-  const v=vehicles.find(x=>x.id===vid);if(!v)return;
-  const record={archivedAt:new Date().toISOString().slice(0,10),reason,note,vehicleId:v.id,plate:v.plate,code:v.code,make:v.make,model:v.model,driver:{name:v.driver.name,id:v.driver.id,phone:v.driver.phone,email:v.driver.email},periodFrom:v.delivery||'',periodTo:new Date().toISOString().slice(0,10)};
-  archivedVehicles.push(record);
-  localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
-  if(reason==='driver_left'){v.driver={name:'פנוי',id:'',phone:'',email:'',licenseExp:''};v.status='free';}
-  else{const i=vehicles.indexOf(v);if(i>-1)vehicles.splice(i,1);}
-  document.getElementById('archive-modal').remove();
-  go('vehicles',document.querySelector('.ni[dp="vehicles"]'));refresh();
-  showToast('✓ '+record.make+' '+record.model+' ('+record.driver.name+') הועבר לארכיון');
-}
+// openArchiveModal and confirmArchive defined earlier (line ~3173)
 
 /* ── FAMILY ── */
 function addFamilyMember(){
