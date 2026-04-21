@@ -160,6 +160,45 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--t1);font-si
 .cal-item-arr{font-size:11px;color:var(--t3);flex-shrink:0;align-self:center}
 .cal-empty-msg{padding:14px;font-size:12px;color:var(--t3);text-align:center}
 
+/* ─ DASHBOARD TIMELINE ─ */
+.timeline-card{background:#fff;border-radius:12px;border:0.5px solid rgba(0,0,0,.08);overflow:hidden;margin-bottom:20px}
+.timeline-card-header{padding:14px 18px;border-bottom:0.5px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.timeline-card-title{font-size:14px;font-weight:500;margin:0}
+.timeline-card-sub{font-size:11px;color:#5F5E5A;margin-top:2px}
+.tl-range{display:flex;background:#F1EFE8;border-radius:8px;padding:3px;gap:2px}
+.tl-range-btn{background:transparent;border:none;padding:4px 10px;font-size:11px;font-weight:500;color:#5F5E5A;cursor:pointer;border-radius:6px;font-family:inherit}
+.tl-range-btn.active{background:#fff;color:#1A1A1A;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.tl-body{padding:18px}
+.tl-track{position:relative;height:60px;margin-bottom:18px}
+.tl-line{position:absolute;top:20px;right:0;left:0;height:2px;background:#E5E5E0;border-radius:2px}
+.tl-dot{position:absolute;top:16px;width:10px;height:10px;border-radius:50%}
+.tl-dot.today{top:13px;width:16px;height:16px;background:#1D9E75;border:3px solid #fff;box-shadow:0 0 0 1px #1D9E75}
+.tl-dot.amber{background:#E89B2A}
+.tl-dot.blue{background:#378ADD}
+.tl-label{position:absolute;top:40px;font-size:10px;text-align:center;width:56px}
+.tl-label.today{color:#0F6E56;font-weight:500}
+.tl-label:not(.today){color:#5F5E5A}
+.tl-events{display:flex;flex-direction:column;gap:8px}
+.tl-event{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:8px;border-right:3px solid transparent}
+.tl-event.amber{background:#FAEEDA;border-right-color:#E89B2A}
+.tl-event.blue{background:#E6F1FB;border-right-color:#378ADD}
+.tl-event-date{width:44px;height:44px;border-radius:8px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.tl-event.amber .tl-event-date{color:#854F0B}
+.tl-event.blue .tl-event-date{color:#185FA5}
+.tl-event-month{font-size:9px;font-weight:500}
+.tl-event-day{font-size:15px;font-weight:500;line-height:1}
+.tl-event-content{flex:1;min-width:0}
+.tl-event-title{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px}
+.tl-event-days{color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:500}
+.tl-event-days.amber{background:#E89B2A}
+.tl-event-days.blue{background:#378ADD}
+.tl-event-meta{font-size:11px}
+.tl-event.amber .tl-event-meta{color:#854F0B}
+.tl-event.blue .tl-event-meta{color:#185FA5}
+.tl-event-action{padding:6px 12px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.tl-event-action.primary{background:#fff;border:0.5px solid #E89B2A;color:#854F0B}
+.tl-event-action.secondary{background:transparent;border:0.5px solid rgba(0,0,0,.15);color:#1A1A1A}
+
 /* ─ TABLE ─ */
 .tw{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
 table{width:100%;border-collapse:collapse}
@@ -620,14 +659,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
       </div>
 
-      <!-- monthly calendar -->
-      <div class="cal-hdr">
-        <h2>לוח חודשי — <span id="cal-range"></span></h2>
-        <span class="sp"></span>
-        <div class="cal-nb" onclick="calNavPrev()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="9 18 15 12 9 6"/></svg></div>
-        <div class="cal-nb" onclick="calNavNext()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg></div>
-      </div>
-      <div class="cal-grid" id="cal-grid"></div>
+      <!-- dashboard timeline -->
+      <div id="dash-timeline"></div>
 
       <!-- vehicles table -->
       <div class="sh"><h2>כל הרכבים בציר</h2><span class="cp" id="dash-cnt">12</span></div>
@@ -4571,6 +4604,7 @@ function calNavNext(){calOffset++;renderCal();}
 function calNavPrev(){calOffset--;renderCal();}
 
 function renderCal(){
+  if(!id('cal-range')||!id('cal-grid'))return;
   const base=new Date(NOW.getFullYear(),NOW.getMonth()+calOffset,1);
   const next=new Date(NOW.getFullYear(),NOW.getMonth()+calOffset+1,1);
   id('cal-range').textContent=`${HEM[base.getMonth()]} ${base.getFullYear()} — ${HEM[next.getMonth()]} ${next.getFullYear()}`;
@@ -5072,14 +5106,134 @@ function calMarkDone(key,uid){
     }
   }catch(e){}
   renderCal();
+  renderDashTimeline();
   // Re-render main calendar reminders panel if visible
   if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
 }
 function renderCal(){
+  if(!id('cal-range')||!id('cal-grid'))return;
   const base=new Date(NOW.getFullYear(),NOW.getMonth()+calOffset,1);
   const next=new Date(NOW.getFullYear(),NOW.getMonth()+calOffset+1,1);
   id('cal-range').textContent=`${HEM[base.getMonth()]} ${base.getFullYear()} — ${HEM[next.getMonth()]} ${next.getFullYear()}`;
   id('cal-grid').innerHTML=renderCalCard(base)+renderCalCard(next);
+}
+
+/* ── DASHBOARD TIMELINE ── */
+var _tlRange=30;
+function getTimelineItems(rangeDays){
+  var now=new Date();now.setHours(0,0,0,0);
+  var endDate=new Date(now.getTime()+rangeDays*86400000);
+  var todayStr=now.toISOString().split('T')[0];
+  var endStr=endDate.toISOString().split('T')[0];
+  var items=[];
+  (vehicles||[]).forEach(function(v){
+    var drv=v.driver?.name||'';
+    // Vehicle test (רישיון רכב)
+    if(v.licenseExp&&v.licenseExp>=todayStr&&v.licenseExp<=endStr){
+      items.push({uid:'test-'+v.id,type:'test',subType:'vehicle',plate:v.plate,driver:drv,model:(v.make||'')+' '+(v.model||''),date:v.licenseExp,vid:v.id});
+    }
+    // Driver license
+    if(v.driver&&v.driver.licenseExp&&v.driver.licenseExp>=todayStr&&v.driver.licenseExp<=endStr){
+      items.push({uid:'lic-drv-'+v.id,type:'lic',subType:'driver',plate:v.plate,driver:drv,model:null,date:v.driver.licenseExp,vid:v.id});
+    }
+    // Family licenses
+    if(v.family)v.family.forEach(function(f,fi){
+      if(f.licenseExp&&f.licenseExp>=todayStr&&f.licenseExp<=endStr){
+        items.push({uid:'lic-fam-'+v.id+'-'+fi,type:'lic',subType:'family',plate:v.plate,driver:f.name,model:null,date:f.licenseExp,vid:v.id});
+      }
+    });
+    // Service anniversary
+    var lastSvcDate=typeof getVehicleLastServiceDate==='function'?getVehicleLastServiceDate(v):null;
+    if(lastSvcDate){
+      var anniversary=new Date(lastSvcDate);
+      while(anniversary<=now)anniversary.setFullYear(anniversary.getFullYear()+1);
+      var annivStr=anniversary.toISOString().split('T')[0];
+      if(annivStr>=todayStr&&annivStr<=endStr){
+        items.push({uid:'svc-'+v.id,type:'svc',plate:v.plate,driver:drv,model:(v.make||'')+' '+(v.model||''),date:annivStr,vid:v.id});
+      }
+    }
+  });
+  items.sort(function(a,b){return a.date>b.date?1:a.date<b.date?-1:0;});
+  return items;
+}
+function renderDashTimeline(){
+  var container=document.getElementById('dash-timeline');
+  if(!container)return;
+  var now=new Date();
+  var allItems=getTimelineItems(_tlRange);
+  var totalEvents=allItems.length;
+  // Range buttons
+  var rangeHtml='<div class="tl-range">';
+  [30,60,90].forEach(function(r){
+    rangeHtml+='<button class="tl-range-btn'+(r===_tlRange?' active':'')+'" onclick="_tlRange='+r+';renderDashTimeline()">'+r+' יום</button>';
+  });
+  rangeHtml+='</div>';
+  // Timeline track dots
+  var totalDays=_tlRange;
+  var dotsHtml='<div class="tl-track"><div class="tl-line"></div>';
+  // Today dot
+  dotsHtml+='<div class="tl-dot today" style="right:0;margin-right:-8px"></div>';
+  dotsHtml+='<div class="tl-label today" style="right:0;margin-right:-28px">היום</div>';
+  // Group items by date for dots
+  var dateGroups={};
+  allItems.forEach(function(it){
+    if(!dateGroups[it.date])dateGroups[it.date]=[];
+    dateGroups[it.date].push(it);
+  });
+  var dates=Object.keys(dateGroups).sort();
+  // Only show up to 8 dots to avoid clutter
+  var dotDates=dates.length>8?dates.filter(function(_,i){return i%Math.ceil(dates.length/8)===0;}):dates;
+  dotDates.forEach(function(dt){
+    var daysFromNow=Math.ceil((new Date(dt)-now)/86400000);
+    if(daysFromNow<0)daysFromNow=0;
+    var pct=Math.min((daysFromNow/totalDays)*100,100);
+    // RTL: right=0 is today, so position from right
+    var posStyle='right:'+pct+'%;margin-right:-5px';
+    var cls=daysFromNow<14?'amber':'blue';
+    var dateObj=new Date(dt);
+    var lbl=dateObj.getDate()+'/'+(dateObj.getMonth()+1);
+    dotsHtml+='<div class="tl-dot '+cls+'" style="'+posStyle+'"></div>';
+    dotsHtml+='<div class="tl-label" style="right:'+pct+'%;margin-right:-28px">'+lbl+'</div>';
+  });
+  dotsHtml+='</div>';
+  // Event cards
+  var eventsHtml='<div class="tl-events">';
+  if(allItems.length===0){
+    eventsHtml+='<div style="text-align:center;padding:20px;color:#5F5E5A;font-size:13px">אין אירועים בטווח הנבחר</div>';
+  }
+  allItems.forEach(function(it){
+    var daysLeft=Math.ceil((new Date(it.date)-now)/86400000);
+    var cls=daysLeft<14?'amber':'blue';
+    var dateObj=new Date(it.date);
+    var monthName=HEM[dateObj.getMonth()].slice(0,3);
+    var dayNum=dateObj.getDate();
+    // Type label
+    var typeLabel='תזכורת';
+    if(it.type==='svc')typeLabel='טיפול שנתי';
+    else if(it.type==='test')typeLabel='רישיון רכב';
+    else if(it.type==='lic'&&it.subType==='driver')typeLabel='רישיון נהיגה';
+    else if(it.type==='lic'&&it.subType==='family')typeLabel='רישיון נהיגה (משפחה)';
+    var daysText=daysLeft===0?'היום':daysLeft===1?'מחר':'עוד '+daysLeft+' ימים';
+    var metaText=(it.driver||'')+(it.model?' · '+it.model:'')+(it.plate?' · '+it.plate:'');
+    var actionCls=cls==='amber'?'primary':'secondary';
+    eventsHtml+='<div class="tl-event '+cls+'">';
+    eventsHtml+='<div class="tl-event-date"><span class="tl-event-month">'+monthName+'</span><span class="tl-event-day">'+dayNum+'</span></div>';
+    eventsHtml+='<div class="tl-event-content">';
+    eventsHtml+='<div class="tl-event-title">'+typeLabel+' <span class="tl-event-days '+cls+'">'+daysText+'</span></div>';
+    eventsHtml+='<div class="tl-event-meta">'+metaText+'</div>';
+    eventsHtml+='</div>';
+    eventsHtml+='<button class="tl-event-action '+actionCls+'" onclick="openDet('+it.vid+')">פרטים</button>';
+    eventsHtml+='</div>';
+  });
+  eventsHtml+='</div>';
+  // Assemble
+  container.innerHTML='<div class="timeline-card">'
+    +'<div class="timeline-card-header">'
+    +'<div><div class="timeline-card-title">ציר הזמן שלי</div><div class="timeline-card-sub">'+totalEvents+' אירועים בטווח הנבחר</div></div>'
+    +rangeHtml
+    +'</div>'
+    +'<div class="tl-body">'+dotsHtml+eventsHtml+'</div>'
+    +'</div>';
 }
 
 /* ── TABLES ── */
@@ -5164,6 +5318,8 @@ function renderDash(){
   })();
   // Update greeting header
   updateDashGreeting();
+  // Render dashboard timeline
+  renderDashTimeline();
 }
 function updateStatCard(valId,subId,emptyId,cardId,count){
   var valEl=document.getElementById(valId);
