@@ -8952,13 +8952,14 @@ function renderArchivePage(){
   var html='<div class="viol-container">';
   html+='<div style="display:flex;align-items:center;justify-content:center;padding:18px 22px;border-bottom:1px solid var(--bdr);gap:8px"><h2 style="margin:0;font-size:17px;font-weight:700;color:var(--t1)">ארכיון</h2><span class="viol-count">'+archivedVehicles.length+'</span></div>';
   // Header
-  html+='<div class="viol-row viol-header" style="grid-template-columns:1.2fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr"><div>רכב · נהג</div><div>סיבה</div><div>רכב</div><div>טלפון</div><div>תחילת עסקה</div><div>הוסר</div><div style="text-align:center">פעולות</div></div>';
+  html+='<div class="viol-row viol-header" style="grid-template-columns:1fr 0.7fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr"><div>נהג</div><div>מס׳ רכב</div><div>סיבה</div><div>רכב</div><div>טלפון</div><div>תחילת עסקה</div><div>הוסר</div><div style="text-align:center">פעולות</div></div>';
   archivedVehicles.slice().reverse().forEach(function(r,idx){
     var revIdx=archivedVehicles.length-1-idx;
     var reasonLabel=reasonLabels[r.reason]||'הוסר';
     var reasonColor=reasonColors[r.reason]||'#dc2626';
-    html+='<div class="viol-row viol-data-row" style="grid-template-columns:1.2fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr">';
-    html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(r.driver.name)+'">'+inits(r.driver.name)+'</div><div><div class="viol-driver-name">'+r.driver.name+'</div><div style="font-size:11px;color:var(--t3)">'+r.plate+'</div></div></div>';
+    html+='<div class="viol-row viol-data-row" style="grid-template-columns:1fr 0.7fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr">';
+    html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(r.driver.name)+'">'+inits(r.driver.name)+'</div><span class="viol-driver-name">'+r.driver.name+'</span></div>';
+    html+='<div class="viol-cell" data-label="מס׳ רכב"><span class="viol-mono">'+r.plate+'</span></div>';
     html+='<div class="viol-cell" data-label="סיבה"><span style="font-size:11px;color:#fff;background:'+reasonColor+';padding:3px 10px;border-radius:999px;font-weight:500;white-space:nowrap">'+reasonLabel+'</span></div>';
     html+='<div class="viol-cell" data-label="רכב"><span class="viol-mono">'+r.make+' '+r.model+'</span></div>';
     html+='<div class="viol-cell" data-label="טלפון"><span class="viol-muted">'+(r.driver.phone||'—')+'</span></div>';
