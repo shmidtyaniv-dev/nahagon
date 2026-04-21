@@ -7097,17 +7097,21 @@ function renderViolations(){
     // Type badge (סוג טיפול)
     const typeBadge=`<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#EEEDFE;color:#3C3489;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>בקשה להסבה</span>`;
 
-    // Status badge
-    const statusClass=v.status==='sent'?'background:#FAEEDA;color:#854F0B':v.status==='waiting'?'background:#E6F1FB;color:#185FA5':'background:#E1F5EE;color:#0F6E56';
-    const statusDot=v.status==='sent'?'#BA7517':v.status==='waiting'?'#378ADD':'#1D9E75';
-    const statusLabel=v.status==='sent'?'ממתין':v.status==='waiting'?'בטיפול':'אושר';
-
-    // Build workflow pills
-    let pills='';
-    if(v.noticeSentAt&&!v.noticeApprovedAt) pills+=`<span class="viol-status-pill" style="color:#92400e;background:#fef3c7" title="נשלח: ${v.noticeSentAt}">📤 הודעה</span>`;
-    if(v.noticeApprovedAt) pills+=`<span class="viol-status-pill" style="color:#166534;background:#dcfce7" title="${v.noticeApprovedAt}">✅ הודעה</span>`;
-    if(v.transferSentAt&&!v.transferApprovedAt) pills+=`<span class="viol-status-pill" style="color:#991b1b;background:#fee2e2" title="נשלח: ${v.transferSentAt}">📤 הסבה</span>`;
-    if(v.transferApprovedAt) pills+=`<span class="viol-status-pill" style="color:#166534;background:#dcfce7" title="${v.transferApprovedAt}">✅ הסבה</span>`;
+    // Auto status based on workflow state
+    let autoStatus='', autoStyle='', autoDot='';
+    if(v.paymentReceipt){
+      autoStatus='שולם'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
+    } else if(v.transferApprovedAt){
+      autoStatus='נהג אישר הסבה'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
+    } else if(v.transferSentAt){
+      autoStatus='נשלחה הסבה לנהג'; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
+    } else if(v.noticeApprovedAt){
+      autoStatus='נהג אישר קיום הדוח'; autoStyle='background:#FAEEDA;color:#854F0B'; autoDot='#BA7517';
+    } else if(v.noticeSentAt){
+      autoStatus='נשלחה הודעה לנהג'; autoStyle='background:#FAEEDA;color:#854F0B'; autoDot='#BA7517';
+    } else {
+      autoStatus='טרם נשלח'; autoStyle='background:#F1EFE8;color:#444441'; autoDot='#888780';
+    }
 
     // Workflow button
     let workflowBtn='';
@@ -7130,11 +7134,7 @@ function renderViolations(){
       <div class="viol-muted">${fd(v.date)}</div>
       <div>${typeBadge}</div>
       <div>
-        <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;${statusClass};white-space:nowrap;cursor:pointer" onclick="this.style.display='none';this.nextElementSibling.style.display='inline-block'"><span style="width:6px;height:6px;border-radius:50%;background:${statusDot};flex-shrink:0"></span>${statusLabel}</span>
-        <select onchange="changeViolStatus(${v.id},this.value);renderViolations();if(_currentVid)renderVcViolations(_currentVid)" style="display:none;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--bdr2);background:var(--bg);color:var(--t1);font-family:inherit;cursor:pointer">
-          ${Object.keys(VIOL_STATUS).map(k=>`<option value="${k}"${v.status===k?' selected':''}>${VIOL_STATUS[k]}</option>`).join('')}
-        </select>
-        ${pills?`<div class="viol-status-pills" style="margin-top:4px">${pills}</div>`:''}
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:500;${autoStyle};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${autoDot};flex-shrink:0"></span>${autoStatus}</span>
       </div>
       <div class="viol-actions" style="justify-content:center">
         ${workflowBtn}
