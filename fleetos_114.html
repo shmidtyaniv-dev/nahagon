@@ -1741,46 +1741,80 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <!-- ACCIDENT MODAL -->
 <div class="ov" id="acc-ov">
-  <div class="modal" style="max-width:620px" onclick="event.stopPropagation()">
-    <div class="mh"><h3 id="acc-modal-title">פתיחת אירוע תאונה</h3>
-      <button class="mc-btn" onclick="closeModal('acc-ov')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal" style="max-width:560px;border-radius:12px;overflow:hidden;max-height:none" onclick="event.stopPropagation()">
+    <!-- Green header -->
+    <div style="background:#1D9E75;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h3 id="acc-modal-title" style="margin:0;color:#fff;font-size:16px;font-weight:500">פתיחת אירוע תאונה</h3>
+      </div>
+      <button onclick="closeModal('acc-ov')" style="background:rgba(255,255,255,.15);border:none;width:30px;height:30px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <div class="mb">
+    <!-- Form body -->
+    <div style="padding:22px 20px">
       <input type="hidden" id="acc-edit-id">
-      <div class="fg">
-        <div class="ff"><label>מספר אירוע</label><input id="acc-num" placeholder="ACC-2025-001" dir="ltr"></div>
-        <div class="ff"><label>רכב</label><select id="acc-vehicle"><option value="">בחר רכב</option></select></div>
-        <div class="ff"><label>תאריך האירוע</label><input type="date" id="acc-date"></div>
-        <div class="ff"><label>תאריך דיווח</label><input type="date" id="acc-report-date"></div>
-        <div class="ff"><label>אשם</label>
-          <select id="acc-fault">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">מספר אירוע <span style="color:#E24B4A">*</span></label>
+          <input id="acc-num" placeholder="ACC-2025-001" dir="ltr" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-family:monospace;font-size:14px;background:#fff;color:#1A1A1A">
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">רכב <span style="color:#E24B4A">*</span></label>
+          <select id="acc-vehicle" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer"><option value="">בחר רכב</option></select>
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">תאריך האירוע <span style="color:#E24B4A">*</span></label>
+          <input type="date" id="acc-date" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A">
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">תאריך דיווח</label>
+          <input type="date" id="acc-report-date" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A">
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">אשם</label>
+          <select id="acc-fault" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer">
             <option value="self">עצמי</option>
             <option value="third">צד ג׳</option>
           </select>
         </div>
-        <div class="ff"><label>סטטוס</label>
-          <select id="acc-status">
+        <div>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">סטטוס</label>
+          <select id="acc-status" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer">
             <option value="inprogress">בטיפול</option>
             <option value="done">אירוע טופל</option>
           </select>
         </div>
-        <div class="ff full"><label>תיאור האירוע *</label><textarea id="acc-desc" rows="3" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:var(--rs);padding:7px 10px;font-family:inherit;font-size:20px;color:var(--t1);resize:vertical;width:100%;direction:rtl" placeholder="תאר את האירוע..."></textarea></div>
-        <div class="ff full">
-          <label>קובץ מצורף (PDF / תמונה)</label>
-          <div style="display:flex;align-items:center;gap:6px">
-            <label id="acc-upload-label" style="flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;border:1.5px dashed var(--bdr2);border-radius:var(--rs);padding:9px 12px;background:var(--bg);transition:border-color .2s">
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <span id="acc-file-name" style="font-size:12px;color:var(--t3);flex:1">בחר קובץ PDF / תמונה...</span>
-              <input type="file" id="acc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="onAccFileChange(this)">
-            </label>
-            <button type="button" id="acc-file-remove" onclick="accRemoveFile()" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;cursor:pointer;font-size:18px;padding:4px 10px;border-radius:6px;font-family:inherit">×</button>
-          </div>
+      </div>
+      <!-- Description -->
+      <div style="margin-top:16px">
+        <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">תיאור האירוע <span style="color:#E24B4A">*</span></label>
+        <textarea id="acc-desc" rows="3" style="width:100%;min-height:72px;padding:10px 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;resize:vertical;direction:rtl" placeholder="תאר את האירוע..."></textarea>
+      </div>
+      <!-- File upload -->
+      <div style="margin-top:16px">
+        <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">קובץ מצורף</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <label id="acc-upload-label" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:1.5px dashed #9FE1CB;border-radius:8px;padding:16px;background:#F5FBF8;text-align:center;transition:all .15s" onmouseover="this.style.background='#E1F5EE';this.style.borderColor='#1D9E75'" onmouseout="this.style.background='#F5FBF8';this.style.borderColor='#9FE1CB'">
+            <div style="width:36px;height:36px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <span style="font-size:13px;font-weight:500;color:#0F6E56">גרור קובץ לכאן או לחץ לבחירה</span>
+            <span id="acc-file-name" style="font-size:11px;color:#5F5E5A">PDF, JPG, PNG</span>
+            <input type="file" id="acc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="onAccFileChange(this)">
+          </label>
+          <button type="button" id="acc-file-remove" onclick="accRemoveFile()" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;cursor:pointer;font-size:18px;padding:4px 10px;border-radius:6px;font-family:inherit">×</button>
         </div>
       </div>
     </div>
-    <div class="mf">
-      <button class="btn btn-l btn-sm" onclick="closeModal('acc-ov')">ביטול</button>
-      <button class="btn btn-p btn-sm" onclick="saveAccident()">שמור</button>
+    <!-- Footer -->
+    <div style="padding:16px 20px;background:#F1EFE8;border-top:0.5px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:11px;color:#5F5E5A"><span style="color:#E24B4A">*</span> שדה חובה</span>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeModal('acc-ov')" style="padding:8px 18px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;border:0.5px solid rgba(0,0,0,.15);background:#fff;color:#1A1A1A">ביטול</button>
+        <button onclick="saveAccident()" style="padding:8px 20px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;border:none;background:#1D9E75;color:#fff">שמור אירוע</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2266,6 +2300,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 #viol-ov .modal label[style*="padding:20px"]{padding:12px!important}
 #viol-ov .modal p{margin:0!important;font-size:11px!important}
 #viol-ov .modal>div:last-child{position:sticky;bottom:0;z-index:2}
+#acc-ov .modal{max-width:100vw!important;border-radius:0!important;margin:0;position:fixed;inset:0;max-height:100vh!important;overflow:auto!important}
+#acc-ov .modal div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+#acc-ov .modal>div:last-child{position:sticky;bottom:0;z-index:2}
 }
 </style>
 
