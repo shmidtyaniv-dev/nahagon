@@ -2057,9 +2057,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <!-- ADD MODAL -->
 <div class="ov" id="add-ov">
-  <div class="modal" style="max-width:560px;border-radius:12px;overflow:hidden;max-height:none" onclick="event.stopPropagation()">
+  <div class="modal" style="max-width:560px;border-radius:12px;overflow-y:auto;max-height:92vh" onclick="event.stopPropagation()">
     <!-- Green header -->
-    <div style="background:#1D9E75;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+    <div style="background:#1D9E75;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:3">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
@@ -2158,7 +2158,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">👤</span><span style="font-size:14px;font-weight:600;color:var(--t1)">פרטי נהג</span></div>
           <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
         </div>
-        <div class="acc-body" style="padding:0 20px 16px">
+        <div class="acc-body" style="padding:0 20px 16px;display:none">
         <!-- AI SCAN: רישיון נהיגה -->
         <div id="scan-driver-zone" class="scan-zone" style="margin-bottom:12px;background:linear-gradient(135deg,#f0fdf4 0%,#dbeafe 100%);border:2px dashed #7DC242;border-radius:10px;padding:14px;text-align:center;transition:all .25s">
           <label for="fa-driver-doc" style="cursor:pointer;display:block">
