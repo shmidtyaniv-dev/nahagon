@@ -2246,13 +2246,15 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .viol-top-right{display:flex;gap:8px;align-items:center}
 .viol-count{background:var(--gd);color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;margin-inline-start:10px}
 @media(max-width:900px){
-.viol-row{grid-template-columns:1fr!important;gap:4px;padding:14px 16px}
+.viol-row{grid-template-columns:1fr!important}
 .viol-header{display:none}
-.viol-data-row{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--bdr);padding:14px 16px}
-.viol-data-row .viol-driver{margin-bottom:4px}
-.viol-data-row .viol-mono,.viol-data-row .viol-muted{font-size:13px;text-align:right}
-.viol-data-row .viol-actions{justify-content:flex-start!important;flex-wrap:wrap}
-.viol-top-bar{grid-template-columns:1fr!important;gap:12px!important;text-align:center}
+.viol-data-row{display:block!important;border-top:1px solid var(--bdr);padding:14px 16px;text-align:right}
+.viol-data-row .viol-driver{margin-bottom:10px}
+.viol-data-row .viol-cell{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.04)}
+.viol-data-row .viol-cell[data-label]::after{content:attr(data-label);font-size:11px;color:#888;font-weight:400;order:1}
+.viol-data-row .viol-cell>*{order:0}
+.viol-data-row .viol-actions{display:flex;justify-content:center!important;flex-wrap:wrap;margin-top:12px;gap:8px}
+.viol-top-bar{grid-template-columns:1fr!important;gap:10px!important;text-align:center}
 .viol-top-bar>div{justify-content:center!important}
 }
 @media(max-width:480px){
@@ -7194,12 +7196,12 @@ function renderViolations(){
         <div class="viol-avatar" style="background:${ac}">${ini}</div>
         <div><div class="viol-driver-name">${driverName}</div>${v.transferDate?`<div style="font-size:10px;color:#5F5E5A;margin-top:1px">הסבה: ${fd(v.transferDate)}</div>`:''}</div>
       </div>
-      <div class="viol-mono" style="color:var(--gd)">${v.num}</div>
-      <div class="viol-mono">${veh?veh.plate:'—'}</div>
-      <div class="viol-muted">${v.issuer||'—'}</div>
-      <div class="viol-muted">${fd(v.date)}</div>
-      <div>${typeBadge}</div>
-      <div>
+      <div class="viol-cell" data-label="מס׳ דוח"><span class="viol-mono" style="color:var(--gd)">${v.num}</span></div>
+      <div class="viol-cell" data-label="רכב"><span class="viol-mono">${veh?veh.plate:'—'}</span></div>
+      <div class="viol-cell" data-label="מקור"><span class="viol-muted">${v.issuer||'—'}</span></div>
+      <div class="viol-cell" data-label="תאריך"><span class="viol-muted">${fd(v.date)}</span></div>
+      <div class="viol-cell">${typeBadge}</div>
+      <div class="viol-cell">
         <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:500;${autoStyle};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${autoDot};flex-shrink:0"></span>${autoStatus}</span>
       </div>
       <div class="viol-actions" style="justify-content:center">
