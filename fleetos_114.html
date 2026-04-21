@@ -1279,7 +1279,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
         🎨 צבעי ממשק
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
         <div>
           <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:4px">צבע Topbar</label>
           <div style="display:flex;gap:8px;align-items:center">
@@ -1292,6 +1292,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div style="display:flex;gap:8px;align-items:center">
             <input type="color" id="theme-sidebar-color" value="#ffffff" oninput="document.querySelector('.sb').style.background=this.value" style="width:40px;height:32px;border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;padding:2px">
             <input type="text" id="theme-sidebar-hex" value="#ffffff" oninput="document.querySelector('.sb').style.background=this.value;document.getElementById('theme-sidebar-color').value=this.value" style="width:80px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:monospace;direction:ltr">
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:4px">צבע רקע ראשי</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="color" id="theme-bg-color" value="#f5f5f0" oninput="document.querySelector('.content').style.background=this.value;document.body.style.background=this.value" style="width:40px;height:32px;border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;padding:2px">
+            <input type="text" id="theme-bg-hex" value="#f5f5f0" oninput="document.querySelector('.content').style.background=this.value;document.body.style.background=this.value;document.getElementById('theme-bg-color').value=this.value" style="width:80px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:monospace;direction:ltr">
           </div>
         </div>
       </div>
@@ -6791,18 +6798,20 @@ function saveThemeColors(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   s.themeTopbar=document.getElementById('theme-topbar-color')?.value||'#ffffff';
   s.themeSidebar=document.getElementById('theme-sidebar-color')?.value||'#ffffff';
+  s.themeBg=document.getElementById('theme-bg-color')?.value||'#f5f5f0';
   localStorage.setItem('fleetSettings',JSON.stringify(s));
   showToast('✓ צבעים נשמרו');
 }
 function resetThemeColors(){
   document.querySelector('.topbar').style.background='#ffffff';
   document.querySelector('.sb').style.background='#ffffff';
-  var tc=document.getElementById('theme-topbar-color');if(tc)tc.value='#ffffff';
-  var th=document.getElementById('theme-topbar-hex');if(th)th.value='#ffffff';
-  var sc=document.getElementById('theme-sidebar-color');if(sc)sc.value='#ffffff';
-  var sh=document.getElementById('theme-sidebar-hex');if(sh)sh.value='#ffffff';
+  document.querySelector('.content').style.background='';
+  document.body.style.background='';
+  ['theme-topbar-color','theme-topbar-hex'].forEach(function(x){var e=document.getElementById(x);if(e)e.value='#ffffff';});
+  ['theme-sidebar-color','theme-sidebar-hex'].forEach(function(x){var e=document.getElementById(x);if(e)e.value='#ffffff';});
+  ['theme-bg-color','theme-bg-hex'].forEach(function(x){var e=document.getElementById(x);if(e)e.value='#f5f5f0';});
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  delete s.themeTopbar;delete s.themeSidebar;
+  delete s.themeTopbar;delete s.themeSidebar;delete s.themeBg;
   localStorage.setItem('fleetSettings',JSON.stringify(s));
   showToast('צבעים אופסו');
 }
@@ -6810,10 +6819,11 @@ function applyThemeColors(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   if(s.themeTopbar) document.querySelector('.topbar').style.background=s.themeTopbar;
   if(s.themeSidebar) document.querySelector('.sb').style.background=s.themeSidebar;
-  var tc=document.getElementById('theme-topbar-color');if(tc&&s.themeTopbar)tc.value=s.themeTopbar;
-  var th=document.getElementById('theme-topbar-hex');if(th&&s.themeTopbar)th.value=s.themeTopbar;
-  var sc=document.getElementById('theme-sidebar-color');if(sc&&s.themeSidebar)sc.value=s.themeSidebar;
-  var sh=document.getElementById('theme-sidebar-hex');if(sh&&s.themeSidebar)sh.value=s.themeSidebar;
+  if(s.themeBg){var c=document.querySelector('.content');if(c)c.style.background=s.themeBg;document.body.style.background=s.themeBg;}
+  ['topbar','sidebar','bg'].forEach(function(k){
+    var cv=document.getElementById('theme-'+k+'-color'),hv=document.getElementById('theme-'+k+'-hex'),val=s['theme'+(k.charAt(0).toUpperCase()+k.slice(1))];
+    if(cv&&val)cv.value=val;if(hv&&val)hv.value=val;
+  });
 }
 // Apply saved colors on load
 document.addEventListener('DOMContentLoaded',function(){setTimeout(applyThemeColors,100);});
