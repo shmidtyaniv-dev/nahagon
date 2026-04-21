@@ -3253,8 +3253,13 @@ function confirmArchive(vid){
     record.action=reason;
   } else if(reason==='deal_ended'){
     // Deal ended - vehicle returned, driver stays waiting for new car
-    const i=vehicles.indexOf(v);
-    if(i>-1)vehicles.splice(i,1);
+    v.plate='ממתין לרכב';
+    v.make='';v.model='';v.code='';
+    v.licenseExp='';v.currentKm=0;v.serviceKm=0;
+    v.status='waiting_vehicle';
+    v.photo=null;
+    if(!v.historyLog) v.historyLog=[];
+    v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'סיום עסקה — רכב '+record.plate+' הוחזר לליסינג. הנהג ממתין לרכב חדש',createdAt:new Date().toISOString(),source:'auto'});
     record.action='deal_ended';
     record.driverWaiting=true;
   } else {
