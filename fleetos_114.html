@@ -33,7 +33,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--t1);font-si
 .app{display:flex;height:100vh}
 
 /* ─ SIDEBAR ─ */
-.sb{width:240px;min-width:240px;background:var(--gd);display:flex;flex-direction:column;box-shadow:2px 0 12px rgba(26,74,58,.22)}
+.sb{width:260px;min-width:260px;background:#fff;display:flex;flex-direction:column;border-left:0.5px solid rgba(0,0,0,.08)}
 .sb-logo{border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:flex-start;gap:0}
 .logo-icon{width:32px;height:32px;background:var(--gl);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .logo-icon svg{width:18px;height:18px}
@@ -49,17 +49,19 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--t1);font-si
 
 .nav{padding:8px 8px;flex:1;overflow-y:auto}
 .nav-sec{font-size:11px;font-weight:700;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;padding:0 9px;margin:11px 0 4px}
-.ni{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:var(--rs);cursor:pointer;color:rgba(255,255,255,.58);font-size:13px;transition:all .15s;margin-bottom:1px;user-select:none}
-.ni:hover{background:rgba(255,255,255,.07);color:#fff}
-.ni.active{background:var(--gl);color:#fff;font-weight:500}
-.ni svg{width:15px;height:15px;flex-shrink:0}
-.nb{margin-right:auto;background:rgba(255,255,255,.18);color:#fff;font-size:9.5px;font-weight:600;padding:1px 6px;border-radius:999px;min-width:16px;text-align:center}
-.ni.active .nb{background:rgba(255,255,255,.28)}
+.ni{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:8px;cursor:pointer;color:#1A1A1A;font-size:14px;transition:all .15s;margin-bottom:2px;user-select:none}
+.ni:hover{background:#F1EFE8}
+.ni.active{background:#E1F5EE;color:#0F6E56;font-weight:500}
+.ni svg{width:18px;height:18px;flex-shrink:0}
+.nb{margin-right:auto;font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px;min-width:16px;text-align:center}
+.nb-amber{background:#FAEEDA;color:#854F0B}
+.nb-red{background:#FCEBEB;color:#A32D2D}
+.ni.active .nb{background:#bbf7d0;color:#0F6E56}
 
-.sb-user{padding:9px 14px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:9px}
-.u-av{width:28px;height:28px;background:var(--gl);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0}
-.u-name{font-size:20px;font-weight:500;color:#fff}
-.u-role{font-size:12px;color:rgba(255,255,255,.38)}
+.sb-user{padding:14px 10px 0;border-top:0.5px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;margin-top:auto}
+.u-av{width:36px;height:36px;background:#EEEDFE;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#3C3489;flex-shrink:0}
+.u-name{font-size:13px;font-weight:500;color:#1A1A1A}
+.u-role{font-size:11px;color:#5F5E5A}
 
 /* ─ MAIN ─ */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
@@ -508,10 +510,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <!-- Tasks merged into Calendar page -->
     <div class="ni" dp="tasks" onclick="go('calendar',q('[dp=calendar]'))" style="display:none"></div>
     <div class="ni" dp="violations" onclick="go('violations',this)">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>דוחות תנועה
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>דוחות תנועה</span><span class="nb nb-amber" id="nb-violations"></span>
     </div>
     <div class="ni" dp="accidents" onclick="go('accidents',this)">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 12h7v6H1zM16 12h7v6h-7zM4 19a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM19 19a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" d="M10 10l4 4M14 10l-4 4"/></svg>תאונות
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>תאונות</span><span class="nb nb-red" id="nb-accidents"></span>
     </div>
     <div class="ni" dp="archive" onclick="go('archive',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>ארכיון
@@ -5311,6 +5313,11 @@ function renderDash(){
   updateDashGreeting();
   // Render dashboard timeline
   renderDashTimeline();
+  // Update sidebar badges
+  var nbViol=document.getElementById('nb-violations');
+  if(nbViol){if(violCount>0){nbViol.textContent=violCount;nbViol.style.display='';}else nbViol.style.display='none';}
+  var nbAcc=document.getElementById('nb-accidents');
+  if(nbAcc){if(accCount>0){nbAcc.textContent=accCount;nbAcc.style.display='';}else nbAcc.style.display='none';}
 }
 function updateStatCard(valId,subId,emptyId,cardId,count){
   var valEl=document.getElementById(valId);
