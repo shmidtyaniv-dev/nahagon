@@ -246,7 +246,6 @@ tbody td{padding:6px 10px;font-size:20px;color:var(--t1);vertical-align:middle}
   #vc-summary-cards2,#vc-summary-cards3{grid-template-columns:1fr 1fr!important}
   .mg{grid-template-columns:1fr!important}
   .modal{max-width:100vw!important;border-radius:14px 14px 0 0;margin:0;position:fixed;bottom:0;left:0;right:0;max-height:92vh}
-  #add-ov .modal{display:flex!important;flex-direction:column!important;overflow:hidden!important}
   .ov{align-items:flex-end}
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
   table{min-width:600px}
@@ -2058,7 +2057,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <!-- ADD MODAL -->
 <div class="ov" id="add-ov">
-  <div class="modal" style="max-width:560px;border-radius:12px" onclick="event.stopPropagation()">
+  <div id="add-modal-inner" onclick="event.stopPropagation()">
     <!-- Green header -->
     <div style="background:#1D9E75;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div style="display:flex;align-items:center;gap:10px">
@@ -2069,7 +2068,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
       <button onclick="closeModal('add-ov')" style="background:rgba(255,255,255,.15);border:none;width:30px;height:30px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <div class="mb" style="padding:0">
+    <div class="mb">
 
       <!-- ACCORDION: פרטי רכב -->
       <div style="border-bottom:1px solid rgba(0,0,0,.08)">
@@ -2310,10 +2309,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .viol-icon-btn.v-purple{background:#f3e8ff;color:#7c3aed}
 .viol-status-pills{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
 .acc-row{grid-template-columns:1fr 0.8fr 0.8fr 0.7fr 0.8fr 0.8fr 1.2fr}
-#add-ov .modal{display:flex!important;flex-direction:column!important;overflow:hidden!important;max-height:90vh!important}
-#add-ov .modal>.mb{overflow-y:auto!important;flex:1!important;min-height:0!important}
-#add-ov .modal>div:first-child{flex-shrink:0}
-#add-ov .modal>div:last-child{flex-shrink:0}
+#add-modal-inner{background:var(--card);border-radius:12px;width:560px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 16px 48px rgba(26,74,58,.2);cursor:default;direction:rtl}
+#add-modal-inner>.mb{overflow-y:auto;flex:1;min-height:0;padding:0}
+#add-modal-inner>div:first-child{flex-shrink:0}
+#add-modal-inner>div:last-child{flex-shrink:0}
 .viol-status-pill{font-size:9px;padding:2px 7px;border-radius:999px;white-space:nowrap;font-weight:500}
 .viol-top-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--bdr)}
 .viol-top-bar h2{margin:0;font-size:17px;font-weight:700;color:var(--t1)}
