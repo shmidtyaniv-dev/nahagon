@@ -3003,6 +3003,8 @@ function saveKmUpdate(vid){
   if(!raw||isNaN(raw)){alert('יש להזין ק"מ תקין');return;}
   v.currentKm=raw;
   v.lastKmUpdate=new Date().toISOString().split('T')[0];
+  if(!v.historyLog) v.historyLog=[];
+  v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'ק"מ עודכן ל-'+raw.toLocaleString('he-IL'),createdAt:new Date().toISOString(),source:'auto'});
   document.getElementById('km-update-modal').remove();
   openDet(vid);
   if(typeof renderReminders==='function')renderReminders();
@@ -6698,6 +6700,8 @@ function saveEditVehicle(){
 function saveUpdate(){
   const vid=_currentVid;
   const v=vehicles.find(x=>x.id===vid);if(!v)return;
+  const oldDriver=v.driver.name;
+  const oldKm=v.currentKm;
   const dname=id('upd-dname')?.value.trim();
   if(dname)v.driver.name=dname;
   v.driver.id=id('upd-did')?.value.trim()||v.driver.id;
@@ -6709,6 +6713,16 @@ function saveUpdate(){
   v.licenseExp=id('upd-lic')?.value||v.licenseExp;
   v.dealEnd=v.delivery?addY(v.delivery,3):v.dealEnd;
   const curKm=id('upd-ckm');if(curKm)v.currentKm=getRawKm('upd-ckm');
+  // Log changes to historyLog
+  if(!v.historyLog) v.historyLog=[];
+  var changes=[];
+  if(dname && dname!==oldDriver) changes.push('נהג שונה מ-'+oldDriver+' ל-'+dname);
+  if(curKm && v.currentKm!==oldKm) changes.push('ק"מ עודכן ל-'+Number(v.currentKm).toLocaleString('he-IL'));
+  if(id('upd-delivery')?.value && id('upd-delivery').value!==v.delivery) changes.push('תאריך מסירה עודכן');
+  if(id('upd-lic')?.value && id('upd-lic').value!==v.licenseExp) changes.push('תוקף רישיון עודכן');
+  if(changes.length){
+    v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:changes.join(' · '),createdAt:new Date().toISOString(),source:'auto'});
+  }
   closeModal('update-ov');
   refresh();
   openDet(vid);
