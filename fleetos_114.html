@@ -7083,8 +7083,8 @@ function renderViolations(){
     id('violations-list').innerHTML=html;return;
   }
 
-  html+=`<div class="viol-row viol-header">
-    <div>שם הנהג</div><div>מס׳ דוח</div><div>רכב</div><div>מקור הדוח</div><div>תאריך הסבה</div><div>סטטוס</div><div>פעולות</div>
+  html+=`<div class="viol-row viol-header" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.8fr 1.1fr">
+    <div>שם הנהג</div><div>מס׳ דוח</div><div>רכב</div><div>מקור הדוח</div><div>תאריך</div><div>סוג טיפול</div><div>סטטוס</div><div style="text-align:center">פעולות</div>
   </div>`;
 
   list.forEach(v=>{
@@ -7093,17 +7093,23 @@ function renderViolations(){
     const ac=avatarColor(driverName);
     const ini=driverName!=='—'?inits(driverName):'—';
     const logsCount=(v.logs||[]).length;
-    const badgeClass=v.status==='sent'?'viol-badge-sent':v.status==='waiting'?'viol-badge-waiting':'viol-badge-done';
-    const badgeLabel=v.status==='sent'?'בקשה להסב':v.status==='waiting'?'ממתין אישור':'טופל';
 
-    // Build status pills for workflow
+    // Type badge (סוג טיפול)
+    const typeBadge=`<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#EEEDFE;color:#3C3489;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>בקשה להסבה</span>`;
+
+    // Status badge
+    const statusClass=v.status==='sent'?'background:#FAEEDA;color:#854F0B':v.status==='waiting'?'background:#E6F1FB;color:#185FA5':'background:#E1F5EE;color:#0F6E56';
+    const statusDot=v.status==='sent'?'#BA7517':v.status==='waiting'?'#378ADD':'#1D9E75';
+    const statusLabel=v.status==='sent'?'ממתין':v.status==='waiting'?'בטיפול':'אושר';
+
+    // Build workflow pills
     let pills='';
     if(v.noticeSentAt&&!v.noticeApprovedAt) pills+=`<span class="viol-status-pill" style="color:#92400e;background:#fef3c7" title="נשלח: ${v.noticeSentAt}">📤 הודעה</span>`;
     if(v.noticeApprovedAt) pills+=`<span class="viol-status-pill" style="color:#166534;background:#dcfce7" title="${v.noticeApprovedAt}">✅ הודעה</span>`;
     if(v.transferSentAt&&!v.transferApprovedAt) pills+=`<span class="viol-status-pill" style="color:#991b1b;background:#fee2e2" title="נשלח: ${v.transferSentAt}">📤 הסבה</span>`;
     if(v.transferApprovedAt) pills+=`<span class="viol-status-pill" style="color:#166534;background:#dcfce7" title="${v.transferApprovedAt}">✅ הסבה</span>`;
 
-    // Build action button for workflow
+    // Workflow button
     let workflowBtn='';
     if(!v.transferApprovedAt){
       if(v.noticeApprovedAt){
@@ -7113,7 +7119,7 @@ function renderViolations(){
       }
     }
 
-    html+=`<div class="viol-row viol-data-row">
+    html+=`<div class="viol-row viol-data-row" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.8fr 1.1fr">
       <div class="viol-driver">
         <div class="viol-avatar" style="background:${ac}">${ini}</div>
         <span class="viol-driver-name">${driverName}</span>
@@ -7122,20 +7128,20 @@ function renderViolations(){
       <div class="viol-mono">${veh?veh.plate:'—'}</div>
       <div class="viol-muted">${v.issuer||'—'}</div>
       <div class="viol-muted">${fd(v.date)}</div>
+      <div>${typeBadge}</div>
       <div>
-        <span class="viol-badge ${badgeClass}" style="cursor:pointer" onclick="this.style.display='none';this.nextElementSibling.style.display='inline-block'">${badgeLabel}</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;${statusClass};white-space:nowrap;cursor:pointer" onclick="this.style.display='none';this.nextElementSibling.style.display='inline-block'"><span style="width:6px;height:6px;border-radius:50%;background:${statusDot};flex-shrink:0"></span>${statusLabel}</span>
         <select onchange="changeViolStatus(${v.id},this.value);renderViolations();if(_currentVid)renderVcViolations(_currentVid)" style="display:none;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--bdr2);background:var(--bg);color:var(--t1);font-family:inherit;cursor:pointer">
           ${Object.keys(VIOL_STATUS).map(k=>`<option value="${k}"${v.status===k?' selected':''}>${VIOL_STATUS[k]}</option>`).join('')}
         </select>
         ${pills?`<div class="viol-status-pills" style="margin-top:4px">${pills}</div>`:''}
       </div>
-      <div class="viol-actions">
+      <div class="viol-actions" style="justify-content:center">
         ${workflowBtn}
-        <button onclick="openViolationModal(${v.id})" class="viol-icon-btn v-green" title="עריכה / צפייה">✏️</button>
-        ${(v.fileData||v._hasFile)?`<button onclick="viewViolationDoc(${v.id})" class="viol-icon-btn v-green" title="צפה במסמך">👁</button>`:''}
+        <button onclick="openViolationModal(${v.id})" class="viol-icon-btn v-green" title="עריכה">✏️</button>
+        ${(v.fileData||v._hasFile)?`<button onclick="viewViolationDoc(${v.id})" class="viol-icon-btn v-green" title="צפה">👁</button>`:''}
         ${v.paymentReceipt?`<button onclick="viewPaymentReceipt(${v.id})" class="viol-icon-btn v-green" title="שולם">✅</button>`:''}
-        <button onclick="openViolLogsModal(${v.id})" class="viol-icon-btn v-purple" title="${logsCount} תיעודים">📋</button>
-        <button onclick="openViolAttachmentsModal(${v.id})" class="viol-icon-btn v-blue" title="מסמכים מצורפים${(v.attachments||[]).length?' ('+v.attachments.length+')':''}">📎</button>
+        <button onclick="openViolAttachmentsModal(${v.id})" class="viol-icon-btn v-blue" title="מצורפים">📎</button>
         <button onclick="deleteViolation(${v.id})" class="viol-icon-btn v-red" title="מחק">🗑</button>
       </div>
     </div>`;
