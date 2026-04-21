@@ -1655,7 +1655,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <input id="viol-num" placeholder="D-2025-003" dir="ltr" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-family:monospace;font-size:14px;background:#fff;color:#1A1A1A">
         </div>
         <div>
-          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">תאריך הסבה <span style="color:#E24B4A">*</span></label>
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">תאריך העבירה</label>
           <input type="date" id="viol-date" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A">
         </div>
         <div>
@@ -7084,7 +7084,7 @@ function renderViolations(){
   }
 
   html+=`<div class="viol-row viol-header" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.8fr 1.1fr">
-    <div>שם הנהג</div><div>מס׳ דוח</div><div>רכב</div><div>מקור הדוח</div><div>תאריך</div><div>סוג טיפול</div><div>סטטוס</div><div style="text-align:center">פעולות</div>
+    <div>שם הנהג</div><div>מס׳ דוח</div><div>רכב</div><div>מקור הדוח</div><div>תאריך עבירה</div><div>סוג טיפול</div><div>סטטוס</div><div style="text-align:center">פעולות</div>
   </div>`;
 
   list.forEach(v=>{
@@ -7122,7 +7122,7 @@ function renderViolations(){
     html+=`<div class="viol-row viol-data-row" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.8fr 1.1fr">
       <div class="viol-driver">
         <div class="viol-avatar" style="background:${ac}">${ini}</div>
-        <span class="viol-driver-name">${driverName}</span>
+        <div><div class="viol-driver-name">${driverName}</div>${v.transferDate?`<div style="font-size:10px;color:#5F5E5A;margin-top:1px">הסבה: ${fd(v.transferDate)}</div>`:''}</div>
       </div>
       <div class="viol-mono" style="color:var(--gd)">${v.num}</div>
       <div class="viol-mono">${veh?veh.plate:'—'}</div>
@@ -7502,7 +7502,7 @@ function saveViolation(){
       fileName:fileName||null
     };
     if(editId){Object.assign(violationsList.find(v=>v.id===editId),data);}
-    else{violationsList.unshift({id:++violIdSeq,...data});}
+    else{data.transferDate=new Date().toISOString().split('T')[0];violationsList.unshift({id:++violIdSeq,...data});}
     // Store file in memory cache (not localStorage - too large)
     var savedVid = editId || violIdSeq;
     var savedV = violationsList.find(x=>x.id===savedVid);
@@ -7556,8 +7556,8 @@ function saveViolation(){
   }
 }
 
-const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך}.\nגורם נותן הדוח: {מקור}\n\n{תשלום}\n{קובץ}\nלאישור על קיום הדוח, חובה ללחוץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
-const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} מתאריך {תאריך} הוסב על שמך.\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאישור על הסבת הדוח על שמך, חובה ללחוץ כאן:\n{לינק}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום בקישור למעלה.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\n{תשלום}\n{קובץ}\nלאישור על קיום הדוח, חובה ללחוץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} הוסב על שמך.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאישור על הסבת הדוח על שמך, חובה ללחוץ כאן:\n{לינק}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום בקישור למעלה.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
 // Payment links - direct URLs for Israeli municipalities
 const CITY_PAYMENT_MAP = {
@@ -7659,10 +7659,10 @@ const TEST_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} 
 // Auto-migrate: always reset saved templates to use latest defaults (v2)
 (function(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  if(s._tplVersion!==4){
+  if(s._tplVersion!==5){
     delete s.violMsgTemplate;
     delete s.violMsgTransferTemplate;
-    s._tplVersion=4;
+    s._tplVersion=5;
     localStorage.setItem('fleetSettings',JSON.stringify(s));
   }
 })();
