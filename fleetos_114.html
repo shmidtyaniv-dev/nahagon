@@ -2566,7 +2566,7 @@ function doUploadVehiclePhoto(){
         v.photo=data;
         try{if(typeof persistVehiclesDebounced==='function')persistVehiclesDebounced();}catch(e){}
         renderBrandIcon(v.make);
-        showToast('✓ תמונת רכב עודכנה');
+        showUploadSuccess('תמונת רכב',null);
       }
     });
     try{document.body.removeChild(inp);}catch(e){}
@@ -7327,7 +7327,7 @@ function uploadViolAttachment(vid, input){
       document.getElementById('viol-att-modal')?.remove();
       openViolAttachmentsModal(vid);
       renderViolations();
-    },1200);
+    },3000);
   };
   reader.readAsDataURL(file);
   input.value = '';
@@ -7467,8 +7467,8 @@ function onViolFileChange(input){
   const label=document.getElementById('viol-upload-label');
   const nameEl=document.getElementById('viol-file-name');
   if(file){
-    if(nameEl)nameEl.textContent=file.name;
-    if(label)label.style.borderColor='var(--gd)';
+    if(nameEl)nameEl.textContent='✅ '+file.name;
+    if(label){label.style.borderColor='#16a34a';label.style.background='#dcfce7';}
   }
 }
 
@@ -8393,9 +8393,9 @@ function accResetFileUI(fileName){
   const removeBtn=id('acc-file-remove');
   const label=id('acc-upload-label');
   if(fileName){
-    if(nameEl)nameEl.textContent=fileName;
+    if(nameEl)nameEl.textContent='✅ '+fileName;
     if(removeBtn)removeBtn.style.display='inline';
-    if(label)label.style.borderColor='var(--gl)';
+    if(label){label.style.borderColor='#16a34a';label.style.background='#f0fdf4';}
   }else{
     if(nameEl)nameEl.textContent='בחר קובץ PDF / תמונה...';
     if(removeBtn)removeBtn.style.display='none';
@@ -9083,11 +9083,21 @@ function uploadMandatoryDoc(vid,key,input){
   const reader=new FileReader();
   reader.onload=e=>{
     vehicleDocs[vid][key]={name:file.name,type:file.type,data:e.target.result};
-    // Auto-scan removed (requires paid API)
-    openDet(vid);vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]);
+    showUploadSuccess(file.name,function(){openDet(vid);vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]);});
   };
   reader.readAsDataURL(file);
 }
+function showUploadSuccess(fileName,callback){
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99999;display:flex;align-items:center;justify-content:center;direction:rtl';
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px 50px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.15)">'+
+    '<div style="font-size:52px;margin-bottom:12px">✅</div>'+
+    '<div style="font-size:18px;font-weight:700;color:#166534;margin-bottom:6px">הועלה בהצלחה!</div>'+
+    '<div style="font-size:13px;color:#5F5E5A">'+(fileName||'')+'</div></div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ov.remove();if(callback)callback();},2500);
+}
+
 function viewDoc(vid,key){
   const vd=vehicleDocs[vid]||{};const doc=vd[key];
   if(!doc||!doc.data){alert('לא נמצא קובץ לצפייה');return;}
