@@ -4633,7 +4633,7 @@ function saveUpdate(){
     v.tolls=tolls;
     v.photo=null;
     // Log
-    v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'החלפת רכב: '+oldMake+' '+oldModel+' ('+oldPlate+') → '+v.make+' '+v.model+' ('+newPlate+')',createdAt:now,source:'auto'});
+    v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'החלפת רכב: '+v.make+' '+v.model+' ('+newPlate+') ← '+oldMake+' '+oldModel+' ('+oldPlate+')',createdAt:now,source:'auto'});
   } else {
     // Scenario 2: Transfer vehicle to different driver
     const newName=id('upd-dname')?.value.trim();
@@ -4657,7 +4657,7 @@ function saveUpdate(){
     v.driver.licenseExp=id('upd-dlic')?.value||'';
     v.driver.address=id('upd-daddress')?.value.trim()||'';
     // Log
-    v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'העברת רכב: מ-'+oldDriver.name+' ל-'+newName,createdAt:now,source:'auto'});
+    v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'החלפת נהג: '+newName+' ← '+oldDriver.name,createdAt:now,source:'auto'});
   }
 
   try{if(typeof persistVehiclesDebounced==='function')persistVehiclesDebounced();}catch(e){}
