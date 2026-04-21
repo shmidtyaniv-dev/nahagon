@@ -3186,23 +3186,17 @@ function openArchiveModal(vid){
       <div style="font-size:13px;color:#555;margin-bottom:16px">${v.make} ${v.model} · ${v.plate} · נהג: ${v.driver.name}</div>
       <div style="margin-bottom:14px">
         <div style="font-size:12px;color:#666;margin-bottom:8px;font-weight:500">סיבת הסרה:</div>
-        <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px" onclick="document.getElementById('archive-sub-options').style.display='block'">
+        <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
           <input type="radio" name="archive-reason" value="driver_left" style="margin-top:2px;accent-color:#dc2626">
-          <div><div style="font-size:13px;font-weight:500">נהג עזב את החברה</div><div style="font-size:11px;color:#888">הרכב יסומן כ"פנוי"</div></div>
+          <div><div style="font-size:13px;font-weight:500">נהג עזב את החברה</div><div style="font-size:11px;color:#888">הרכב חזר למגרש הליסינג</div></div>
         </label>
-        <div id="archive-sub-options" style="display:none;margin:-2px 0 8px 0;padding:0 20px">
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:7px;cursor:pointer;margin-bottom:4px;background:#f9fafb">
-            <input type="radio" name="archive-sub" value="returned_to_lot" style="accent-color:#1D9E75">
-            <div><div style="font-size:12px;font-weight:500">רכב חזר למגרש הליסינג</div></div>
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:7px;cursor:pointer;background:#f9fafb">
-            <input type="radio" name="archive-sub" value="waiting_new_driver" checked style="accent-color:#1D9E75">
-            <div><div style="font-size:12px;font-weight:500">נשאר בחברה — ממתין לנהג חדש</div></div>
-          </label>
-        </div>
-        <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer" onclick="document.getElementById('archive-sub-options').style.display='none'">
-          <input type="radio" name="archive-reason" value="vehicle_returned" style="margin-top:2px;accent-color:#dc2626">
-          <div><div style="font-size:13px;font-weight:500">רכב הוחזר (סיום חוזה)</div><div style="font-size:11px;color:#888">הרכב והנהג יוסרו מהציר ויישמרו בארכיון</div></div>
+        <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
+          <input type="radio" name="archive-reason" value="driver_quit" style="margin-top:2px;accent-color:#dc2626">
+          <div><div style="font-size:13px;font-weight:500">נהג מוותר על הרכב</div><div style="font-size:11px;color:#888">הרכב חזר למגרש הליסינג</div></div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
+          <input type="radio" name="archive-reason" value="deal_ended" style="margin-top:2px;accent-color:#dc2626">
+          <div><div style="font-size:13px;font-weight:500">סיום עסקה</div><div style="font-size:11px;color:#888">הרכב חזר לחברת הליסינג, הנהג נשאר וממתין לרכב חדש</div></div>
         </label>
       </div>
       <div style="margin-bottom:14px">
@@ -3252,23 +3246,19 @@ function confirmArchive(vid){
   archivedVehicles.push(record);
   localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
 
-  const subReason=document.querySelector('input[name="archive-sub"]:checked')?.value||'';
-  record.subReason=subReason;
-
-  if(reason==='driver_left'){
-    if(subReason==='returned_to_lot'){
-      // Vehicle returned to leasing lot - remove from active
-      const i=vehicles.indexOf(v);
-      if(i>-1)vehicles.splice(i,1);
-      record.action='returned_to_lot';
-    } else {
-      // Vehicle stays, waiting for new driver
-      v.driver={name:'פנוי — ממתין לשיבוץ',id:'',phone:'',email:'',licenseExp:''};
-      v.status='free';
-      record.action='waiting_new_driver';
-    }
-  }else{
-    // Contract ended - remove entirely
+  if(reason==='driver_left' || reason==='driver_quit'){
+    // Driver left or quit - vehicle returned to leasing, remove both
+    const i=vehicles.indexOf(v);
+    if(i>-1)vehicles.splice(i,1);
+    record.action=reason;
+  } else if(reason==='deal_ended'){
+    // Deal ended - vehicle returned, driver stays waiting for new car
+    const i=vehicles.indexOf(v);
+    if(i>-1)vehicles.splice(i,1);
+    record.action='deal_ended';
+    record.driverWaiting=true;
+  } else {
+    // Fallback - remove entirely
     const i=vehicles.indexOf(v);
     if(i>-1)vehicles.splice(i,1);
     record.action='contract_ended';
