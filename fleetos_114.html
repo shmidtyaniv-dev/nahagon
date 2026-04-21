@@ -887,7 +887,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
     </div>
     <div class="page" id="page-archive">
-  <div style="padding:16px;max-width:700px">
+  <div style="padding:16px">
     <div id="archive-list"></div>
   </div>
 </div>
@@ -8760,7 +8760,7 @@ document.addEventListener('click',e=>{
 });
 
 /* ── NAV ── */
-const PT={dashboard:'דשבורד',vehicles:'רכבים ונהגים','vehicle-card':'כרטיס רכב',tasks:'משימות',violations:'דוחות תנועה',accidents:'תאונות',calendar:'יומן',scheduling:'לוח טיפולים',forms:'טפסים דיגיטליים',reminders:'תזכורות',settings:'הגדרות'};
+const PT={dashboard:'דשבורד',vehicles:'רכבים ונהגים','vehicle-card':'כרטיס רכב',tasks:'משימות',violations:'דוחות תנועה',accidents:'תאונות',archive:'ארכיון',calendar:'יומן',scheduling:'לוח טיפולים',forms:'טפסים דיגיטליים',reminders:'תזכורות',settings:'הגדרות'};
 function go(name,el){
   // Reset ALL vc-tab-panels when navigating away from vehicle card
   document.querySelectorAll('.vc-tab-panel').forEach(function(p){p.style.display='none';});
@@ -8949,29 +8949,33 @@ function renderArchivePage(){
   if(!archivedVehicles.length){el.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--t3);font-size:14px">הארכיון ריק</div>';return;}
   var reasonLabels={driver_left:'נהג עזב',driver_quit:'נהג ויתר',deal_ended:'סיום עסקה',vehicle_returned:'רכב הוחזר'};
   var reasonColors={driver_left:'#d97706',driver_quit:'#d97706',deal_ended:'#3b82f6',vehicle_returned:'#dc2626'};
-  el.innerHTML=archivedVehicles.slice().reverse().map(function(r,idx){
+  var html='<div class="viol-container">';
+  html+='<div style="display:flex;align-items:center;justify-content:center;padding:18px 22px;border-bottom:1px solid var(--bdr);gap:8px"><h2 style="margin:0;font-size:17px;font-weight:700;color:var(--t1)">ארכיון</h2><span class="viol-count">'+archivedVehicles.length+'</span></div>';
+  // Header
+  html+='<div class="viol-row viol-header" style="grid-template-columns:1.2fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr"><div>רכב · נהג</div><div>סיבה</div><div>רכב</div><div>טלפון</div><div>תחילת עסקה</div><div>הוסר</div><div style="text-align:center">פעולות</div></div>';
+  archivedVehicles.slice().reverse().forEach(function(r,idx){
     var revIdx=archivedVehicles.length-1-idx;
     var reasonLabel=reasonLabels[r.reason]||'הוסר';
     var reasonColor=reasonColors[r.reason]||'#dc2626';
-    return `<div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="display:flex;gap:8px;align-items:center">
-          <span style="font-size:11px;color:#fff;background:${reasonColor};padding:3px 10px;border-radius:999px;font-weight:500">${reasonLabel}</span>
-          <button onclick="restoreFromArchive(${revIdx})" style="font-size:11px;color:var(--gd);background:#f0fdf4;border:1px solid #bbf7d0;padding:3px 10px;border-radius:999px;cursor:pointer;font-family:inherit;font-weight:500">↩ החזר לציר</button>
-        </div>
-        <div style="font-size:16px;font-weight:700;color:var(--t1)">${r.plate} · ${r.driver.name}</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:12px;color:var(--t2)">
-        <div><span style="color:var(--t3)">רכב: </span><b>${r.make} ${r.model}</b></div>
-        <div><span style="color:var(--t3)">קוד: </span>${r.code||'—'}</div>
-        <div><span style="color:var(--t3)">ת.ז.: </span>${r.driver.id||'—'}</div>
-        <div><span style="color:var(--t3)">טלפון: </span>${r.driver.phone||'—'}</div>
-        <div><span style="color:var(--t3)">מייל: </span>${r.driver.email||'—'}</div>
-        <div><span style="color:var(--t3)">תחילת עסקה: </span>${fd(r.periodFrom)||'—'}</div>
-        <div><span style="color:var(--t3)">הוסר: </span>${fd(r.archivedAt)||'—'}</div>
-        ${r.note?`<div><span style="color:var(--t3)">הערה: </span>${r.note}</div>`:''}
-      </div>
-    </div>`;}).join('');
+    html+='<div class="viol-row viol-data-row" style="grid-template-columns:1.2fr 1fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr">';
+    html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(r.driver.name)+'">'+inits(r.driver.name)+'</div><div><div class="viol-driver-name">'+r.driver.name+'</div><div style="font-size:11px;color:var(--t3)">'+r.plate+'</div></div></div>';
+    html+='<div class="viol-cell" data-label="סיבה"><span style="font-size:11px;color:#fff;background:'+reasonColor+';padding:3px 10px;border-radius:999px;font-weight:500;white-space:nowrap">'+reasonLabel+'</span></div>';
+    html+='<div class="viol-cell" data-label="רכב"><span class="viol-mono">'+r.make+' '+r.model+'</span></div>';
+    html+='<div class="viol-cell" data-label="טלפון"><span class="viol-muted">'+(r.driver.phone||'—')+'</span></div>';
+    html+='<div class="viol-cell" data-label="תחילת עסקה"><span class="viol-muted">'+(fd(r.periodFrom)||'—')+'</span></div>';
+    html+='<div class="viol-cell" data-label="הוסר"><span class="viol-muted">'+(fd(r.archivedAt)||'—')+'</span></div>';
+    html+='<div class="viol-actions" style="justify-content:center"><button onclick="restoreFromArchive('+revIdx+')" class="viol-icon-btn v-green" title="החזר לציר" style="font-size:12px;width:auto;padding:0 12px">↩ החזר</button><button onclick="deleteFromArchive('+revIdx+')" class="viol-icon-btn v-red" title="מחק">🗑</button></div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+function deleteFromArchive(idx){
+  if(!confirm('למחוק את הרשומה מהארכיון לצמיתות?'))return;
+  archivedVehicles.splice(idx,1);
+  localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
+  renderArchivePage();
+  showToast('נמחק מהארכיון');
 }
 function restoreFromArchive(idx){
   if(!confirm('להחזיר את הרכב לציר הפעיל?'))return;
