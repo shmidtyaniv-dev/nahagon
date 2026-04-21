@@ -2057,7 +2057,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <!-- ADD MODAL -->
 <div class="ov" id="add-ov">
-  <div style="background:var(--card);border-radius:12px;width:560px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 16px 48px rgba(26,74,58,.2);cursor:default;direction:rtl" onclick="event.stopPropagation()">
+  <div class="modal" style="max-width:560px;border-radius:12px;max-height:none;overflow:visible" onclick="event.stopPropagation()">
     <!-- Green header -->
     <div style="background:#1D9E75;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div style="display:flex;align-items:center;gap:10px">
@@ -6499,14 +6499,19 @@ function openAdd(){
 
 function toggleAccSection(header){
   var body=header.nextElementSibling;
-  var arrow=header.querySelector('.acc-arrow');
   if(!body)return;
-  if(body.style.display==='none'){
+  var isOpen=body.style.display!=='none';
+  // Close all accordion sections in same modal
+  var parent=header.closest('.mb')||header.parentElement.parentElement;
+  if(parent){
+    parent.querySelectorAll('.acc-body').forEach(function(b){b.style.display='none';});
+    parent.querySelectorAll('.acc-arrow').forEach(function(a){a.style.transform='rotate(-90deg)';});
+  }
+  // Toggle clicked one
+  if(!isOpen){
     body.style.display='';
+    var arrow=header.querySelector('.acc-arrow');
     if(arrow)arrow.style.transform='rotate(0deg)';
-  } else {
-    body.style.display='none';
-    if(arrow)arrow.style.transform='rotate(-90deg)';
   }
 }
 
