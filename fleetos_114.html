@@ -652,7 +652,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <div class="mc-lbl">חלופי / גישור</div>
               <div class="mc-val" style="color:#1D9E75" id="mv-alt">0</div>
               <div class="mc-sub" id="mv-alt-sub">לפי טפסי מסירה פתוחים</div>
-              <div class="stat-value-empty" id="mv-alt-empty" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>✓ אין פתוחים</div>
             </div>
             <div class="stat-circle" style="background:#1D9E75">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -5365,18 +5364,9 @@ function renderDash(){
 function updateStatCard(valId,subId,emptyId,cardId,count){
   var valEl=document.getElementById(valId);
   var subEl=document.getElementById(subId);
-  var emptyEl=document.getElementById(emptyId);
-  var cardEl=cardId?document.getElementById(cardId):null;
-  if(count===0){
-    if(valEl) valEl.style.display='none';
-    if(subEl) subEl.style.display='none';
-    if(emptyEl) emptyEl.style.display='flex';
-    if(cardEl) cardEl.classList.add('empty-good');
-  } else {
-    if(valEl){valEl.style.display='';valEl.textContent=count;}
-    if(subEl) subEl.style.display='';
-    if(emptyEl) emptyEl.style.display='none';
-    if(cardEl) cardEl.classList.remove('empty-good');
+  if(valEl){valEl.style.display='';valEl.textContent=count;}
+  if(subEl) subEl.style.display='';
+  if(count>0){
   }
 }
 function updateDashGreeting(){
