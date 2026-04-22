@@ -554,18 +554,18 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <span id="topbar-greet-text" style="font-size:15px;font-weight:600;color:var(--t1);white-space:nowrap"></span>
       <span id="topbar-greet-sub" style="font-size:11px;color:var(--t2);cursor:pointer;text-decoration:underline dotted;white-space:nowrap" onclick="showAttentionDetails()"></span>
     </div>
-    <!-- Center: search + date -->
+    <!-- Center: date + search -->
     <div style="display:flex;align-items:center;gap:12px;flex:1;justify-content:center">
+      <div id="topbar-date" style="font-size:11px;color:#5F5E5A;white-space:nowrap"></div>
       <div style="position:relative;flex:1;max-width:400px">
         <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" placeholder="חיפוש: רכב, נהג, יצרן, דוח..." id="srch-inp" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
         <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
       </div>
-      <div id="topbar-date" style="font-size:11px;color:#5F5E5A;white-space:nowrap"></div>
     </div>
     <!-- Left: system name + add button -->
     <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-      <span style="font-size:12px;color:var(--t2);white-space:nowrap">מרכז הרכב של מור השקעות</span>
+      <span id="topbar-system-name" style="font-size:14px;font-weight:500;color:var(--t1);white-space:nowrap">מרכז הרכב של מור השקעות</span>
       <button onclick="openAdd()" style="height:34px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;background:#1D9E75;color:#fff;border:none;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוסף רכב</button>
     </div>
     <div class="pt" id="page-title" style="display:none">דשבורד</div>
@@ -1279,6 +1279,17 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <button onclick="saveRequestTemplates()" style="background:var(--gd);color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">שמור תבניות</button>
         <button onclick="resetRequestTemplates()" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);padding:7px 14px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">ברירת מחדל</button>
         <span id="req-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
+      </div>
+    </div>
+
+    <!-- SYSTEM NAME -->
+    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
+      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+        🏢 שם המערכת
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="system-name-input" value="מרכז הרכב של מור השקעות" style="flex:1;padding:8px 12px;border:1px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;color:var(--t1);direction:rtl">
+        <button onclick="saveSystemName()" style="background:var(--gd);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">שמור</button>
       </div>
     </div>
 
@@ -6796,6 +6807,25 @@ function openAdd(){
   ['scan-vehicle-zone','scan-driver-zone'].forEach(x=>{id(x).classList.remove('scan-filled')});
   ['toll-6','toll-6n','toll-carmel','toll-fastlane'].forEach(x=>{id(x).checked=false});
 }
+
+function saveSystemName(){
+  var val=document.getElementById('system-name-input')?.value.trim()||'מרכז הרכב של מור השקעות';
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  s.systemName=val;
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
+  var el=document.getElementById('topbar-system-name');
+  if(el) el.textContent=val;
+  showToast('✓ שם המערכת עודכן');
+}
+function applySystemName(){
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  var name=s.systemName||'מרכז הרכב של מור השקעות';
+  var el=document.getElementById('topbar-system-name');
+  if(el) el.textContent=name;
+  var inp=document.getElementById('system-name-input');
+  if(inp) inp.value=name;
+}
+document.addEventListener('DOMContentLoaded',function(){setTimeout(applySystemName,100);});
 
 function showAttentionDetails(){
   var altCount=(countDriversOnAlt()||{}).total||0;
