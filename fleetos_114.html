@@ -566,7 +566,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <div id="topbar-greeting" style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px 10px;border-top:0.5px solid rgba(0,0,0,.06)">
       <div>
         <span id="topbar-greet-text" style="font-size:18px;font-weight:500;color:var(--t1)"></span>
-        <span id="topbar-greet-sub" style="font-size:12px;color:var(--t2);margin-right:12px"></span>
+        <span id="topbar-greet-sub" style="font-size:12px;color:var(--t2);margin-right:12px;cursor:pointer;text-decoration:underline dotted" onclick="showAttentionDetails()"></span>
       </div>
     </div>
   </div>
@@ -6795,6 +6795,34 @@ function openAdd(){
   ['scan-v-status','scan-d-status'].forEach(x=>{id(x).textContent=''});
   ['scan-vehicle-zone','scan-driver-zone'].forEach(x=>{id(x).classList.remove('scan-filled')});
   ['toll-6','toll-6n','toll-carmel','toll-fastlane'].forEach(x=>{id(x).checked=false});
+}
+
+function showAttentionDetails(){
+  var altCount=(countDriversOnAlt()||{}).total||0;
+  var missingDocsCount=vehicles.filter(function(v){return hasMissingDocs(v);}).length;
+  var accCount=(typeof accidentsList!=='undefined'?accidentsList:[]).filter(function(a){return a.status!=='closed';}).length;
+  var violCount=(typeof violationsList!=='undefined'?violationsList:[]).filter(function(v){return v.status!=='done'&&v.status!=='closed';}).length;
+  var items=[];
+  if(accCount) items.push({icon:'⚠️',label:'תאונות פתוחות',count:accCount,color:'#E24B4A'});
+  if(violCount) items.push({icon:'📄',label:'דוחות להסבה',count:violCount,color:'#E89B2A'});
+  if(missingDocsCount) items.push({icon:'📋',label:'רכבים עם מסמכים חסרים',count:missingDocsCount,color:'#378ADD'});
+  if(altCount) items.push({icon:'👥',label:'נהגים על חלופי/גישור',count:altCount,color:'#1D9E75'});
+  var ex=document.getElementById('attention-popup');if(ex)ex.remove();
+  if(!items.length) return;
+  var popup=document.createElement('div');
+  popup.id='attention-popup';
+  popup.style.cssText='position:fixed;top:100px;left:50%;transform:translateX(-50%);background:#fff;border-radius:12px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.18);z-index:9999;direction:rtl;min-width:300px;max-width:400px';
+  var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><div style="font-size:15px;font-weight:600;color:#1A1A1A">פריטים שדורשים תשומת לב</div><button onclick="document.getElementById(\'attention-popup\').remove()" style="background:none;border:none;font-size:20px;color:#888;cursor:pointer">×</button></div>';
+  items.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:0.5px solid rgba(0,0,0,.06)">';
+    html+='<span style="font-size:20px">'+it.icon+'</span>';
+    html+='<div style="flex:1;font-size:13px;color:#1A1A1A">'+it.label+'</div>';
+    html+='<span style="font-size:18px;font-weight:600;color:'+it.color+'">'+it.count+'</span>';
+    html+='</div>';
+  });
+  popup.innerHTML=html;
+  document.body.appendChild(popup);
+  setTimeout(function(){document.addEventListener('click',function handler(e){if(!popup.contains(e.target)){popup.remove();document.removeEventListener('click',handler);}},{once:false});},100);
 }
 
 function saveThemeColors(){
