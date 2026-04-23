@@ -278,10 +278,22 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 .v-logo-box:hover{border-style:solid;border-color:var(--green);background:var(--green-bg)}
 .v-logo-box img{width:100%;height:100%;object-fit:contain}
 .v-title-block{min-width:0}
-.v-driver-name{font-size:24px;font-weight:500;margin:0 0 3px;line-height:1.2}
-.v-driver-company{font-size:15px;color:var(--t2);font-weight:500;margin-bottom:8px}
+.v-vehicle-model-title{font-size:22px;font-weight:500;margin:0 0 8px;line-height:1.2}
 .v-vehicle-info{font-size:14px;color:var(--t2);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.v-vehicle-model{font-weight:500;color:var(--t1)}
+.driver-details-card{background:#fff;border-radius:12px;border:0.5px solid rgba(0,0,0,.08);padding:16px 18px}
+.driver-details-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:0.5px solid rgba(0,0,0,.08)}
+.driver-details-title{font-size:12px;color:#5F5E5A;font-weight:500;letter-spacing:.02em}
+.driver-details-edit{background:transparent;border:none;font-size:11px;color:var(--green-dark);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:3px;font-weight:500;padding:2px 6px;border-radius:6px;transition:background .15s}
+.driver-details-edit:hover{background:var(--green-light)}
+.driver-details-list{display:flex;flex-direction:column}
+.driver-name-header{font-size:20px;font-weight:600;color:var(--t1);margin-bottom:14px;line-height:1.2;letter-spacing:-.01em}
+.driver-detail-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0;font-size:12px;border-bottom:0.5px solid rgba(0,0,0,.08)}
+.driver-detail-row:last-child{border-bottom:none;padding-bottom:2px}
+.driver-detail-row:first-child{padding-top:2px}
+.driver-detail-icon{width:16px;height:16px;color:#5F5E5A;flex-shrink:0;margin-top:2px}
+.driver-detail-content{flex:1;min-width:0}
+.driver-detail-label{font-size:11px;color:#5F5E5A;margin-bottom:1px}
+.driver-detail-value{font-size:13px;font-weight:500;color:#1A1A1A}
 .v-meta-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:var(--bg2);border-radius:4px;font-size:12px;font-weight:500}
 .v-code-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:var(--bg2);color:var(--t1);border-radius:4px;font-size:12px;font-weight:500}
 .v-code-chip-label{color:var(--t2);font-weight:400}
@@ -483,7 +495,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .vc-tab-btn{font-size:10px!important;padding:6px 8px!important}
   .v-hero{padding:10px 12px!important}
   .v-logo-box{width:52px!important;height:52px!important;border-radius:10px!important}
-  .v-driver-name{font-size:18px!important}
+  .v-vehicle-model-title{font-size:18px!important}
   .vc-license-plate{height:40px!important}
   .vc-license-plate-number{font-size:18px!important;padding:0 10px!important}
   .vc-info-grid{grid-template-columns:1fr!important}
@@ -1800,12 +1812,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <!-- License plate (Israeli style) -->
         <span id="vc-plate-big"></span>
 
-        <!-- Title: Driver name + Company + Vehicle info -->
+        <!-- Title: Vehicle name + chips (driver details moved to sidebar) -->
         <div class="v-title-block">
-          <h1 class="v-driver-name" id="vc-hero-driver-name"></h1>
-          <div class="v-driver-company" id="vc-hero-company"></div>
+          <h1 class="v-vehicle-model-title" id="vc-hero-vehicle-title"></h1>
           <div class="v-vehicle-info">
-            <span class="v-vehicle-model" id="vc-car-line"></span>
             <span class="v-meta-chip" id="vc-hero-year" style="display:none"></span>
             <span class="v-meta-chip" id="vc-hero-fuel" style="display:none"></span>
             <span class="v-code-chip" id="vc-hero-code" style="display:none">
@@ -6719,10 +6729,8 @@ function openDet(vid){
   id('vc-plate-big').innerHTML=`<div class="vc-license-plate"><div class="vc-license-plate-flag"><svg width="18" height="12" viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><rect width="18" height="12" fill="white"/><rect y="1.5" width="18" height="1.6" fill="#0038B8"/><rect y="8.9" width="18" height="1.6" fill="#0038B8"/><g transform="translate(9, 6)" fill="none" stroke="#0038B8" stroke-width="0.6"><polygon points="0,-2.2 1.9,1.1 -1.9,1.1"/><polygon points="0,2.2 -1.9,-1.1 1.9,-1.1"/></g></svg><div class="vc-license-plate-flag-label">IL</div></div><div class="vc-license-plate-number">${v.plate||''}</div></div>`;
   // Brand icon / vehicle photo
   renderBrandIcon(v.make);
-  // Title block
-  id('vc-hero-driver-name').textContent=v.driver.name||'';
-  id('vc-hero-company').textContent=v.driver.company||v.driver.dept||'';
-  id('vc-car-line').textContent=`${v.make} ${v.model}`;
+  // Title block - vehicle name as main title
+  id('vc-hero-vehicle-title').textContent=`${v.make||''} ${v.model||''}`.trim()||'רכב';
   // Code chip
   const codeEl=id('vc-hero-code');
   if(v.code){codeEl.style.display='';id('vc-code-line').textContent=v.code;}else{codeEl.style.display='none';}
@@ -6791,20 +6799,9 @@ function openDet(vid){
     dealPct=dealMonthsTotal>0?Math.round((dealMonthsCurrent/dealMonthsTotal)*100):0;
   }
 
+  id('vc-summary-cards').style.gridTemplateColumns='repeat(2,1fr)';
   id('vc-summary-cards').innerHTML=
-    // Card 1: Driver info
-    `<div class="vc-info-box" style="align-items:stretch;text-align:right;padding:16px 18px">
-      <div class="vc-info-label" style="text-align:right;margin-bottom:10px;font-weight:600">פרטי נהג</div>
-      <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--t2)">שם</span><span style="font-weight:500">${v.driver.name||'—'}</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--t2)">ת.ז.</span><span style="font-weight:500" dir="ltr">${v.driver.id||'—'}</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--t2)">טלפון</span><span style="font-weight:500" dir="ltr">${v.driver.phone||'—'}</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--t2)">אימייל</span><span style="font-weight:500" dir="ltr" style="font-size:11px">${v.driver.email||'—'}</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--t2)">רישיון נהיגה</span><span style="font-weight:500"${dLc?' style="color:'+dLc+'"':''}>${fd(v.driver.licenseExp)||'—'}</span></div>
-        ${v.driver.company?`<div style="display:flex;justify-content:space-between"><span style="color:var(--t2)">חברה</span><span style="font-weight:500">${v.driver.company}</span></div>`:''}
-      </div>
-    </div>`+
-    // Card 2: Deal & Schedule
+    // Card 1: Deal & Schedule (driver info moved to sidebar)
     `<div class="vc-info-box" style="align-items:stretch;padding:16px 18px">
       <div class="vc-info-label" style="text-align:center;margin-bottom:10px;font-weight:600">עסקה ולו"ז</div>
       <div class="vc-date-range">
@@ -6945,14 +6942,56 @@ function openDet(vid){
       </div>
     </div>`;
 
-  // ── SIDEBAR: Contact + Stats ──
+  // ── SIDEBAR: Driver Details + Contact + Stats ──
   var sidebarHtml='';
-  // Contact card
   var dPhone=v.driver.phone||'';
   var dEmail=v.driver.email||'';
   var dName=v.driver.name||'';
   var waPhone=dPhone.replace(/[^0-9]/g,'');
   if(waPhone.startsWith('0'))waPhone='972'+waPhone.substring(1);
+
+  // Driver Details Card (NEW - moved from hero & overview)
+  sidebarHtml+='<div class="driver-details-card">';
+  sidebarHtml+='<div class="driver-details-header">';
+  sidebarHtml+='<span class="driver-details-title">\u05E4\u05E8\u05D8\u05D9 \u05D4\u05E0\u05D4\u05D2</span>';
+  sidebarHtml+='<button class="driver-details-edit" title="\u05E2\u05E8\u05D5\u05DA \u05E4\u05E8\u05D8\u05D9\u05DD" onclick="openEditVehicle('+vid+')">';
+  sidebarHtml+='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+  sidebarHtml+='\u05E2\u05E8\u05D9\u05DB\u05D4</button>';
+  sidebarHtml+='</div>';
+  sidebarHtml+='<div class="driver-name-header">'+(dName||'\u2014')+'</div>';
+  sidebarHtml+='<div class="driver-details-list">';
+  // Company
+  if(v.driver.company||v.driver.dept){
+    sidebarHtml+='<div class="driver-detail-row">';
+    sidebarHtml+='<svg class="driver-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 7v14M21 7v14M6 21V11M10 21V11M14 21V11M18 21V11"/><path d="M3 7l9-4 9 4"/></svg>';
+    sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05D7\u05D1\u05E8\u05D4</div><div class="driver-detail-value">'+(v.driver.company||v.driver.dept)+'</div></div>';
+    sidebarHtml+='</div>';
+  }
+  // Phone
+  sidebarHtml+='<div class="driver-detail-row">';
+  sidebarHtml+='<svg class="driver-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+  sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05D8\u05DC\u05E4\u05D5\u05DF</div><div class="driver-detail-value" dir="ltr">'+(dPhone||'\u2014')+'</div></div>';
+  sidebarHtml+='</div>';
+  // Email
+  sidebarHtml+='<div class="driver-detail-row">';
+  sidebarHtml+='<svg class="driver-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
+  sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05D0\u05D9\u05DE\u05D9\u05D9\u05DC</div><div class="driver-detail-value" dir="ltr">'+(dEmail||'\u2014')+'</div></div>';
+  sidebarHtml+='</div>';
+  // Address
+  if(v.driver.address){
+    sidebarHtml+='<div class="driver-detail-row">';
+    sidebarHtml+='<svg class="driver-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+    sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05DB\u05EA\u05D5\u05D1\u05EA</div><div class="driver-detail-value">'+v.driver.address+' <a href="https://www.google.com/maps/search/'+encodeURIComponent(v.driver.address)+'" target="_blank" style="font-size:10px;color:var(--green);margin-right:4px">\u05D4\u05E6\u05D2 \u05D1\u05DE\u05E4\u05D4</a></div></div>';
+    sidebarHtml+='</div>';
+  }
+  // License expiry
+  sidebarHtml+='<div class="driver-detail-row">';
+  sidebarHtml+='<svg class="driver-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><circle cx="8" cy="15" r="1"/></svg>';
+  sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05EA\u05D5\u05E7\u05E3 \u05E8\u05D9\u05E9\u05D9\u05D5\u05DF \u05E0\u05D4\u05D9\u05D2\u05D4</div><div class="driver-detail-value"'+(dLc?' style="color:'+dLc+'"':'')+'>'+(fd(v.driver.licenseExp)||'\u2014')+'</div></div>';
+  sidebarHtml+='</div>';
+  sidebarHtml+='</div></div>';
+
+  // Contact card
   sidebarHtml+='<div class="vc-contact-card">';
   sidebarHtml+='<div class="vc-contact-card-title">\u05EA\u05E7\u05E9\u05D5\u05E8\u05EA \u05E2\u05DD \u05D4\u05E0\u05D4\u05D2</div>';
   sidebarHtml+='<div class="vc-contact-methods">';
