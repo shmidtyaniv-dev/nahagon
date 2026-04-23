@@ -6876,22 +6876,6 @@ function openDet(vid){
         </div>
       </div>
       <div class="vc-info-sublabel" style="margin-top:8px">המוקדם מביניהם קובע</div>
-    </div>`+
-    // Deal period with progress bar
-    `<div class="vc-info-box">
-      <div class="vc-info-label">תקופת עסקה</div>
-      ${v.delivery?`<div style="display:flex;align-items:baseline;gap:10px;justify-content:center;margin-bottom:8px">
-        <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.delivery)}</div><div style="font-size:10px;color:var(--t2)">מסירה</div></div>
-        <span style="color:var(--t3)">←</span>
-        <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.dealEnd)||'—'}</div><div style="font-size:10px;color:var(--t2)">סיום</div></div>
-      </div>
-      ${(function(){
-        var start=new Date(v.delivery);var end=v.dealEnd?new Date(v.dealEnd):new Date(start.getTime()+3*365.25*86400000);
-        var total=Math.round((end-start)/2592000000);var elapsed=Math.round((new Date()-start)/2592000000);
-        var pct=Math.min(100,Math.max(0,Math.round(elapsed/total*100)));
-        var remaining=total-elapsed;
-        return '<div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:6px;width:100%"><div style="height:100%;background:var(--green);border-radius:2px;width:'+pct+'%"></div></div><div style="font-size:12px;color:var(--t2);text-align:center">חודש <strong style="color:var(--t1)">'+elapsed+'</strong> מתוך <strong style="color:var(--t1)">'+total+'</strong> · נותרו '+remaining+' חודשים</div>';
-      })()}`:'<div style="font-size:14px;color:var(--t3)">לא הוגדרה עסקה</div>'}
     </div>`;
 
   // Row 3 removed (info now in Row 1 "עסקה ולו"ז")
