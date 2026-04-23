@@ -6884,7 +6884,27 @@ function openDet(vid){
       <div class="vc-info-sublabel" style="margin-top:8px">המוקדם מביניהם קובע</div>
     </div>`;
 
-  // Row 3 removed (info now in Row 1 "עסקה ולו"ז")
+  // Row 3: Documents & vehicle details
+  var dLicDays=v.licenseExp?Math.ceil((new Date(v.licenseExp)-new Date())/86400000):null;
+  id('vc-summary-cards3').innerHTML=
+    `<div style="font-size:13px;font-weight:500;color:var(--t2);margin-bottom:10px;letter-spacing:.02em">מסמכים ופרטי רכב</div>
+    <div class="vc-info-grid">
+      <div class="vc-info-box">
+        <div class="vc-info-label">תוקף רישיון רכב</div>
+        <div style="font-size:22px;font-weight:500">${fd(v.licenseExp)||'—'}</div>
+        ${dLicDays!==null?`<div class="vc-info-sublabel">${dLicDays<0?'<span style="color:#A32D2D">פג תוקף!</span>':'בתוקף · עוד '+dLicDays+' ימים'}</div>`:''}
+      </div>
+      <div class="vc-info-box">
+        <div class="vc-info-label">תוקף ביטוח</div>
+        <div style="font-size:22px;font-weight:500">${insTxt}</div>
+        <div class="vc-info-sublabel">${insColor?'<span style="color:'+insColor+'">שים לב</span>':''}</div>
+      </div>
+      <div class="vc-info-box">
+        <div class="vc-info-label">כבישי אגרה</div>
+        <div style="font-size:16px;font-weight:500">${(v.tolls||[]).length?'מורשה ל'+v.tolls[0]:'אין מנויים'}</div>
+        <div class="vc-info-sublabel">${(v.tolls||[]).length>1?v.tolls.slice(1).join(', '):'לא מורשה למנהרות כרמל'}</div>
+      </div>
+    </div>`;
 
   // Row 2.5: סטטוס רכב חלופי/גישור (רק אם יש טופס מסירה פתוח)
   const altStatus = getAltVehicleStatus(vid);
