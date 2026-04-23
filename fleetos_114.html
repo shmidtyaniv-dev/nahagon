@@ -5413,12 +5413,8 @@ function renderDashTimeline(){
 
   // View toggle
   var viewToggle='<div class="tl-view-toggle">'
-    +'<button class="view-btn'+(_tlView==='timeline'?' active':'')+'" onclick="_tlView=\'timeline\';renderDashTimeline()" title="ציר זמן">'
-    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><circle cx="7" cy="12" r="2" fill="currentColor"/><circle cx="13" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>'
-    +'</button>'
-    +'<button class="view-btn'+(_tlView==='list'?' active':'')+'" onclick="_tlView=\'list\';renderDashTimeline()" title="רשימה">'
-    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>'
-    +'</button>'
+    +'<button class="view-btn'+(_tlView==='timeline'?' active':'')+'" onclick="_tlView=\'timeline\';renderDashTimeline()" style="font-size:12px;padding:5px 12px">ציר זמן</button>'
+    +'<button class="view-btn'+(_tlView==='list'?' active':'')+'" onclick="_tlView=\'list\';renderDashTimeline()" style="font-size:12px;padding:5px 12px">רשימה</button>'
     +'</div>';
 
   // Filter chips
