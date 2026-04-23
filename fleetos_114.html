@@ -5472,7 +5472,7 @@ function renderDashTimeline(){
       +'<div class="tl-list-row"><span class="tl-list-dot" style="background:'+dotColor+'"></span><span class="tl-list-type">'+typeLabel+'</span><span class="tl-list-target">\u00B7 '+metaText+'</span></div>'
       +'<div class="tl-list-sub">'+daysText+(isUrgent?' \u00B7 דחוף':' \u00B7 מוצע ע"י המערכת')+'</div>'
       +'</div>'
-      +'<button class="tl-list-action'+(isUrgent?' urgent':'')+'" onclick="openDet('+it.vid+')">'+(isUrgent?'טפל \u2192':'פרטים \u2192')+'</button>'
+      +'<button class="tl-list-action'+(isUrgent?' urgent':'')+'" onclick="openDet('+it.vid+')">טפל \u2192</button>'
       +'</div>';
   });
   if(filteredItems.length>0){
