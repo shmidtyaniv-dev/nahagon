@@ -5396,7 +5396,7 @@ function renderDashTimeline(){
   var suggestedCount=allItems.filter(function(it){return it._cls==='suggested'}).length;
 
   // Range buttons
-  var rangeHtml='<div class="tl-range" id="tl-range-ctrl"'+((_tlView==='list')?' style="display:none"':'')+'>';
+  var rangeHtml='<div class="tl-range" id="tl-range-ctrl">';
   [7,14,30,60].forEach(function(r){
     rangeHtml+='<button class="tl-range-btn'+(r===_tlRange?' active':'')+'" onclick="_tlRange='+r+';renderDashTimeline()">'+r+(r>14?' יום':' ימים')+'</button>';
   });
