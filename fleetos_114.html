@@ -5211,7 +5211,7 @@ function renderDashTimeline(){
   var totalEvents=allItems.length;
   // Range buttons
   var rangeHtml='<div class="tl-range">';
-  [30,60,90].forEach(function(r){
+  [7,30,60,90].forEach(function(r){
     rangeHtml+='<button class="tl-range-btn'+(r===_tlRange?' active':'')+'" onclick="_tlRange='+r+';renderDashTimeline()">'+r+' יום</button>';
   });
   rangeHtml+='</div>';
