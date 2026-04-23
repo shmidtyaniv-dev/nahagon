@@ -6837,13 +6837,22 @@ function openDet(vid){
       </div>
     </div>`;
 
-  // Row 2: Deal + KM + Next service
+  // Row 2: Deal period + KM + Next service (3 columns)
   var kmUpdateAgo='';
   if(v.lastKmUpdate){var diffDays=Math.round((new Date()-new Date(v.lastKmUpdate))/86400000);kmUpdateAgo='עודכן לפני '+diffDays+' ימים · '+fd(v.lastKmUpdate);}
-  id('vc-summary-cards2').style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px';
+  id('vc-summary-cards2').style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px';
   var oldTitle=document.getElementById('vc-row2-title');if(oldTitle)oldTitle.remove();
   id('vc-summary-cards2').insertAdjacentHTML('beforebegin','<div style="font-size:13px;font-weight:500;color:var(--t2);margin-bottom:10px;letter-spacing:.02em" id="vc-row2-title">עסקה וטיפולים</div>');
   id('vc-summary-cards2').innerHTML=
+    // Deal period card
+    `<div class="vc-info-box">
+      <div class="vc-info-label">תקופת עסקה</div>
+      ${v.delivery?`<div style="display:flex;align-items:baseline;gap:10px;justify-content:center;margin-bottom:8px">
+        <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.delivery)}</div><div style="font-size:10px;color:var(--t2)">מסירה</div></div>
+        <span style="color:var(--t3)">←</span>
+        <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.dealEnd)||'—'}</div><div style="font-size:10px;color:var(--t2)">סיום</div></div>
+      </div>${(function(){var start=new Date(v.delivery);var end=v.dealEnd?new Date(v.dealEnd):new Date(start.getTime()+3*365.25*86400000);var total=Math.round((end-start)/2592000000);var elapsed=Math.max(0,Math.round((new Date()-start)/2592000000));var pct=Math.min(100,Math.max(0,Math.round(elapsed/total*100)));var remaining=Math.max(0,total-elapsed);return'<div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:6px;width:100%"><div style="height:100%;background:var(--green,#1D9E75);border-radius:2px;width:'+pct+'%"></div></div><div style="font-size:12px;color:var(--t2);text-align:center">חודש <strong style="color:var(--t1)">'+elapsed+'</strong> מתוך <strong style="color:var(--t1)">'+total+'</strong> · נותרו '+remaining+' חודשים</div>';})()}`:'<div style="font-size:14px;color:var(--t3)">—</div>'}
+    </div>`+
     // KM card
     `<div class="vc-info-box">
       <div class="vc-info-label">ק"מ נוכחי</div>
