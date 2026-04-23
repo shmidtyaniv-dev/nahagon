@@ -593,7 +593,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .quick-filter-count{font-weight:500;opacity:.8;margin-right:4px}
 
 /* Grid-based table rows */
-.v-table-row{display:grid;grid-template-columns:minmax(160px,1fr) 110px 110px 110px 130px 1fr 60px;gap:12px;padding:10px 18px;align-items:center;border-top:0.5px solid var(--bdr);font-size:12px;transition:background .15s ease}
+.v-table-row{display:grid;grid-template-columns:2fr 1fr 1.5fr 1.3fr 1.3fr 2fr;gap:16px;padding:12px 18px;align-items:center;border-top:0.5px solid var(--bdr);font-size:12px;transition:background .15s ease}
 .v-table-row.header{border-top:none;background:var(--bg2);font-size:11px;font-weight:500;color:var(--t2);letter-spacing:.02em;cursor:default}
 .v-table-row.header>div{display:flex;align-items:center;gap:4px;cursor:pointer}
 .v-table-row:not(.header){cursor:pointer}
@@ -609,6 +609,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .driver-name-block{min-width:0;overflow:hidden}
 .driver-name{font-weight:500;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .driver-company{font-size:10px;color:var(--t2)}
+.muted{color:var(--t2)}
 .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:500;font-size:11px}
 .status-pill-sm{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500;display:inline-block}
 .status-pill-sm.warn{background:var(--amber-light);color:var(--amber-dark)}
@@ -624,6 +625,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .row-action{overflow:visible!important}
 .row-action-btn{width:26px;height:26px;border:none;background:transparent;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2)}
 .row-action-btn:hover{background:var(--bg2);color:var(--t1)}
+.docs-cell{display:flex;align-items:center;overflow:visible!important}
+.docs-summary{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:500;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.docs-summary svg{flex-shrink:0}
+.docs-summary.ok{background:var(--green-light);color:var(--green-dark)}
+.docs-summary.warn{background:var(--amber-light);color:var(--amber-dark)}
+.docs-summary.danger{background:var(--red-light);color:var(--red-dark)}
+.docs-summary.pending{background:var(--bg2);color:var(--t2)}
 
 /* Pagination */
 .pagination{padding:12px 18px;border-top:0.5px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--t2)}
@@ -635,7 +643,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 /* Responsive updates */
 @media(max-width:1200px){.metrics{grid-template-columns:repeat(2,1fr)!important}}
-@media(max-width:700px){.metrics{grid-template-columns:1fr!important}.v-table-row{grid-template-columns:1fr;gap:4px}.v-table-row.header{display:none}}
+@media(max-width:900px){.v-table-row{grid-template-columns:1fr;gap:4px}.v-table-row.header{display:none}}
+@media(max-width:700px){.metrics{grid-template-columns:1fr!important}}
 </style>
 <script>
 (function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')||p.get('book')||p.get('km')){document.documentElement.style.visibility='hidden';}})();
@@ -837,11 +846,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div class="v-table-row header">
           <div>נהג / חברה</div>
           <div>רישוי</div>
-          <div>יצרן / דגם</div>
+          <div>דגם</div>
+          <div>סטטוס</div>
           <div>טיפול הבא</div>
-          <div>רישיון רכב</div>
           <div>מסמכים</div>
-          <div></div>
         </div>
         <div id="dash-tbody"></div>
         <div class="pagination" id="dash-pagination"></div>
@@ -856,9 +864,15 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <button class="tab" onclick="switchTab('ok',this)">תקינים</button>
       </div>
       <div class="tw">
-        <table><thead><tr>
-          <th>נהג</th><th>מ. רישוי</th><th>יצרן / דגם</th><th>טיפול הבא</th><th>רישיון רכב</th><th>מסמכים</th><th></th>
-        </tr></thead><tbody id="v-tbody"></tbody></table>
+        <div class="v-table-row header">
+          <div>נהג / חברה</div>
+          <div>רישוי</div>
+          <div>דגם</div>
+          <div>סטטוס</div>
+          <div>טיפול הבא</div>
+          <div>מסמכים</div>
+        </div>
+        <div id="v-tbody"></div>
       </div>
     </div>
 
@@ -5542,26 +5556,65 @@ function altBadge(vid){
 }
 function avatarColor(name){var colors=['#16a34a','#3b82f6','#f59e0b','#ec4899','#06b6d4','#8b5cf6','#ef4444','#14b8a6','#f97316','#6366f1'];var h=0;for(var i=0;i<(name||'').length;i++)h=((h<<5)-h)+(name||'').charCodeAt(i);return colors[Math.abs(h)%colors.length];}
 function driverCell(v){return`<div class="dc"><div class="av" style="background:${avatarColor(v.driver.name)}">${inits(v.driver.name)}</div><div><div style="font-weight:600;font-size:13px;color:var(--t1)">${v.driver.name}</div><div style="font-size:10px;color:var(--t3)">${v.driver.company||v.driver.address||''}</div></div>${altBadge(v.id)}</div>`;}
+function getVehicleStatus(v){
+  if(!v)return{cls:'success',label:'תקין'};
+  // Check for open accident
+  var hasAccident=(typeof accidentsList!=='undefined'?accidentsList:[]).some(function(a){return a.vehicleId===v.id&&a.status!=='closed';});
+  if(hasAccident)return{cls:'danger',label:'תאונה פתוחה'};
+  // Check overdue service
+  var nxt=calcNextSvc(v);
+  if(nxt.km){var kLeft=nxt.km-(v.currentKm||0);if(kLeft<=0)return{cls:'danger',label:'דחוף'};}
+  // Check expired license
+  var licDays=dys(v.licenseExp);
+  if(licDays<0)return{cls:'danger',label:'רישיון פג'};
+  // Check missing docs
+  if(hasMissingDocs(v))return{cls:'danger',label:'מסמכים חסרים'};
+  // Check waiting vehicle
+  if(v.status==='waiting_vehicle')return{cls:'warn',label:'ממתין לרכב'};
+  // Check service within 30 days
+  if(nxt.date){var svcDays=dys(nxt.date);if(svcDays>=0&&svcDays<30)return{cls:'warn',label:'טיפול קרוב'};}
+  if(nxt.km){var kLeft2=nxt.km-(v.currentKm||0);if(kLeft2>0&&kLeft2<2000)return{cls:'warn',label:'טיפול קרוב'};}
+  // Check license within 30 days
+  if(licDays>=0&&licDays<30)return{cls:'warn',label:'טסט קרוב'};
+  return{cls:'success',label:'תקין'};
+}
+function nextSvcCell(v){
+  var nxt=calcNextSvc(v);
+  if(!nxt.date)return'<span style="color:var(--t2)">\u2014</span>';
+  var d=dys(nxt.date);var s=fd(nxt.date);
+  if(d<0)return'<span class="date-danger">'+s+'</span>';
+  if(d<30)return'<span class="date-warn">'+s+'</span>';
+  return'<span style="color:var(--t2)">'+s+'</span>';
+}
 function dRow(v){
   var avatarColors=['pink','purple','blue','green','amber'];
   var h=0;for(var i=0;i<(v.driver.name||'').length;i++)h=((h<<5)-h)+(v.driver.name||'').charCodeAt(i);
   var acls=avatarColors[Math.abs(h)%avatarColors.length];
-  var statusHtml='';
-  if(v.status==='waiting_vehicle'){statusHtml='<span class="status-pill-sm warn">ממתין לרכב</span>';}
-  else if(hasMissingDocs(v)){statusHtml='<span class="status-pill-sm danger">מסמכים חסרים</span>';}
-  else{statusHtml='<span class="status-pill-sm success">תקין</span>';}
+  var st=getVehicleStatus(v);
   return'<div class="v-table-row" onclick="openDet('+v.id+')">'
     +'<div class="driver-cell"><div class="driver-avatar '+acls+'">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div><div class="driver-company">'+(v.driver.company||v.driver.address||'')+'</div></div>'+altBadge(v.id)+'</div>'
     +'<div>'+renderPlate(v.plate)+'</div>'
-    +'<div style="color:var(--t2)">'+v.make+' '+v.model+'</div>'
-    +'<div>'+kmS(v)+'</div>'
-    +'<div>'+lcS(v.licenseExp)+'</div>'
-    +'<div>'+docsIcon(v.id)+'</div>'
-    +'<div class="row-action"><button class="row-action-btn" onclick="event.stopPropagation();openDet('+v.id+')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></div>'
+    +'<div class="muted">'+v.make+' '+v.model+'</div>'
+    +'<div><span class="status-pill-sm '+st.cls+'">'+st.label+'</span></div>'
+    +'<div>'+nextSvcCell(v)+'</div>'
+    +'<div class="docs-cell">'+docsIcon(v.id)+'</div>'
     +'</div>';
 }
-function fRow(v){return`<tr onclick="openDet(${v.id})" style="cursor:pointer"><td>${driverCell(v)}</td><td>${renderPlate(v.plate)}</td><td>${v.make} ${v.model}</td><td>${kmS(v)}</td><td>${lcS(v.licenseExp)}</td><td>${docsIcon(v.id)}</td><td><button class="btn btn-l btn-sm" onclick="event.stopPropagation();openDet(${v.id})">פרטים ←</button></td></tr>`}
-function fil(){let r=vehicles.slice();if(vSearch)r=r.filter(v=>v.plate.toLowerCase().includes(vSearch)||v.driver.name.toLowerCase().includes(vSearch)||v.make.toLowerCase().includes(vSearch));r.sort(function(a,b){var aMissing=hasMissingDocs(a)?0:1;var bMissing=hasMissingDocs(b)?0:1;return aMissing-bMissing;});return r}
+function fRow(v){
+  var avatarColors=['pink','purple','blue','green','amber'];
+  var h=0;for(var i=0;i<(v.driver.name||'').length;i++)h=((h<<5)-h)+(v.driver.name||'').charCodeAt(i);
+  var acls=avatarColors[Math.abs(h)%avatarColors.length];
+  var st=getVehicleStatus(v);
+  return'<div class="v-table-row" onclick="openDet('+v.id+')">'
+    +'<div class="driver-cell"><div class="driver-avatar '+acls+'">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div><div class="driver-company">'+(v.driver.company||v.driver.address||'')+'</div></div>'+altBadge(v.id)+'</div>'
+    +'<div>'+renderPlate(v.plate)+'</div>'
+    +'<div class="muted">'+v.make+' '+v.model+'</div>'
+    +'<div><span class="status-pill-sm '+st.cls+'">'+st.label+'</span></div>'
+    +'<div>'+nextSvcCell(v)+'</div>'
+    +'<div class="docs-cell">'+docsIcon(v.id)+'</div>'
+    +'</div>';
+}
+function fil(){let r=vehicles.slice();if(vSearch)r=r.filter(v=>v.plate.toLowerCase().includes(vSearch)||v.driver.name.toLowerCase().includes(vSearch)||v.make.toLowerCase().includes(vSearch));var statusOrder={danger:0,warn:1,success:2};r.sort(function(a,b){var aS=getVehicleStatus(a).cls;var bS=getVehicleStatus(b).cls;return(statusOrder[aS]||2)-(statusOrder[bS]||2);});return r}
 function hasMissingDocs(v){if(!v)return false;var vd=vehicleDocs[v.id]||{};var missing=MANDATORY_DOCS.filter(function(d){return!vd[d.key];});return missing.length>0;}
 var _dashFilter='all';
 var _dashPage=1;
@@ -5576,17 +5629,17 @@ function renderDash(){
   var r=fil();
   // Quick filter counts
   var allCount=r.length;
-  var alertCount=r.filter(function(v){return hasMissingDocs(v)||v.status==='waiting_vehicle'}).length;
+  var alertCount=r.filter(function(v){var s=getVehicleStatus(v).cls;return s==='danger'||s==='warn';}).length;
   var missingCount=r.filter(function(v){return hasMissingDocs(v)}).length;
-  var okCount=r.filter(function(v){return!hasMissingDocs(v)&&v.status!=='waiting_vehicle'}).length;
+  var okCount=r.filter(function(v){return getVehicleStatus(v).cls==='success';}).length;
   var qfAll=document.getElementById('qf-all');if(qfAll)qfAll.textContent=' \u00B7 '+allCount;
   var qfAlerts=document.getElementById('qf-alerts');if(qfAlerts)qfAlerts.textContent=' \u00B7 '+alertCount;
   var qfMissing=document.getElementById('qf-missing');if(qfMissing)qfMissing.textContent=' \u00B7 '+missingCount;
   var qfOk=document.getElementById('qf-ok');if(qfOk)qfOk.textContent=' \u00B7 '+okCount;
   // Apply quick filter
-  if(_dashFilter==='alerts')r=r.filter(function(v){return hasMissingDocs(v)||v.status==='waiting_vehicle'});
+  if(_dashFilter==='alerts')r=r.filter(function(v){var s=getVehicleStatus(v).cls;return s==='danger'||s==='warn';});
   else if(_dashFilter==='missing')r=r.filter(function(v){return hasMissingDocs(v)});
-  else if(_dashFilter==='ok')r=r.filter(function(v){return!hasMissingDocs(v)&&v.status!=='waiting_vehicle'});
+  else if(_dashFilter==='ok')r=r.filter(function(v){return getVehicleStatus(v).cls==='success';});
   // Pagination
   var totalPages=Math.max(1,Math.ceil(r.length/_dashPerPage));
   if(_dashPage>totalPages)_dashPage=totalPages;
@@ -5763,7 +5816,7 @@ function showAltDriversModal(){
   </div>`;
   document.body.appendChild(modal);
 }
-function renderV(){let r=fil();if(vFilter==='alerts')r=r.filter(v=>slvl(v)!=='ok');if(vFilter==='ok')r=r.filter(v=>slvl(v)==='ok');id('v-tbody').innerHTML=r.map(fRow).join('')||'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--t3)">לא נמצאו</td></tr>'}
+function renderV(){let r=fil();if(vFilter==='alerts')r=r.filter(v=>slvl(v)!=='ok');if(vFilter==='ok')r=r.filter(v=>slvl(v)==='ok');id('v-tbody').innerHTML=r.map(fRow).join('')||'<div style="text-align:center;padding:20px;color:var(--t3)">לא נמצאו</div>'}
 function filterV(q){vSearch=q.trim().toLowerCase();renderDash();renderV()}
 
 /* ─ GLOBAL SEARCH ─ */
