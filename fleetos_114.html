@@ -564,11 +564,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
       </div>
     </div>
-    <!-- Left: system name + add button -->
-    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-      <span id="topbar-system-name" style="font-size:14px;font-weight:500;color:var(--t1);white-space:nowrap">מרכז הרכב של מור השקעות</span>
-      <button onclick="openAdd()" style="height:34px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;background:#1D9E75;color:#fff;border:none;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוסף רכב</button>
-    </div>
+    <!-- Left: system name then add button -->
+    <span id="topbar-system-name" style="font-size:14px;font-weight:500;color:var(--t1);white-space:nowrap;flex-shrink:0">מרכז הרכב של מור השקעות</span>
+    <button onclick="openAdd()" style="height:34px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;background:#1D9E75;color:#fff;border:none;white-space:nowrap;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוסף רכב</button>
     <div class="pt" id="page-title" style="display:none">דשבורד</div>
   </div>
 
