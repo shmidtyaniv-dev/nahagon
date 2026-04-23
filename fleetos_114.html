@@ -737,7 +737,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <div class="page active" id="page-dashboard">
 
       <!-- greeting block -->
-      <div class="greeting-block" id="dash-greeting">
+      <div class="greeting-block" id="dash-greeting" style="display:none">
         <div>
           <div class="greeting-date" id="dash-greeting-date"></div>
           <h1 class="greeting-title" id="dash-greet-text"></h1>
@@ -825,16 +825,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <h4 class="vehicles-title">הרכבים שלי</h4>
               <span class="vehicles-count" id="dash-cnt">0 רכבים</span>
             </div>
-            <div class="vehicles-controls">
-              <div class="local-search">
-                <input type="text" placeholder="חפש בטבלה..." oninput="vSearch=this.value.toLowerCase();renderDash()" />
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </div>
-              <button class="filter-btn" onclick="go('vehicles',q('[dp=vehicles]'))">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                סינון מתקדם
-              </button>
-            </div>
+            <div class="vehicles-controls"></div>
           </div>
           <div class="quick-filters" id="dash-quick-filters">
             <button class="quick-filter active" onclick="setDashFilter('all',this)">הכל<span class="quick-filter-count" id="qf-all"></span></button>
