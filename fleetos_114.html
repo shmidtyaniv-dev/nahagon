@@ -19,17 +19,22 @@ html.approve-mode .app{display:none!important}
 :root{
   --gd:#1A4A3A;--gd2:#153d30;--gd3:#1f5a47;
   --gl:#7DC242;--gl2:#6aab35;
-  --bg:#f2f5f2;--bg2:#e6ece6;
+  --bg:#F7F7F4;--bg2:#F1EFE8;
   --card:#fff;
-  --t1:#1A3028;--t2:#4a6a58;--t3:#8aab98;
-  --bdr:rgba(26,74,58,.10);--bdr2:rgba(26,74,58,.18);
-  --green:#16a34a;--amber:#d97706;--red:#dc2626;--blue:#2563eb;
+  --t1:#1A1A1A;--t2:#5F5E5A;--t3:#8aab98;
+  --bdr:rgba(0,0,0,.08);--bdr2:rgba(0,0,0,.15);
+  --green:#1D9E75;--green-dark:#0F6E56;--green-light:#E1F5EE;--green-bg:#F0FAF5;
+  --amber:#E89B2A;--amber-dark:#854F0B;--amber-light:#FAEEDA;
+  --red:#E24B4A;--red-dark:#A32D2D;--red-light:#FCEBEB;--red-border:#F7C1C1;
+  --blue:#378ADD;--blue-dark:#185FA5;--blue-light:#E6F1FB;
   --gbg:#dcfce7;--abg:#fef3c7;--rbg:#fee2e2;--bbg:#dbeafe;
-  --r:10px;--rs:7px;
+  --r:12px;--rs:8px;
+  --purple-light:#EEEDFE;--purple-dark:#3C3489;
+  --pink-light:#FBEAF0;--pink-dark:#72243E;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
-body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--t1);font-size:13px;line-height:1.45;overflow-x:hidden}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--t1);font-size:13px;line-height:1.45;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 .app{display:flex;height:100vh}
 
 /* ─ SIDEBAR ─ */
@@ -40,8 +45,8 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--t1);font-si
 .logo-name{font-size:15px;font-weight:700;color:#fff}
 .logo-sub{font-size:12px;color:rgba(255,255,255,.42);margin-top:1px}
 
-.sb-chip{margin:8px 14px 0;background:#fff;border:0.5px solid rgba(0,0,0,.15);border-radius:12px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .15s}
-.sb-chip:hover{background:#F1EFE8}
+.sb-chip{margin:8px 14px 0;background:#fff;border:0.5px solid var(--bdr2);border-radius:var(--r);padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:background .15s}
+.sb-chip:hover{background:var(--bg2)}
 .chip-lbl{font-size:11px;color:#5F5E5A}
 .chip-val{font-size:18px;font-weight:500;color:#0F6E56;line-height:1}
 .chip-sub{font-size:11px;color:rgba(255,255,255,.32);margin-top:1px}
@@ -49,9 +54,9 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--t1);font-si
 
 .nav{padding:8px 14px;flex:1;overflow-y:auto}
 .nav-sec{font-size:11px;font-weight:700;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;padding:0 9px;margin:11px 0 4px}
-.ni{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:8px;cursor:pointer;color:#1A1A1A;font-size:14px;transition:all .15s;margin-bottom:2px;user-select:none}
-.ni:hover{background:#F1EFE8}
-.ni.active{background:#E1F5EE;color:#0F6E56;font-weight:500}
+.ni{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:var(--rs);cursor:pointer;color:var(--t1);font-size:14px;transition:all .15s;margin-bottom:2px;user-select:none}
+.ni:hover{background:var(--bg2)}
+.ni.active{background:var(--green-light);color:var(--green-dark);font-weight:500}
 .ni svg{width:18px;height:18px;flex-shrink:0}
 .nb{margin-right:auto;font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px;min-width:16px;text-align:center}
 .nb-amber{background:#FAEEDA;color:#854F0B}
@@ -72,14 +77,13 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--t1);font-si
 .srch:focus-within{border-color:#1D9E75;box-shadow:0 0 0 3px rgba(29,158,117,.15)}
 .srch input{background:none;border:none;outline:none;color:var(--t1);font-size:13px;font-family:inherit;width:100%;text-align:right}
 .srch input::placeholder{color:#5F5E5A}
-.srch input::placeholder{color:rgba(255,255,255,.33)}
-.srch svg{color:rgba(255,255,255,.38);width:13px;height:13px;flex-shrink:0}
-.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--rs);font-size:20px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
-.btn-p{background:var(--gl);color:#fff}.btn-p:hover{background:var(--gl2)}
+.srch svg{color:#5F5E5A;width:13px;height:13px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.btn-p{background:var(--green);color:#fff}.btn-p:hover{background:var(--green-dark)}
 .btn-l{background:var(--bg2);color:var(--t2);border:1px solid var(--bdr2)}.btn-l:hover{background:var(--bg)}
-.btn-sm{padding:4px 10px;font-size:20px}
+.btn-sm{padding:4px 10px;font-size:12px}
 .btn svg{width:13px;height:13px}
-.content{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;min-height:0;width:100%;box-sizing:border-box}
+.content{flex:1;overflow-y:auto;padding:20px 24px 32px;display:flex;flex-direction:column;min-height:0;width:100%;box-sizing:border-box}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bg2);border-radius:99px}
 
 /* ─ METRICS ─ */
@@ -127,7 +131,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--t1);font-si
 .tag{display:inline-block;font-size:13px;font-weight:500;padding:2px 7px;border-radius:999px}
 .tag.r{background:var(--rbg);color:var(--red)}.tag.a{background:var(--abg);color:var(--amber)}
 .tag.b{background:var(--bbg);color:var(--blue)}.tag.g{background:var(--gbg);color:var(--green)}
-.sdot{display:inline-flex;align-items:center;gap:4px;font-size:20px}
+.sdot{display:inline-flex;align-items:center;gap:4px;font-size:12px}
 .sdot::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
 .sdot.ok::before{background:var(--green)}.sdot.ok{color:var(--green)}
 .sdot.warn::before{background:var(--amber)}.sdot.warn{color:var(--amber)}
@@ -209,14 +213,14 @@ thead th{padding:7px 10px;text-align:right;font-size:9.5px;font-weight:600;color
 tbody tr{border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .1s}
 tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:var(--bg)}
-tbody td{padding:6px 10px;font-size:20px;color:var(--t1);vertical-align:middle}
+tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 .vn{font-weight:600;font-family:monospace;font-size:12px;color:var(--gd);letter-spacing:.04em}
 .dc{display:flex;align-items:center;gap:10px}
 .av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
 
 /* ─ TABS ─ */
 .tabs{display:flex;gap:3px;margin-bottom:10px}
-.tab{padding:5px 14px;border-radius:var(--rs);font-size:20px;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:inherit;background:transparent;color:var(--t2);transition:all .15s}
+.tab{padding:5px 14px;border-radius:var(--rs);font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:inherit;background:transparent;color:var(--t2);transition:all .15s}
 .tab.active{background:var(--card);color:var(--t1);border-color:var(--bdr2);box-shadow:0 1px 3px rgba(26,74,58,.06)}
 
 /* ─ MODAL ─ */
@@ -477,6 +481,161 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 .ho-fuel-btn.active{background:var(--gd)!important;color:#fff!important;border-color:var(--gd)!important;font-weight:700!important}
 .ho-view-btn.active{background:var(--gd)!important;color:#fff!important;border-color:var(--gd)!important}
+
+/* ===== NEW DASHBOARD DESIGN (reference) ===== */
+
+/* Greeting block */
+.greeting-block{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);padding:18px 20px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.greeting-date{font-size:11px;color:var(--t2);margin-bottom:2px}
+.greeting-title{margin:0;font-size:22px;font-weight:500}
+.fleet-status-pill{display:inline-flex;align-items:center;gap:8px;background:var(--green-bg);padding:8px 14px;border-radius:999px;font-size:13px;color:var(--green-dark);font-weight:500}
+.fleet-status-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.2)}
+
+/* Updated stat cards */
+.metrics{gap:12px;margin-bottom:12px}
+.mc{background:#fff;padding:14px 16px;border-radius:var(--r);border:0.5px solid var(--bdr);transition:transform .15s ease,box-shadow .15s ease;position:relative;overflow:hidden;min-width:0;cursor:pointer}
+.mc:hover{box-shadow:0 2px 8px rgba(0,0,0,.04);transform:translateY(-1px)}
+.mc-lbl{font-size:12px;color:var(--t1);font-weight:500;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-val{font-size:28px;font-weight:500;line-height:1;margin-bottom:4px}
+.mc-sub{font-size:10px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-bar{display:none}
+
+/* Updated timeline card */
+.timeline-card{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);padding:16px 20px;margin-bottom:12px;overflow:visible}
+.timeline-card-header{padding:0;border-bottom:none;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.timeline-card-title{font-size:15px;font-weight:500;margin:0}
+.timeline-card-sub{font-size:12px;color:var(--t2);margin-top:2px}
+.tl-range{display:flex;gap:2px;background:var(--bg2);padding:2px;border-radius:6px}
+.tl-range-btn{padding:5px 14px;background:transparent;border:none;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;border-radius:4px;font-family:inherit;transition:all .15s ease}
+.tl-range-btn:hover{color:var(--t1)}
+.tl-range-btn.active{background:#fff;color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+
+/* Timeline controls */
+.tl-controls{display:flex;align-items:center;gap:8px}
+.tl-view-toggle{display:flex;gap:2px;background:var(--bg2);padding:2px;border-radius:6px}
+.view-btn{width:30px;height:28px;background:transparent;border:none;border-radius:4px;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;font-family:inherit;transition:all .15s ease}
+.view-btn:hover{color:var(--t1)}
+.view-btn.active{background:#fff;color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+
+/* Timeline filter chips */
+.tl-filters{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap;padding-bottom:14px;border-bottom:0.5px solid var(--bdr)}
+.filter-chip{padding:5px 12px;border-radius:999px;font-size:12px;font-family:inherit;cursor:pointer;border:0.5px solid transparent;background:var(--bg2);color:var(--t2);font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:all .15s ease}
+.filter-chip:hover{background:#E6E4DB;color:var(--t1)}
+.filter-chip.active{background:#fff;border-color:var(--bdr2);color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.filter-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.filter-count{opacity:.7;font-weight:500;font-size:11px;margin-right:2px}
+.filter-chip.active .filter-count{opacity:1}
+
+/* Timeline track */
+.tl-track-wrap{padding:8px 12px 70px;position:relative}
+.tl-track{position:relative;height:40px}
+.tl-line{position:absolute;top:18px;right:0;left:0;height:3px;background:#EEEBE2;border-radius:2px}
+.tl-today-line{position:absolute;top:6px;bottom:-48px;width:2px;background:var(--green);right:0}
+.tl-today-label{position:absolute;top:-4px;right:8px;font-size:10px;color:var(--green-dark);font-weight:500;background:#fff;padding:0 4px}
+.tl-event-dot{position:absolute;top:13px;width:14px;height:14px;border-radius:50%;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.12);padding:0;transition:transform .15s ease,opacity .15s ease;z-index:2}
+.tl-event-dot:hover{transform:scale(1.35);z-index:5}
+.tl-event-dot.hidden{opacity:.15;pointer-events:none}
+.tl-event-dot.filtered{opacity:.15;pointer-events:none}
+.tl-event-tip{position:absolute;top:22px;right:50%;transform:translateX(50%);font-size:10px;white-space:nowrap;text-align:center;width:110px;color:var(--t2);line-height:1.4;pointer-events:none}
+.event-day{font-weight:500;color:var(--t1);display:block;margin-bottom:1px}
+.ev-suggested{background:var(--blue)}
+.ev-scheduled{background:var(--green)}
+.ev-urgent{background:var(--red)}
+.tl-month-labels{position:absolute;bottom:0;right:0;left:0;display:flex;justify-content:space-between;font-size:10px;color:var(--t2);padding:0 12px}
+.tl-hint{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2);padding:10px 12px;background:var(--bg2);border-radius:var(--rs);margin-top:4px}
+.tl-hint svg{flex-shrink:0}
+
+/* List view */
+.tl-list-wrap{display:flex;flex-direction:column;gap:6px;padding:4px 0}
+.tl-list-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--rs);transition:background .15s ease;cursor:pointer}
+.tl-list-item:hover{background:var(--bg2)}
+.tl-list-item.urgent{background:var(--red-light)}
+.tl-list-item.urgent:hover{background:#F8D7D7}
+.tl-list-item.filtered-out{display:none}
+.tl-list-date{width:44px;height:44px;border-radius:var(--rs);background:#fff;border:0.5px solid var(--bdr);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.tl-list-item.urgent .tl-list-date{border-color:var(--red-border)}
+.tl-list-day{font-size:16px;font-weight:500;line-height:1}
+.tl-list-month{font-size:9px;color:var(--t2);margin-top:2px}
+.tl-list-content{flex:1;min-width:0}
+.tl-list-row{display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap}
+.tl-list-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tl-list-type{font-size:13px;font-weight:500}
+.tl-list-target{font-size:12px;color:var(--t2)}
+.tl-list-sub{font-size:11px;color:var(--t2)}
+.tl-list-item.urgent .tl-list-sub{color:var(--red-dark);font-weight:500}
+.tl-list-action{background:#fff;border:0.5px solid var(--bdr2);padding:6px 12px;border-radius:var(--rs);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--t1);white-space:nowrap;flex-shrink:0;transition:all .15s ease}
+.tl-list-action:hover{background:var(--green);color:#fff;border-color:var(--green)}
+.tl-list-action.urgent{background:var(--red);color:#fff;border-color:var(--red)}
+.tl-list-action.urgent:hover{background:var(--red-dark);border-color:var(--red-dark)}
+.tl-list-footer{padding:10px 12px 4px;display:flex;justify-content:center;border-top:0.5px solid var(--bdr);margin-top:4px}
+.tl-list-showall{background:transparent;border:none;font-size:12px;color:var(--green-dark);font-weight:500;cursor:pointer;font-family:inherit;padding:6px 12px;border-radius:var(--rs)}
+.tl-list-showall:hover{background:var(--green-light)}
+
+/* Updated vehicles card / table */
+.vehicles-card{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);overflow:hidden}
+.vehicles-header{padding:14px 18px;border-bottom:0.5px solid var(--bdr)}
+.vehicles-title-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.vehicles-title-group{display:flex;align-items:center;gap:10px}
+.vehicles-title{margin:0;font-size:14px;font-weight:500}
+.vehicles-count{background:var(--bg2);color:var(--t2);font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px}
+.vehicles-controls{display:flex;align-items:center;gap:8px}
+.local-search{position:relative}
+.local-search input{width:200px;height:32px;padding:0 30px 0 10px;border:0.5px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:inherit;background:#fff;color:var(--t1);outline:none}
+.local-search input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.15)}
+.local-search svg{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--t2);pointer-events:none}
+.filter-btn{height:32px;padding:0 10px;background:#fff;border:0.5px solid var(--bdr2);border-radius:6px;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-family:inherit;color:var(--t1)}
+.filter-btn:hover{background:var(--bg2)}
+.filter-btn svg{width:12px;height:12px}
+.quick-filters{display:flex;gap:6px;flex-wrap:wrap}
+.quick-filter{padding:4px 12px;border-radius:999px;font-size:11px;cursor:pointer;font-weight:500;border:0.5px solid transparent;background:var(--bg2);color:var(--t2);font-family:inherit;transition:all .15s}
+.quick-filter:hover{background:#E6E4DB;color:var(--t1)}
+.quick-filter.active{background:var(--green-light);color:var(--green-dark)}
+.quick-filter-count{font-weight:500;opacity:.8;margin-right:4px}
+
+/* Grid-based table rows */
+.v-table-row{display:grid;grid-template-columns:minmax(160px,1fr) 110px 110px 110px 130px 1fr 60px;gap:12px;padding:10px 18px;align-items:center;border-top:0.5px solid var(--bdr);font-size:12px;transition:background .15s ease}
+.v-table-row.header{border-top:none;background:var(--bg2);font-size:11px;font-weight:500;color:var(--t2);letter-spacing:.02em;cursor:default}
+.v-table-row.header>div{display:flex;align-items:center;gap:4px;cursor:pointer}
+.v-table-row:not(.header){cursor:pointer}
+.v-table-row:not(.header):hover{background:#FAFAF7}
+.v-table-row>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.driver-cell{display:flex;align-items:center;gap:8px;overflow:visible!important}
+.driver-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0}
+.driver-avatar.pink{background:var(--pink-light);color:var(--pink-dark)}
+.driver-avatar.purple{background:var(--purple-light);color:var(--purple-dark)}
+.driver-avatar.blue{background:var(--blue-light);color:var(--blue-dark)}
+.driver-avatar.green{background:var(--green-light);color:var(--green-dark)}
+.driver-avatar.amber{background:var(--amber-light);color:var(--amber-dark)}
+.driver-name-block{min-width:0;overflow:hidden}
+.driver-name{font-weight:500;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.driver-company{font-size:10px;color:var(--t2)}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:500;font-size:11px}
+.status-pill-sm{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500;display:inline-block}
+.status-pill-sm.warn{background:var(--amber-light);color:var(--amber-dark)}
+.status-pill-sm.success{background:var(--green-light);color:var(--green-dark)}
+.status-pill-sm.danger{background:var(--red-light);color:var(--red-dark)}
+.date-warn{color:var(--amber-dark);font-weight:500}
+.date-danger{color:var(--red-dark);font-weight:500}
+.docs-mini{display:flex;gap:3px}
+.doc-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.doc-dot.ok{background:var(--green)}
+.doc-dot.missing{background:var(--red)}
+.doc-dot.warn{background:var(--amber)}
+.row-action{overflow:visible!important}
+.row-action-btn{width:26px;height:26px;border:none;background:transparent;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t2)}
+.row-action-btn:hover{background:var(--bg2);color:var(--t1)}
+
+/* Pagination */
+.pagination{padding:12px 18px;border-top:0.5px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--t2)}
+.pagination-controls{display:flex;align-items:center;gap:4px}
+.page-btn{width:26px;height:26px;border:0.5px solid var(--bdr2);background:#fff;border-radius:4px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;color:var(--t1)}
+.page-btn:hover:not(:disabled){background:var(--bg2)}
+.page-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+.page-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Responsive updates */
+@media(max-width:1200px){.metrics{grid-template-columns:repeat(2,1fr)!important}}
+@media(max-width:700px){.metrics{grid-template-columns:1fr!important}.v-table-row{grid-template-columns:1fr;gap:4px}.v-table-row.header{display:none}}
 </style>
 <script>
 (function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')||p.get('book')||p.get('km')){document.documentElement.style.visibility='hidden';}})();
@@ -507,7 +666,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>דשבורד
     </div>
     <div class="ni" dp="vehicles" onclick="go('vehicles',this)">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>רכבים ונהגים
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>רכבים ונהגים
     </div>
     <!-- Tasks merged into Calendar page -->
     <div class="ni" dp="tasks" onclick="go('calendar',q('[dp=calendar]'))" style="display:none"></div>
@@ -518,13 +677,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>תאונות</span><span class="nb nb-red" id="nb-accidents"></span>
     </div>
     <div class="ni" dp="archive" onclick="go('archive',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>ארכיון
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/></svg>ארכיון
     </div>
     <div class="ni" dp="calendar" onclick="go('calendar',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>יומן
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>יומן
     </div>
     <div class="ni" dp="scheduling" onclick="go('scheduling',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="17" cy="17" r="4" fill="#7DC242" stroke="#7DC242"/><path d="M15.5 17l1 1 2-2" stroke="#fff" stroke-width="1.5" fill="none"/></svg>לוח טיפולים
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>לוח טיפולים
     </div>
     <div class="ni" dp="forms" onclick="go('forms',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>טפסים דיגיטליים
@@ -577,22 +736,16 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
 
-      <!-- greeting header (moved to topbar) -->
-      <div id="dash-greeting" style="display:none">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px">
-          <div>
-            <h1 id="dash-greet-text" style="font-size:22px;font-weight:500;color:var(--t1);margin:0;line-height:1.3"></h1>
-            <p id="dash-greet-sub" style="font-size:13px;color:var(--t2);margin:4px 0 0 0"></p>
-          </div>
-          <div id="dash-vehicle-count-badge" style="display:none">
-            <div style="width:34px;height:34px;border-radius:8px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:11px;color:var(--t2);margin-bottom:1px">רכבים בציר</div>
-              <div style="font-size:18px;font-weight:500;line-height:1;color:#0F6E56" id="dash-vehicle-count-val">0 <span style="font-size:11px;color:var(--t2);font-weight:400;margin-right:4px">פעילים</span></div>
-            </div>
-          </div>
+      <!-- greeting block -->
+      <div class="greeting-block" id="dash-greeting">
+        <div>
+          <div class="greeting-date" id="dash-greeting-date"></div>
+          <h1 class="greeting-title" id="dash-greet-text"></h1>
+          <p id="dash-greet-sub" style="font-size:13px;color:var(--t2);margin:4px 0 0 0;display:none"></p>
+        </div>
+        <div class="fleet-status-pill" id="dash-fleet-pill">
+          <span class="dot"></span>
+          <span id="dash-vehicle-count-val">0 רכבים פעילים</span>
         </div>
       </div>
 
@@ -665,11 +818,42 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div id="dash-timeline"></div>
 
       <!-- vehicles table -->
-      <div class="sh"><h2>כל הרכבים בציר</h2><span class="cp" id="dash-cnt">12</span></div>
-      <div class="tw">
-        <table><thead><tr>
-          <th>נהג</th><th>מ. רישוי</th><th>יצרן / דגם</th><th>טיפול הבא</th><th>רישיון רכב</th><th>מסמכים</th>
-        </tr></thead><tbody id="dash-tbody"></tbody></table>
+      <div class="vehicles-card">
+        <div class="vehicles-header">
+          <div class="vehicles-title-row">
+            <div class="vehicles-title-group">
+              <h4 class="vehicles-title">הרכבים שלי</h4>
+              <span class="vehicles-count" id="dash-cnt">0 רכבים</span>
+            </div>
+            <div class="vehicles-controls">
+              <div class="local-search">
+                <input type="text" placeholder="חפש בטבלה..." oninput="vSearch=this.value.toLowerCase();renderDash()" />
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
+              <button class="filter-btn" onclick="go('vehicles',q('[dp=vehicles]'))">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                סינון מתקדם
+              </button>
+            </div>
+          </div>
+          <div class="quick-filters" id="dash-quick-filters">
+            <button class="quick-filter active" onclick="setDashFilter('all',this)">הכל<span class="quick-filter-count" id="qf-all"></span></button>
+            <button class="quick-filter" onclick="setDashFilter('alerts',this)">דורש טיפול<span class="quick-filter-count" id="qf-alerts"></span></button>
+            <button class="quick-filter" onclick="setDashFilter('missing',this)">מסמכים חסרים<span class="quick-filter-count" id="qf-missing"></span></button>
+            <button class="quick-filter" onclick="setDashFilter('ok',this)">תקין<span class="quick-filter-count" id="qf-ok"></span></button>
+          </div>
+        </div>
+        <div class="v-table-row header">
+          <div>נהג / חברה</div>
+          <div>רישוי</div>
+          <div>יצרן / דגם</div>
+          <div>טיפול הבא</div>
+          <div>רישיון רכב</div>
+          <div>מסמכים</div>
+          <div></div>
+        </div>
+        <div id="dash-tbody"></div>
+        <div class="pagination" id="dash-pagination"></div>
       </div>
     </div>
 
@@ -2728,8 +2912,8 @@ function slbl(v){const s=slvl(v);
   if(s==='warn')return'<span class="sdot warn">שים לב</span>';
   return'<span class="sdot ok">תקין</span>'
 }
-function lcS(d){const n=dys(d);const s=fd(d);return n<0?`<span style="color:var(--red);font-size:20px">${s}</span>`:n<60?`<span style="color:var(--amber);font-size:20px">${s}</span>`:`<span style="font-size:20px">${s}</span>`}
-function kmS(v){const n=calcNextSvc(v);if(!n.km)return'—';const k=n.km-(v.currentKm||0);return k<=0?`<span style="color:var(--red);font-size:20px">דחוף!</span>`:`<span style="font-size:20px">${fkm(k)} ק"מ</span>`}
+function lcS(d){const n=dys(d);const s=fd(d);return n<0?`<span class="date-danger">${s}</span>`:n<60?`<span class="date-warn">${s}</span>`:`<span style="color:var(--t2)">${s}</span>`}
+function kmS(v){const n=calcNextSvc(v);if(!n.km)return'<span style="color:var(--t2)">\u2014</span>';const k=n.km-(v.currentKm||0);return k<=0?`<span class="date-danger">דחוף!</span>`:`<span style="color:var(--t2)">${fkm(k)} ק"מ</span>`}
 
 let archivedVehicles=JSON.parse(localStorage.getItem('archivedVehicles')||'[]');
 
@@ -5203,83 +5387,126 @@ function getTimelineItems(rangeDays){
   items.sort(function(a,b){return a.date>b.date?1:a.date<b.date?-1:0;});
   return items;
 }
+var _tlView='list'; // 'timeline' or 'list'
+var _tlFilter='all'; // 'all','urgent','suggested','scheduled'
 function renderDashTimeline(){
   var container=document.getElementById('dash-timeline');
   if(!container)return;
   var now=new Date();
   var allItems=getTimelineItems(_tlRange);
   var totalEvents=allItems.length;
-  // Range buttons
-  var rangeHtml='<div class="tl-range">';
-  [7,30,60,90].forEach(function(r){
-    rangeHtml+='<button class="tl-range-btn'+(r===_tlRange?' active':'')+'" onclick="_tlRange='+r+';renderDashTimeline()">'+r+' יום</button>';
-  });
-  rangeHtml+='</div>';
-  // Timeline track dots
-  var totalDays=_tlRange;
-  var dotsHtml='<div class="tl-track"><div class="tl-line"></div>';
-  // Today dot
-  dotsHtml+='<div class="tl-dot today" style="right:0;margin-right:-8px"></div>';
-  dotsHtml+='<div class="tl-label today" style="right:0;margin-right:-28px">היום</div>';
-  // Group items by date for dots
-  var dateGroups={};
-  allItems.forEach(function(it){
-    if(!dateGroups[it.date])dateGroups[it.date]=[];
-    dateGroups[it.date].push(it);
-  });
-  var dates=Object.keys(dateGroups).sort();
-  // Only show up to 8 dots to avoid clutter
-  var dotDates=dates.length>8?dates.filter(function(_,i){return i%Math.ceil(dates.length/8)===0;}):dates;
-  dotDates.forEach(function(dt){
-    var daysFromNow=Math.ceil((new Date(dt)-now)/86400000);
-    if(daysFromNow<0)daysFromNow=0;
-    var pct=Math.min((daysFromNow/totalDays)*100,100);
-    // RTL: right=0 is today, so position from right
-    var posStyle='right:'+pct+'%;margin-right:-5px';
-    var cls=daysFromNow<14?'amber':'blue';
-    var dateObj=new Date(dt);
-    var lbl=dateObj.getDate()+'/'+(dateObj.getMonth()+1);
-    dotsHtml+='<div class="tl-dot '+cls+'" style="'+posStyle+'"></div>';
-    dotsHtml+='<div class="tl-label" style="right:'+pct+'%;margin-right:-28px">'+lbl+'</div>';
-  });
-  dotsHtml+='</div>';
-  // Event cards
-  var eventsHtml='<div class="tl-events">';
-  if(allItems.length===0){
-    eventsHtml+='<div style="text-align:center;padding:20px;color:#5F5E5A;font-size:13px">אין אירועים בטווח הנבחר</div>';
-  }
+  // Classify items: urgent (<14 days), otherwise by type
   allItems.forEach(function(it){
     var daysLeft=Math.ceil((new Date(it.date)-now)/86400000);
-    var cls=daysLeft<14?'amber':'blue';
+    if(daysLeft<14) it._cls='urgent';
+    else it._cls='suggested'; // system-suggested
+  });
+  var urgentCount=allItems.filter(function(it){return it._cls==='urgent'}).length;
+  var suggestedCount=allItems.filter(function(it){return it._cls==='suggested'}).length;
+
+  // Range buttons
+  var rangeHtml='<div class="tl-range" id="tl-range-ctrl"'+((_tlView==='list')?' style="display:none"':'')+'>';
+  [7,14,30,60].forEach(function(r){
+    rangeHtml+='<button class="tl-range-btn'+(r===_tlRange?' active':'')+'" onclick="_tlRange='+r+';renderDashTimeline()">'+r+(r>14?' יום':' ימים')+'</button>';
+  });
+  rangeHtml+='</div>';
+
+  // View toggle
+  var viewToggle='<div class="tl-view-toggle">'
+    +'<button class="view-btn'+(_tlView==='timeline'?' active':'')+'" onclick="_tlView=\'timeline\';renderDashTimeline()" title="ציר זמן">'
+    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><circle cx="7" cy="12" r="2" fill="currentColor"/><circle cx="13" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>'
+    +'</button>'
+    +'<button class="view-btn'+(_tlView==='list'?' active':'')+'" onclick="_tlView=\'list\';renderDashTimeline()" title="רשימה">'
+    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>'
+    +'</button>'
+    +'</div>';
+
+  // Filter chips
+  var filtersHtml='<div class="tl-filters">'
+    +'<button class="filter-chip'+(_tlFilter==='all'?' active':'')+'" onclick="_tlFilter=\'all\';renderDashTimeline()"><span>הכל</span><span class="filter-count">'+totalEvents+'</span></button>'
+    +'<button class="filter-chip'+(_tlFilter==='urgent'?' active':'')+'" onclick="_tlFilter=\'urgent\';renderDashTimeline()"><span class="filter-dot" style="background:#E24B4A"></span><span>דחוף</span><span class="filter-count">'+urgentCount+'</span></button>'
+    +'<button class="filter-chip'+(_tlFilter==='suggested'?' active':'')+'" onclick="_tlFilter=\'suggested\';renderDashTimeline()"><span class="filter-dot" style="background:#378ADD"></span><span>מוצע ע"י המערכת</span><span class="filter-count">'+suggestedCount+'</span></button>'
+    +'</div>';
+
+  // Filter items
+  var filteredItems=allItems;
+  if(_tlFilter!=='all') filteredItems=allItems.filter(function(it){return it._cls===_tlFilter});
+
+  // Timeline track view
+  var totalDays=_tlRange;
+  var trackHtml='<div class="tl-track-wrap" id="view-timeline"'+((_tlView!=='timeline')?' style="display:none"':'')+'>';
+  trackHtml+='<div class="tl-track"><div class="tl-line"></div>';
+  trackHtml+='<div class="tl-today-line"></div><div class="tl-today-label">היום</div>';
+  // Dots for items
+  filteredItems.forEach(function(it){
+    var daysLeft=Math.ceil((new Date(it.date)-now)/86400000);
+    if(daysLeft<0)daysLeft=0;
+    var pct=Math.min((daysLeft/totalDays)*100,96);
+    var dotCls=it._cls==='urgent'?'ev-urgent':'ev-suggested';
     var dateObj=new Date(it.date);
-    var monthName=HEM[dateObj.getMonth()].slice(0,3);
-    var dayNum=dateObj.getDate();
-    // Type label
+    var lbl=dateObj.getDate()+'/'+(dateObj.getMonth()+1);
+    var typeLabel='';
+    if(it.type==='svc')typeLabel='טיפול';
+    else if(it.type==='test')typeLabel='רישיון רכב';
+    else if(it.type==='lic')typeLabel='רישיון';
+    else typeLabel='אירוע';
+    trackHtml+='<button class="tl-event-dot '+dotCls+'" style="right:'+pct+'%;margin-right:-7px" onclick="openDet('+it.vid+')">'
+      +'<div class="tl-event-tip"><span class="event-day">'+lbl+'</span><span>'+typeLabel+' \u00B7 '+(it.driver||'').split(' ')[0]+'</span></div>'
+      +'</button>';
+  });
+  trackHtml+='</div>';
+  // Month labels
+  var fmt=function(daysFromToday){var d=new Date(now);d.setDate(now.getDate()+daysFromToday);return d.getDate()+'/'+(d.getMonth()+1);};
+  trackHtml+='<div class="tl-month-labels"><span>'+fmt(totalDays)+'</span><span>'+fmt(Math.floor(totalDays*0.55))+'</span><span>'+fmt(Math.floor(totalDays*0.15))+'</span></div>';
+  trackHtml+='</div>';
+
+  // List view
+  var listHtml='<div class="tl-list-wrap" id="view-list"'+((_tlView!=='list')?' style="display:none"':'')+'>';
+  if(filteredItems.length===0){
+    listHtml+='<div style="text-align:center;padding:20px;color:#5F5E5A;font-size:13px">אין אירועים בטווח הנבחר</div>';
+  }
+  filteredItems.forEach(function(it){
+    var daysLeft=Math.ceil((new Date(it.date)-now)/86400000);
+    var dateObj=new Date(it.date);
+    var monthName=HEM[dateObj.getMonth()].slice(0,3)+'\'';
+    var dayNum=('0'+dateObj.getDate()).slice(-2);
+    var isUrgent=it._cls==='urgent';
     var typeLabel='תזכורת';
     if(it.type==='svc')typeLabel='טיפול שנתי';
     else if(it.type==='test')typeLabel='רישיון רכב';
     else if(it.type==='lic'&&it.subType==='driver')typeLabel='רישיון נהיגה';
     else if(it.type==='lic'&&it.subType==='family')typeLabel='רישיון נהיגה (משפחה)';
     var daysText=daysLeft===0?'היום':daysLeft===1?'מחר':'עוד '+daysLeft+' ימים';
-    var metaText=(it.driver||'')+(it.model?' · '+it.model:'')+(it.plate?' · '+it.plate:'');
-    var actionCls=cls==='amber'?'primary':'secondary';
-    eventsHtml+='<div class="tl-event '+cls+'">';
-    eventsHtml+='<div class="tl-event-date"><span class="tl-event-month">'+monthName+'</span><span class="tl-event-day">'+dayNum+'</span></div>';
-    eventsHtml+='<div class="tl-event-content">';
-    eventsHtml+='<div class="tl-event-title">'+typeLabel+' <span class="tl-event-days '+cls+'">'+daysText+'</span></div>';
-    eventsHtml+='<div class="tl-event-meta">'+metaText+'</div>';
-    eventsHtml+='</div>';
-    eventsHtml+='<button class="tl-event-action '+actionCls+'" onclick="openDet('+it.vid+')">פרטים</button>';
-    eventsHtml+='</div>';
+    var dotColor=isUrgent?'#E24B4A':'#378ADD';
+    var metaText=(it.driver||'')+(it.plate?' \u00B7 '+it.plate:'');
+    listHtml+='<div class="tl-list-item'+(isUrgent?' urgent':'')+'" data-type="'+it._cls+'">'
+      +'<div class="tl-list-date"><div class="tl-list-day">'+dayNum+'</div><div class="tl-list-month">'+monthName+'</div></div>'
+      +'<div class="tl-list-content">'
+      +'<div class="tl-list-row"><span class="tl-list-dot" style="background:'+dotColor+'"></span><span class="tl-list-type">'+typeLabel+'</span><span class="tl-list-target">\u00B7 '+metaText+'</span></div>'
+      +'<div class="tl-list-sub">'+daysText+(isUrgent?' \u00B7 דחוף':' \u00B7 מוצע ע"י המערכת')+'</div>'
+      +'</div>'
+      +'<button class="tl-list-action'+(isUrgent?' urgent':'')+'" onclick="openDet('+it.vid+')">'+(isUrgent?'טפל \u2192':'פרטים \u2192')+'</button>'
+      +'</div>';
   });
-  eventsHtml+='</div>';
+  if(filteredItems.length>0){
+    listHtml+='<div class="tl-list-footer"><button class="tl-list-showall" onclick="go(\'calendar\',q(\'[dp=calendar]\'))">הצג את כל האירועים \u2190</button></div>';
+  }
+  listHtml+='</div>';
+
+  // Hint
+  var hintHtml='<div class="tl-hint"'+((_tlView==='list')?' style="display:none"':'')+'>'
+    +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+    +'לחץ על נקודה כדי לראות פרטים</div>';
+
   // Assemble
+  var urgentLabel=urgentCount>0?' \u00B7 <strong style="color:#A32D2D">'+urgentCount+' דחופים</strong>':'';
   container.innerHTML='<div class="timeline-card">'
     +'<div class="timeline-card-header">'
-    +'<div><div class="timeline-card-title">ציר הזמן שלי</div><div class="timeline-card-sub">'+totalEvents+' אירועים בטווח הנבחר</div></div>'
-    +rangeHtml
+    +'<div><div class="timeline-card-title">ציר הזמן שלי</div><div class="timeline-card-sub">'+totalEvents+' אירועים ב'+(_tlRange<15?_tlRange+' הימים הקרובים':_tlRange+' הימים הקרובים')+urgentLabel+'</div></div>'
+    +'<div class="tl-controls">'+viewToggle+rangeHtml+'</div>'
     +'</div>'
-    +'<div class="tl-body">'+dotsHtml+eventsHtml+'</div>'
+    +filtersHtml
+    +trackHtml+listHtml+hintHtml
     +'</div>';
 }
 
@@ -5308,17 +5535,72 @@ function altBadge(vid){
 }
 function avatarColor(name){var colors=['#16a34a','#3b82f6','#f59e0b','#ec4899','#06b6d4','#8b5cf6','#ef4444','#14b8a6','#f97316','#6366f1'];var h=0;for(var i=0;i<(name||'').length;i++)h=((h<<5)-h)+(name||'').charCodeAt(i);return colors[Math.abs(h)%colors.length];}
 function driverCell(v){return`<div class="dc"><div class="av" style="background:${avatarColor(v.driver.name)}">${inits(v.driver.name)}</div><div><div style="font-weight:600;font-size:13px;color:var(--t1)">${v.driver.name}</div><div style="font-size:10px;color:var(--t3)">${v.driver.company||v.driver.address||''}</div></div>${altBadge(v.id)}</div>`;}
-function dRow(v){return`<tr onclick="openDet(${v.id})" style="cursor:pointer"><td>${driverCell(v)}</td><td>${renderPlate(v.plate)}</td><td>${v.make} ${v.model}</td><td>${kmS(v)}</td><td>${lcS(v.licenseExp)}</td><td>${docsIcon(v.id)}</td></tr>`}
+function dRow(v){
+  var avatarColors=['pink','purple','blue','green','amber'];
+  var h=0;for(var i=0;i<(v.driver.name||'').length;i++)h=((h<<5)-h)+(v.driver.name||'').charCodeAt(i);
+  var acls=avatarColors[Math.abs(h)%avatarColors.length];
+  var statusHtml='';
+  if(v.status==='waiting_vehicle'){statusHtml='<span class="status-pill-sm warn">ממתין לרכב</span>';}
+  else if(hasMissingDocs(v)){statusHtml='<span class="status-pill-sm danger">מסמכים חסרים</span>';}
+  else{statusHtml='<span class="status-pill-sm success">תקין</span>';}
+  return'<div class="v-table-row" onclick="openDet('+v.id+')">'
+    +'<div class="driver-cell"><div class="driver-avatar '+acls+'">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div><div class="driver-company">'+(v.driver.company||v.driver.address||'')+'</div></div>'+altBadge(v.id)+'</div>'
+    +'<div>'+renderPlate(v.plate)+'</div>'
+    +'<div style="color:var(--t2)">'+v.make+' '+v.model+'</div>'
+    +'<div>'+kmS(v)+'</div>'
+    +'<div>'+lcS(v.licenseExp)+'</div>'
+    +'<div>'+docsIcon(v.id)+'</div>'
+    +'<div class="row-action"><button class="row-action-btn" onclick="event.stopPropagation();openDet('+v.id+')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></div>'
+    +'</div>';
+}
 function fRow(v){return`<tr onclick="openDet(${v.id})" style="cursor:pointer"><td>${driverCell(v)}</td><td>${renderPlate(v.plate)}</td><td>${v.make} ${v.model}</td><td>${kmS(v)}</td><td>${lcS(v.licenseExp)}</td><td>${docsIcon(v.id)}</td><td><button class="btn btn-l btn-sm" onclick="event.stopPropagation();openDet(${v.id})">פרטים ←</button></td></tr>`}
 function fil(){let r=vehicles.slice();if(vSearch)r=r.filter(v=>v.plate.toLowerCase().includes(vSearch)||v.driver.name.toLowerCase().includes(vSearch)||v.make.toLowerCase().includes(vSearch));r.sort(function(a,b){var aMissing=hasMissingDocs(a)?0:1;var bMissing=hasMissingDocs(b)?0:1;return aMissing-bMissing;});return r}
 function hasMissingDocs(v){if(!v)return false;var vd=vehicleDocs[v.id]||{};var missing=MANDATORY_DOCS.filter(function(d){return!vd[d.key];});return missing.length>0;}
+var _dashFilter='all';
+var _dashPage=1;
+var _dashPerPage=10;
+function setDashFilter(f,btn){
+  _dashFilter=f;_dashPage=1;
+  document.querySelectorAll('.quick-filter').forEach(function(b){b.classList.remove('active')});
+  if(btn)btn.classList.add('active');
+  renderDash();
+}
 function renderDash(){
-  const r=fil();
-  id('dash-cnt').textContent=r.length;
-  id('dash-tbody').innerHTML=r.map(dRow).join('');
-  // Update vehicle count badge
+  var r=fil();
+  // Quick filter counts
+  var allCount=r.length;
+  var alertCount=r.filter(function(v){return hasMissingDocs(v)||v.status==='waiting_vehicle'}).length;
+  var missingCount=r.filter(function(v){return hasMissingDocs(v)}).length;
+  var okCount=r.filter(function(v){return!hasMissingDocs(v)&&v.status!=='waiting_vehicle'}).length;
+  var qfAll=document.getElementById('qf-all');if(qfAll)qfAll.textContent=' \u00B7 '+allCount;
+  var qfAlerts=document.getElementById('qf-alerts');if(qfAlerts)qfAlerts.textContent=' \u00B7 '+alertCount;
+  var qfMissing=document.getElementById('qf-missing');if(qfMissing)qfMissing.textContent=' \u00B7 '+missingCount;
+  var qfOk=document.getElementById('qf-ok');if(qfOk)qfOk.textContent=' \u00B7 '+okCount;
+  // Apply quick filter
+  if(_dashFilter==='alerts')r=r.filter(function(v){return hasMissingDocs(v)||v.status==='waiting_vehicle'});
+  else if(_dashFilter==='missing')r=r.filter(function(v){return hasMissingDocs(v)});
+  else if(_dashFilter==='ok')r=r.filter(function(v){return!hasMissingDocs(v)&&v.status!=='waiting_vehicle'});
+  // Pagination
+  var totalPages=Math.max(1,Math.ceil(r.length/_dashPerPage));
+  if(_dashPage>totalPages)_dashPage=totalPages;
+  var start=(_dashPage-1)*_dashPerPage;
+  var pageItems=r.slice(start,start+_dashPerPage);
+  id('dash-cnt').textContent=r.length+' רכבים';
+  id('dash-tbody').innerHTML=pageItems.map(dRow).join('');
+  // Render pagination
+  var pagEl=document.getElementById('dash-pagination');
+  if(pagEl){
+    var pagHtml='<div>מציג '+(r.length>0?start+1:0)+'-'+Math.min(start+_dashPerPage,r.length)+' מתוך '+r.length+' רכבים</div><div class="pagination-controls">';
+    pagHtml+='<button class="page-btn" onclick="_dashPage=Math.max(1,_dashPage-1);renderDash()"'+(1===_dashPage?' disabled':'')+'><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>';
+    for(var p=1;p<=Math.min(totalPages,5);p++){pagHtml+='<button class="page-btn'+(p===_dashPage?' active':'')+'" onclick="_dashPage='+p+';renderDash()">'+p+'</button>';}
+    if(totalPages>5)pagHtml+='<span style="margin:0 4px">...</span><button class="page-btn'+(totalPages===_dashPage?' active':'')+'" onclick="_dashPage='+totalPages+';renderDash()">'+totalPages+'</button>';
+    pagHtml+='<button class="page-btn" onclick="_dashPage=Math.min('+totalPages+',_dashPage+1);renderDash()"'+(_dashPage===totalPages?' disabled':'')+'><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>';
+    pagHtml+='</div>';
+    pagEl.innerHTML=pagHtml;
+  }
+  // Update vehicle count badge in greeting
   var vcBadge=document.getElementById('dash-vehicle-count-val');
-  if(vcBadge) vcBadge.innerHTML=r.length+' <span style="font-size:11px;color:var(--t2);font-weight:400;margin-right:4px">פעילים</span>';
+  if(vcBadge) vcBadge.textContent=allCount+' רכבים פעילים';
   // Update alt drivers KPI
   const alt = countDriversOnAlt();
   updateStatCard('mv-alt','mv-alt-sub','mv-alt-empty','mc-alt',alt.total);
@@ -5407,14 +5689,21 @@ function updateDashGreeting(){
   if(tbGreet) tbGreet.textContent=greetText;
   var tbSub=document.getElementById('topbar-greet-sub');
   if(tbSub) tbSub.textContent=subText;
-  // Update topbar date
+  // Update topbar date and greeting date
+  var days=['יום ראשון','יום שני','יום שלישי','יום רביעי','יום חמישי','יום שישי','שבת'];
+  var months=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  var now=new Date();
+  var dateStr=days[now.getDay()]+' \u00B7 '+now.getDate()+' ב'+months[now.getMonth()]+' '+now.getFullYear();
   var dateEl=document.getElementById('topbar-date');
-  if(dateEl){
-    var days=['יום ראשון','יום שני','יום שלישי','יום רביעי','יום חמישי','יום שישי','שבת'];
-    var months=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
-    var now=new Date();
-    dateEl.textContent=days[now.getDay()]+' · '+now.getDate()+' ב'+months[now.getMonth()]+' '+now.getFullYear();
-  }
+  if(dateEl) dateEl.textContent=dateStr;
+  var greetDateEl=document.getElementById('dash-greeting-date');
+  if(greetDateEl) greetDateEl.textContent=dateStr;
+  // Update fleet status pill
+  var okCount=vehicles.filter(function(v){return!hasMissingDocs(v)&&v.status!=='waiting_vehicle'}).length;
+  var total=vehicles.length;
+  var pct=total>0?Math.round((okCount/total)*100):100;
+  var pillEl=document.getElementById('dash-vehicle-count-val');
+  if(pillEl) pillEl.textContent=pct+'% מהציר תקין \u00B7 '+total+' רכבים פעילים';
 }
 function showAltDriversModal(){
   const forms = JSON.parse(localStorage.getItem('hoForms2')||'[]');
