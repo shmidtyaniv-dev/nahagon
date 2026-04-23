@@ -5349,33 +5349,52 @@ function getTimelineItems(rangeDays){
   var endStr=endDate.toISOString().split('T')[0];
   var items=[];
   (vehicles||[]).forEach(function(v){
+    if(v.status==='waiting_vehicle') return; // skip vehicles waiting for assignment
     var drv=v.driver?.name||'';
-    // Vehicle test (רישיון רכב)
-    if(v.licenseExp&&v.licenseExp>=todayStr&&v.licenseExp<=endStr){
-      items.push({uid:'test-'+v.id,type:'test',subType:'vehicle',plate:v.plate,driver:drv,model:(v.make||'')+' '+(v.model||''),date:v.licenseExp,vid:v.id});
+    // Vehicle test (רישיון רכב) - show if expired OR within range
+    if(v.licenseExp){
+      if(v.licenseExp<todayStr){
+        // Expired - stays until renewed
+        items.push({uid:'test-'+v.id,type:'test',subType:'vehicle',plate:v.plate,driver:drv,model:(v.make||'')+' '+(v.model||''),date:v.licenseExp,vid:v.id,overdue:true});
+      } else if(v.licenseExp<=endStr){
+        items.push({uid:'test-'+v.id,type:'test',subType:'vehicle',plate:v.plate,driver:drv,model:(v.make||'')+' '+(v.model||''),date:v.licenseExp,vid:v.id});
+      }
     }
-    // Driver license
-    if(v.driver&&v.driver.licenseExp&&v.driver.licenseExp>=todayStr&&v.driver.licenseExp<=endStr){
-      items.push({uid:'lic-drv-'+v.id,type:'lic',subType:'driver',plate:v.plate,driver:drv,model:null,date:v.driver.licenseExp,vid:v.id});
+    // Driver license - show if expired OR within range
+    if(v.driver&&v.driver.licenseExp){
+      if(v.driver.licenseExp<todayStr){
+        items.push({uid:'lic-drv-'+v.id,type:'lic',subType:'driver',plate:v.plate,driver:drv,model:null,date:v.driver.licenseExp,vid:v.id,overdue:true});
+      } else if(v.driver.licenseExp<=endStr){
+        items.push({uid:'lic-drv-'+v.id,type:'lic',subType:'driver',plate:v.plate,driver:drv,model:null,date:v.driver.licenseExp,vid:v.id});
+      }
     }
-    // Family licenses
+    // Family licenses - show if expired OR within range
     if(v.family)v.family.forEach(function(f,fi){
-      if(f.licenseExp&&f.licenseExp>=todayStr&&f.licenseExp<=endStr){
-        items.push({uid:'lic-fam-'+v.id+'-'+fi,type:'lic',subType:'family',plate:v.plate,driver:f.name,model:null,date:f.licenseExp,vid:v.id});
+      if(f.licenseExp){
+        if(f.licenseExp<todayStr){
+          items.push({uid:'lic-fam-'+v.id+'-'+fi,type:'lic',subType:'family',plate:v.plate,driver:f.name,model:null,date:f.licenseExp,vid:v.id,overdue:true});
+        } else if(f.licenseExp<=endStr){
+          items.push({uid:'lic-fam-'+v.id+'-'+fi,type:'lic',subType:'family',plate:v.plate,driver:f.name,model:null,date:f.licenseExp,vid:v.id});
+        }
       }
     });
-    // Service anniversary
+    // Service anniversary - show if overdue OR within range
     var lastSvcDate=typeof getVehicleLastServiceDate==='function'?getVehicleLastServiceDate(v):null;
     if(lastSvcDate){
       var anniversary=new Date(lastSvcDate);
       while(anniversary<=now)anniversary.setFullYear(anniversary.getFullYear()+1);
       var annivStr=anniversary.toISOString().split('T')[0];
-      if(annivStr>=todayStr&&annivStr<=endStr){
+      if(annivStr<=endStr){
         items.push({uid:'svc-'+v.id,type:'svc',plate:v.plate,driver:drv,model:(v.make||'')+' '+(v.model||''),date:annivStr,vid:v.id});
       }
     }
   });
-  items.sort(function(a,b){return a.date>b.date?1:a.date<b.date?-1:0;});
+  // Overdue items first, then by date
+  items.sort(function(a,b){
+    if(a.overdue&&!b.overdue) return -1;
+    if(!a.overdue&&b.overdue) return 1;
+    return a.date>b.date?1:a.date<b.date?-1:0;
+  });
   return items;
 }
 var _tlView='list'; // 'timeline' or 'list'
@@ -5389,8 +5408,9 @@ function renderDashTimeline(){
   // Classify items: urgent (<14 days), otherwise by type
   allItems.forEach(function(it){
     var daysLeft=Math.ceil((new Date(it.date)-now)/86400000);
-    if(daysLeft<14) it._cls='urgent';
-    else it._cls='suggested'; // system-suggested
+    if(it.overdue||daysLeft<0) it._cls='urgent';
+    else if(daysLeft<14) it._cls='urgent';
+    else it._cls='suggested';
   });
   var urgentCount=allItems.filter(function(it){return it._cls==='urgent'}).length;
   var suggestedCount=allItems.filter(function(it){return it._cls==='suggested'}).length;
