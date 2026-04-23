@@ -556,16 +556,18 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div id="topbar-date" style="font-size:11px;color:#5F5E5A;white-space:nowrap"></div>
     </div>
     <span id="topbar-greet-sub" style="display:none" onclick="showAttentionDetails()"></span>
-    <!-- Center: search -->
-    <div style="display:flex;align-items:center;flex:1;justify-content:center">
-      <div style="position:relative;width:100%;max-width:450px">
-        <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="חיפוש: רכב, נהג, יצרן, דוח..." id="srch-inp" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
-        <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
-      </div>
+    <!-- Search -->
+    <span style="flex:1"></span>
+    <div style="position:relative;width:350px;flex-shrink:0">
+      <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="חיפוש: רכב, נהג, יצרן, דוח..." id="srch-inp" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
+      <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
     </div>
-    <!-- Left: system name then add button -->
+    <span style="flex:1"></span>
+    <!-- System name -->
     <span id="topbar-system-name" style="font-size:14px;font-weight:500;color:var(--t1);white-space:nowrap;flex-shrink:0">מרכז הרכב של מור השקעות</span>
+    <span style="flex:1"></span>
+    <!-- Add button -->
     <button onclick="openAdd()" style="height:34px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;background:#1D9E75;color:#fff;border:none;white-space:nowrap;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוסף רכב</button>
     <div class="pt" id="page-title" style="display:none">דשבורד</div>
   </div>
