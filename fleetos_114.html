@@ -821,7 +821,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 @media(max-width:700px){.metrics{grid-template-columns:1fr!important}}
 
 /* ===== Sidebar layout for vehicle card overview ===== */
-.vc-overview-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+.vc-overview-layout{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
 .vc-overview-main{min-width:0}
 #vc-sidebar-col{display:flex;flex-direction:column;gap:12px;position:sticky;top:70px}
 
@@ -1875,6 +1875,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <!-- OVERVIEW TAB -->
       <div id="vct-overview" class="vc-tab-panel">
         <div class="vc-overview-layout">
+          <div id="vc-sidebar-col"></div>
           <div class="vc-overview-main">
             <div id="vc-summary-cards" class="vc-info-grid"></div>
             <div id="vc-summary-cards2" class="vc-info-grid"></div>
@@ -1882,7 +1883,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div id="vc-summary-cards3"></div>
             <div id="vc-vehicle-timeline" style="margin-top:4px"></div>
           </div>
-          <div id="vc-sidebar-col"></div>
         </div>
       </div>
 
