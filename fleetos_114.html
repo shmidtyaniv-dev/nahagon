@@ -2528,6 +2528,12 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div style="background:var(--abg);border:1px solid #fcd34d;border-radius:var(--rs);padding:8px 12px;margin-bottom:12px;font-size:14px;color:#92400e">
           הנהג <strong id="upd-driver-name"></strong> יישמר. פרטי הרכב הישן יועברו להיסטוריה.
         </div>
+        <div style="margin-bottom:10px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--t2)">
+            <input type="checkbox" id="upd-isnew" onchange="document.getElementById('upd-svc-section').style.display=this.checked?'none':'block'" style="width:15px;height:15px;accent-color:var(--gl)">
+            רכב חדש (טיפול ראשון ב-15,000 ק"מ או שנה מהמסירה)
+          </label>
+        </div>
         <div class="fg">
           <div class="ff"><label>מספר רכב חדש *</label><input id="upd-plate" placeholder="12-345-67" dir="ltr"></div>
           <div class="ff"><label>קודן</label><input id="upd-code" placeholder="COL-2025-013"></div>
@@ -2543,6 +2549,27 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="upd-toll-6n" style="accent-color:var(--gl);width:14px;height:14px"> כביש 6 צפון</label>
             <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="upd-toll-carmel" style="accent-color:var(--gl);width:14px;height:14px"> מנהרות הכרמל</label>
             <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="upd-toll-fastlane" style="accent-color:var(--gl);width:14px;height:14px"> הנתיב המהיר</label>
+          </div>
+        </div>
+        <!-- Service section -->
+        <div id="upd-svc-section" style="margin-top:10px;background:var(--bg);border:1px solid var(--bdr2);border-radius:var(--r);padding:10px 14px">
+          <div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:8px">טיפולים</div>
+          <div class="fg">
+            <div class="ff"><label>תאריך טיפול אחרון</label><input type="date" id="upd-svc-date"></div>
+            <div class="ff"><label>סוג הטיפול האחרון</label>
+              <select id="upd-svc-type">
+                <option value="">בחר סוג טיפול</option>
+                <option value="15000">15,000 ק"מ</option>
+                <option value="30000">30,000 ק"מ</option>
+                <option value="45000">45,000 ק"מ</option>
+                <option value="60000">60,000 ק"מ</option>
+                <option value="75000">75,000 ק"מ</option>
+                <option value="90000">90,000 ק"מ</option>
+                <option value="105000">105,000 ק"מ</option>
+                <option value="120000">120,000 ק"מ</option>
+              </select>
+            </div>
+            <div class="ff"><label>ק"מ נוכחי</label><input type="text" id="upd-ckm" placeholder="18,000" oninput="fmtKmInput(this)" dir="ltr" inputmode="numeric"></div>
           </div>
         </div>
       </div>
@@ -5279,6 +5306,19 @@ function saveUpdate(){
     if(id('upd-toll-fastlane')?.checked)tolls.push('הנתיב המהיר');
     v.tolls=tolls;
     v.photo=null;
+    v.isNew=!!id('upd-isnew')?.checked;
+    // Service info
+    if(v.isNew){
+      v.nextServiceType='טיפול ראשון';
+      v.serviceKm=0;
+      v.currentKm=0;
+      if(v.delivery){var nd=new Date(v.delivery);nd.setFullYear(nd.getFullYear()+1);v.nextSvcDate=nd.toISOString().split('T')[0];}
+    } else {
+      var svcType=parseInt(id('upd-svc-type')?.value)||0;
+      if(svcType){v.serviceKm=svcType;var nextKm=svcType+15000;v.nextServiceType=nextKm.toLocaleString('he-IL')+' ק"מ';}
+      v.lastService=id('upd-svc-date')?.value||'';
+      var ckmEl=id('upd-ckm');if(ckmEl&&ckmEl.value)v.currentKm=parseInt(ckmEl.value.replace(/[^0-9]/g,''))||0;
+    }
     // Log
     v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'החלפת רכב: '+v.make+' '+v.model+' ('+newPlate+') ← '+oldMake+' '+oldModel+' ('+oldPlate+')',createdAt:now,source:'auto'});
   } else {
