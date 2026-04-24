@@ -6799,43 +6799,8 @@ function openDet(vid){
     dealPct=dealMonthsTotal>0?Math.round((dealMonthsCurrent/dealMonthsTotal)*100):0;
   }
 
-  id('vc-summary-cards').style.gridTemplateColumns='repeat(2,1fr)';
-  id('vc-summary-cards').innerHTML=
-    // Card 1: Deal & Schedule (driver info moved to sidebar)
-    `<div class="vc-info-box" style="align-items:stretch;padding:16px 18px">
-      <div class="vc-info-label" style="text-align:center;margin-bottom:10px;font-weight:600">עסקה ולו"ז</div>
-      <div class="vc-date-range">
-        <div class="vc-date-range-item"><div class="date">${fd(v.delivery)||'—'}</div><div class="vc-info-sublabel">מסירה</div></div>
-        <div class="vc-date-range-arrow">&larr;</div>
-        <div class="vc-date-range-item"><div class="date">${fd(v.dealEnd)||'—'}</div><div class="vc-info-sublabel">סיום</div></div>
-      </div>
-      ${dealMonthsTotal?`<div class="vc-deal-progress"><div class="vc-deal-progress-fill" style="width:${dealPct}%"></div></div>
-      <div class="vc-deal-remaining"><strong>חודש ${dealMonthsCurrent} מתוך ${dealMonthsTotal}</strong> · נותרו ${dealMonthsRemain} חודשים</div>`:''}
-      <div style="border-top:0.5px solid var(--bdr);margin-top:10px;padding-top:8px;display:flex;flex-direction:column;gap:4px;font-size:12px">
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--t2)">רישיון רכב</span><span style="font-weight:500">${fd(v.licenseExp)||'—'}</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--t2)">ביטוח</span><span style="font-weight:500"${insColor?' style="color:'+insColor+'"':''}>${insTxt}</span></div>
-        <div style="display:flex;justify-content:space-between"><span style="color:var(--t2)">כבישי אגרה</span><span style="font-weight:500">${tollsTxt}</span></div>
-      </div>
-    </div>`+
-    // Card 3: Mandatory docs summary
-    `<div class="vc-info-box" style="align-items:stretch;padding:16px 18px;cursor:pointer" onclick="vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2])">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="vc-info-label" style="margin-bottom:0;font-weight:600">מסמכי חובה</div>
-        <span class="vc-docs-card-summary ${docsMissing>0?'danger':'ok'}">${docsMissing>0?docsMissing+' חסרים':'מלאים'}</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        ${MANDATORY_DOCS.map(d=>{
-          const up=vd[d.key];
-          const statusCls=up?'valid':'missing';
-          const statusTxt=up?'בתוקף':'חסר';
-          return`<div style="display:flex;align-items:center;gap:8px;font-size:12px">
-            <div style="width:8px;height:8px;border-radius:50%;background:${up?'var(--green)':'var(--red)'};flex-shrink:0"></div>
-            <span style="flex:1;color:var(--t1);font-weight:500">${d.label}</span>
-            <span style="font-size:10px;padding:1px 7px;border-radius:999px;background:${up?'var(--green-light)':'var(--red-light)'};color:${up?'var(--green-dark)':'var(--red-dark)'};font-weight:500">${statusTxt}</span>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
+  // Row 1 removed - "עסקה ולו"ז" and "מסמכי חובה" replaced by Row 2 and Row 3
+  id('vc-summary-cards').style.display='none';
 
   // Row 2: Deal period + KM + Next service (3 columns)
   var kmUpdateAgo='';
@@ -6891,17 +6856,17 @@ function openDet(vid){
     <div class="vc-info-grid">
       <div class="vc-info-box">
         <div class="vc-info-label">תוקף רישיון רכב</div>
-        <div style="font-size:22px;font-weight:500">${fd(v.licenseExp)||'—'}</div>
+        <div style="font-size:18px;font-weight:500">${fd(v.licenseExp)||'—'}</div>
         ${dLicDays!==null?`<div class="vc-info-sublabel">${dLicDays<0?'<span style="color:#A32D2D">פג תוקף!</span>':'בתוקף · עוד '+dLicDays+' ימים'}</div>`:''}
       </div>
       <div class="vc-info-box">
         <div class="vc-info-label">תוקף ביטוח</div>
-        <div style="font-size:22px;font-weight:500">${insTxt}</div>
+        <div style="font-size:18px;font-weight:500">${insTxt}</div>
         <div class="vc-info-sublabel">${insColor?'<span style="color:'+insColor+'">שים לב</span>':''}</div>
       </div>
       <div class="vc-info-box">
         <div class="vc-info-label">כבישי אגרה</div>
-        <div style="font-size:16px;font-weight:500">${(v.tolls||[]).length?'מורשה ל'+v.tolls[0]:'אין מנויים'}</div>
+        <div style="font-size:14px;font-weight:500">${(v.tolls||[]).length?'מורשה ל'+v.tolls[0]:'אין מנויים'}</div>
         <div class="vc-info-sublabel">${(v.tolls||[]).length>1?v.tolls.slice(1).join(', '):'לא מורשה למנהרות כרמל'}</div>
       </div>
     </div>`;
