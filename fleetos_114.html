@@ -6849,11 +6849,12 @@ function openDet(vid){
       <div class="vc-info-sublabel" style="margin-top:8px">המוקדם מביניהם קובע</div>
     </div>`;
 
-  // Row 3: Documents & vehicle details
+  // Row 3: Documents & vehicle details (4 columns)
   var dLicDays=v.licenseExp?Math.ceil((new Date(v.licenseExp)-new Date())/86400000):null;
+  var drvLicDays=v.driver.licenseExp?Math.ceil((new Date(v.driver.licenseExp)-new Date())/86400000):null;
   id('vc-summary-cards3').innerHTML=
-    `<div style="font-size:13px;font-weight:500;color:var(--t2);margin-bottom:10px;letter-spacing:.02em">מסמכים ופרטי רכב</div>
-    <div class="vc-info-grid">
+    `<div style="font-size:13px;font-weight:500;color:#5F5E5A;margin-bottom:10px;letter-spacing:.02em">מסמכים ופרטי רכב</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
       <div class="vc-info-box">
         <div class="vc-info-label">תוקף רישיון רכב</div>
         <div style="font-size:18px;font-weight:500">${fd(v.licenseExp)||'—'}</div>
@@ -6863,6 +6864,11 @@ function openDet(vid){
         <div class="vc-info-label">תוקף ביטוח</div>
         <div style="font-size:18px;font-weight:500">${insTxt}</div>
         <div class="vc-info-sublabel">${insColor?'<span style="color:'+insColor+'">שים לב</span>':''}</div>
+      </div>
+      <div class="vc-info-box">
+        <div class="vc-info-label">תוקף רישיון נהיגה</div>
+        <div style="font-size:18px;font-weight:500">${fd(v.driver.licenseExp)||'—'}</div>
+        ${drvLicDays!==null?`<div class="vc-info-sublabel">${drvLicDays<0?'<span style="color:#A32D2D">פג תוקף!</span>':'בתוקף · עוד '+drvLicDays+' ימים'}</div>`:''}
       </div>
       <div class="vc-info-box">
         <div class="vc-info-label">כבישי אגרה</div>
@@ -6947,7 +6953,7 @@ function openDet(vid){
   // Driver Details Card (NEW - moved from hero & overview)
   sidebarHtml+='<div class="driver-details-card">';
   sidebarHtml+='<div class="driver-details-header">';
-  sidebarHtml+='<span class="driver-details-title">\u05E4\u05E8\u05D8\u05D9 \u05D4\u05E0\u05D4\u05D2</span>';
+  sidebarHtml+='<span class="driver-details-title">\u05E4\u05E8\u05D8\u05D9 \u05E0\u05D4\u05D2</span>';
   sidebarHtml+='<button class="driver-details-edit" title="\u05E2\u05E8\u05D5\u05DA \u05E4\u05E8\u05D8\u05D9\u05DD" onclick="openEditVehicle('+vid+')">';
   sidebarHtml+='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
   sidebarHtml+='\u05E2\u05E8\u05D9\u05DB\u05D4</button>';
@@ -6978,11 +6984,7 @@ function openDet(vid){
     sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05DB\u05EA\u05D5\u05D1\u05EA</div><div class="driver-detail-value">'+v.driver.address+' <a href="https://www.google.com/maps/search/'+encodeURIComponent(v.driver.address)+'" target="_blank" style="font-size:10px;color:var(--green);margin-right:4px">\u05D4\u05E6\u05D2 \u05D1\u05DE\u05E4\u05D4</a></div></div>';
     sidebarHtml+='</div>';
   }
-  // License expiry
-  sidebarHtml+='<div class="driver-detail-row">';
-  sidebarHtml+='<svg class="driver-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><circle cx="8" cy="15" r="1"/></svg>';
-  sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05EA\u05D5\u05E7\u05E3 \u05E8\u05D9\u05E9\u05D9\u05D5\u05DF \u05E0\u05D4\u05D9\u05D2\u05D4</div><div class="driver-detail-value"'+(dLc?' style="color:'+dLc+'"':'')+'>'+(fd(v.driver.licenseExp)||'\u2014')+'</div></div>';
-  sidebarHtml+='</div>';
+  // License expiry removed - now shown in "מסמכים ופרטי רכב" section
   sidebarHtml+='</div></div>';
 
   // Contact card
