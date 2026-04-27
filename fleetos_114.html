@@ -11421,7 +11421,7 @@ function closeFormBuilder(){
 function onFbPdfUpload(input){
   const file=input.files[0];
   if(!file)return;
-  if(file.size>2*1024*1024){alert('הקובץ גדול מדי. מקסימום 2MB.');return;}
+  // No file size limit
   const reader=new FileReader();
   reader.onload=function(e){
     const base64=e.target.result;
