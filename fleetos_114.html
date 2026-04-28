@@ -7293,7 +7293,7 @@ function openDet(vid){
         <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.delivery)}</div><div style="font-size:10px;color:var(--t2)">מסירה</div></div>
         <span style="color:var(--t3)">←</span>
         <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.dealEnd)||'—'}</div><div style="font-size:10px;color:var(--t2)">סיום</div></div>
-      </div>${(function(){var start=new Date(v.delivery);var end=v.dealEnd?new Date(v.dealEnd):new Date(start.getTime()+3*365.25*86400000);var total=Math.round((end-start)/2592000000);var elapsed=Math.max(0,Math.round((new Date()-start)/2592000000));var pct=Math.min(100,Math.max(0,Math.round(elapsed/total*100)));var remaining=Math.max(0,total-elapsed);return'<div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:6px;width:100%"><div style="height:100%;background:var(--green,#1D9E75);border-radius:2px;width:'+pct+'%"></div></div><div style="font-size:12px;color:var(--t2);text-align:center">חודש <strong style="color:var(--t1)">'+elapsed+'</strong> מתוך <strong style="color:var(--t1)">'+total+'</strong> · נותרו '+remaining+' חודשים</div>';})()}`:'<div style="font-size:14px;color:var(--t3)">—</div>'}
+      </div>${(function(){var start=new Date(v.delivery);var end=v.dealEnd?new Date(v.dealEnd):new Date(start.getTime()+3*365.25*86400000);var total=Math.round((end-start)/2592000000);var elapsed=Math.max(0,Math.round((new Date()-start)/2592000000));var pct=Math.min(100,Math.max(0,Math.round(elapsed/total*100)));var remaining=Math.max(0,total-elapsed);var bar='<div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:6px;width:100%"><div style="height:100%;background:var(--green,#1D9E75);border-radius:2px;width:'+pct+'%"></div></div><div style="font-size:12px;color:var(--t2);text-align:center">חודש <strong style="color:var(--t1)">'+elapsed+'</strong> מתוך <strong style="color:var(--t1)">'+total+'</strong> · נותרו '+remaining+' חודשים</div>';if(remaining<=4){bar+='<div style="margin-top:10px;padding:8px 10px;background:'+(v.newVehicleDate?'#E1F5EE':'#FAEEDA')+';border:1px solid '+(v.newVehicleDate?'#1D9E75':'#D97706')+';border-radius:8px">';if(v.newVehicleDate){bar+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div><div style="font-size:11px;font-weight:600;color:#0F6E56">🚗 רכב חדש בדרך</div><div style="font-size:12px;color:#0F6E56;margin-top:2px">צפוי ב-'+fd(v.newVehicleDate)+'</div></div><button onclick="openNewVehicleDateModal('+vid+')" style="background:#0F6E56;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">עדכן</button></div>';}else{bar+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div style="font-size:11px;font-weight:500;color:#854F0B">⏰ העסקה מסתיימת בקרוב</div><button onclick="openNewVehicleDateModal('+vid+')" style="background:#854F0B;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">עדכן תאריך רכב חדש</button></div>';}bar+='</div>';}return bar;})()}`:'<div style="font-size:14px;color:var(--t3)">—</div>'}
     </div>`+
     // KM card
     `<div class="vc-info-box">
@@ -8496,6 +8496,45 @@ function addVehicle(){
 }
 
 /* ── TIRE UPDATE ── */
+function openNewVehicleDateModal(vid){
+  var v=vehicles.find(function(x){return x.id===vid});if(!v)return;
+  var existing=document.getElementById('new-vehicle-date-modal');if(existing)existing.remove();
+  var modal=document.createElement('div');
+  modal.id='new-vehicle-date-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  modal.innerHTML='<div style="background:var(--card);border-radius:12px;width:100%;max-width:380px;overflow:hidden" onclick="event.stopPropagation()">'
+    +'<div style="background:#1D9E75;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">'
+    +'<div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></div><span style="color:#fff;font-size:15px;font-weight:500">רכב חדש בדרך</span></div>'
+    +'<button onclick="document.getElementById(\'new-vehicle-date-modal\').remove()" style="background:rgba(255,255,255,.15);border:none;width:28px;height:28px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+    +'</div>'
+    +'<div style="padding:18px">'
+    +'<div style="font-size:12px;color:var(--t2);margin-bottom:12px">רכב נוכחי: <strong>'+v.plate+'</strong> · '+(v.driver?.name||'')+'<br>סיום עסקה: <strong>'+(v.dealEnd?fd(v.dealEnd):'—')+'</strong></div>'
+    +'<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">תאריך קבלת רכב חדש (צפוי)</label><input type="date" id="nvd-date" value="'+(v.newVehicleDate||'')+'" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
+    +'<div style="margin-bottom:16px"><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">הערות (אופציונלי)</label><input type="text" id="nvd-notes" value="'+(v.newVehicleNotes||'')+'" placeholder="דגם חדש, מספר הזמנה..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
+    +'<div style="display:flex;gap:8px">'
+    +(v.newVehicleDate?'<button onclick="clearNewVehicleDate('+vid+')" style="padding:10px 14px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit">הסר</button>':'')
+    +'<button onclick="document.getElementById(\'new-vehicle-date-modal\').remove()" style="flex:1;padding:10px;background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">ביטול</button>'
+    +'<button onclick="saveNewVehicleDate('+vid+')" style="flex:2;padding:10px;background:#1D9E75;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">שמור</button></div>'
+    +'</div></div>';
+  document.body.appendChild(modal);
+}
+function saveNewVehicleDate(vid){
+  var v=vehicles.find(function(x){return x.id===vid});if(!v)return;
+  var dateVal=document.getElementById('nvd-date').value;
+  if(!dateVal){alert('יש לבחור תאריך');return;}
+  v.newVehicleDate=dateVal;
+  v.newVehicleNotes=document.getElementById('nvd-notes').value.trim();
+  document.getElementById('new-vehicle-date-modal').remove();
+  refresh();openDet(vid);
+}
+function clearNewVehicleDate(vid){
+  var v=vehicles.find(function(x){return x.id===vid});if(!v)return;
+  delete v.newVehicleDate;delete v.newVehicleNotes;
+  document.getElementById('new-vehicle-date-modal').remove();
+  refresh();openDet(vid);
+}
+
 function openTireUpdateModal(vid){
   var v=vehicles.find(function(x){return x.id===vid});if(!v)return;
   var existing=document.getElementById('tire-update-modal');if(existing)existing.remove();
