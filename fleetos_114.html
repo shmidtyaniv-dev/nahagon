@@ -11231,7 +11231,8 @@ function _openFormDB(){
 }
 function getFormTemplates(){
   // Return cached synchronously (loaded at init)
-  return _formTemplatesCache||JSON.parse(localStorage.getItem('formTemplates')||'[]');
+  if(_formTemplatesCache && _formTemplatesCache.length>=0) return _formTemplatesCache;
+  try{return JSON.parse(localStorage.getItem('formTemplates')||'[]');}catch(e){return [];}
 }
 function saveFormTemplatesArr(arr){
   _formTemplatesCache=arr;
@@ -12218,11 +12219,13 @@ function deleteFormTemplate(tid){
 }
 
 function shareFormTemplate(tid){
+  try{
   const base=location.protocol==='file:'?'https://nahagon.vercel.app/fleetos_114.html':(location.origin+location.pathname);
   const url=base.replace(/[?#].*$/,'')+'?form='+tid;
   // Get template name
-  var tpl=getFormTemplates().find(function(t){return t.id===tid;});
-  var formName=tpl?tpl.name:'טופס';
+  var templates=getFormTemplates()||[];
+  var tpl=templates.find(function(t){return t.id===tid;});
+  var formName=(tpl&&tpl.name)?tpl.name:'טופס';
   // Open share modal
   var existing=document.getElementById('share-form-modal');if(existing)existing.remove();
   var modal=document.createElement('div');
@@ -12248,6 +12251,7 @@ function shareFormTemplate(tid){
     +'<div style="margin-top:12px;padding:10px;background:var(--bg2);border-radius:6px;font-size:11px;color:var(--t2);word-break:break-all;direction:ltr;text-align:left">'+url+'</div>'
     +'</div></div>';
   document.body.appendChild(modal);
+  }catch(err){console.error('shareFormTemplate error:',err);alert('שגיאה בשליחה: '+err.message);}
 }
 function copyFormLink(url){
   if(navigator.clipboard){
