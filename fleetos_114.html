@@ -6889,7 +6889,12 @@ function renderVehicleTimeline(vid){
   // 4. Delivery
   if(v.delivery) events.push({date:v.delivery,icon:'📦',bg:'#e0e7ff',clr:'#3730a3',title:'מסירת רכב',desc:'נמסר ל'+(v.driver?.name||''),source:'auto'});
 
-  // 5. Document uploads
+  // 5. Tire changes
+  (v.tireChanges||[]).forEach(function(tc){
+    events.push({date:tc.addedAt||tc.date||'',icon:'🔄',bg:'#E6F1FB',clr:'#185FA5',title:'החלפת צמיגים'+(tc.qty?' · '+tc.qty+' צמיגים':''),desc:tc.notes||'',source:'manual'});
+  });
+
+  // 6. Document uploads
   var vd=vehicleDocs[vid]||{};
   MANDATORY_DOCS.forEach(function(d){
     if(vd[d.key]) events.push({date:'',icon:'📄',bg:'#dcfce7',clr:'#166534',title:d.label+' הועלה',desc:vd[d.key].name||'',source:'auto'});
@@ -7511,7 +7516,7 @@ function openDet(vid){
   // Tires
   var totalTires=tireChanges.reduce(function(s,c){return s+(c.qty||0)},0);
   sidebarHtml+='<div class="vc-stat-row"><div class="vc-stat-row-icon tires"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg></div>';
-  sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">החלפת צמיגים</div><div class="vc-stat-row-detail">'+(tireCount>0?tireCount+' החלפות · '+totalTires+' צמיגים':'טרם עודכן')+'</div></div>';
+  sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">החלפת צמיגים</div><div class="vc-stat-row-detail">'+(tireCount>0?'בשנה האחרונה':'טרם עודכן')+'</div></div>';
   sidebarHtml+='<div style="display:flex;align-items:center;gap:6px"><button onclick="event.stopPropagation();openTireUpdateModal('+vid+')" style="background:#E6F1FB;color:#185FA5;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ עדכן</button><div class="vc-stat-row-value">'+totalTires+'</div></div></div>';
   sidebarHtml+='</div></div>';
 
@@ -8506,7 +8511,7 @@ function openTireUpdateModal(vid){
     +'<div style="padding:18px">'
     +'<div style="font-size:12px;color:var(--t2);margin-bottom:12px">רכב: <strong>'+v.plate+'</strong> · '+(v.driver?.name||'')+'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
-    +'<div><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">כמה צמיגים הוחלפו *</label><select id="tire-qty" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"><option value="1">1 צמיג</option><option value="2">2 צמיגים</option><option value="4" selected>4 צמיגים</option><option value="5">5 צמיגים</option><option value="6">6 צמיגים</option></select></div>'
+    +'<div><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">כמה צמיגים הוחלפו *</label><input type="number" id="tire-qty" value="4" min="1" max="20" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)" dir="ltr"></div>'
     +'<div><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">תאריך ההחלפה</label><input type="date" id="tire-date" value="'+new Date().toISOString().slice(0,10)+'" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
     +'</div>'
     +'<div style="margin-bottom:16px"><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">הערות (אופציונלי)</label><input type="text" id="tire-notes" placeholder="סוג צמיגים, מוסך..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
