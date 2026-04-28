@@ -2670,69 +2670,109 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <!-- EDIT VEHICLE MODAL -->
 <div class="ov" id="edit-ov">
-  <div class="modal" style="max-width:680px" onclick="event.stopPropagation()">
-    <div class="mh">
-      <h3>עריכת רכב</h3>
-      <span class="vb" id="edit-plate-badge"></span>
-      <button class="mc-btn" onclick="closeModal('edit-ov')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div class="modal" style="max-width:680px;border-radius:12px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column" onclick="event.stopPropagation()">
+    <!-- Green header (same style as add-ov) -->
+    <div style="background:#1D9E75;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <h3 style="margin:0;color:#fff;font-size:16px;font-weight:500">עריכת רכב</h3>
+        <span style="background:rgba(255,255,255,.2);color:#fff;padding:2px 10px;border-radius:6px;font-family:monospace;font-size:13px;font-weight:600;letter-spacing:.05em" id="edit-plate-badge"></span>
+      </div>
+      <button onclick="closeModal('edit-ov')" style="background:rgba(255,255,255,.15);border:none;width:30px;height:30px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <div class="mb">
-      <div class="fsl" style="margin-bottom:8px">פרטי רכב</div>
-      <div class="fg">
-        <div class="ff"><label>מספר רכב</label><input id="ev-plate" dir="ltr"></div>
-        <div class="ff"><label>קודן</label><input id="ev-code"></div>
-        <div class="ff"><label>יצרן</label><input id="ev-make"></div>
-        <div class="ff"><label>דגם</label><input id="ev-model"></div>
-        <div class="ff"><label>תאריך מסירה</label><input type="date" id="ev-delivery"></div>
-        <div class="ff"><label>תוקף רישיון רכב</label><input type="date" id="ev-lic"></div>
-      </div>
-      <div style="margin-top:12px;background:var(--bg);border:1px solid var(--bdr2);border-radius:var(--r);padding:10px 14px">
-        <div style="font-size:20px;font-weight:600;color:var(--t2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">מנויי כבישי אגרה</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-6" style="accent-color:var(--gl);width:14px;height:14px"> כביש 6</label>
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-6n" style="accent-color:var(--gl);width:14px;height:14px"> כביש 6 צפון</label>
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-carmel" style="accent-color:var(--gl);width:14px;height:14px"> מנהרות הכרמל</label>
-          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-fastlane" style="accent-color:var(--gl);width:14px;height:14px"> הנתיב המהיר</label>
+    <div style="overflow-y:auto;flex:1">
+
+      <!-- ACCORDION: פרטי רכב -->
+      <div style="border-bottom:1px solid rgba(0,0,0,.08)">
+        <div onclick="toggleAccSection(this)" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🚗</span><span style="font-size:14px;font-weight:600;color:var(--t1)">פרטי רכב</span></div>
+          <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
+        </div>
+        <div class="acc-body" style="padding:0 20px 16px">
+          <div class="fg">
+            <div class="ff"><label>מספר רכב</label><input id="ev-plate" dir="ltr"></div>
+            <div class="ff"><label>קודן</label><input id="ev-code"></div>
+            <div class="ff"><label>יצרן</label><input id="ev-make"></div>
+            <div class="ff"><label>דגם</label><input id="ev-model"></div>
+            <div class="ff"><label>תאריך מסירה</label><input type="date" id="ev-delivery"></div>
+            <div class="ff"><label>תוקף רישיון רכב</label><input type="date" id="ev-lic"></div>
+          </div>
         </div>
       </div>
-      <hr class="fsep" style="margin:14px 0">
-      <div class="fsl" style="margin-bottom:8px">פרטי נהג</div>
-      <div class="fg">
-        <div class="ff"><label>שם מלא</label><input id="ev-dname"></div>
-        <div class="ff"><label>תעודת זהות</label><input id="ev-did" dir="ltr"></div>
-        <div class="ff"><label>טלפון</label><input id="ev-dphone" dir="ltr"></div>
-        <div class="ff"><label>מייל</label><input id="ev-demail" dir="ltr"></div>
-        <div class="ff"><label>תוקף רישיון נהיגה</label><input type="date" id="ev-dlic"></div>
-        <div class="ff" style="grid-column:span 2"><label>כתובת</label><input id="ev-daddress" placeholder="רחוב, עיר"></div>
-        <div class="ff" style="grid-column:span 2"><label>חברה</label>
-          <select id="ev-dcompany" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:var(--rs);font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)">
-            <option value="">— לא מוגדר —</option>
-            <option value="י.ד מור השקעות">י.ד מור השקעות</option>
-            <option value="מור קופות גמל">מור קופות גמל</option>
-          </select>
+
+      <!-- ACCORDION: כבישי אגרה -->
+      <div style="border-bottom:1px solid rgba(0,0,0,.08)">
+        <div onclick="toggleAccSection(this)" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🛣️</span><span style="font-size:14px;font-weight:600;color:var(--t1)">כבישי אגרה</span></div>
+          <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
+        </div>
+        <div class="acc-body" style="padding:0 20px 16px;display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-6" style="accent-color:var(--gl);width:14px;height:14px"> כביש 6</label>
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-6n" style="accent-color:var(--gl);width:14px;height:14px"> כביש 6 צפון</label>
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-carmel" style="accent-color:var(--gl);width:14px;height:14px"> מנהרות הכרמל</label>
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-fastlane" style="accent-color:var(--gl);width:14px;height:14px"> הנתיב המהיר</label>
+          </div>
         </div>
       </div>
-      <hr class="fsep" style="margin:14px 0">
-      <div class="fsl" style="margin-bottom:8px">טיפולים</div>
-      <div class="fg">
-        <div class="ff"><label>תאריך טיפול אחרון</label><input type="date" id="ev-svc"></div>
-        <div class="ff"><label>סוג הטיפול האחרון</label>
-          <select id="ev-svc-type">
-            <option value="">בחר</option>
-            <option value="15000">15,000 ק"מ</option>
-            <option value="30000">30,000 ק"מ</option>
-            <option value="45000">45,000 ק"מ</option>
-            <option value="60000">60,000 ק"מ</option>
-            <option value="75000">75,000 ק"מ</option>
-            <option value="90000">90,000 ק"מ</option>
-            <option value="105000">105,000 ק"מ</option>
-            <option value="120000">120,000 ק"מ</option>
-          </select>
+
+      <!-- ACCORDION: פרטי נהג -->
+      <div style="border-bottom:1px solid rgba(0,0,0,.08)">
+        <div onclick="toggleAccSection(this)" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">👤</span><span style="font-size:14px;font-weight:600;color:var(--t1)">פרטי נהג</span></div>
+          <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
         </div>
-        <div class="ff"><label>ק"מ נוכחי</label><input type="text" id="ev-ckm" oninput="fmtKmInput(this)" dir="ltr" inputmode="numeric"></div>
+        <div class="acc-body" style="padding:0 20px 16px;display:none">
+          <div class="fg">
+            <div class="ff"><label>שם מלא</label><input id="ev-dname"></div>
+            <div class="ff"><label>תעודת זהות</label><input id="ev-did" dir="ltr"></div>
+            <div class="ff"><label>טלפון</label><input id="ev-dphone" dir="ltr"></div>
+            <div class="ff"><label>מייל</label><input id="ev-demail" dir="ltr"></div>
+            <div class="ff"><label>תוקף רישיון נהיגה</label><input type="date" id="ev-dlic"></div>
+            <div class="ff" style="grid-column:span 2"><label>כתובת</label><input id="ev-daddress" placeholder="רחוב, עיר"></div>
+            <div class="ff" style="grid-column:span 2"><label>חברה</label>
+              <select id="ev-dcompany" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:var(--rs);font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)">
+                <option value="">— לא מוגדר —</option>
+                <option value="י.ד מור השקעות">י.ד מור השקעות</option>
+                <option value="מור קופות גמל">מור קופות גמל</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- ACCORDION: טיפולים -->
+      <div style="border-bottom:1px solid rgba(0,0,0,.08)">
+        <div onclick="toggleAccSection(this)" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🔧</span><span style="font-size:14px;font-weight:600;color:var(--t1)">טיפולים</span></div>
+          <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
+        </div>
+        <div class="acc-body" style="padding:0 20px 16px;display:none">
+          <div class="fg">
+            <div class="ff"><label>תאריך טיפול אחרון</label><input type="date" id="ev-svc"></div>
+            <div class="ff"><label>סוג הטיפול האחרון</label>
+              <select id="ev-svc-type">
+                <option value="">בחר</option>
+                <option value="15000">15,000 ק"מ</option>
+                <option value="30000">30,000 ק"מ</option>
+                <option value="45000">45,000 ק"מ</option>
+                <option value="60000">60,000 ק"מ</option>
+                <option value="75000">75,000 ק"מ</option>
+                <option value="90000">90,000 ק"מ</option>
+                <option value="105000">105,000 ק"מ</option>
+                <option value="120000">120,000 ק"מ</option>
+              </select>
+            </div>
+            <div class="ff"><label>ק"מ נוכחי</label><input type="text" id="ev-ckm" oninput="fmtKmInput(this)" dir="ltr" inputmode="numeric"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
-    <div class="mf">
+    <!-- Footer -->
+    <div style="padding:14px 20px;border-top:1px solid rgba(0,0,0,.08);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;background:#fff">
       <button class="btn btn-l btn-sm" onclick="closeModal('edit-ov')">ביטול</button>
       <button class="btn btn-p btn-sm" onclick="saveEditVehicle()">שמור שינויים</button>
     </div>
