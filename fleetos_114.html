@@ -6158,14 +6158,12 @@ function updateStatCard(valId,subId,emptyId,cardId,count){
   var valEl=document.getElementById(valId);
   var subEl=document.getElementById(subId);
   var emptyEl=document.getElementById(emptyId);
+  if(emptyEl)emptyEl.style.display='none';
+  if(valEl){valEl.style.display='';valEl.textContent=formatNumber(count);}
+  if(subEl)subEl.style.display='';
   if(count===0){
-    if(valEl){valEl.style.display='none';}
-    if(subEl)subEl.style.display='none';
-    if(emptyEl)emptyEl.style.display='flex';
+    if(subEl)subEl.textContent='אין';
   } else {
-    if(valEl){valEl.style.display='';valEl.textContent=formatNumber(count);}
-    if(subEl)subEl.style.display='';
-    if(emptyEl)emptyEl.style.display='none';
   }
 }
 function formatNumber(n){
@@ -6546,7 +6544,7 @@ function renderSvcSection(){
   // "מיילים נשלחו" = how many booking emails were sent this month
   var sentEl=document.getElementById('svc-sent');if(sentEl)sentEl.textContent=formatNumber(sent);
   var sentSub=document.getElementById('svc-sent-sub');if(sentSub)sentSub.textContent='מ-'+formatNumber(totalFiltered);
-  var sentDetail=document.getElementById('svc-sent-detail');if(sentDetail)sentDetail.textContent=notSent>0?formatNumber(notSent)+' ממתינים לשליחה':'הכל נשלח ✓';
+  var sentDetail=document.getElementById('svc-sent-detail');if(sentDetail)sentDetail.textContent=notSent>0?formatNumber(notSent)+' ממתינים לשליחה':'';
   // "ממתין לתשובה" = pending bookings (sent but driver hasn't picked date)
   var pendingCount=monthBookings.filter(function(b){return b.status==='pending'}).length;
   var waitEl=document.getElementById('svc-waiting');if(waitEl)waitEl.textContent=formatNumber(pendingCount);
