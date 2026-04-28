@@ -6553,7 +6553,7 @@ function renderSvcSection(){
   var waitDetail=document.getElementById('svc-waiting-detail');
   if(waitDetail){
     var over5=overdueDrivers.length;
-    waitDetail.textContent=over5>0?formatNumber(over5)+' מהם 5+ ימים':'';
+    waitDetail.textContent='';
   }
   // "מועד נקבע" = confirmed bookings
   var schedEl=document.getElementById('svc-scheduled');if(schedEl)schedEl.textContent=formatNumber(scheduled);
