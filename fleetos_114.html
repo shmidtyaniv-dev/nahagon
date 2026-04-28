@@ -6145,6 +6145,8 @@ function renderDash(){
   updateDashGreeting();
   // Render service & test section
   renderSvcSection();
+  // Check for auto-reminders (every 3 days for pending bookings)
+  checkAutoReminders();
   // Update sidebar badges
   var nbViol=document.getElementById('nb-violations');
   if(nbViol){if(violCount>0){nbViol.textContent=violCount;nbViol.style.display='';}else nbViol.style.display='none';}
@@ -6364,6 +6366,45 @@ function getSvcItems(){
   var seen={};
   items=items.filter(function(it){var k=it.vid+'-'+it.type;if(seen[k])return false;seen[k]=true;return true;});
   return items;
+}
+function checkAutoReminders(){
+  var bookings=typeof getServiceBookings==='function'?getServiceBookings():[];
+  var now=new Date();
+  var changed=false;
+  bookings.forEach(function(b){
+    if(b.status!=='pending')return;
+    var created=new Date(b.createdAt||'');
+    var daysSince=Math.floor((now-created)/86400000);
+    var lastReminder=b.lastReminderAt?new Date(b.lastReminderAt):created;
+    var daysSinceReminder=Math.floor((now-lastReminder)/86400000);
+    // Send auto reminder every 3 days
+    if(daysSinceReminder>=3){
+      if(!b.autoReminders)b.autoReminders=[];
+      b.autoReminders.push({date:now.toISOString(),daysSinceCreated:daysSince});
+      b.lastReminderAt=now.toISOString();
+      changed=true;
+      // Show notification
+      showToast('🔔 תזכורת אוטומטית נשלחה ל'+(b.driverName||'נהג')+' ('+b.plate+') — '+daysSince+' ימים ללא תשובה');
+      // Open WhatsApp/Email for the reminder
+      var bookUrl=(location.protocol==='file:'?'https://nahagon.vercel.app/fleetos_114.html':location.origin+location.pathname).replace(/[?#].*$/,'')+'?book='+b.id;
+      var msg='שלום '+(b.driverName||'')+',\n\nתזכורת: רכב '+b.plate+' צריך '+b.serviceType+'.\nטרם קבעת מועד לאיסוף הרכב.\n\nלקביעת מועד:\n'+bookUrl+'\n\n📍 מיקום: משרדי מור בית השקעות\n\nתודה,\nמרכז הרכב של מור';
+      var waNum=(b.driverPhone||'').replace(/[^0-9]/g,'').replace(/^0/,'972');
+      // Auto-open WhatsApp with the reminder
+      if(waNum)window.open('https://wa.me/'+waNum+'?text='+encodeURIComponent(msg),'_blank');
+    }
+  });
+  if(changed){
+    if(typeof saveServiceBookings==='function')saveServiceBookings(bookings);
+    // Sync to Firestore
+    if(typeof db!=='undefined'&&db){
+      bookings.filter(function(b){return b.lastReminderAt}).forEach(function(b){
+        db.collection('serviceBookings').doc(b.id).update({
+          autoReminders:b.autoReminders||[],
+          lastReminderAt:b.lastReminderAt
+        }).catch(function(){});
+      });
+    }
+  }
 }
 function renderSvcSection(){
   var allItems=getSvcItems();
