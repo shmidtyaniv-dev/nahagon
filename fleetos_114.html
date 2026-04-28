@@ -1291,61 +1291,103 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <button class="cal-filter-btn" onclick="setCalFilter('personal',this)">שלי</button>
           </div>
         </div>
-        <button class="cal-add-btn" onclick="openSelfReminderModal()">+ תזכורת אישית</button>
-      </div>
-
-      <!-- Main grid: sidebar + calendar -->
-      <div class="cal-main-grid">
-        <!-- Right sidebar: this week (RTL = first column = right) -->
-        <div class="cal-sidebar-card" id="cal-week-sidebar">
-          <div class="cal-sidebar-header">
-            <div>
-              <div class="cal-sidebar-title">השבוע הקרוב <span class="cal-sidebar-badge" id="cal-week-count">0 אירועים</span></div>
-              <div class="cal-sidebar-sub" id="cal-week-range"></div>
+        <div class="cal-header-left">
+          <div class="cal-export-wrap">
+            <button class="cal-export-btn" onclick="toggleCalExport()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ייצוא יומן</button>
+            <div class="cal-export-dropdown" id="cal-export-dropdown" style="display:none">
+              <button onclick="exportCalendar('google')">Google Calendar</button>
+              <button onclick="exportCalendar('ics')">Outlook / iCal (.ics)</button>
+              <button onclick="exportCalendar('pdf')">ייצוא ל-PDF</button>
+              <button onclick="exportCalendar('excel')">ייצוא ל-Excel</button>
             </div>
           </div>
-          <div id="cal-week-list"></div>
-          <div class="cal-sidebar-footer" id="cal-week-footer" style="display:none">
-            <button class="cal-sidebar-showall" id="cal-week-showall">צפה בכל <span id="cal-week-total">0</span> האירועים →</button>
+          <button class="cal-add-btn" onclick="openSelfReminderModal()">+ תזכורת אישית</button>
+        </div>
+      </div>
+
+      <!-- Month summary bar -->
+      <div class="cal-summary-bar" id="cal-summary-bar">
+        <div class="cal-summary-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          <span id="cal-summary-month">סיכום החודש</span>
+        </div>
+        <div class="cal-summary-stats">
+          <div class="cal-summary-stat">
+            <div class="cal-summary-num" id="cal-sum-total">0</div>
+            <div class="cal-summary-label">סך אירועים</div>
+          </div>
+          <div class="cal-summary-divider"></div>
+          <div class="cal-summary-stat">
+            <span class="cal-summary-dot" style="background:#C9302C"></span>
+            <div class="cal-summary-num" id="cal-sum-svc">0</div>
+            <div class="cal-summary-label">איסוף לטיפול</div>
+          </div>
+          <div class="cal-summary-stat">
+            <span class="cal-summary-dot" style="background:#D97706"></span>
+            <div class="cal-summary-num" id="cal-sum-test">0</div>
+            <div class="cal-summary-label">איסוף לטסט</div>
+          </div>
+          <div class="cal-summary-stat">
+            <span class="cal-summary-dot" style="background:#B45309"></span>
+            <div class="cal-summary-num" id="cal-sum-personal">0</div>
+            <div class="cal-summary-label">תזכורות אישיות</div>
+          </div>
+          <div class="cal-summary-divider"></div>
+          <div class="cal-summary-stat">
+            <span class="cal-summary-dot" style="background:#A32D2D"></span>
+            <div class="cal-summary-num" id="cal-sum-alerts">0</div>
+            <div class="cal-summary-label">התראות פעילות</div>
           </div>
         </div>
+      </div>
 
-        <!-- Calendar area -->
+      <!-- Main grid: alerts sidebar + calendar -->
+      <div class="cal-main-grid">
+        <!-- Right column: system alerts (RTL = first = right) -->
+        <div class="cal-alerts-card" id="cal-alerts-section">
+          <div class="cal-alerts-header">
+            <div class="cal-alerts-title-wrap">
+              <div class="cal-alerts-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A32D2D" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>
+              <span class="cal-alerts-title">התראות מערכת</span>
+              <span class="cal-alerts-badge" id="cal-alerts-count">0</span>
+            </div>
+            <div class="cal-alerts-sub">דברים שצריך לטפל בהם בקרוב</div>
+          </div>
+          <div class="cal-alerts-range-pills">
+            <button class="cal-range-btn active" onclick="setAlertRange(7,this)">7 ימים</button>
+            <button class="cal-range-btn" onclick="setAlertRange(14,this)">14 יום</button>
+            <button class="cal-range-btn" onclick="setAlertRange(30,this)">30 יום</button>
+          </div>
+          <div id="cal-alerts-list"></div>
+          <div class="cal-alerts-footer" id="cal-alerts-footer" style="display:none">
+            <button class="cal-alerts-showall" onclick="showAllAlerts()">צפה בכל <span id="cal-alerts-total">0</span> ההתראות →</button>
+          </div>
+          <div id="cal-alerts-empty" style="display:none;text-align:center;padding:16px;color:var(--t2);font-size:12px">אין התראות בטווח הזה. הכל בשליטה ✓</div>
+        </div>
+
+        <!-- Left column: calendar -->
         <div class="cal-calendar-card">
           <div class="cal-nav">
             <button onclick="calPrev()" class="cal-nav-btn">→</button>
-            <div id="cal-title" class="cal-nav-title"></div>
+            <div class="cal-nav-center">
+              <button onclick="calToday()" class="cal-today-btn">היום</button>
+              <div id="cal-title" class="cal-nav-title"></div>
+            </div>
             <button onclick="calNext()" class="cal-nav-btn">←</button>
           </div>
           <div id="cal-grid-area"></div>
-          <div class="cal-legend">
-            <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#D4A017"></span>איסוף לטיפול</div>
-            <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#A32D2D"></span>איסוף לטסט</div>
-            <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#BA7517"></span>תזכורת אישית</div>
+          <div class="cal-legend" id="cal-legend">
+            <div class="cal-legend-item" onclick="toggleLegendFilter('svc-pickup')" style="cursor:pointer">
+              <span class="cal-legend-swatch" style="background:#FBEAEA;border:1.5px solid #C9302C"></span>איסוף לטיפול
+            </div>
+            <div class="cal-legend-item" onclick="toggleLegendFilter('test-pickup')" style="cursor:pointer">
+              <span class="cal-legend-swatch" style="background:#FEF3E2;border:1.5px solid #D97706"></span>איסוף לטסט
+            </div>
+            <div class="cal-legend-item" onclick="toggleLegendFilter('personal')" style="cursor:pointer">
+              <span class="cal-legend-swatch" style="background:#FCD34D;border:1.5px solid #B45309"></span>תזכורת אישית
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- System alerts section (full width) -->
-      <div class="cal-alerts-card" id="cal-alerts-section">
-        <div class="cal-alerts-header">
-          <div class="cal-alerts-title-wrap">
-            <div class="cal-alerts-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A32D2D" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>
-            <span class="cal-alerts-title">התראות מערכת</span>
-            <span class="cal-alerts-badge" id="cal-alerts-count">0</span>
-          </div>
-          <div class="cal-alerts-sub">דברים שצריך לטפל בהם בקרוב — דדליינים, פקיעת תוקף ועוד</div>
-        </div>
-        <div class="cal-alerts-range-pills">
-          <button class="cal-range-btn active" onclick="setAlertRange(7,this)">7 ימים</button>
-          <button class="cal-range-btn" onclick="setAlertRange(14,this)">14 יום</button>
-          <button class="cal-range-btn" onclick="setAlertRange(30,this)">30 יום</button>
-        </div>
-        <div id="cal-alerts-list"></div>
-        <div class="cal-alerts-footer" id="cal-alerts-footer" style="display:none">
-          <button class="cal-alerts-showall" onclick="showAllAlerts()">צפה בכל <span id="cal-alerts-total">0</span> ההתראות →</button>
-        </div>
-        <div id="cal-alerts-empty" style="display:none;text-align:center;padding:20px;color:var(--t2);font-size:13px">אין התראות בטווח הזה. הכל בשליטה ✓</div>
       </div>
     </div>
 
@@ -2922,92 +2964,98 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 /* Calendar grid */
 /* ─ CALENDAR PAGE ─ */
-.cal-page-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.cal-page-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
 .cal-header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.cal-page-title{font-size:22px;font-weight:700;margin:0;color:var(--t1)}
+.cal-header-left{display:flex;align-items:center;gap:8px}
+.cal-page-title{font-size:18px;font-weight:500;margin:0;color:var(--t1)}
 .cal-view-pills,.cal-filter-pills{display:flex;background:var(--bg2);padding:3px;border-radius:8px;gap:2px}
 .cal-view-btn,.cal-filter-btn{padding:6px 16px;background:transparent;border:none;font-size:13px;font-weight:600;color:var(--t2);cursor:pointer;border-radius:6px;font-family:inherit;transition:all .15s;white-space:nowrap}
 .cal-view-btn:hover,.cal-filter-btn:hover{color:var(--t1)}
 .cal-view-btn.active{background:var(--gd)!important;color:#fff!important;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 .cal-filter-btn.active{background:#fff;color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.cal-export-wrap{position:relative}
+.cal-export-btn{background:#fff;border:1px solid var(--bdr2);padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;color:var(--t1);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all .15s}
+.cal-export-btn:hover{background:var(--bg2)}
+.cal-export-dropdown{position:absolute;top:100%;left:0;margin-top:4px;background:#fff;border:1px solid var(--bdr2);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;min-width:180px;overflow:hidden}
+.cal-export-dropdown button{display:block;width:100%;padding:10px 16px;border:none;background:transparent;font-size:13px;font-family:inherit;color:var(--t1);text-align:right;cursor:pointer;transition:background .1s}
+.cal-export-dropdown button:hover{background:var(--bg2)}
 .cal-add-btn{background:#1D9E75;color:#fff;border:none;padding:7px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s}
 .cal-add-btn:hover{background:#178A66}
-.cal-main-grid{display:grid;grid-template-columns:240px 1fr;gap:14px;align-items:start;margin-bottom:14px}
-.cal-sidebar-card{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);overflow:hidden}
-.cal-sidebar-header{padding:14px 16px 10px}
-.cal-sidebar-title{font-size:13px;font-weight:500;color:var(--t1);display:flex;align-items:center;gap:8px}
-.cal-sidebar-badge{background:var(--bg2);color:var(--t2);font-size:10px;font-weight:500;padding:2px 8px;border-radius:999px}
-.cal-sidebar-sub{font-size:10px;color:var(--t2);margin-top:3px}
-.cal-week-day{padding:8px 16px;border-top:0.5px solid var(--bdr)}
-.cal-week-day.today{background:#E1F5EE;border-right:3px solid #1D9E75}
-.cal-week-day-header{display:flex;align-items:center;gap:6px;margin-bottom:4px}
-.cal-week-day-num{font-size:14px;font-weight:600;color:var(--t1)}
-.cal-week-day-name{font-size:11px;color:var(--t2)}
-.cal-week-event{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px;cursor:pointer}
-.cal-week-event:hover{opacity:.8}
-.cal-week-ev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.cal-week-ev-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cal-week-more{font-size:10px;color:var(--t2);padding:2px 0}
-.cal-sidebar-footer{padding:10px 16px;border-top:0.5px solid var(--bdr);text-align:center}
-.cal-sidebar-showall{background:transparent;border:none;font-size:12px;color:var(--green-dark);font-weight:500;cursor:pointer;font-family:inherit;padding:4px 8px;border-radius:6px}
-.cal-sidebar-showall:hover{background:var(--green-light)}
+/* Summary bar */
+.cal-summary-bar{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.cal-summary-title{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#5F5E5A;white-space:nowrap}
+.cal-summary-stats{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.cal-summary-stat{display:flex;align-items:center;gap:6px}
+.cal-summary-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cal-summary-num{font-size:18px;font-weight:500;color:var(--t1)}
+.cal-summary-label{font-size:11px;color:#5F5E5A;white-space:nowrap}
+.cal-summary-divider{width:1px;height:28px;background:var(--bdr);flex-shrink:0}
+/* Main grid */
+.cal-main-grid{display:grid;grid-template-columns:300px 1fr;gap:12px;align-items:start}
+/* Alerts sidebar */
+.cal-alerts-card{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);padding:14px 16px}
+.cal-alerts-header{margin-bottom:8px}
+.cal-alerts-title-wrap{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.cal-alerts-icon{width:28px;height:28px;border-radius:8px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cal-alerts-title{font-size:14px;font-weight:600;color:var(--t1)}
+.cal-alerts-badge{background:#FCEBEB;color:#A32D2D;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
+.cal-alerts-sub{font-size:11px;color:var(--t2);margin-right:36px}
+.cal-alerts-range-pills{display:flex;gap:4px;margin-bottom:8px}
+.cal-range-btn{padding:5px 12px;border-radius:999px;font-size:12px;font-weight:500;border:0.5px solid transparent;background:var(--bg2);color:var(--t2);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.cal-range-btn:hover{background:#E6E4DB;color:var(--t1)}
+.cal-range-btn.active{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
+.cal-alert-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--bdr)}
+.cal-alert-item:last-child{border-bottom:none}
+.cal-alert-icon{width:28px;height:28px;border-radius:8px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.cal-alert-content{flex:1;min-width:0}
+.cal-alert-name{font-size:13px;font-weight:600;color:var(--t1);display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.cal-alert-urgent{background:#FCEBEB;color:#A32D2D;font-size:10px;font-weight:600;padding:1px 7px;border-radius:999px}
+.cal-alert-meta{font-size:11px;color:var(--t2);margin-bottom:6px}
+.cal-alert-days{font-size:12px;font-weight:600;color:#A32D2D;margin-bottom:6px}
+.cal-alert-action{display:block;width:100%;padding:6px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;text-align:center;border:none;transition:all .15s;background:#FCEBEB;color:#A32D2D}
+.cal-alert-action:hover{background:#A32D2D;color:#fff}
+.cal-alerts-footer{padding:8px 0 0;border-top:0.5px solid var(--bdr);text-align:center;margin-top:4px}
+.cal-alerts-showall{background:transparent;border:none;font-size:12px;color:#A32D2D;font-weight:500;cursor:pointer;font-family:inherit;padding:6px 12px;border-radius:6px}
+.cal-alerts-showall:hover{background:rgba(163,45,45,.06)}
+/* Calendar card */
 .cal-calendar-card{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);padding:14px;display:flex;flex-direction:column}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-nav-btn{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:inherit;font-size:14px;color:var(--t2);transition:all .15s}
 .cal-nav-btn:hover{background:var(--bg);color:var(--t1)}
+.cal-nav-center{display:flex;align-items:center;gap:10px}
 .cal-nav-title{font-size:15px;font-weight:500;color:var(--t1)}
-.cal-legend{display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--bdr);font-size:11px;color:var(--t2);flex-wrap:wrap}
-.cal-legend-item{display:flex;align-items:center;gap:5px}
-.cal-legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
-.fc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;grid-auto-rows:minmax(100px,1fr)}
-.fc-wday{font-size:10px;font-weight:600;color:var(--t2);text-align:center;padding:6px 0}
-.fc-day{background:var(--bg);border:1px solid var(--bdr);border-radius:6px;min-height:100px;padding:5px;cursor:pointer;transition:all .15s;position:relative;display:flex;flex-direction:column}
+.cal-today-btn{background:var(--green-light);color:var(--green-dark);border:1px solid var(--green);padding:4px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.cal-today-btn:hover{background:var(--green);color:#fff}
+/* Calendar grid */
+.fc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.fc-day{background:var(--bg);border:1px solid var(--bdr);border-radius:6px;min-height:90px;padding:5px;cursor:pointer;transition:all .15s;position:relative;display:flex;flex-direction:column}
 .fc-day:hover{border-color:var(--green);background:#f8fdf8}
-.fc-day.today{border-color:var(--green);background:#E1F5EE;border-width:2px}
-.fc-day.other{background:transparent;border-color:transparent;opacity:.4;cursor:default}
-.fc-day.other:hover{background:transparent;border-color:transparent}
-.fc-day-hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:3px;margin-bottom:3px}
-.fc-day-name{font-size:9px;font-weight:500;color:var(--t3)}
-.fc-day-num{font-size:15px;font-weight:700;color:var(--t1)}
-.fc-day.today .fc-day-num{color:#0F6E56;font-weight:800}
+.fc-day:hover .fc-day-plus{opacity:1}
+.fc-day.today{border-color:var(--green);background:#E1F5EE;border-width:1.5px}
+.fc-day.other{opacity:.4;cursor:default}
+.fc-day.other:hover{background:var(--bg);border-color:var(--bdr)}
+.fc-day-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.fc-day-num{font-size:13px;font-weight:500;color:#1A1A1A}
+.fc-day-name{font-size:9px;font-weight:500;color:#5F5E5A}
+.fc-day.today .fc-day-num{color:#0F6E56;font-weight:600}
 .fc-day.today .fc-day-name{color:#0F6E56}
-.fc-day-events{display:flex;flex-direction:column;gap:2px;margin-top:2px;flex:1;overflow:hidden}
+.fc-day-plus{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:#B45309;color:#fff;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s;border:none;padding:0;line-height:1}
+.fc-day-events{display:flex;flex-direction:column;gap:2px;flex:1;overflow:hidden}
 .fc-ev{font-size:10px;padding:3px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;font-weight:500;transition:opacity .15s}
 .fc-ev:hover{opacity:.85}
-.fc-ev.svc-pickup{background:#FEF9E7;color:#92400E}
-.fc-ev.test-pickup{background:#FCEBEB;color:#A32D2D}
-.fc-ev.personal{background:#FAEEDA;color:#854F0B}
+.fc-ev.svc-pickup{background:#FBEAEA;color:#8B1A17}
+.fc-ev.test-pickup{background:#FEF3E2;color:#92400E}
+.fc-ev.personal{background:#FCD34D;color:#78350F}
 .fc-ev.grouped{font-size:9px;font-weight:500}
 .fc-ev.done{opacity:.5;text-decoration:line-through}
-/* System alerts section */
-.cal-alerts-card{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);padding:14px 18px}
-.cal-alerts-header{margin-bottom:8px}
-.cal-alerts-title-wrap{display:flex;align-items:center;gap:8px;margin-bottom:2px}
-.cal-alerts-icon{width:28px;height:28px;border-radius:8px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.cal-alerts-title{font-size:15px;font-weight:600;color:var(--t1)}
-.cal-alerts-badge{background:#FCEBEB;color:#A32D2D;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
-.cal-alerts-sub{font-size:11px;color:var(--t2);margin-right:36px}
-.cal-alerts-range-pills{display:flex;gap:4px;margin-bottom:8px}
-.cal-range-btn{padding:6px 16px;border-radius:999px;font-size:13px;font-weight:500;border:0.5px solid transparent;background:var(--bg2);color:var(--t2);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
-.cal-range-btn:hover{background:#E6E4DB;color:var(--t1)}
-.cal-range-btn.active{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
-.cal-alert-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--bdr);transition:background .15s}
-.cal-alert-item:last-child{border-bottom:none}
-.cal-alert-icon{width:32px;height:32px;border-radius:8px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.cal-alert-content{flex:1;min-width:0}
-.cal-alert-name{font-size:13px;font-weight:600;color:var(--t1);display:flex;align-items:center;gap:6px}
-.cal-alert-urgent{background:#FCEBEB;color:#A32D2D;font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px}
-.cal-alert-meta{font-size:12px;color:var(--t2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cal-alert-days{font-size:13px;font-weight:600;color:#A32D2D;white-space:nowrap;text-align:left;min-width:70px}
-.cal-alert-action{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;border:none;transition:all .15s;flex-shrink:0}
-.cal-alert-action.remind{background:#FCEBEB;color:#A32D2D}
-.cal-alert-action.remind:hover{background:#A32D2D;color:#fff}
-.cal-alert-action.renew{background:#E6F1FB;color:#185FA5}
-.cal-alert-action.renew:hover{background:#185FA5;color:#fff}
-.cal-alerts-footer{padding:10px 0 0;border-top:0.5px solid var(--bdr);text-align:center;margin-top:4px}
-.cal-alerts-showall{background:transparent;border:none;font-size:12px;color:#A32D2D;font-weight:500;cursor:pointer;font-family:inherit;padding:6px 12px;border-radius:6px}
-.cal-alerts-showall:hover{background:rgba(163,45,45,.06)}
-@media(max-width:900px){.cal-main-grid{grid-template-columns:1fr!important}.cal-sidebar-card{order:2}}
+.fc-ev.dim{opacity:.2}
+/* Legend */
+.cal-legend{display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--bdr);font-size:11px;color:var(--t2);justify-content:center;flex-wrap:wrap}
+.cal-legend-item{display:flex;align-items:center;gap:5px;padding:3px 8px;border-radius:6px;transition:background .15s}
+.cal-legend-item:hover{background:var(--bg2)}
+.cal-legend-item.active{background:var(--bg2);font-weight:600;color:var(--t1)}
+.cal-legend-swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+@media(max-width:900px){.cal-main-grid{grid-template-columns:1fr!important}.cal-alerts-card{order:2}}
 
 /* Form builder field type buttons */
 .fb-tool{padding:10px 8px;border:1.5px solid var(--bdr2);background:var(--bg);color:var(--t2);border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s;font-weight:500}
@@ -12337,22 +12385,102 @@ function getCalendarEvents(){
   return out;
 }
 
+function toggleCalExport(){
+  var dd=document.getElementById('cal-export-dropdown');
+  if(dd) dd.style.display=dd.style.display==='none'?'':'none';
+}
+function exportCalendar(type){
+  document.getElementById('cal-export-dropdown').style.display='none';
+  alert('ייצוא ל-'+type+' — בקרוב');
+}
+document.addEventListener('click',function(e){
+  var wrap=document.querySelector('.cal-export-wrap');
+  var dd=document.getElementById('cal-export-dropdown');
+  if(wrap&&dd&&!wrap.contains(e.target))dd.style.display='none';
+});
+function calToday(){
+  calCurrentDate=new Date();
+  if(calViewMode==='month')calCurrentDate.setDate(1);
+  renderCalendar();
+}
+var _legendFilter=null;
+function toggleLegendFilter(type){
+  _legendFilter=(_legendFilter===type)?null:type;
+  document.querySelectorAll('.cal-legend-item').forEach(function(el){el.classList.remove('active')});
+  if(_legendFilter){
+    document.querySelectorAll('.cal-legend-item').forEach(function(el){
+      if(el.getAttribute('onclick').includes(_legendFilter)) el.classList.add('active');
+    });
+  }
+  renderCalendar();
+}
+function renderCalSummary(events){
+  var now=calCurrentDate;
+  var y=now.getFullYear(),m=now.getMonth();
+  var monthLabel=document.getElementById('cal-summary-month');
+  if(monthLabel) monthLabel.textContent='סיכום החודש · '+HEM[m]+' '+y;
+  var monthStart=(new Date(y,m,1)).toISOString().split('T')[0];
+  var monthEnd=(new Date(y,m+1,0)).toISOString().split('T')[0];
+  var monthEvents=events.filter(function(e){return e.date>=monthStart&&e.date<=monthEnd;});
+  var svcCount=monthEvents.filter(function(e){return e.type==='svc-pickup'}).length;
+  var testCount=monthEvents.filter(function(e){return e.type==='test-pickup'}).length;
+  var persCount=monthEvents.filter(function(e){return e.type==='personal'}).length;
+  var total=monthEvents.length;
+  var el;
+  el=document.getElementById('cal-sum-total');if(el)el.textContent=formatNumber(total);
+  el=document.getElementById('cal-sum-svc');if(el)el.textContent=formatNumber(svcCount);
+  el=document.getElementById('cal-sum-test');if(el)el.textContent=formatNumber(testCount);
+  el=document.getElementById('cal-sum-personal');if(el)el.textContent=formatNumber(persCount);
+  // Alert count
+  var alertItems=buildSystemAlertItems(30);
+  el=document.getElementById('cal-sum-alerts');if(el)el.textContent=formatNumber(alertItems.length);
+}
+function buildSystemAlertItems(rangeDays){
+  var now=new Date();now.setHours(0,0,0,0);
+  var allAlerts=[];
+  (vehicles||[]).forEach(function(v){
+    if(v.status==='waiting_vehicle')return;
+    var drv=v.driver||{};
+    if(v.licenseExp){
+      var d1=Math.ceil((new Date(v.licenseExp)-now)/86400000);
+      if(d1<=rangeDays) allAlerts.push({type:'רישיון רכב',icon:'cal',driver:drv.name||'',plate:v.plate||'',date:v.licenseExp,days:d1,vid:v.id,actionType:'remind'});
+    }
+    if(drv.licenseExp){
+      var d2=Math.ceil((new Date(drv.licenseExp)-now)/86400000);
+      if(d2<=rangeDays) allAlerts.push({type:'רישיון נהיגה',icon:'cal',driver:drv.name||'',plate:v.plate||'',date:drv.licenseExp,days:d2,vid:v.id,actionType:'remind'});
+    }
+    if(v.insuranceExp){
+      var d3=Math.ceil((new Date(v.insuranceExp)-now)/86400000);
+      if(d3<=rangeDays) allAlerts.push({type:'ביטוח',icon:'doc',driver:drv.name||'',plate:v.plate||'',date:v.insuranceExp,days:d3,vid:v.id,actionType:'renew'});
+    }
+    if(v.family) v.family.forEach(function(f,i){
+      if(f.licenseExp){
+        var d4=Math.ceil((new Date(f.licenseExp)-now)/86400000);
+        if(d4<=rangeDays) allAlerts.push({type:'רישיון נהיגה (משפחה)',icon:'cal',driver:f.name||'בן משפחה',plate:v.plate||'',date:f.licenseExp,days:d4,vid:v.id,actionType:'remind'});
+      }
+    });
+  });
+  allAlerts.sort(function(a,b){return a.days-b.days;});
+  return allAlerts;
+}
+
 function renderCalendar(){
   if(!id('cal-grid-area'))return;
   var allEvents=getCalendarEvents();
   // Apply filter
-  var events=allEvents;
-  if(_calFilter==='system') events=allEvents.filter(function(e){return e.type==='svc-pickup'||e.type==='test-pickup';});
-  else if(_calFilter==='personal') events=allEvents.filter(function(e){return e.type==='personal';});
+  var filteredEvents=allEvents;
+  if(_calFilter==='system') filteredEvents=allEvents.filter(function(e){return e.type==='svc-pickup'||e.type==='test-pickup';});
+  else if(_calFilter==='personal') filteredEvents=allEvents.filter(function(e){return e.type==='personal';});
+  if(_legendFilter) filteredEvents = filteredEvents.filter(function(e){return e.type===_legendFilter;});
 
   if(calViewMode==='month'){
-    renderCalendarMonth(events);
+    renderCalendarMonth(filteredEvents);
   }else if(calViewMode==='week'){
-    renderCalendarWeek(events);
+    renderCalendarWeek(filteredEvents);
   }else{
-    renderCalendarDay(events);
+    renderCalendarDay(filteredEvents);
   }
-  renderUpcomingWeek(allEvents);
+  renderCalSummary(allEvents);
   renderSystemAlerts();
 }
 
@@ -12391,8 +12519,9 @@ function renderCalendarMonth(events){
     html+='<div class="fc-day'+(isToday?' today':'')+'" onclick="openDayPicker(\''+iso+'\')">'+
       '<div class="fc-day-hdr">'+
         '<span class="fc-day-name">'+dayName+'</span>'+
-        '<span class="fc-day-num">'+d+'</span>'+
+        '<span class="fc-day-num">'+d+(isToday?' · היום':'')+'</span>'+
       '</div>'+
+      '<button class="fc-day-plus" onclick="event.stopPropagation();openSelfReminderModal(\''+iso+'\')">+</button>'+
       '<div class="fc-day-events">'+evHtml+'</div>'+
     '</div>';
   }
@@ -13126,7 +13255,7 @@ function renderCalendarDay(events){
   // Sort by time
   dayEvents.sort(function(a,b){return(a.time||'00:00').localeCompare(b.time||'00:00');});
 
-  var typeColors={'svc-pickup':'#D4A017','test-pickup':'#A32D2D','personal':'#BA7517'};
+  var typeColors={'svc-pickup':'#C9302C','test-pickup':'#D97706','personal':'#B45309'};
   var typeBgs={'svc-pickup':'#E6F1FB','test-pickup':'#FAEEDA','personal':'#EEEDFE'};
   var typeLabels={'svc-pickup':'איסוף לטיפול','test-pickup':'איסוף לטסט','personal':'תזכורת אישית'};
 
@@ -13174,7 +13303,7 @@ function renderUpcomingWeek(allEvents){
   var today=new Date();today.setHours(0,0,0,0);
   var todayIso=today.toISOString().split('T')[0];
   var wdays=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-  var dotColors={'svc-pickup':'#D4A017','test-pickup':'#A32D2D','personal':'#BA7517'};
+  var dotColors={'svc-pickup':'#C9302C','test-pickup':'#D97706','personal':'#B45309'};
 
   // Build 5 days starting from today
   var days=[];
