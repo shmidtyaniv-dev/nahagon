@@ -1276,64 +1276,76 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
     <!-- CALENDAR (with integrated reminders) -->
     <div class="page" id="page-calendar">
-      <div class="sh">
-        <h2>יומן</h2>
-        <span class="cp" id="cal-events-count" style="display:none">0</span>
-        <span class="sp"></span>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <div style="display:flex;background:var(--card);border:1px solid var(--bdr2);border-radius:var(--rs);padding:2px;gap:2px">
-            <button id="cal-view-month" onclick="setCalView('month')" class="cal-view-btn active" style="padding:5px 12px;border:none;background:var(--gd);color:#fff;border-radius:5px;font-size:12px;cursor:pointer;font-family:inherit">חודש</button>
-            <button id="cal-view-week" onclick="setCalView('week')" class="cal-view-btn" style="padding:5px 12px;border:none;background:transparent;color:var(--t2);border-radius:5px;font-size:12px;cursor:pointer;font-family:inherit">שבוע</button>
-            <button id="cal-view-day" onclick="setCalView('day')" class="cal-view-btn" style="padding:5px 12px;border:none;background:transparent;color:var(--t2);border-radius:5px;font-size:12px;cursor:pointer;font-family:inherit">יום</button>
+      <!-- Calendar header -->
+      <div class="cal-page-header">
+        <div class="cal-header-right">
+          <h2 class="cal-page-title">יומן</h2>
+          <div class="cal-view-pills">
+            <button id="cal-view-month" onclick="setCalView('month')" class="cal-view-btn active">חודש</button>
+            <button id="cal-view-week" onclick="setCalView('week')" class="cal-view-btn">שבוע</button>
+            <button id="cal-view-day" onclick="setCalView('day')" class="cal-view-btn">יום</button>
           </div>
-          <button class="btn btn-p btn-sm" onclick="openNewItemPicker()" style="font-size:13px;padding:6px 16px">+ חדש</button>
+          <div class="cal-filter-pills">
+            <button class="cal-filter-btn active" onclick="setCalFilter('all',this)">הכל</button>
+            <button class="cal-filter-btn" onclick="setCalFilter('system',this)">מערכת</button>
+            <button class="cal-filter-btn" onclick="setCalFilter('personal',this)">שלי</button>
+          </div>
+        </div>
+        <button class="cal-add-btn" onclick="openSelfReminderModal()">+ תזכורת אישית</button>
+      </div>
+
+      <!-- Main grid: sidebar + calendar -->
+      <div class="cal-main-grid">
+        <!-- Right sidebar: this week (RTL = first column = right) -->
+        <div class="cal-sidebar-card" id="cal-week-sidebar">
+          <div class="cal-sidebar-header">
+            <div>
+              <div class="cal-sidebar-title">השבוע הקרוב <span class="cal-sidebar-badge" id="cal-week-count">0 אירועים</span></div>
+              <div class="cal-sidebar-sub" id="cal-week-range"></div>
+            </div>
+          </div>
+          <div id="cal-week-list"></div>
+          <div class="cal-sidebar-footer" id="cal-week-footer" style="display:none">
+            <button class="cal-sidebar-showall" id="cal-week-showall">צפה בכל <span id="cal-week-total">0</span> האירועים →</button>
+          </div>
+        </div>
+
+        <!-- Calendar area -->
+        <div class="cal-calendar-card">
+          <div class="cal-nav">
+            <button onclick="calPrev()" class="cal-nav-btn">→</button>
+            <div id="cal-title" class="cal-nav-title"></div>
+            <button onclick="calNext()" class="cal-nav-btn">←</button>
+          </div>
+          <div id="cal-grid-area"></div>
+          <div class="cal-legend">
+            <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#185FA5"></span>איסוף לטיפול</div>
+            <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#BA7517"></span>איסוף לטסט</div>
+            <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#3C3489"></span>תזכורת אישית</div>
+          </div>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;align-items:start">
-        <!-- Right sidebar: upcoming events + reminders + tasks (RTL: first = right visual) -->
-        <div style="display:flex;flex-direction:column;gap:14px">
-          <!-- Upcoming events -->
-          <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:14px">
-            <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:10px;display:flex;align-items:center;gap:6px">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              אירועים קרובים
-            </div>
-            <div id="cal-upcoming-list" style="max-height:240px;overflow-y:auto"></div>
+      <!-- System alerts section (full width) -->
+      <div class="cal-alerts-card" id="cal-alerts-section">
+        <div class="cal-alerts-header">
+          <div class="cal-alerts-title-wrap">
+            <div class="cal-alerts-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A32D2D" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div>
+            <span class="cal-alerts-title">התראות מערכת</span>
+            <span class="cal-alerts-badge" id="cal-alerts-count">0</span>
           </div>
-
-          <!-- Unified reminders (system + personal with purple marker) -->
-          <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:14px">
-            <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:10px;display:flex;align-items:center;gap:6px">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-              <span>תזכורות</span>
-              <span id="cal-month-label" style="color:var(--t3);font-weight:500;font-size:11px;margin-right:auto"></span>
-            </div>
-            <div style="display:flex;gap:8px;font-size:10px;color:var(--t3);margin-bottom:8px;padding-bottom:6px;border-bottom:1px dashed var(--bdr)">
-              <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:#8b5cf6;border-radius:50%"></span>אישי</span>
-              <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:#d97706;border-radius:50%"></span>מערכת</span>
-            </div>
-            <div id="cal-reminders-list" style="max-height:480px;overflow-y:auto"></div>
-          </div>
-
+          <div class="cal-alerts-sub">דברים שצריך לטפל בהם בקרוב — דדליינים, פקיעת תוקף ועוד</div>
         </div>
-
-        <!-- Monthly/Weekly/Daily Calendar (second = left in RTL) -->
-        <div style="background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;display:flex;flex-direction:column">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <button onclick="calPrev()" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:inherit;font-size:14px">→</button>
-            <div id="cal-title" style="font-size:15px;font-weight:600;color:var(--t1)"></div>
-            <button onclick="calNext()" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:inherit;font-size:14px">←</button>
-          </div>
-          <div id="cal-grid-area"></div>
-          <div style="display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr);font-size:11px;color:var(--t3);flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#d97706;border-radius:2px"></span>טיפול</div>
-            <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#2563eb;border-radius:2px"></span>טסט</div>
-            <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#6b7280;border-radius:2px"></span>אחר</div>
-            <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#8b5cf6;border-radius:2px"></span>תזכורת אישית</div>
-            <div style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#dc2626;border-radius:2px"></span>תזכורת מערכת</div>
-          </div>
+        <div class="cal-alerts-range-pills">
+          <button class="cal-range-btn active" onclick="setAlertRange(7,this)">7 ימים · <span id="cal-alert-r7">0</span></button>
+          <button class="cal-range-btn" onclick="setAlertRange(14,this)">14 יום · <span id="cal-alert-r14">0</span></button>
+          <button class="cal-range-btn" onclick="setAlertRange(30,this)">30 יום · <span id="cal-alert-r30">0</span></button>
         </div>
+        <div id="cal-alerts-list"></div>
+        <div class="cal-alerts-footer" id="cal-alerts-footer" style="display:none">
+          <button class="cal-alerts-showall" onclick="showAllAlerts()">צפה בכל <span id="cal-alerts-total">0</span> ההתראות →</button>
+        </div>
+        <div id="cal-alerts-empty" style="display:none;text-align:center;padding:20px;color:var(--t2);font-size:13px">אין התראות בטווח הזה. הכל בשליטה ✓</div>
       </div>
     </div>
 
@@ -2909,25 +2921,93 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .scan-filled{border-color:var(--gl)!important;background:rgba(125,194,66,.07)!important}
 
 /* Calendar grid */
-.fc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;grid-auto-rows:minmax(110px,1fr)}
-.fc-wday{font-size:11px;font-weight:600;color:var(--t3);text-align:center;padding:6px 0;text-transform:uppercase}
-.fc-day{background:var(--bg);border:1px solid var(--bdr);border-radius:6px;min-height:110px;padding:5px;cursor:pointer;transition:all .15s;position:relative;display:flex;flex-direction:column}
-.fc-day:hover{border-color:var(--gl);background:#f0fdf4}
-.fc-day.today{border-color:var(--gl);background:#f0fdf4;border-width:2px}
-.fc-day.other{background:transparent;border-color:transparent;color:var(--t3);cursor:default}
+/* ─ CALENDAR PAGE ─ */
+.cal-page-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.cal-header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cal-page-title{font-size:15px;font-weight:500;margin:0;color:var(--t1)}
+.cal-view-pills,.cal-filter-pills{display:flex;background:var(--bg2);padding:2px;border-radius:8px;gap:2px}
+.cal-view-btn,.cal-filter-btn{padding:5px 14px;background:transparent;border:none;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;border-radius:6px;font-family:inherit;transition:all .15s;white-space:nowrap}
+.cal-view-btn:hover,.cal-filter-btn:hover{color:var(--t1)}
+.cal-view-btn.active{background:var(--gd)!important;color:#fff!important;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.cal-filter-btn.active{background:#fff;color:var(--t1);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.cal-add-btn{background:#1D9E75;color:#fff;border:none;padding:7px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s}
+.cal-add-btn:hover{background:#178A66}
+.cal-main-grid{display:grid;grid-template-columns:240px 1fr;gap:14px;align-items:start;margin-bottom:14px}
+.cal-sidebar-card{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);overflow:hidden}
+.cal-sidebar-header{padding:14px 16px 10px}
+.cal-sidebar-title{font-size:13px;font-weight:500;color:var(--t1);display:flex;align-items:center;gap:8px}
+.cal-sidebar-badge{background:var(--bg2);color:var(--t2);font-size:10px;font-weight:500;padding:2px 8px;border-radius:999px}
+.cal-sidebar-sub{font-size:10px;color:var(--t2);margin-top:3px}
+.cal-week-day{padding:8px 16px;border-top:0.5px solid var(--bdr)}
+.cal-week-day.today{background:#E1F5EE;border-right:3px solid #1D9E75}
+.cal-week-day-header{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.cal-week-day-num{font-size:14px;font-weight:600;color:var(--t1)}
+.cal-week-day-name{font-size:11px;color:var(--t2)}
+.cal-week-event{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px;cursor:pointer}
+.cal-week-event:hover{opacity:.8}
+.cal-week-ev-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.cal-week-ev-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-week-more{font-size:10px;color:var(--t2);padding:2px 0}
+.cal-sidebar-footer{padding:10px 16px;border-top:0.5px solid var(--bdr);text-align:center}
+.cal-sidebar-showall{background:transparent;border:none;font-size:12px;color:var(--green-dark);font-weight:500;cursor:pointer;font-family:inherit;padding:4px 8px;border-radius:6px}
+.cal-sidebar-showall:hover{background:var(--green-light)}
+.cal-calendar-card{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);padding:14px;display:flex;flex-direction:column}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-nav-btn{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:inherit;font-size:14px;color:var(--t2);transition:all .15s}
+.cal-nav-btn:hover{background:var(--bg);color:var(--t1)}
+.cal-nav-title{font-size:15px;font-weight:500;color:var(--t1)}
+.cal-legend{display:flex;gap:16px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--bdr);font-size:11px;color:var(--t2);flex-wrap:wrap}
+.cal-legend-item{display:flex;align-items:center;gap:5px}
+.cal-legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.fc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;grid-auto-rows:minmax(100px,1fr)}
+.fc-wday{font-size:10px;font-weight:600;color:var(--t2);text-align:center;padding:6px 0}
+.fc-day{background:var(--bg);border:1px solid var(--bdr);border-radius:6px;min-height:100px;padding:5px;cursor:pointer;transition:all .15s;position:relative;display:flex;flex-direction:column}
+.fc-day:hover{border-color:var(--green);background:#f8fdf8}
+.fc-day.today{border-color:var(--green);background:#E1F5EE;border-width:2px}
+.fc-day.other{background:transparent;border-color:transparent;opacity:.4;cursor:default}
 .fc-day.other:hover{background:transparent;border-color:transparent}
-.fc-day-hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:3px;margin-bottom:3px;border-bottom:1px solid var(--bdr)}
-.fc-day-name{font-size:10px;font-weight:600;color:var(--t3);text-transform:none}
-.fc-day-num{font-size:13px;font-weight:700;color:var(--t2)}
-.fc-day.today .fc-day-num{color:var(--gl2);font-weight:800}
-.fc-day.today .fc-day-name{color:var(--gl2);font-weight:700}
-.fc-day-events{display:flex;flex-direction:column;gap:2px;margin-top:3px;flex:1;overflow:hidden}
-.fc-ev{font-size:10px;padding:2px 5px;border-radius:3px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
-.fc-ev.service{background:#d97706}
-.fc-ev.test{background:#2563eb}
-.fc-ev.general{background:#6b7280}
+.fc-day-hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:3px;margin-bottom:3px}
+.fc-day-name{font-size:9px;font-weight:500;color:var(--t3)}
+.fc-day-num{font-size:13px;font-weight:600;color:var(--t2)}
+.fc-day.today .fc-day-num{color:#0F6E56;font-weight:700}
+.fc-day.today .fc-day-name{color:#0F6E56}
+.fc-day-events{display:flex;flex-direction:column;gap:2px;margin-top:2px;flex:1;overflow:hidden}
+.fc-ev{font-size:10px;padding:3px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;font-weight:500;transition:opacity .15s}
+.fc-ev:hover{opacity:.85}
+.fc-ev.svc-pickup{background:#E6F1FB;color:#185FA5}
+.fc-ev.test-pickup{background:#FAEEDA;color:#854F0B}
+.fc-ev.personal{background:#EEEDFE;color:#3C3489}
+.fc-ev.grouped{font-size:9px;font-weight:500}
 .fc-ev.done{opacity:.5;text-decoration:line-through}
-.cal-view-btn.active{background:var(--gd)!important;color:#fff!important}
+/* System alerts section */
+.cal-alerts-card{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);padding:16px 20px}
+.cal-alerts-header{margin-bottom:12px}
+.cal-alerts-title-wrap{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.cal-alerts-icon{width:28px;height:28px;border-radius:8px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cal-alerts-title{font-size:13px;font-weight:500;color:var(--t1)}
+.cal-alerts-badge{background:#FCEBEB;color:#A32D2D;font-size:10px;font-weight:600;padding:2px 8px;border-radius:999px}
+.cal-alerts-sub{font-size:10px;color:var(--t2);margin-right:36px}
+.cal-alerts-range-pills{display:flex;gap:4px;margin-bottom:12px}
+.cal-range-btn{padding:5px 14px;border-radius:999px;font-size:12px;font-weight:500;border:0.5px solid transparent;background:var(--bg2);color:var(--t2);cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.cal-range-btn:hover{background:#E6E4DB;color:var(--t1)}
+.cal-range-btn.active{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
+.cal-alert-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--bdr);transition:background .15s}
+.cal-alert-item:last-child{border-bottom:none}
+.cal-alert-icon{width:34px;height:34px;border-radius:10px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cal-alert-content{flex:1;min-width:0}
+.cal-alert-name{font-size:11px;font-weight:500;color:var(--t1);display:flex;align-items:center;gap:6px}
+.cal-alert-urgent{background:#FCEBEB;color:#A32D2D;font-size:9px;font-weight:600;padding:1px 6px;border-radius:999px}
+.cal-alert-meta{font-size:10px;color:var(--t2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-alert-days{font-size:11px;font-weight:600;color:#A32D2D;white-space:nowrap;text-align:left;min-width:70px}
+.cal-alert-action{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;border:none;transition:all .15s;flex-shrink:0}
+.cal-alert-action.remind{background:#FCEBEB;color:#A32D2D}
+.cal-alert-action.remind:hover{background:#A32D2D;color:#fff}
+.cal-alert-action.renew{background:#E6F1FB;color:#185FA5}
+.cal-alert-action.renew:hover{background:#185FA5;color:#fff}
+.cal-alerts-footer{padding:10px 0 0;border-top:0.5px solid var(--bdr);text-align:center;margin-top:4px}
+.cal-alerts-showall{background:transparent;border:none;font-size:12px;color:#A32D2D;font-weight:500;cursor:pointer;font-family:inherit;padding:6px 12px;border-radius:6px}
+.cal-alerts-showall:hover{background:rgba(163,45,45,.06)}
+@media(max-width:900px){.cal-main-grid{grid-template-columns:1fr!important}.cal-sidebar-card{order:2}}
 
 /* Form builder field type buttons */
 .fb-tool{padding:10px 8px;border:1.5px solid var(--bdr2);background:var(--bg);color:var(--t2);border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s;font-weight:500}
@@ -12191,370 +12271,123 @@ function calNext(){
   renderCalendar();
 }
 
+// Calendar filter state
+var _calFilter='all';
+function setCalFilter(f,btn){
+  _calFilter=f;
+  document.querySelectorAll('.cal-filter-btn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  renderCalendar();
+}
+
+// Alert range state
+var _alertRange=7;
+function setAlertRange(days,btn){
+  _alertRange=days;
+  document.querySelectorAll('.cal-range-btn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  renderSystemAlerts();
+}
+
+// Unified calendar events: only 3 types for grid display
+function getCalendarEvents(){
+  var out=[];
+  (vehicles||[]).forEach(function(v){
+    // svc-pickup: vehicles needing service (from calcNextSvc)
+    var nxt=calcNextSvc(v);
+    if(nxt&&nxt.date){
+      out.push({
+        id:'cal-svc-'+v.id,
+        type:'svc-pickup',
+        title:'איסוף לטיפול',
+        label:(v.make||'')+' '+(v.model||''),
+        plate:v.plate,
+        driverName:v.driver?.name||'',
+        date:nxt.date,
+        vehicleId:v.id
+      });
+    }
+    // test-pickup: vehicles needing test (from licenseExp)
+    if(v.licenseExp){
+      out.push({
+        id:'cal-test-'+v.id,
+        type:'test-pickup',
+        title:'איסוף לטסט',
+        label:(v.make||'')+' '+(v.model||''),
+        plate:v.plate,
+        driverName:v.driver?.name||'',
+        date:v.licenseExp,
+        vehicleId:v.id
+      });
+    }
+  });
+  // personal: from selfReminders
+  (selfReminders||[]).forEach(function(r){
+    if(!r.date) return;
+    out.push({
+      id:'cal-personal-'+r.id,
+      selfReminderId:r.id,
+      type:'personal',
+      title:r.title||'תזכורת אישית',
+      label:r.note||'',
+      date:r.date,
+      time:r.time||''
+    });
+  });
+  return out;
+}
+
 function renderCalendar(){
   if(!id('cal-grid-area'))return;
-  const manualEvents = getFleetEvents();
-  // Auto events from vehicle data (only within 30 days) - for calendar grid display only
-  const autoEvents = getAutoExpirationEvents();
-  const eventsForGrid = manualEvents.concat(autoEvents);
-  // System reminders (that have a date)
-  const sysReminders=(typeof buildReminders==='function')?buildReminders().filter(function(r){return r.date;}):[];
-  // Personal reminders converted to calendar-event shape (shown purple in grid)
-  const selfReminderEvents = (selfReminders||[]).filter(function(r){return r.date;}).map(function(r){
-    return {
-      id: 'self-'+r.id,
-      selfReminderId: r.id,
-      type: 'self-reminder',
-      title: r.title,
-      date: r.date,
-      time: r.time||'',
-      desc: r.note||'',
-      status: r.sent?'done':'open',
-      isSelfReminder: true
-    };
-  });
-  // Merge self reminders into events array for calendar grid display
-  const gridEvents = eventsForGrid.concat(selfReminderEvents);
-  id('cal-events-count').textContent=gridEvents.length+sysReminders.length;
+  var allEvents=getCalendarEvents();
+  // Apply filter
+  var events=allEvents;
+  if(_calFilter==='system') events=allEvents.filter(function(e){return e.type==='svc-pickup'||e.type==='test-pickup';});
+  else if(_calFilter==='personal') events=allEvents.filter(function(e){return e.type==='personal';});
 
   if(calViewMode==='month'){
-    renderCalendarMonth(gridEvents,sysReminders,[]);
+    renderCalendarMonth(events);
   }else if(calViewMode==='week'){
-    renderCalendarWeek(gridEvents,sysReminders,[]);
+    renderCalendarWeek(events);
   }else{
-    renderCalendarDay(gridEvents,sysReminders,[]);
+    renderCalendarDay(events);
   }
-  // "Upcoming events" panel - ONLY manual events (avoid duplication with "תזכורות" panel that shows system alerts)
-  renderUpcomingEvents(manualEvents);
-  renderMonthReminders(sysReminders);
+  renderUpcomingWeek(allEvents);
+  renderSystemAlerts();
 }
 
-// Build automatic calendar events from vehicle expiration data - only within 30 days
-function getAutoExpirationEvents(){
-  const out = [];
-  (vehicles||[]).forEach(function(v){
-    // Vehicle license / test
-    if(v.licenseExp && isWithin30Days(v.licenseExp)){
-      out.push({
-        id:'auto-test-'+v.id,
-        type:'test',
-        title:'טסט / רישיון רכב - '+v.plate,
-        date:v.licenseExp,
-        time:'',
-        desc:(v.make||'')+' '+(v.model||'')+' · נהג: '+(v.driver?.name||''),
-        vehicleId:v.id,
-        status:'open',
-        isAuto:true
-      });
-    }
-    // Driver license
-    if(v.driver?.licenseExp && isWithin30Days(v.driver.licenseExp)){
-      out.push({
-        id:'auto-lic-'+v.id,
-        type:'general',
-        title:'רישיון נהיגה - '+(v.driver?.name||''),
-        date:v.driver.licenseExp,
-        time:'',
-        desc:'רכב: '+v.plate,
-        vehicleId:v.id,
-        status:'open',
-        isAuto:true
-      });
-    }
-    // Family licenses
-    if(v.family) v.family.forEach(function(f,i){
-      if(f.licenseExp && isWithin30Days(f.licenseExp)){
-        out.push({
-          id:'auto-fam-'+v.id+'-'+i,
-          type:'general',
-          title:'רישיון נהיגה (משפחה) - '+(f.name||''),
-          date:f.licenseExp,
-          time:'',
-          desc:'רכב: '+v.plate+' · '+(v.driver?.name||''),
-          vehicleId:v.id,
-          status:'open',
-          isAuto:true
-        });
-      }
-    });
-    // Annual service anniversary
-    const lastSvcDate = getVehicleLastServiceDate(v);
-    if(lastSvcDate){
-      const today = new Date(); today.setHours(0,0,0,0);
-      const anniversary = new Date(lastSvcDate);
-      while(anniversary <= today) anniversary.setFullYear(anniversary.getFullYear()+1);
-      const annivStr = anniversary.toISOString().split('T')[0];
-      if(isWithin30Days(annivStr)){
-        out.push({
-          id:'auto-svc-'+v.id,
-          type:'service',
-          title:'טיפול שנתי - '+v.plate,
-          date:annivStr,
-          time:'',
-          desc:(v.make||'')+' '+(v.model||'')+' · נהג: '+(v.driver?.name||''),
-          vehicleId:v.id,
-          status:'open',
-          isAuto:true
-        });
-      }
-    }
-  });
-  return out;
-}
-
-// Convert tasks with date into calendar-event shape
-function getTaskCalendarEvents(){
-  const out=[];
-  (tasks||[]).forEach(function(t){
-    // Only tasks with a date (scheduled OR due) should appear in calendar
-    const d = t.scheduledDate || t.due;
-    if(!d) return;
-    // Don't show completed tasks in calendar
-    if(getTaskStatus(t)==='done' || t.status==='cancelled') return;
-    out.push({
-      id:'task-'+t.id,
-      type:'task',
-      taskId:t.id,
-      title:t.title,
-      date:d,
-      time:t.remindTime||'',
-      vehicleId:t.vehicleId,
-      priority:t.priority,
-      status:t.status,
-      isTaskEvent:true
-    });
-  });
-  return out;
-}
-
-// Render tasks panel on the right side of calendar
-function renderCalendarTasks(){
-  const el = document.getElementById('cal-tasks-list');
-  if(!el) return;
-  const filter = document.getElementById('cal-tasks-filter')?.value || 'active';
-  let list = (tasks||[]).slice();
-  // Filter
-  list = list.filter(function(t){
-    const s = getTaskStatus(t);
-    if(filter==='all') return true;
-    if(filter==='active') return s!=='done' && s!=='cancelled';
-    if(filter==='late') return s==='late';
-    return s===filter;
-  });
-  // Sort: by due/scheduled date, tasks without date last
-  list.sort(function(a,b){
-    const da = a.scheduledDate||a.due||'9999-12-31';
-    const db = b.scheduledDate||b.due||'9999-12-31';
-    return da.localeCompare(db);
-  });
-  const cnt = document.getElementById('cal-tasks-count');
-  if(cnt) cnt.textContent = list.length;
-  if(!list.length){
-    el.innerHTML = '<div style="text-align:center;padding:16px 10px;color:var(--t3);font-size:12px">אין משימות</div>';
-    return;
-  }
-  el.innerHTML = list.slice(0,20).map(function(t){
-    const s = getTaskStatus(t);
-    const sc = TASK_STATUS_COLORS[s]||'var(--t2)';
-    const veh = t.vehicleId ? vehicles.find(function(v){return v.id===t.vehicleId;}) : null;
-    const dateStr = t.scheduledDate||t.due;
-    const dateBadge = dateStr ? '<span style="font-size:10px;color:var(--t3);white-space:nowrap">'+fd(dateStr)+'</span>' : '<span style="font-size:10px;color:var(--t3)">ללא תאריך</span>';
-    const vehBadge = veh ? '<span style="font-size:10px;padding:1px 6px;border-radius:999px;background:#dbeafe;color:#1e40af;font-weight:600">🚗 '+veh.plate+'</span>' : '';
-    const isServiceTask = t.type==='טיפולים ושירות' || t.type==='טסט רכב';
-    const canSendMsg = s!=='done' && t.scheduledDate && t.vehicleId && isServiceTask;
-    return '<div onclick="openTaskModal('+t.id+')" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+sc+';border-radius:7px;padding:8px 10px;margin-bottom:6px;cursor:pointer">'+
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">'+
-        '<span style="font-size:12px;font-weight:600;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+t.title+'</span>'+
-        '<span style="font-size:9px;background:'+sc+'1a;color:'+sc+';padding:1px 5px;border-radius:999px;font-weight:600">'+(TASK_STATUS_LABELS[s]||s)+'</span>'+
-      '</div>'+
-      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'+
-        dateBadge+
-        vehBadge+
-      '</div>'+
-      (s!=='done'?
-        '<div style="display:flex;gap:4px;margin-top:6px">'+
-        '<button onclick="event.stopPropagation();quickDoneTask('+t.id+')" style="flex:1;background:var(--gbg);border:1px solid #86efac;border-radius:5px;padding:3px;cursor:pointer;font-size:10px;font-weight:600;color:#166534;font-family:inherit">✓ בוצע</button>'+
-        (canSendMsg ? '<button onclick="event.stopPropagation();openSendSchedMessageModal('+t.id+')" title="שלח הודעה לנהג" style="background:#eff6ff;border:1px solid #93c5fd;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:10px;font-weight:600;color:#1e40af;font-family:inherit">📨 שלח</button>' : '')+
-        '</div>':'')+
-    '</div>';
-  }).join('');
-}
-
-function renderMonthReminders(allReminders){
-  const el=id('cal-reminders-list');
-  if(!el)return;
-  const y=calCurrentDate.getFullYear();
-  const m=calCurrentDate.getMonth();
-  const monthLabel=id('cal-month-label');
-  if(monthLabel)monthLabel.textContent=HEM[m]+' '+y;
-
-  // Filter system reminders to current month view
-  const sysRems=allReminders.filter(function(r){
-    if(!r.date)return false;
-    const d=new Date(r.date);
-    return d.getFullYear()===y && d.getMonth()===m;
-  }).map(function(r){
-    return {
-      id:r.id, kind:'system', icon:r.icon, title:r.title,
-      driverName:r.driverName, driverCompany:r.driverCompany||'',
-      isFamily:r.isFamily||false,
-      familyRelation:r.familyRelation||'',
-      primaryDriverName:r.primaryDriverName||'',
-      plate:r.plate, detail:r.detail,
-      date:r.date, days:r.days,
-      action:r.action, sent:false
-    };
-  });
-
-  // Add self-reminders for this month
-  const today = new Date();
-  const selfRems = (selfReminders||[]).filter(function(r){
-    if(!r.date) return false;
-    const d = new Date(r.date);
-    return d.getFullYear()===y && d.getMonth()===m;
-  }).map(function(r){
-    const dt = new Date(r.date);
-    const diff = Math.round((dt - today)/(1000*60*60*24));
-    return {
-      id:r.id, kind:'self', icon:'🔔', title:r.title,
-      driverName:null, date:r.date, time:r.time, days:diff,
-      sent:r.sent, note:r.note
-    };
-  });
-
-  const monthRems = sysRems.concat(selfRems).sort(function(a,b){
-    return a.date.localeCompare(b.date);
-  });
-
-  if(!monthRems.length){
-    el.innerHTML='<div style="text-align:center;padding:20px 10px;color:var(--t3);font-size:12px">אין תזכורות לחודש זה</div>';
-    return;
-  }
-
-  let html='';
-  monthRems.forEach(function(r){
-    const isSelf = r.kind==='self';
-    const col = isSelf ? '#8b5cf6' : remindersUrgencyColor(r.days);
-    const bg = isSelf ? '#f5f3ff' : remindersUrgencyBg(r.days);
-    let daysText='';
-    if(r.days===null||r.days===undefined)daysText='—';
-    else if(r.days<0)daysText='פג '+Math.abs(r.days)+' י';
-    else if(r.days===0)daysText='היום';
-    else if(r.days===1)daysText='מחר';
-    else daysText=r.days+' ימים';
-
-    const clickHandler = isSelf
-      ? 'openSelfReminderModal(null,\''+r.id+'\')'
-      : (r.action ? 'openReminderAction(\''+r.id+'\')' : '');
-
-    // Detect if this is a family member reminder (from the explicit flag set in buildReminders)
-    const isFamilyReminder = !isSelf && r.isFamily === true;
-    // Clean title (without the relation in parens)
-    const cleanTitle = isFamilyReminder ? r.title.replace(/\s*\([^)]*\)/,'').trim() : r.title;
-    // Relation (e.g. "בת זוג")
-    const relation = isFamilyReminder ? (r.familyRelation||'') : '';
-    // Primary driver name (for family reminders - to know who the family belongs to)
-    const primaryDriverName = isFamilyReminder ? (r.primaryDriverName||'') : '';
-
-    // Build HTML
-    if(isSelf){
-      // Self reminder - simpler layout
-      html+='<div onclick="'+clickHandler+'" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
-          '<span style="font-size:16px">'+r.icon+'</span>'+
-          '<span style="font-size:13px;font-weight:700;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.title+'</span>'+
-        '</div>'+
-        (r.note?'<div style="font-size:12px;color:var(--t2);font-weight:500;margin:4px 0 6px">'+r.note+'</div>':'')+
-        '<div style="font-size:12px;color:var(--t2);font-weight:600;text-align:left;direction:ltr">'+fd(r.date)+(r.time?' · '+r.time:'')+'</div>'+
-      '</div>';
-    } else {
-      // System reminder - show company badge + driver name + yellow plate + family badge (if applicable)
-      // Family members: NO company badge (they don't work for the company)
-      const compBadge = isFamilyReminder ? '' : companyBadge(r.driverCompany);
-      const driverLine = r.driverName
-        ? '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">'+
-            (compBadge ? compBadge : '')+
-            '<span style="font-size:13px;font-weight:600;color:var(--t1)">'+r.driverName+'</span>'+
-            (r.plate?renderPlate(r.plate):'')+
-          '</div>'
-        : '';
-      // Family badge: includes primary driver name for context
-      // e.g. "👨‍👩‍👧 בן משפחה של יניב שמידט · בת זוג"
-      const familyLine = isFamilyReminder
-        ? '<div style="margin-top:6px"><span style="font-size:11px;background:#fce7f3;color:#9f1239;padding:3px 10px;border-radius:999px;font-weight:600">👨‍👩‍👧 בן משפחה'+(primaryDriverName?' של '+primaryDriverName:'')+(relation?' · '+relation:'')+'</span></div>'
-        : '';
-      html+='<div onclick="'+clickHandler+'" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
-        '<div style="display:flex;align-items:center;gap:8px">'+
-          '<span style="font-size:16px">'+r.icon+'</span>'+
-          '<span style="font-size:13px;font-weight:700;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+cleanTitle+'</span>'+
-        '</div>'+
-        driverLine+
-        familyLine+
-        '<div style="font-size:12px;color:var(--t2);font-weight:600;margin-top:8px;padding-top:8px;border-top:1px dashed var(--bdr);text-align:left;direction:ltr">'+fd(r.date)+'</div>'+
-      '</div>';
-    }
-  });
-  el.innerHTML=html;
-}
-
-function renderCalendarMonth(events,reminders,taskEvents){
-  reminders=reminders||[];
-  taskEvents=taskEvents||[];
-  const year=calCurrentDate.getFullYear();
-  const month=calCurrentDate.getMonth();
-  const firstDay=new Date(year,month,1);
-  const lastDay=new Date(year,month+1,0);
-  const startWeekday=firstDay.getDay();
-  const daysInMonth=lastDay.getDate();
-  const today=new Date();today.setHours(0,0,0,0);
-  const todayIso=today.toISOString().split('T')[0];
+function renderCalendarMonth(events){
+  var year=calCurrentDate.getFullYear();
+  var month=calCurrentDate.getMonth();
+  var firstDay=new Date(year,month,1);
+  var lastDay=new Date(year,month+1,0);
+  var startWeekday=firstDay.getDay();
+  var daysInMonth=lastDay.getDate();
+  var today=new Date();today.setHours(0,0,0,0);
+  var todayIso=today.toISOString().split('T')[0];
+  var prevMonth=new Date(year,month,0);
+  var prevDays=prevMonth.getDate();
 
   id('cal-title').textContent=HEM[month]+' '+year;
 
-  const wdays=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-  let html='<div class="fc-grid">';
+  var wdays=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  var html='<div class="fc-grid">';
 
-  // Empty slots before month start
-  for(let i=0;i<startWeekday;i++){
-    html+='<div class="fc-day other"></div>';
+  // Days from previous month
+  for(var i=0;i<startWeekday;i++){
+    var pDay=prevDays-startWeekday+1+i;
+    html+='<div class="fc-day other"><div class="fc-day-hdr"><span class="fc-day-name">'+wdays[i]+'</span><span class="fc-day-num">'+pDay+'</span></div></div>';
   }
 
-  // Days of month - each cell shows day name + date number
-  for(let d=1;d<=daysInMonth;d++){
-    const dateObj=new Date(year,month,d);
-    const iso=dateObj.toISOString().split('T')[0];
-    const isToday=iso===todayIso;
-    const dayName=wdays[dateObj.getDay()];
-    const dayEvents=events.filter(function(e){return e.date===iso;});
-    const dayReminders=reminders.filter(function(r){return r.date===iso;});
-    const dayTasks=taskEvents.filter(function(t){return t.date===iso;});
-    const totalItems=dayEvents.length+dayReminders.length+dayTasks.length;
-    let evHtml='';
+  // Days of current month
+  for(var d=1;d<=daysInMonth;d++){
+    var dateObj=new Date(year,month,d);
+    var iso=dateObj.toISOString().split('T')[0];
+    var isToday=iso===todayIso;
+    var dayName=wdays[dateObj.getDay()];
+    var dayEvents=events.filter(function(e){return e.date===iso;});
+    var evHtml=_buildDayEventsHtml(dayEvents);
 
-    // Show events (including self-reminders which are also in events array)
-    dayEvents.slice(0,2).forEach(function(e){
-      if(e.isSelfReminder){
-        evHtml+='<div class="fc-ev" style="background:#8b5cf6" onclick="event.stopPropagation();openSelfReminderModal(null,\''+e.selfReminderId+'\')" title="'+(e.title||'').replace(/"/g,'&quot;')+'">🔔 '+(e.time?e.time+' ':'')+(e.title||'').substring(0,16)+'</div>';
-      } else {
-        const cls=e.type+(e.status==='done'?' done':'');
-        evHtml+='<div class="fc-ev '+cls+'" onclick="event.stopPropagation();openEventModal(\''+e.id+'\')" title="'+(e.title||'').replace(/"/g,'&quot;')+'">'+(e.time?e.time+' ':'')+(e.title||'').substring(0,20)+'</div>';
-      }
-    });
-
-    // Show tasks
-    dayTasks.slice(0,2).forEach(function(t){
-      evHtml+='<div class="fc-ev" style="background:#16a34a" onclick="event.stopPropagation();openTaskModal('+t.taskId+')" title="'+(t.title||'').replace(/"/g,'&quot;')+'">📋 '+(t.title||'').substring(0,18)+'</div>';
-    });
-
-    // Show system reminders
-    dayReminders.slice(0,2).forEach(function(r){
-      evHtml+='<div class="fc-ev" style="background:#dc2626" onclick="event.stopPropagation();openReminderAction(\''+r.id+'\')" title="'+(r.title||'').replace(/"/g,'&quot;')+'">'+r.icon+' '+(r.driverName||r.title).substring(0,15)+'</div>';
-    });
-
-    const shownCount=Math.min(dayEvents.length,2)+Math.min(dayReminders.length,2)+Math.min(dayTasks.length,2);
-    if(totalItems>shownCount){
-      evHtml+='<div style="font-size:9px;color:var(--t3);text-align:center">+'+(totalItems-shownCount)+'</div>';
-    }
     html+='<div class="fc-day'+(isToday?' today':'')+'" onclick="openDayPicker(\''+iso+'\')">'+
       '<div class="fc-day-hdr">'+
         '<span class="fc-day-name">'+dayName+'</span>'+
@@ -12563,8 +12396,59 @@ function renderCalendarMonth(events,reminders,taskEvents){
       '<div class="fc-day-events">'+evHtml+'</div>'+
     '</div>';
   }
+
+  // Days from next month to fill last row
+  var totalCells=startWeekday+daysInMonth;
+  var remainder=totalCells%7;
+  if(remainder>0){
+    for(var n=1;n<=7-remainder;n++){
+      var nDow=(totalCells+n-1)%7;
+      html+='<div class="fc-day other"><div class="fc-day-hdr"><span class="fc-day-name">'+wdays[nDow]+'</span><span class="fc-day-num">'+n+'</span></div></div>';
+    }
+  }
+
   html+='</div>';
   id('cal-grid-area').innerHTML=html;
+}
+
+// Build event chips HTML for a single day cell
+function _buildDayEventsHtml(dayEvents){
+  if(!dayEvents.length) return '';
+  // Group by type
+  var groups={};
+  dayEvents.forEach(function(e){
+    if(!groups[e.type]) groups[e.type]=[];
+    groups[e.type].push(e);
+  });
+  var typeOrder=['svc-pickup','test-pickup','personal'];
+  var typeLabels={'svc-pickup':'איסוף לטיפול','test-pickup':'איסוף לטסט','personal':'תזכורת אישית'};
+  var html='';
+  var shown=0;
+  typeOrder.forEach(function(t){
+    if(!groups[t]||shown>=3) return;
+    var arr=groups[t];
+    if(arr.length>=3){
+      // Grouped display
+      html+='<div class="fc-ev '+t+' grouped" onclick="event.stopPropagation()" title="'+typeLabels[t]+' - '+arr.length+' פריטים">'+typeLabels[t]+' · '+arr.length+' רכבים</div>';
+      shown++;
+    } else {
+      arr.forEach(function(e){
+        if(shown>=3) return;
+        var clickAction='event.stopPropagation()';
+        if(e.type==='personal'&&e.selfReminderId) clickAction='event.stopPropagation();openSelfReminderModal(null,\''+e.selfReminderId+'\')';
+        else if(e.vehicleId) clickAction='event.stopPropagation();openDet('+e.vehicleId+')';
+        var label=e.type==='personal'?(e.title||'').substring(0,18):(e.plate||e.title||'').substring(0,18);
+        html+='<div class="fc-ev '+e.type+'" onclick="'+clickAction+'" title="'+(e.title||'').replace(/"/g,'&quot;')+'">'+label+'</div>';
+        shown++;
+      });
+    }
+  });
+  // Overflow indicator
+  var total=dayEvents.length;
+  if(total>shown){
+    html+='<div style="font-size:9px;color:var(--t3);text-align:center">+'+(total-shown)+'</div>';
+  }
+  return html;
 }
 
 // When clicking on a calendar day - jump to day view for that date
@@ -13198,44 +13082,26 @@ function openTaskModalForDate(iso){
   },100);
 }
 
-function renderCalendarWeek(events,reminders,taskEvents){
-  reminders=reminders||[];
-  taskEvents=taskEvents||[];
-  const d=new Date(calCurrentDate);
-  const dow=d.getDay();
-  const sunday=new Date(d);
+function renderCalendarWeek(events){
+  var d=new Date(calCurrentDate);
+  var dow=d.getDay();
+  var sunday=new Date(d);
   sunday.setDate(d.getDate()-dow);
-  const today=new Date();today.setHours(0,0,0,0);
-  const todayIso=today.toISOString().split('T')[0];
+  var today=new Date();today.setHours(0,0,0,0);
+  var todayIso=today.toISOString().split('T')[0];
 
-  const lastDay=new Date(sunday);lastDay.setDate(sunday.getDate()+6);
+  var lastDay=new Date(sunday);lastDay.setDate(sunday.getDate()+6);
   id('cal-title').textContent=sunday.getDate()+'/'+(sunday.getMonth()+1)+' - '+lastDay.getDate()+'/'+(lastDay.getMonth()+1)+'/'+lastDay.getFullYear();
 
-  const wdays=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
-  let html='<div class="fc-grid">';
-  for(let i=0;i<7;i++){
-    const day=new Date(sunday);day.setDate(sunday.getDate()+i);
-    const iso=day.toISOString().split('T')[0];
-    const isToday=iso===todayIso;
-    const dayName=wdays[day.getDay()];
-    const dayEvents=events.filter(function(e){return e.date===iso;});
-    const dayReminders=reminders.filter(function(r){return r.date===iso;});
-    const dayTasks=taskEvents.filter(function(t){return t.date===iso;});
-    let evHtml='';
-    dayEvents.forEach(function(e){
-      if(e.isSelfReminder){
-        evHtml+='<div class="fc-ev" style="background:#8b5cf6" onclick="event.stopPropagation();openSelfReminderModal(null,\''+e.selfReminderId+'\')" title="'+(e.title||'').replace(/"/g,'&quot;')+'">🔔 '+(e.time?e.time+' ':'')+e.title+'</div>';
-      } else {
-        const cls=e.type+(e.status==='done'?' done':'');
-        evHtml+='<div class="fc-ev '+cls+'" onclick="event.stopPropagation();openEventModal(\''+e.id+'\')" title="'+(e.title||'').replace(/"/g,'&quot;')+'">'+(e.time?e.time+' ':'')+e.title+'</div>';
-      }
-    });
-    dayTasks.forEach(function(t){
-      evHtml+='<div class="fc-ev" style="background:#16a34a" onclick="event.stopPropagation();openTaskModal('+t.taskId+')" title="'+(t.title||'').replace(/"/g,'&quot;')+'">📋 '+t.title+'</div>';
-    });
-    dayReminders.forEach(function(r){
-      evHtml+='<div class="fc-ev" style="background:#dc2626" onclick="event.stopPropagation();openReminderAction(\''+r.id+'\')" title="'+(r.title||'').replace(/"/g,'&quot;')+'">'+r.icon+' '+(r.driverName||r.title)+'</div>';
-    });
+  var wdays=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  var html='<div class="fc-grid">';
+  for(var i=0;i<7;i++){
+    var day=new Date(sunday);day.setDate(sunday.getDate()+i);
+    var iso=day.toISOString().split('T')[0];
+    var isToday=iso===todayIso;
+    var dayName=wdays[day.getDay()];
+    var dayEvents=events.filter(function(e){return e.date===iso;});
+    var evHtml=_buildDayEventsHtml(dayEvents);
     html+='<div class="fc-day'+(isToday?' today':'')+'" style="min-height:180px" onclick="openDayPicker(\''+iso+'\')">'+
       '<div class="fc-day-hdr">'+
         '<span class="fc-day-name">'+dayName+'</span>'+
@@ -13248,144 +13114,335 @@ function renderCalendarWeek(events,reminders,taskEvents){
   id('cal-grid-area').innerHTML=html;
 }
 
-function renderCalendarDay(events,reminders,taskEvents){
-  reminders=reminders||[];
-  taskEvents=taskEvents||[];
-  const d=new Date(calCurrentDate);
-  const iso=d.toISOString().split('T')[0];
-  const today=new Date();today.setHours(0,0,0,0);
-  const isToday=iso===today.toISOString().split('T')[0];
-  const wdays=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+function renderCalendarDay(events){
+  var d=new Date(calCurrentDate);
+  var iso=d.toISOString().split('T')[0];
+  var today=new Date();today.setHours(0,0,0,0);
+  var isToday=iso===today.toISOString().split('T')[0];
+  var wdays=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
   id('cal-title').textContent=wdays[d.getDay()]+' · '+d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
 
-  const dayEvents=events.filter(function(e){return e.date===iso;});
-  const dayReminders=reminders.filter(function(r){return r.date===iso;});
-  const dayTasks=taskEvents.filter(function(t){return t.date===iso;});
+  var dayEvents=events.filter(function(e){return e.date===iso;});
+  // Sort by time
+  dayEvents.sort(function(a,b){return(a.time||'00:00').localeCompare(b.time||'00:00');});
 
-  // Sort all items by time
-  const all=[];
-  dayEvents.forEach(function(e){all.push({kind:'event',time:e.time||'00:00',item:e});});
-  dayTasks.forEach(function(t){all.push({kind:'task',time:t.time||'00:00',item:t});});
-  dayReminders.forEach(function(r){all.push({kind:'reminder',time:'23:59',item:r});});
-  all.sort(function(a,b){return a.time.localeCompare(b.time);});
+  var typeColors={'svc-pickup':'#185FA5','test-pickup':'#BA7517','personal':'#3C3489'};
+  var typeBgs={'svc-pickup':'#E6F1FB','test-pickup':'#FAEEDA','personal':'#EEEDFE'};
+  var typeLabels={'svc-pickup':'איסוף לטיפול','test-pickup':'איסוף לטסט','personal':'תזכורת אישית'};
 
-  let html='<div style="min-height:400px;padding:8px">';
+  var html='<div style="min-height:400px;padding:8px">';
   html+='<div style="background:'+(isToday?'#fefce8':'var(--bg)')+';border:1.5px solid '+(isToday?'#fde68a':'var(--bdr2)')+';border-radius:10px;padding:14px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px">';
   html+='<div style="flex:1">';
-  html+='<div style="font-size:13px;color:var(--t2);margin-bottom:4px">'+(isToday?'📍 היום':'תאריך')+'</div>';
+  html+='<div style="font-size:13px;color:var(--t2);margin-bottom:4px">'+(isToday?'היום':'תאריך')+'</div>';
   html+='<div style="font-size:22px;font-weight:700;color:var(--gd)">'+wdays[d.getDay()]+', '+d.getDate()+' '+HEM[d.getMonth()]+' '+d.getFullYear()+'</div>';
-  html+='<div style="font-size:12px;color:var(--t3);margin-top:4px">'+all.length+' פריטים ביום זה</div>';
+  html+='<div style="font-size:12px;color:var(--t3);margin-top:4px">'+dayEvents.length+' פריטים ביום זה</div>';
   html+='</div>';
   html+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
-  html+='<button onclick="openSelfReminderModal(\''+iso+'\')" style="background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:#5b21b6">🔔 + תזכורת</button>';
-  html+='<button onclick="openEnhancedEventModal(null,\''+iso+'\')" style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:#166534">📅 + אירוע</button>';
+  html+='<button onclick="openSelfReminderModal(\''+iso+'\')" style="background:#EEEDFE;border:1.5px solid #c4b5fd;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:#3C3489">+ תזכורת</button>';
   html+='</div>';
   html+='</div>';
 
-  if(!all.length){
-    html+='<div style="text-align:center;padding:40px 20px;color:var(--t3);font-size:14px;background:var(--bg);border-radius:10px;border:1px dashed var(--bdr2)"><div style="font-size:40px;margin-bottom:8px">📅</div>אין פריטים ביום זה<div style="font-size:11px;margin-top:6px">לחץ על אחד הכפתורים למעלה כדי להוסיף</div></div>';
+  if(!dayEvents.length){
+    html+='<div style="text-align:center;padding:40px 20px;color:var(--t3);font-size:14px;background:var(--bg);border-radius:10px;border:1px dashed var(--bdr2)"><div style="font-size:40px;margin-bottom:8px">📅</div>אין פריטים ביום זה<div style="font-size:11px;margin-top:6px">לחץ על הכפתור למעלה כדי להוסיף תזכורת</div></div>';
   } else {
-    all.forEach(function(x){
-      if(x.kind==='event'){
-        const e=x.item;
-        if(e.isSelfReminder){
-          html+='<div onclick="openSelfReminderModal(null,\''+e.selfReminderId+'\')" style="background:var(--card);border:1px solid var(--bdr);border-right:4px solid #8b5cf6;border-radius:9px;padding:11px 14px;margin-bottom:8px;cursor:pointer">';
-          html+='<div style="display:flex;align-items:center;gap:10px">';
-          html+='<div style="font-size:22px">🔔</div>';
-          html+='<div style="flex:1"><div style="font-size:14px;font-weight:600;color:#5b21b6">'+(e.title||'')+'</div>';
-          if(e.time) html+='<div style="font-size:11px;color:var(--t3);margin-top:2px">⏱ '+e.time+'</div>';
-          if(e.desc) html+='<div style="font-size:12px;color:var(--t2);margin-top:4px">'+e.desc+'</div>';
-          html+='<div style="font-size:10px;color:#7c3aed;margin-top:2px">תזכורת אישית</div>';
-          html+='</div></div></div>';
-        } else {
-          const iconMap={service:'🔧',test:'🔍',general:'📅'};
-          const colorMap={service:'#d97706',test:'#2563eb',general:'#6b7280'};
-          const col=colorMap[e.type]||'#6b7280';
-          const isDone=e.status==='done';
-          html+='<div onclick="openEventModal(\''+e.id+'\')" style="background:var(--card);border:1px solid var(--bdr);border-right:4px solid '+col+';border-radius:9px;padding:11px 14px;margin-bottom:8px;cursor:pointer;'+(isDone?'opacity:.5':'')+'">';
-          html+='<div style="display:flex;align-items:center;gap:10px">';
-          html+='<div style="font-size:22px">'+(iconMap[e.type]||'📅')+'</div>';
-          html+='<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--t1)">'+(e.title||'')+'</div>';
-          if(e.time) html+='<div style="font-size:11px;color:var(--t3);margin-top:2px">⏱ '+e.time+'</div>';
-          if(e.desc) html+='<div style="font-size:12px;color:var(--t2);margin-top:4px">'+e.desc+'</div>';
-          html+='</div>';
-          if(isDone) html+='<span style="font-size:11px;color:#16a34a;font-weight:600">✓ בוצע</span>';
-          html+='</div></div>';
-        }
-      } else if(x.kind==='task'){
-        const t=x.item;
-        const veh = t.vehicleId ? vehicles.find(function(v){return v.id===t.vehicleId;}) : null;
-        html+='<div onclick="openTaskModal('+t.taskId+')" style="background:var(--card);border:1px solid var(--bdr);border-right:4px solid #8b5cf6;border-radius:9px;padding:11px 14px;margin-bottom:8px;cursor:pointer">';
-        html+='<div style="display:flex;align-items:center;gap:10px">';
-        html+='<div style="font-size:22px">📋</div>';
-        html+='<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--t1)">'+(t.title||'')+'</div>';
-        if(veh) html+='<div style="font-size:11px;color:var(--t3);margin-top:2px">🚗 '+veh.plate+' — '+veh.driver.name+'</div>';
-        html+='</div>';
-        html+='<button onclick="event.stopPropagation();quickDoneTask('+t.taskId+')" style="background:var(--gbg);border:1px solid #86efac;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:600;color:#166534;font-family:inherit">✓ בוצע</button>';
-        html+='</div></div>';
-      } else {
-        const r=x.item;
-        html+='<div onclick="'+(r.action?'openReminderAction(\''+r.id+'\')':'')+'" style="background:var(--card);border:1px solid var(--bdr);border-right:4px solid #dc2626;border-radius:9px;padding:11px 14px;margin-bottom:8px;cursor:pointer">';
-        html+='<div style="display:flex;align-items:center;gap:10px">';
-        html+='<div style="font-size:22px">'+r.icon+'</div>';
-        html+='<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--t1)">'+(r.driverName||r.title)+'</div>';
-        html+='<div style="font-size:11px;color:var(--t3);margin-top:2px">'+r.title+'</div>';
-        html+='</div></div></div>';
-      }
+    dayEvents.forEach(function(e){
+      var col=typeColors[e.type]||'#6b7280';
+      var bg=typeBgs[e.type]||'var(--bg)';
+      var clickAction='';
+      if(e.type==='personal'&&e.selfReminderId) clickAction='openSelfReminderModal(null,\''+e.selfReminderId+'\')';
+      else if(e.vehicleId) clickAction='openDet('+e.vehicleId+')';
+      html+='<div onclick="'+clickAction+'" style="background:var(--card);border:1px solid var(--bdr);border-right:4px solid '+col+';border-radius:9px;padding:11px 14px;margin-bottom:8px;cursor:pointer">';
+      html+='<div style="display:flex;align-items:center;gap:10px">';
+      html+='<div style="width:32px;height:32px;border-radius:8px;background:'+bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:14px;color:'+col+';font-weight:700">'+(e.type==='svc-pickup'?'T':e.type==='test-pickup'?'R':'A')+'</span></div>';
+      html+='<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--t1)">'+e.title+'</div>';
+      if(e.plate) html+='<div style="font-size:11px;color:var(--t3);margin-top:2px">'+e.plate+(e.driverName?' - '+e.driverName:'')+'</div>';
+      if(e.time) html+='<div style="font-size:11px;color:var(--t3);margin-top:2px">'+e.time+'</div>';
+      if(e.label&&e.type==='personal') html+='<div style="font-size:11px;color:var(--t3);margin-top:2px">'+e.label+'</div>';
+      html+='</div>';
+      html+='<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:'+bg+';color:'+col+';font-weight:600">'+typeLabels[e.type]+'</span>';
+      html+='</div></div>';
     });
   }
   html+='</div>';
   id('cal-grid-area').innerHTML=html;
 }
 
-function renderUpcomingEvents(events){
-  const el=id('cal-upcoming-list');
-  if(!el)return;
-  const today=new Date();today.setHours(0,0,0,0);
-  const todayIso=today.toISOString().split('T')[0];
-  const upcoming=events.filter(function(e){return e.date>=todayIso;}).sort(function(a,b){
-    if(a.date===b.date)return(a.time||'').localeCompare(b.time||'');
-    return a.date.localeCompare(b.date);
-  });
+// Upcoming week sidebar
+function renderUpcomingWeek(allEvents){
+  var el=document.getElementById('cal-week-list');
+  if(!el) return;
+  var today=new Date();today.setHours(0,0,0,0);
+  var todayIso=today.toISOString().split('T')[0];
+  var wdays=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+  var dotColors={'svc-pickup':'#185FA5','test-pickup':'#BA7517','personal':'#3C3489'};
 
-  if(!upcoming.length){
-    el.innerHTML='<div style="text-align:center;padding:24px 10px;color:var(--t3);font-size:13px">אין אירועים קרובים</div>';
-    return;
+  // Build 5 days starting from today
+  var days=[];
+  for(var i=0;i<5;i++){
+    var dt=new Date(today);
+    dt.setDate(today.getDate()+i);
+    var iso=dt.toISOString().split('T')[0];
+    var dayEvs=allEvents.filter(function(e){return e.date===iso;});
+    days.push({date:dt,iso:iso,events:dayEvs});
   }
 
-  const iconMap={service:'🔧',test:'🔍',general:'📅'};
-  const colorMap={service:'#d97706',test:'#2563eb',general:'#6b7280'};
-  let html='';
-  let currentMonth='';
-  upcoming.forEach(function(e){
-    const d=new Date(e.date);
-    const monthKey=HEM[d.getMonth()]+' '+d.getFullYear();
-    if(monthKey!==currentMonth){
-      currentMonth=monthKey;
-      html+='<div style="font-size:12px;font-weight:700;color:var(--gd);margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--bdr)">'+monthKey+'</div>';
+  var totalCount=0;
+  days.forEach(function(day){totalCount+=day.events.length;});
+
+  // Update count badge
+  var countEl=document.getElementById('cal-week-count');
+  if(countEl) countEl.textContent=totalCount+' אירועים';
+
+  // Update range text
+  var rangeEl=document.getElementById('cal-week-range');
+  if(rangeEl){
+    var first=days[0].date;
+    var last=days[days.length-1].date;
+    rangeEl.textContent=first.getDate()+'/'+(first.getMonth()+1)+' - '+last.getDate()+'/'+(last.getMonth()+1);
+  }
+
+  var html='';
+  days.forEach(function(day){
+    var isToday=day.iso===todayIso;
+    var dayNum=day.date.getDate();
+    var dayName=wdays[day.date.getDay()];
+
+    html+='<div style="display:flex;gap:10px;padding:8px 0;'+(isToday?'':'')+'border-bottom:1px solid var(--bdr);align-items:flex-start" class="'+(isToday?'today':'')+'">';
+    // Date column
+    html+='<div style="min-width:36px;text-align:center;flex-shrink:0">';
+    html+='<div style="font-size:16px;font-weight:700;color:'+(isToday?'var(--green)':'var(--t1)')+'">'+dayNum+'</div>';
+    html+='<div style="font-size:9px;color:'+(isToday?'var(--green)':'var(--t3)')+'">'+dayName+'</div>';
+    html+='</div>';
+    // Events column
+    html+='<div style="flex:1;min-width:0">';
+    if(!day.events.length){
+      html+='<div style="font-size:11px;color:var(--t3);padding:4px 0">אין אירועים</div>';
+    } else {
+      // Show first event with dot
+      var first=day.events[0];
+      var dotColor=dotColors[first.type]||'#999';
+      var evLabel=first.type==='personal'?(first.title||'תזכורת'):(first.plate||first.title);
+      html+='<div style="display:flex;align-items:center;gap:6px;padding:2px 0">';
+      html+='<span style="width:6px;height:6px;border-radius:50%;background:'+dotColor+';flex-shrink:0"></span>';
+      html+='<span style="font-size:11px;color:var(--t1);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+evLabel+'</span>';
+      html+='</div>';
+      // If more events, show "+ X נוסף"
+      if(day.events.length>=2){
+        html+='<div style="font-size:10px;color:var(--t3);padding:1px 0 0 12px">\u200F+ '+(day.events.length-1)+' נוסף</div>';
+      }
     }
-    const v=e.vehicleId?vehicles.find(function(x){return x.id==e.vehicleId;}):null;
-    const col=colorMap[e.type]||'#6b7280';
-    const isDone=e.status==='done';
-    const compBadge = v ? companyBadge(v.driver?.company) : '';
-    const driverLine = v ?
-      '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">'+
-        (compBadge ? compBadge : '')+
-        '<span style="font-size:13px;font-weight:600;color:var(--t1)">'+(v.driver?.name||'')+'</span>'+
-        renderPlate(v.plate)+
-      '</div>' : '';
-    const dateLine = '<div style="font-size:12px;color:var(--t2);font-weight:600;margin-top:8px;padding-top:8px;border-top:1px dashed var(--bdr);text-align:left;direction:ltr">'+fd(e.date)+(e.time?' · '+e.time:'')+'</div>';
-    html+='<div onclick="openEventModal(\''+e.id+'\')" style="background:var(--bg);border:1px solid var(--bdr);border-right:3px solid '+col+';border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:background .15s'+(isDone?';opacity:.6':'')+'" onmouseover="this.style.background=\'#fff\'" onmouseout="this.style.background=\'var(--bg)\'">'+
-      '<div style="display:flex;align-items:center;gap:8px">'+
-        '<span style="font-size:16px">'+(iconMap[e.type]||'📅')+'</span>'+
-        '<span style="font-size:13px;font-weight:700;color:var(--t1);flex:1'+(isDone?';text-decoration:line-through':'')+'">'+e.title+'</span>'+
-        (isDone?'<span style="font-size:10px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:999px;font-weight:600">✓</span>':'')+
-      '</div>'+
-      driverLine+
-      dateLine+
-    '</div>';
+    html+='</div>';
+    html+='</div>';
+  });
+
+  el.innerHTML=html;
+
+  // Footer button
+  var footer=document.getElementById('cal-week-footer');
+  var totalEl=document.getElementById('cal-week-total');
+  if(footer&&totalCount>0){
+    footer.style.display='';
+    if(totalEl) totalEl.textContent=totalCount;
+  } else if(footer){
+    footer.style.display='none';
+  }
+}
+
+// System alerts section
+function renderSystemAlerts(){
+  var el=document.getElementById('cal-alerts-list');
+  if(!el) return;
+  var today=new Date();today.setHours(0,0,0,0);
+
+  // Build all alerts from vehicle data
+  var allAlerts=[];
+  (vehicles||[]).forEach(function(v){
+    var driverName=v.driver?.name||'';
+    // Vehicle license expiring
+    if(v.licenseExp){
+      var days=daysUntil(v.licenseExp);
+      if(days!==null&&days<=30){
+        allAlerts.push({
+          type:'vehicle-license',
+          icon:'calendar',
+          title:'פקיעת רישיון רכב',
+          driverName:driverName,
+          plate:v.plate,
+          date:v.licenseExp,
+          days:days,
+          vehicleId:v.id,
+          actionType:'renew'
+        });
+      }
+    }
+    // Driver license expiring
+    if(v.driver?.licenseExp){
+      var days=daysUntil(v.driver.licenseExp);
+      if(days!==null&&days<=30){
+        allAlerts.push({
+          type:'driver-license',
+          icon:'calendar',
+          title:'פקיעת רישיון נהיגה',
+          driverName:driverName,
+          plate:v.plate,
+          date:v.driver.licenseExp,
+          days:days,
+          vehicleId:v.id,
+          actionType:'remind'
+        });
+      }
+    }
+    // Insurance expiring (check vehicleDocs if available, else check v.insuranceExp)
+    var insExp=v.insuranceExp;
+    if(!insExp&&typeof vehicleDocs==='object'&&vehicleDocs[v.id]){
+      var docs=vehicleDocs[v.id];
+      if(docs){
+        for(var dk in docs){
+          if(dk.indexOf('insurance')>=0||dk.indexOf('ביטוח')>=0){
+            if(docs[dk]&&docs[dk].expDate) insExp=docs[dk].expDate;
+          }
+        }
+      }
+    }
+    if(insExp){
+      var days=daysUntil(insExp);
+      if(days!==null&&days<=30){
+        allAlerts.push({
+          type:'insurance',
+          icon:'document',
+          title:'פקיעת ביטוח',
+          driverName:driverName,
+          plate:v.plate,
+          date:insExp,
+          days:days,
+          vehicleId:v.id,
+          actionType:'renew'
+        });
+      }
+    }
+    // Family member license expiring
+    (v.family||[]).forEach(function(f,fidx){
+      if(f.licenseExp){
+        var days=daysUntil(f.licenseExp);
+        if(days!==null&&days<=30){
+          allAlerts.push({
+            type:'family-license',
+            icon:'calendar',
+            title:'פקיעת רישיון נהיגה',
+            driverName:f.name||'',
+            plate:v.plate,
+            date:f.licenseExp,
+            days:days,
+            vehicleId:v.id,
+            familyRel:f.rel||'בן משפחה',
+            primaryDriver:driverName,
+            actionType:'remind'
+          });
+        }
+      }
+    });
+  });
+
+  // Sort by urgency (soonest first)
+  allAlerts.sort(function(a,b){return a.days-b.days;});
+
+  // Count for each range button
+  var c7=allAlerts.filter(function(a){return a.days<=7;}).length;
+  var c14=allAlerts.filter(function(a){return a.days<=14;}).length;
+  var c30=allAlerts.length;
+  var r7El=document.getElementById('cal-alert-r7');
+  var r14El=document.getElementById('cal-alert-r14');
+  var r30El=document.getElementById('cal-alert-r30');
+  if(r7El) r7El.textContent=c7;
+  if(r14El) r14El.textContent=c14;
+  if(r30El) r30El.textContent=c30;
+
+  // Filter by selected range
+  var filtered=allAlerts.filter(function(a){return a.days<=_alertRange;});
+
+  // Update total badge
+  var countEl=document.getElementById('cal-alerts-count');
+  if(countEl) countEl.textContent=filtered.length;
+
+  // Empty state
+  var emptyEl=document.getElementById('cal-alerts-empty');
+  if(!filtered.length){
+    el.innerHTML='';
+    if(emptyEl) emptyEl.style.display='';
+    var footerEl=document.getElementById('cal-alerts-footer');
+    if(footerEl) footerEl.style.display='none';
+    return;
+  }
+  if(emptyEl) emptyEl.style.display='none';
+
+  // Render max 5
+  var shown=filtered.slice(0,5);
+  var html='';
+  shown.forEach(function(a){
+    var isUrgent=a.days<=7;
+    var iconSvg=a.icon==='document'
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>'
+      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    var daysText='';
+    if(a.days<0) daysText='פג לפני '+Math.abs(a.days)+' ימים';
+    else if(a.days===0) daysText='היום!';
+    else if(a.days===1) daysText='מחר';
+    else daysText='בעוד '+a.days+' ימים';
+
+    var actionLabel=a.actionType==='renew'?'חידוש':'שלח תזכורת';
+    var actionClick='openDet('+a.vehicleId+')';
+
+    html+='<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--bdr)">';
+    // Icon
+    html+='<div style="width:32px;height:32px;border-radius:8px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#A32D2D">'+iconSvg+'</div>';
+    // Content
+    html+='<div style="flex:1;min-width:0">';
+    html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">';
+    html+='<span style="font-size:12px;font-weight:600;color:var(--t1)">'+a.title+'</span>';
+    if(isUrgent) html+='<span style="font-size:9px;padding:1px 6px;border-radius:999px;background:#FEE2E2;color:#DC2626;font-weight:600">דחוף</span>';
+    html+='</div>';
+    html+='<div style="font-size:11px;color:var(--t2)">'+a.driverName+(a.plate?' · '+a.plate:'')+'</div>';
+    html+='<div style="font-size:11px;color:var(--t3);margin-top:2px">'+fd(a.date)+'</div>';
+    if(a.type==='family-license') html+='<div style="margin-top:3px"><span style="font-size:9px;background:#fce7f3;color:#9f1239;padding:1px 6px;border-radius:999px;font-weight:600">בן משפחה'+(a.primaryDriver?' של '+a.primaryDriver:'')+'</span></div>';
+    html+='</div>';
+    // Right side: days + action
+    html+='<div style="text-align:left;flex-shrink:0">';
+    html+='<div style="font-size:11px;font-weight:600;color:#DC2626;margin-bottom:6px;white-space:nowrap">'+daysText+'</div>';
+    html+='<button onclick="'+actionClick+'" style="font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--bdr);background:var(--bg);color:var(--t1);cursor:pointer;font-family:inherit;font-weight:500;white-space:nowrap">'+actionLabel+'</button>';
+    html+='</div>';
+    html+='</div>';
   });
   el.innerHTML=html;
+
+  // Footer
+  var footerEl=document.getElementById('cal-alerts-footer');
+  var totalEl=document.getElementById('cal-alerts-total');
+  if(footerEl){
+    if(filtered.length>5){
+      footerEl.style.display='';
+      if(totalEl) totalEl.textContent=filtered.length;
+    } else {
+      footerEl.style.display='none';
+    }
+  }
+}
+
+function showAllAlerts(){
+  // Temporarily show all alerts by expanding the range
+  var prev=_alertRange;
+  _alertRange=365;
+  var el=document.getElementById('cal-alerts-list');
+  if(!el) return;
+  // Re-render with no limit - override the 5 limit temporarily
+  // Build alerts same as renderSystemAlerts but show all
+  renderSystemAlerts();
+  // Hack: re-render without slice(0,5) - call with expanded data
+  // For simplicity, just set range to 30 and re-render
+  _alertRange=30;
+  // Actually let's just navigate to reminders page
+  if(typeof go==='function'){
+    go('reminders',document.querySelector('[dp=reminders]'));
+  }
 }
 
 function openEventModalForDay(iso){
