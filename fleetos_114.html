@@ -1308,8 +1308,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <!-- Month summary bar -->
       <div class="cal-summary-bar" id="cal-summary-bar">
         <div class="cal-summary-stats">
-          <span class="cal-summary-num" id="cal-sum-total">0</span><span class="cal-summary-label">סך אירועים</span>
-          <span class="cal-summary-sep"></span>
+          <span class="cal-summary-label">סך אירועים</span><span class="cal-summary-num" id="cal-sum-total">0</span>
           <span class="cal-summary-dot" style="background:#C9302C"></span><span class="cal-summary-label">איסוף לטיפול</span><span class="cal-summary-val" id="cal-sum-svc">0</span>
           <span class="cal-summary-dot" style="background:#D97706"></span><span class="cal-summary-label">איסוף לטסט</span><span class="cal-summary-val" id="cal-sum-test">0</span>
           <span class="cal-summary-dot" style="background:#FCD34D"></span><span class="cal-summary-label">תזכורות אישיות</span><span class="cal-summary-val" id="cal-sum-personal">0</span>
@@ -2999,7 +2998,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .cal-nav-btn{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:inherit;font-size:14px;color:var(--t2);transition:all .15s}
 .cal-nav-btn:hover{background:var(--bg);color:var(--t1)}
 .cal-nav-arrows{display:flex;gap:4px;align-items:center}
-.cal-nav-title{font-size:15px;font-weight:500;color:var(--t1)}
+.cal-nav-title{font-size:17px;font-weight:600;color:var(--t1)}
 .cal-today-btn{background:var(--green-light);color:var(--green-dark);border:1px solid var(--green);padding:4px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
 .cal-today-btn:hover{background:var(--green);color:#fff}
 /* Calendar grid */
@@ -12394,7 +12393,7 @@ function renderCalSummary(events){
   var now=calCurrentDate;
   var y=now.getFullYear(),m=now.getMonth();
   var monthLabel=document.getElementById('cal-summary-month');
-  if(monthLabel) monthLabel.textContent='סיכום החודש · '+HEM[m]+' '+y;
+  if(monthLabel) monthLabel.textContent='סיכום החודש';
   var monthStart=(new Date(y,m,1)).toISOString().split('T')[0];
   var monthEnd=(new Date(y,m+1,0)).toISOString().split('T')[0];
   var monthEvents=events.filter(function(e){return e.date>=monthStart&&e.date<=monthEnd;});
