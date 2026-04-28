@@ -6369,21 +6369,27 @@ function getSvcItems(){
   return items;
 }
 function simulateServiceTest(){
-  // Set first vehicle's last service to 11 months ago so it triggers "needs service"
   if(!vehicles||!vehicles.length){alert('אין רכבים במערכת');return;}
   var v=vehicles[0];
   var elevenMonthsAgo=new Date();
   elevenMonthsAgo.setMonth(elevenMonthsAgo.getMonth()-11);
-  elevenMonthsAgo.setDate(elevenMonthsAgo.getDate()+10); // 20 days from now = service due
+  elevenMonthsAgo.setDate(elevenMonthsAgo.getDate()+10);
   v.lastService=elevenMonthsAgo.toISOString().split('T')[0];
-  // Clear any existing history service entries so lastService is used
-  if(v.historyLog){
-    v.historyLog=v.historyLog.filter(function(h){return h.kind!=='service';});
+  if(v.historyLog) v.historyLog=v.historyLog.filter(function(h){return h.kind!=='service';});
+  // Save to Firestore
+  if(db){
+    db.collection('vehicles').doc(String(v.id)).update({lastService:v.lastService,historyLog:v.historyLog||[]}).then(function(){
+      showToast('✅ בדיקה: טיפול אחרון של '+v.driver.name+' הוגדר ל-'+fd(v.lastService));
+      refresh();
+    }).catch(function(e){
+      console.error(e);
+      showToast('✅ בדיקה מקומית: '+v.driver.name+' — ידרוש טיפול בקרוב');
+      refresh();
+    });
+  } else {
+    showToast('✅ בדיקה: '+v.driver.name+' — ידרוש טיפול בקרוב');
+    refresh();
   }
-  refresh();
-  showToast('✅ בדיקה: טיפול אחרון של '+v.driver.name+' הוגדר ל-'+fd(v.lastService)+' — הרכב ידרוש טיפול בקרוב');
-  // Navigate to dashboard
-  go('dashboard',document.querySelector('[dp=dashboard]'));
 }
 function checkAutoReminders(){
   var bookings=typeof getServiceBookings==='function'?getServiceBookings():[];
