@@ -6386,38 +6386,29 @@ function renderSvcSection(){
   if(_svcFilter==='svc')filtered=allItems.filter(function(it){return it.type==='svc'});
   else if(_svcFilter==='test')filtered=allItems.filter(function(it){return it.type==='test'});
 
-  // Simulate scheduling status (in production this comes from DB)
-  // For now: items with date in past = overdue, items near = sent, items far = not sent
-  var todayStr=now.toISOString().split('T')[0];
-  var scheduled=0,waiting=0,sent=0,notSent=0;
+  // Real data from service bookings
+  var bookings=typeof getServiceBookings==='function'?getServiceBookings():[];
+  var now_y=now.getFullYear(),now_m=now.getMonth();
+  // Filter bookings to current month only
+  var monthBookings=bookings.filter(function(b){
+    var d=new Date(b.createdAt||b.bookedDate||'');
+    return d.getFullYear()===now_y && d.getMonth()===now_m;
+  });
+  var totalFiltered=filtered.length;
+  var sent=monthBookings.filter(function(b){return b.status==='pending'||b.status==='booked'||b.status==='confirmed'}).length;
+  var waiting=monthBookings.filter(function(b){return b.status==='booked'&&!b.confirmedAt}).length;
+  var scheduled=monthBookings.filter(function(b){return b.status==='confirmed'}).length;
+  var notSent=Math.max(0,totalFiltered-sent);
   var overdueDrivers=[];
-  filtered.forEach(function(it,i){
-    var daysDiff=Math.ceil((new Date(it.date)-now)/86400000);
-    // Simulate status based on date proximity
-    if(it.overdue||daysDiff<-3){
-      waiting++;
-      var daysNoReply=Math.abs(daysDiff)+3;
-      if(daysNoReply>=5){
-        overdueDrivers.push({name:it.driver,type:it.type,detail:it.detail,company:it.company,days:daysNoReply,vid:it.vid});
-      }
-    } else if(daysDiff<7){
-      waiting++;
-      if(daysDiff<0){
-        var dNR=Math.abs(daysDiff)+2;
-        if(dNR>=5) overdueDrivers.push({name:it.driver,type:it.type,detail:it.detail,company:it.company,days:dNR,vid:it.vid});
-      }
-    } else if(daysDiff<14){
-      sent++;
-    } else {
-      notSent++;
+  // Find drivers with pending status for 5+ days
+  monthBookings.filter(function(b){return b.status==='pending'}).forEach(function(b){
+    var daysSince=Math.floor((now-new Date(b.createdAt||''))/86400000);
+    if(daysSince>=5){
+      overdueDrivers.push({name:b.driverName||'',type:b.serviceType==='טסט'?'test':'svc',detail:b.plate||'',company:'',days:daysSince,vid:b.vid});
     }
   });
-  // Some items are "scheduled" (simulated)
-  var totalFiltered=filtered.length;
-  scheduled=Math.floor(totalFiltered*0.15);
-  if(waiting>scheduled)waiting=waiting-scheduled;
 
-  // Status cards
+  // Status cards - "דורש שיבוץ" = total needing service this month
   var needEl=document.getElementById('svc-need');if(needEl)needEl.textContent=formatNumber(totalFiltered);
   var needDetail=document.getElementById('svc-need-detail');
   if(needDetail){
@@ -6425,31 +6416,35 @@ function renderSvcSection(){
     var fTest=filtered.filter(function(it){return it.type==='test'}).length;
     needDetail.textContent=formatNumber(fSvc)+' טיפולים · '+formatNumber(fTest)+' טסטים';
   }
+  // "מיילים נשלחו" = how many booking emails were sent this month
   var sentEl=document.getElementById('svc-sent');if(sentEl)sentEl.textContent=formatNumber(sent);
   var sentSub=document.getElementById('svc-sent-sub');if(sentSub)sentSub.textContent='מ-'+formatNumber(totalFiltered);
-  var sentDetail=document.getElementById('svc-sent-detail');if(sentDetail)sentDetail.textContent=formatNumber(notSent)+' ממתינים לשליחה';
-  var waitEl=document.getElementById('svc-waiting');if(waitEl)waitEl.textContent=formatNumber(waiting);
+  var sentDetail=document.getElementById('svc-sent-detail');if(sentDetail)sentDetail.textContent=notSent>0?formatNumber(notSent)+' ממתינים לשליחה':'הכל נשלח ✓';
+  // "ממתין לתשובה" = pending bookings (sent but driver hasn't picked date)
+  var pendingCount=monthBookings.filter(function(b){return b.status==='pending'}).length;
+  var waitEl=document.getElementById('svc-waiting');if(waitEl)waitEl.textContent=formatNumber(pendingCount);
   var waitDetail=document.getElementById('svc-waiting-detail');
   if(waitDetail){
     var over5=overdueDrivers.length;
     waitDetail.textContent=over5>0?formatNumber(over5)+' מהם 5+ ימים ↓':'';
   }
+  // "מועד נקבע" = confirmed bookings
   var schedEl=document.getElementById('svc-scheduled');if(schedEl)schedEl.textContent=formatNumber(scheduled);
   var schedDetail=document.getElementById('svc-scheduled-detail');
   if(schedDetail){
-    var pct=totalFiltered>0?Math.round((scheduled/totalFiltered)*100):0;
-    schedDetail.textContent=pct+'% מהיעד החודשי';
+    var bookedNotConfirmed=monthBookings.filter(function(b){return b.status==='booked'}).length;
+    schedDetail.textContent=bookedNotConfirmed>0?formatNumber(bookedNotConfirmed)+' ממתינים לאישורך':'';
   }
 
   // Progress bar
   var progSummary=document.getElementById('svc-progress-summary');
-  if(progSummary)progSummary.textContent=formatNumber(scheduled)+' נקבעו · '+formatNumber(waiting+sent)+' ממתינים · '+formatNumber(notSent)+' לא נשלחו';
+  if(progSummary)progSummary.textContent=formatNumber(scheduled)+' אושרו · '+formatNumber(pendingCount)+' ממתינים לתשובה · '+formatNumber(notSent)+' לא נשלחו';
   var pGreen=document.getElementById('svc-prog-green');
   var pOrange=document.getElementById('svc-prog-orange');
   var pGray=document.getElementById('svc-prog-gray');
   if(totalFiltered>0){
     if(pGreen)pGreen.style.width=Math.round((scheduled/totalFiltered)*100)+'%';
-    if(pOrange)pOrange.style.width=Math.round(((waiting+sent)/totalFiltered)*100)+'%';
+    if(pOrange)pOrange.style.width=Math.round((pendingCount/totalFiltered)*100)+'%';
     if(pGray)pGray.style.width=Math.round((notSent/totalFiltered)*100)+'%';
   } else {
     if(pGreen)pGreen.style.width='0%';
