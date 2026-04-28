@@ -1020,32 +1020,31 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <button class="svc-tab active" onclick="setSvcFilter('all',this)">הכל · <span id="svc-tab-all">0</span></button>
             <button class="svc-tab" onclick="setSvcFilter('svc',this)">טיפולים · <span id="svc-tab-svc">0</span></button>
             <button class="svc-tab" onclick="setSvcFilter('test',this)">טסטים · <span id="svc-tab-test">0</span></button>
-            <button onclick="simulateServiceTest()" style="background:#FAEEDA;color:#854F0B;border:1px solid #D97706;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit;margin-right:8px" title="יוצר תרחיש בדיקה לטיפול">🧪 בדיקה</button>
           </div>
         </div>
         <div class="svc-status-grid">
-          <div class="svc-status-card" style="background:#F1EFE8">
+          <div class="svc-status-card" style="background:#F1EFE8;cursor:pointer" onclick="openSvcStatusModal('need')">
             <div class="svc-status-dot" style="background:#888780"></div>
             <div class="svc-status-label">דורש שיבוץ</div>
             <div class="svc-status-value" id="svc-need" style="color:#5F5E5A">0</div>
             <div class="svc-status-sub">נהגים</div>
             <div class="svc-status-detail" id="svc-need-detail">0 טיפולים · 0 טסטים</div>
           </div>
-          <div class="svc-status-card" style="background:#E6F1FB">
+          <div class="svc-status-card" style="background:#E6F1FB;cursor:pointer" onclick="openSvcStatusModal('sent')">
             <div class="svc-status-dot" style="background:#185FA5"></div>
             <div class="svc-status-label" style="color:#185FA5">מיילים נשלחו</div>
             <div class="svc-status-value" id="svc-sent" style="color:#0C447C">0</div>
             <div class="svc-status-sub" id="svc-sent-sub">מ-0</div>
             <div class="svc-status-detail" id="svc-sent-detail" style="color:#185FA5">0 ממתינים לשליחה</div>
           </div>
-          <div class="svc-status-card" style="background:#FAEEDA">
+          <div class="svc-status-card" style="background:#FAEEDA;cursor:pointer" onclick="openSvcStatusModal('waiting')">
             <div class="svc-status-dot" style="background:#BA7517"></div>
             <div class="svc-status-label" style="color:#854F0B">ממתין לתשובה</div>
             <div class="svc-status-value" id="svc-waiting" style="color:#854F0B">0</div>
             <div class="svc-status-sub">נהגים</div>
             <div class="svc-status-detail" id="svc-waiting-detail" style="color:#854F0B"></div>
           </div>
-          <div class="svc-status-card" style="background:#E1F5EE">
+          <div class="svc-status-card" style="background:#E1F5EE;cursor:pointer" onclick="openSvcStatusModal('scheduled')">
             <div class="svc-status-dot" style="background:#0F6E56"></div>
             <div class="svc-status-label" style="color:#0F6E56">מועד נקבע</div>
             <div class="svc-status-value" id="svc-scheduled" style="color:#0F6E56">0</div>
@@ -6368,6 +6367,68 @@ function getSvcItems(){
   items=items.filter(function(it){var k=it.vid+'-'+it.type;if(seen[k])return false;seen[k]=true;return true;});
   return items;
 }
+function openSvcStatusModal(type){
+  var titles={'need':'דורש שיבוץ','sent':'מיילים נשלחו','waiting':'ממתין לתשובה','scheduled':'מועד נקבע'};
+  var colors={'need':'#5F5E5A','sent':'#185FA5','waiting':'#854F0B','scheduled':'#0F6E56'};
+  var bgColors={'need':'#F1EFE8','sent':'#E6F1FB','waiting':'#FAEEDA','scheduled':'#E1F5EE'};
+  var bookings=typeof getServiceBookings==='function'?getServiceBookings():[];
+  var needs=typeof getVehiclesNeedingService==='function'?getVehiclesNeedingService(60):[];
+  var items=[];
+
+  if(type==='need'){
+    // Vehicles needing service that don't have a booking yet
+    needs.forEach(function(n){
+      var hasBooking=bookings.some(function(b){return String(b.vid)===String(n.vid)&&b.status!=='cancelled';});
+      items.push({name:n.driver,plate:n.plate,detail:n.type,date:n.dueDate,days:n.daysLeft,status:hasBooking?'נשלח':'טרם נשלח',vid:n.vid,hasBooking:hasBooking});
+    });
+  } else if(type==='sent'){
+    bookings.filter(function(b){return b.status==='pending'||b.status==='booked'||b.status==='confirmed';}).forEach(function(b){
+      items.push({name:b.driverName||'',plate:b.plate||'',detail:b.serviceType||'',date:b.createdAt?b.createdAt.split('T')[0]:'',days:null,status:b.status==='pending'?'ממתין לתשובה':b.status==='booked'?'בחר תאריך':'אושר',vid:b.vid});
+    });
+  } else if(type==='waiting'){
+    bookings.filter(function(b){return b.status==='pending';}).forEach(function(b){
+      var daysSince=Math.floor((new Date()-new Date(b.createdAt||''))/86400000);
+      items.push({name:b.driverName||'',plate:b.plate||'',detail:b.serviceType||'',date:b.createdAt?b.createdAt.split('T')[0]:'',days:daysSince,status:daysSince+'  ימים ללא תשובה',vid:b.vid});
+    });
+  } else if(type==='scheduled'){
+    bookings.filter(function(b){return b.status==='confirmed'||b.status==='booked';}).forEach(function(b){
+      var stLabel=b.status==='confirmed'?'אושר':'ממתין לאישורך';
+      items.push({name:b.driverName||'',plate:b.plate||'',detail:b.serviceType||'',date:b.bookedDate||'',days:null,status:stLabel,vid:b.vid});
+    });
+  }
+
+  var existing=document.getElementById('svc-status-modal');if(existing)existing.remove();
+  var modal=document.createElement('div');
+  modal.id='svc-status-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+
+  var rows='';
+  if(items.length===0){
+    rows='<div style="text-align:center;padding:28px;color:var(--t2);font-size:13px">אין נהגים בקטגוריה זו</div>';
+  } else {
+    rows='<div style="border-top:1px solid rgba(0,0,0,.08)">';
+    items.forEach(function(it){
+      var statusColor=it.status==='אושר'?'#0F6E56':it.status==='טרם נשלח'?'#A32D2D':colors[type];
+      rows+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer" onclick="document.getElementById(\'svc-status-modal\').remove();openDet('+it.vid+')">'
+        +'<div style="width:32px;height:32px;border-radius:50%;background:'+bgColors[type]+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:'+colors[type]+';flex-shrink:0">'+(it.name||'').split(' ').map(function(w){return w.charAt(0)}).join('').slice(0,2)+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">'+it.name+'</div><div style="font-size:11px;color:var(--t2)">'+it.plate+' · '+it.detail+'</div></div>'
+        +'<div style="text-align:left"><div style="font-size:11px;font-weight:500;color:'+statusColor+'">'+it.status+'</div>'+(it.date?'<div style="font-size:10px;color:var(--t3)">'+fd(it.date)+'</div>':'')+'</div>'
+        +'</div>';
+    });
+    rows+='</div>';
+  }
+
+  modal.innerHTML='<div style="background:var(--card);border-radius:12px;width:100%;max-width:500px;overflow:hidden;max-height:80vh;display:flex;flex-direction:column" onclick="event.stopPropagation()">'
+    +'<div style="background:'+colors[type]+';padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">'
+    +'<div style="display:flex;align-items:center;gap:8px"><span style="color:#fff;font-size:15px;font-weight:500">'+titles[type]+'</span><span style="background:rgba(255,255,255,.2);color:#fff;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600">'+items.length+'</span></div>'
+    +'<button onclick="document.getElementById(\'svc-status-modal\').remove()" style="background:rgba(255,255,255,.15);border:none;width:28px;height:28px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+    +'</div>'
+    +'<div style="padding:16px;overflow-y:auto;flex:1">'+rows+'</div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
 function simulateServiceTest(){
   if(!vehicles||!vehicles.length){alert('אין רכבים במערכת');return;}
   var v=vehicles[0];
