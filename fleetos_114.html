@@ -1020,6 +1020,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <button class="svc-tab active" onclick="setSvcFilter('all',this)">הכל · <span id="svc-tab-all">0</span></button>
             <button class="svc-tab" onclick="setSvcFilter('svc',this)">טיפולים · <span id="svc-tab-svc">0</span></button>
             <button class="svc-tab" onclick="setSvcFilter('test',this)">טסטים · <span id="svc-tab-test">0</span></button>
+            <button onclick="simulateServiceTest()" style="background:#FAEEDA;color:#854F0B;border:1px solid #D97706;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-family:inherit;margin-right:8px" title="יוצר תרחיש בדיקה לטיפול">🧪 בדיקה</button>
           </div>
         </div>
         <div class="svc-status-grid">
@@ -6366,6 +6367,23 @@ function getSvcItems(){
   var seen={};
   items=items.filter(function(it){var k=it.vid+'-'+it.type;if(seen[k])return false;seen[k]=true;return true;});
   return items;
+}
+function simulateServiceTest(){
+  // Set first vehicle's last service to 11 months ago so it triggers "needs service"
+  if(!vehicles||!vehicles.length){alert('אין רכבים במערכת');return;}
+  var v=vehicles[0];
+  var elevenMonthsAgo=new Date();
+  elevenMonthsAgo.setMonth(elevenMonthsAgo.getMonth()-11);
+  elevenMonthsAgo.setDate(elevenMonthsAgo.getDate()+10); // 20 days from now = service due
+  v.lastService=elevenMonthsAgo.toISOString().split('T')[0];
+  // Clear any existing history service entries so lastService is used
+  if(v.historyLog){
+    v.historyLog=v.historyLog.filter(function(h){return h.kind!=='service';});
+  }
+  refresh();
+  showToast('✅ בדיקה: טיפול אחרון של '+v.driver.name+' הוגדר ל-'+fd(v.lastService)+' — הרכב ידרוש טיפול בקרוב');
+  // Navigate to dashboard
+  go('dashboard',document.querySelector('[dp=dashboard]'));
 }
 function checkAutoReminders(){
   var bookings=typeof getServiceBookings==='function'?getServiceBookings():[];
