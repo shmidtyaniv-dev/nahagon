@@ -1309,14 +1309,14 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div class="cal-summary-bar" id="cal-summary-bar">
         <div class="cal-summary-stats">
           <span class="cal-summary-num" id="cal-sum-total">0</span><span class="cal-summary-label">סך אירועים</span>
-          <span class="cal-summary-dot" style="background:#C9302C"></span><span class="cal-summary-label">איסוף לטיפול</span><span class="cal-summary-num" id="cal-sum-svc">0</span>
-          <span class="cal-summary-dot" style="background:#D97706"></span><span class="cal-summary-label">איסוף לטסט</span><span class="cal-summary-num" id="cal-sum-test">0</span>
-          <span class="cal-summary-dot" style="background:#FCD34D"></span><span class="cal-summary-label">תזכורות אישיות</span><span class="cal-summary-num" id="cal-sum-personal">0</span>
-          <span class="cal-summary-dot" style="background:#A32D2D"></span><span class="cal-summary-label">התראות פעילות</span><span class="cal-summary-num" id="cal-sum-alerts">0</span>
+          <span class="cal-summary-sep"></span>
+          <span class="cal-summary-dot" style="background:#C9302C"></span><span class="cal-summary-label">איסוף לטיפול</span><span class="cal-summary-val" id="cal-sum-svc">0</span>
+          <span class="cal-summary-dot" style="background:#D97706"></span><span class="cal-summary-label">איסוף לטסט</span><span class="cal-summary-val" id="cal-sum-test">0</span>
+          <span class="cal-summary-dot" style="background:#FCD34D"></span><span class="cal-summary-label">תזכורות אישיות</span><span class="cal-summary-val" id="cal-sum-personal">0</span>
+          <span class="cal-summary-sep"></span>
+          <span class="cal-summary-dot" style="background:#A32D2D"></span><span class="cal-summary-label">התראות פעילות</span><span class="cal-summary-val" id="cal-sum-alerts">0</span>
         </div>
-        <div class="cal-summary-title">
-          <span id="cal-summary-month">סיכום החודש</span>
-        </div>
+        <div class="cal-summary-title"><span id="cal-summary-month">סיכום החודש</span></div>
       </div>
 
       <!-- Main grid: alerts sidebar + calendar -->
@@ -2963,9 +2963,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .cal-summary-bar{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px}
 .cal-summary-title{font-size:12px;font-weight:500;color:#5F5E5A;white-space:nowrap}
 .cal-summary-stats{display:flex;align-items:center;gap:6px}
-.cal-summary-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-left:14px}
-.cal-summary-num{font-size:18px;font-weight:500;color:var(--t1);line-height:1}
+.cal-summary-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-left:16px}
+.cal-summary-num{font-size:18px;font-weight:500;color:var(--t1);line-height:1;margin-left:4px}
+.cal-summary-val{font-size:14px;font-weight:500;color:var(--t1);margin-left:16px}
 .cal-summary-label{font-size:11px;color:#5F5E5A;white-space:nowrap;margin-left:2px}
+.cal-summary-sep{width:1px;height:20px;background:var(--bdr);margin:0 10px;flex-shrink:0}
 /* Main grid */
 .cal-main-grid{display:grid;grid-template-columns:300px 1fr;gap:12px;align-items:start}
 /* Alerts sidebar */
