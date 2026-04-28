@@ -1823,6 +1823,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         הגדרות לוח טיפולים
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <label style="font-size:12px;color:var(--t2);white-space:nowrap">התראה לפני טיפול (ימים):</label>
+        <input type="number" id="sched-reminder-days" min="1" max="90" value="20" style="width:60px;padding:5px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;text-align:center">
+        <span style="font-size:10px;color:var(--t3)">ברירת מחדל: 20</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <label style="font-size:12px;color:var(--t2);white-space:nowrap">כמות טיפולים ליום:</label>
         <input type="number" id="sched-daily-capacity" min="1" max="20" value="2" style="width:60px;padding:5px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;text-align:center">
       </div>
@@ -14773,19 +14778,22 @@ function quickRemoveTask(tid){const idx=tasks.findIndex(x=>x.id===tid);if(idx<0)
 
 var _lastBookingIds = new Set();
 
-const BOOK_MSG_DEFAULT = 'שלום {נהג},\n\nרכב {רכב} צריך {סוג}.\n\nלקביעת תור לטיפול, לחץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const BOOK_MSG_DEFAULT = 'שלום {נהג},\n\nרכב {רכב} צריך {סוג}.\nנא לקבוע מועד לאיסוף הרכב ולעדכן ק"מ נוכחי בקישור:\n{לינק}\n\n📍 מיקום איסוף: משרדי מור בית השקעות\n* במידה ויש בעיה במיקום האיסוף, יש לפנות לנציג לקביעת מיקום חלופי.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const BOOK_CONFIRM_DEFAULT = 'שלום {נהג},\n\nנקבע {סוג} לרכב {רכב} בתאריך {תאריך}.\nמוסך: {מוסך}\n{רכב_חלופי}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
 function getSchedulingSettings(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   return {
     dailyCapacity: s.schedDailyCapacity||2,
-    openDays: s.schedOpenDays||[0,1,2,3,4] // Sun-Thu by default
+    openDays: s.schedOpenDays||[0,1,2,3,4],
+    reminderDays: s.schedReminderDays||20
   };
 }
 
 function saveSchedulingSettings(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  var remEl=document.getElementById('sched-reminder-days');
+  if(remEl) s.schedReminderDays=parseInt(remEl.value)||20;
   var capEl=document.getElementById('sched-daily-capacity');
   if(capEl) s.schedDailyCapacity=parseInt(capEl.value)||2;
   var daysCbs=document.querySelectorAll('.sched-day-cb');
@@ -14798,6 +14806,8 @@ function saveSchedulingSettings(){
 
 function initSchedulingSettings(){
   var s=getSchedulingSettings();
+  var remEl=document.getElementById('sched-reminder-days');
+  if(remEl) remEl.value=s.reminderDays;
   var capEl=document.getElementById('sched-daily-capacity');
   if(capEl) capEl.value=s.dailyCapacity;
   var daysCbs=document.querySelectorAll('.sched-day-cb');
@@ -15132,7 +15142,8 @@ function openBookingDetails(bookingId){
           '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3);font-size:12px">נהג</span><span style="font-weight:600;font-size:13px">'+(b.driverName||'—')+'</span></div>'+
           '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3);font-size:12px">סוג טיפול</span><span style="font-weight:600;font-size:13px">'+b.serviceType+'</span></div>'+
           '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3);font-size:12px">תאריך יעד</span><span style="font-weight:600;font-size:13px">'+fd(b.dueDate)+'</span></div>'+
-          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--t3);font-size:12px">תאריך תור</span><span style="font-weight:700;font-size:13px;color:'+stColor+'">'+fd(b.bookedDate)+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bdr)"><span style="color:var(--t3);font-size:12px">תאריך תור</span><span style="font-weight:700;font-size:13px;color:'+stColor+'">'+fd(b.bookedDate)+'</span></div>'+
+          (b.driverReportedKm?'<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--t3);font-size:12px">ק"מ שדווח ע"י הנהג</span><span style="font-weight:600;font-size:13px;color:#185FA5">'+Number(b.driverReportedKm).toLocaleString('he-IL')+' ק"מ</span></div>':'<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--t3);font-size:12px">ק"מ</span><span style="font-size:13px;color:var(--t3)">לא דווח</span></div>')+
         '</div>'+
         '<div style="display:grid;gap:10px;margin-bottom:14px">'+
           '<div><label style="font-size:11px;color:var(--t3);display:block;margin-bottom:3px">שם מוסך</label>'+
@@ -15320,11 +15331,20 @@ function renderPublicBookingPage(page,token,info){
           '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">סוג טיפול</span><span style="font-weight:600;font-size:13px">'+info.serviceType+'</span></div>'+
           '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">תאריך יעד</span><span style="font-weight:600;font-size:13px">'+fd(info.dueDate)+'</span></div>'+
         '</div>'+
-        '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:12px;text-align:center">בחר תאריך לטיפול:</div>'+
+        '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:12px;text-align:center">בחר תאריך לאיסוף הרכב:</div>'+
         calHtml+
+        '<div style="margin-top:14px;background:#f8f9f8;border-radius:10px;padding:14px">'+
+          '<label style="font-size:13px;font-weight:600;color:#333;display:block;margin-bottom:6px">ק"מ נוכחי ברכב *</label>'+
+          '<input type="text" id="booking-km" inputmode="numeric" dir="ltr" placeholder="לדוגמה: 45,000" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;font-family:Heebo,Arial,sans-serif;text-align:center;box-sizing:border-box" oninput="this.value=this.value.replace(/[^0-9]/g,\'\').replace(/\\B(?=(\\d{3})+(?!\\d))/g,\',\')">'+
+          '<div style="font-size:11px;color:#888;margin-top:4px;text-align:center">הזן את מספר הק"מ המוצג בלוח השעונים</div>'+
+        '</div>'+
+        '<div style="margin-top:12px;background:#FEF9E7;border:1px solid #D97706;border-radius:10px;padding:12px;font-size:12px;color:#854F0B;line-height:1.6">'+
+          '<strong>📍 מיקום איסוף:</strong> משרדי מור בית השקעות<br>'+
+          '<span style="font-size:11px">* במידה ויש בעיה במיקום האיסוף, יש לפנות לנציג לקביעת מיקום חלופי.</span>'+
+        '</div>'+
         '<div id="booking-selected-info" style="display:none;margin-top:14px;text-align:center">'+
           '<div style="font-size:14px;color:#333;margin-bottom:10px">תאריך נבחר: <b id="booking-selected-date"></b></div>'+
-          '<button id="booking-confirm-btn" onclick="submitPublicBooking(\''+token+'\')" style="width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:Heebo,Arial,sans-serif">&#10003; אישור קביעת תור</button>'+
+          '<button id="booking-confirm-btn" onclick="submitPublicBooking(\''+token+'\')" style="width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:Heebo,Arial,sans-serif">&#10003; אישור קביעת מועד</button>'+
         '</div>'+
         '<div style="text-align:center;margin-top:18px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
       '</div></div>';
@@ -15416,20 +15436,26 @@ function selectBookingDate(isoDate){
 }
 
 function submitPublicBooking(token){
-  if(!_publicSelectedDate){return;}
+  if(!_publicSelectedDate){alert('נא לבחור תאריך');return;}
+  var kmEl=document.getElementById('booking-km');
+  var kmVal=kmEl?parseInt(kmEl.value.replace(/[^0-9]/g,'')):0;
+  if(!kmVal){alert('נא להזין ק"מ נוכחי');if(kmEl)kmEl.focus();return;}
   var btn=document.getElementById('booking-confirm-btn');
   if(btn){btn.disabled=true;btn.textContent='שומר...';}
 
+  var updateData={
+    status:'booked',
+    bookedDate:_publicSelectedDate,
+    bookedAt:new Date().toISOString(),
+    driverReportedKm:kmVal
+  };
+
   if(db){
-    db.collection('serviceBookings').doc(token).update({
-      status:'booked',
-      bookedDate:_publicSelectedDate,
-      bookedAt:new Date().toISOString()
-    }).then(function(){
+    db.collection('serviceBookings').doc(token).update(updateData).then(function(){
       showBookingSuccess(_publicSelectedDate);
     }).catch(function(e){
       console.error('booking submit error:',e);
-      if(btn){btn.disabled=false;btn.textContent='&#10003; אישור קביעת תור';}
+      if(btn){btn.disabled=false;btn.textContent='&#10003; אישור קביעת מועד';}
     });
   } else {
     showBookingSuccess(_publicSelectedDate);
