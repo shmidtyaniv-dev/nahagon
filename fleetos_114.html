@@ -12193,11 +12193,26 @@ function saveFormTemplate(){
     return;
   }
 
-  // Also save to Firestore for sharing via link
+  // Save to Firestore for sharing via link (split PDF into chunks to avoid 1MB limit)
   if(db){
-    db.collection('formTemplates').doc(id_).set(data).then(function(){
-      console.log('✅ Template saved to Firestore');
-    }).catch(function(e){console.error('Firestore save error:',e);});
+    var pdfData=data.pdfBase64||'';
+    var metaDoc=Object.assign({},data);
+    delete metaDoc.pdfBase64;
+    var CHUNK_SIZE=800000; // ~800KB per chunk
+    var chunks=[];
+    for(var ci=0;ci<pdfData.length;ci+=CHUNK_SIZE){chunks.push(pdfData.substring(ci,ci+CHUNK_SIZE));}
+    metaDoc.pdfChunks=chunks.length;
+    var batch=db.batch();
+    batch.set(db.collection('formTemplates').doc(id_),metaDoc);
+    chunks.forEach(function(chunk,idx){
+      batch.set(db.collection('formTemplates').doc(id_).collection('pdfChunks').doc('chunk_'+idx),{data:chunk,idx:idx});
+    });
+    batch.commit().then(function(){
+      console.log('✅ Template saved to Firestore ('+chunks.length+' chunks)');
+    }).catch(function(e){
+      console.error('Firestore save error:',e);
+      showToast('הטופס נשמר מקומית אבל לא הועלה לשרת — שליחה לנהג לא תעבוד');
+    });
   }
 
   closeFormBuilder();
@@ -12213,7 +12228,15 @@ function deleteFormTemplate(tid){
   if(!confirm('למחוק את הטופס?'))return;
   const templates=getFormTemplates().filter(function(x){return x.id!==tid;});
   saveFormTemplatesArr(templates);
-  if(db)db.collection('formTemplates').doc(tid).delete().catch(function(){});
+  if(db){
+    // Delete chunks first, then main doc
+    db.collection('formTemplates').doc(tid).collection('pdfChunks').get().then(function(snap){
+      var batch=db.batch();
+      snap.forEach(function(d){batch.delete(d.ref);});
+      batch.delete(db.collection('formTemplates').doc(tid));
+      return batch.commit();
+    }).catch(function(){db.collection('formTemplates').doc(tid).delete().catch(function(){});});
+  }
   renderFormTemplates();
   showToast('נמחק');
 }
@@ -12290,8 +12313,24 @@ function checkFormFillPage(){
       id('form-fill-content').innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:10px">⚠️</div><div style="color:#dc2626;font-weight:600">הטופס לא נמצא</div><div style="color:#888;font-size:13px;margin-top:6px">ייתכן שהלינק אינו תקין או שהטופס נמחק.</div></div>';
       return;
     }
-    formFillState.template=doc.data();
-    renderFormFill();
+    var tplData=doc.data();
+    // Check if PDF is stored in chunks
+    if(tplData.pdfChunks && tplData.pdfChunks>0 && !tplData.pdfBase64){
+      id('form-fill-content').innerHTML='<div style="text-align:center;padding:40px;color:#888">⏳ טוען טופס...</div>';
+      db.collection('formTemplates').doc(tid).collection('pdfChunks').orderBy('idx').get().then(function(snap){
+        var pdfParts=[];
+        snap.forEach(function(chunkDoc){pdfParts.push(chunkDoc.data().data);});
+        tplData.pdfBase64=pdfParts.join('');
+        formFillState.template=tplData;
+        renderFormFill();
+      }).catch(function(e){
+        console.error('Chunk load error:',e);
+        id('form-fill-content').innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:10px">⚠️</div><div style="color:#dc2626;font-weight:600">שגיאה בטעינת הטופס</div><div style="color:#888;font-size:13px;margin-top:6px">'+e.message+'</div></div>';
+      });
+    } else {
+      formFillState.template=tplData;
+      renderFormFill();
+    }
   }).catch(function(e){
     console.error(e);
     id('form-fill-content').innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:10px">⚠️</div><div style="color:#dc2626;font-weight:600">שגיאה בטעינה</div><div style="color:#888;font-size:13px;margin-top:6px">'+e.message+'</div></div>';
