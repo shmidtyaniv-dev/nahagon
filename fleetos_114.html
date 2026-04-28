@@ -11219,15 +11219,79 @@ var fbState={
 var formSubmissionsCache=[];
 var _formSubsListener=null;
 
-function getFormTemplates(){return JSON.parse(localStorage.getItem('formTemplates')||'[]');}
-function saveFormTemplatesArr(arr){
-  try{
-    localStorage.setItem('formTemplates',JSON.stringify(arr));
-  }catch(e){
-    console.error('localStorage save error:',e);
-    alert('שגיאה בשמירה: נפח האחסון המקומי מלא. נסה למחוק טפסים ישנים או להקטין את קובץ ה-PDF.');
-  }
+// IndexedDB for form templates (localStorage is too small for PDFs)
+var _formTemplatesCache=null;
+function _openFormDB(){
+  return new Promise(function(resolve,reject){
+    var req=indexedDB.open('formTemplatesDB',1);
+    req.onupgradeneeded=function(e){e.target.result.createObjectStore('templates',{keyPath:'id'});};
+    req.onsuccess=function(e){resolve(e.target.result);};
+    req.onerror=function(e){reject(e.target.error);};
+  });
 }
+function getFormTemplates(){
+  // Return cached synchronously (loaded at init)
+  return _formTemplatesCache||JSON.parse(localStorage.getItem('formTemplates')||'[]');
+}
+function saveFormTemplatesArr(arr){
+  _formTemplatesCache=arr;
+  _openFormDB().then(function(db){
+    var tx=db.transaction('templates','readwrite');
+    var store=tx.objectStore('templates');
+    store.clear();
+    arr.forEach(function(t){store.put(t);});
+  }).catch(function(e){
+    console.error('IndexedDB save error:',e);
+    // Fallback to localStorage (without PDF data)
+    try{
+      var light=arr.map(function(t){var c=Object.assign({},t);delete c.pdfBase64;return c;});
+      localStorage.setItem('formTemplates',JSON.stringify(light));
+    }catch(e2){console.error('localStorage fallback error:',e2);}
+  });
+  // Also try to keep localStorage in sync (without heavy PDF data) for quick load
+  try{
+    var light=arr.map(function(t){var c=Object.assign({},t);delete c.pdfBase64;return c;});
+    localStorage.setItem('formTemplates',JSON.stringify(light));
+  }catch(e){}
+}
+function loadFormTemplatesFromDB(){
+  return _openFormDB().then(function(db){
+    return new Promise(function(resolve,reject){
+      var tx=db.transaction('templates','readonly');
+      var store=tx.objectStore('templates');
+      var req=store.getAll();
+      req.onsuccess=function(){
+        var arr=req.result||[];
+        if(arr.length>0){
+          _formTemplatesCache=arr;
+        } else {
+          // Migrate from localStorage if exists
+          var old=JSON.parse(localStorage.getItem('formTemplates')||'[]');
+          if(old.length>0){
+            _formTemplatesCache=old;
+            saveFormTemplatesArr(old);
+          } else {
+            _formTemplatesCache=[];
+          }
+        }
+        resolve(_formTemplatesCache);
+      };
+      req.onerror=function(){
+        _formTemplatesCache=JSON.parse(localStorage.getItem('formTemplates')||'[]');
+        resolve(_formTemplatesCache);
+      };
+    });
+  }).catch(function(){
+    _formTemplatesCache=JSON.parse(localStorage.getItem('formTemplates')||'[]');
+    return _formTemplatesCache;
+  });
+}
+// Init: load from IndexedDB at startup
+loadFormTemplatesFromDB().then(function(){
+  if(typeof renderFormTemplates==='function' && document.getElementById('forms-templates-list')){
+    renderFormTemplates();
+  }
+});
 
 function setFormsTab(tab){
   document.querySelectorAll('.forms-tab-btn').forEach(function(b){
