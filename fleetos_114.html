@@ -7509,10 +7509,10 @@ function openDet(vid){
   sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">\u05D3\u05D9\u05D5\u05D5\u05D7\u05D9 \u05EA\u05D0\u05D5\u05E0\u05D4</div><div class="vc-stat-row-detail">'+(vAcc.length?('<strong>'+accOpen+' \u05E4\u05EA\u05D5\u05D7\u05D5\u05EA</strong> \u00B7 '+accClosed+' \u05E1\u05D2\u05D5\u05E8\u05D5\u05EA'):'\u05D0\u05D9\u05DF')+'</div></div>';
   sidebarHtml+='<div class="vc-stat-row-value">'+vAcc.length+'</div></div>';
   // Tires
-  var tireDetail=lastTire?'אחרונה: '+fd(lastTire)+(tireDaysAgo!==null?' · לפני '+tireDaysAgo+' ימים':''):'טרם עודכן';
+  var totalTires=tireChanges.reduce(function(s,c){return s+(c.qty||0)},0);
   sidebarHtml+='<div class="vc-stat-row"><div class="vc-stat-row-icon tires"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg></div>';
-  sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">החלפת צמיגים</div><div class="vc-stat-row-detail">'+tireDetail+'</div></div>';
-  sidebarHtml+='<div style="display:flex;align-items:center;gap:6px"><div class="vc-stat-row-value">'+tireCount+'</div><button onclick="event.stopPropagation();openTireUpdateModal('+vid+')" style="background:#E6F1FB;color:#185FA5;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ עדכן</button></div></div>';
+  sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">החלפת צמיגים</div><div class="vc-stat-row-detail">'+(tireCount>0?tireCount+' החלפות · '+totalTires+' צמיגים':'טרם עודכן')+'</div></div>';
+  sidebarHtml+='<div style="display:flex;align-items:center;gap:6px"><button onclick="event.stopPropagation();openTireUpdateModal('+vid+')" style="background:#E6F1FB;color:#185FA5;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ עדכן</button><div class="vc-stat-row-value">'+totalTires+'</div></div></div>';
   sidebarHtml+='</div></div>';
 
   var sidebarEl=document.getElementById('vc-sidebar-col');
@@ -8505,7 +8505,10 @@ function openTireUpdateModal(vid){
     +'</div>'
     +'<div style="padding:18px">'
     +'<div style="font-size:12px;color:var(--t2);margin-bottom:12px">רכב: <strong>'+v.plate+'</strong> · '+(v.driver?.name||'')+'</div>'
-    +'<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">תאריך ההחלפה</label><input type="date" id="tire-date" value="'+new Date().toISOString().slice(0,10)+'" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'
+    +'<div><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">כמה צמיגים הוחלפו *</label><select id="tire-qty" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"><option value="1">1 צמיג</option><option value="2">2 צמיגים</option><option value="4" selected>4 צמיגים</option><option value="5">5 צמיגים</option><option value="6">6 צמיגים</option></select></div>'
+    +'<div><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">תאריך ההחלפה</label><input type="date" id="tire-date" value="'+new Date().toISOString().slice(0,10)+'" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
+    +'</div>'
     +'<div style="margin-bottom:16px"><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">הערות (אופציונלי)</label><input type="text" id="tire-notes" placeholder="סוג צמיגים, מוסך..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
     +'<div style="display:flex;gap:8px"><button onclick="document.getElementById(\'tire-update-modal\').remove()" style="flex:1;padding:10px;background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">ביטול</button>'
     +'<button onclick="saveTireUpdate('+vid+')" style="flex:2;padding:10px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">שמור</button></div>'
@@ -8516,9 +8519,10 @@ function saveTireUpdate(vid){
   var v=vehicles.find(function(x){return x.id===vid});if(!v)return;
   var dateVal=document.getElementById('tire-date').value;
   if(!dateVal){alert('יש לבחור תאריך');return;}
+  var qty=parseInt(document.getElementById('tire-qty').value)||4;
   var notes=document.getElementById('tire-notes').value.trim();
   if(!v.tireChanges)v.tireChanges=[];
-  v.tireChanges.push({date:dateVal,notes:notes,addedAt:new Date().toISOString()});
+  v.tireChanges.push({date:dateVal,qty:qty,notes:notes,addedAt:new Date().toISOString()});
   document.getElementById('tire-update-modal').remove();
   refresh();
   openDet(vid);
