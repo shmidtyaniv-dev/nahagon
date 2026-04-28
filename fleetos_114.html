@@ -1204,11 +1204,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div style="padding:16px;display:grid;grid-template-columns:1fr 260px;gap:14px;max-width:1200px;margin:0 auto">
         <!-- Left: PDF + field overlay -->
         <div style="background:#fff;border-radius:10px;padding:14px;border:1px solid var(--bdr)">
+          <input type="file" id="fb-pdf-input" accept=".pdf" style="display:none" onchange="onFbPdfUpload(this)">
           <div id="fb-upload-area" style="border:2px dashed var(--bdr2);border-radius:10px;padding:40px 20px;text-align:center;background:var(--bg);cursor:pointer" onclick="document.getElementById('fb-pdf-input').click()">
             <div style="font-size:36px;margin-bottom:10px">📄</div>
             <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px">לחץ להעלאת PDF</div>
-            <div style="font-size:12px;color:var(--t3)">עמוד ראשון יוצג כבד הקלקה להצבת שדות</div>
-            <input type="file" id="fb-pdf-input" accept=".pdf" style="display:none" onchange="onFbPdfUpload(this)">
+            <div style="font-size:12px;color:var(--t3)">עמוד ראשון יוצג כרקע להצבת שדות</div>
           </div>
           <div id="fb-pdf-wrap" style="display:none;position:relative;overflow:auto">
             <canvas id="fb-pdf-canvas" style="display:block;margin:0 auto;box-shadow:0 1px 8px rgba(0,0,0,.1);cursor:crosshair"></canvas>
@@ -11220,7 +11220,14 @@ var formSubmissionsCache=[];
 var _formSubsListener=null;
 
 function getFormTemplates(){return JSON.parse(localStorage.getItem('formTemplates')||'[]');}
-function saveFormTemplatesArr(arr){localStorage.setItem('formTemplates',JSON.stringify(arr));}
+function saveFormTemplatesArr(arr){
+  try{
+    localStorage.setItem('formTemplates',JSON.stringify(arr));
+  }catch(e){
+    console.error('localStorage save error:',e);
+    alert('שגיאה בשמירה: נפח האחסון המקומי מלא. נסה למחוק טפסים ישנים או להקטין את קובץ ה-PDF.');
+  }
+}
 
 function setFormsTab(tab){
   document.querySelectorAll('.forms-tab-btn').forEach(function(b){
@@ -11619,7 +11626,12 @@ function openFormBuilder(templateId){
     editTemplateId:templateId||null
   };
   id('fb-name').value='';
-  id('fb-upload-area').style.display='block';
+  var uploadArea=id('fb-upload-area');
+  if(uploadArea){
+    uploadArea.style.display='block';
+    uploadArea.innerHTML='<div style="font-size:36px;margin-bottom:10px">📄</div><div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px">לחץ להעלאת PDF</div><div style="font-size:12px;color:var(--t3)">עמוד ראשון יוצג כרקע להצבת שדות</div>';
+  }
+  var pdfInput=id('fb-pdf-input');if(pdfInput)pdfInput.value='';
   id('fb-pdf-wrap').style.display='none';
   id('fb-tools-section').style.display='none';
   id('fb-save-btn').style.display='none';
@@ -11650,12 +11662,23 @@ function closeFormBuilder(){
 function onFbPdfUpload(input){
   const file=input.files[0];
   if(!file)return;
-  // No file size limit
+  if(!file.name.toLowerCase().endsWith('.pdf')){alert('יש להעלות קובץ PDF בלבד');input.value='';return;}
+  // Show loading state
+  var uploadArea=id('fb-upload-area');
+  if(uploadArea){
+    uploadArea.innerHTML='<div style="padding:30px;text-align:center"><div style="display:inline-block;width:28px;height:28px;border:3px solid var(--bdr2);border-top-color:var(--gd);border-radius:50%;animation:spin 1s linear infinite"></div><div style="margin-top:10px;font-size:13px;color:var(--t2)">טוען את הקובץ...</div></div>';
+  }
   const reader=new FileReader();
   reader.onload=function(e){
     const base64=e.target.result;
     fbState.pdfBase64=base64;
     loadPdfToCanvas(base64);
+  };
+  reader.onerror=function(){
+    alert('שגיאה בקריאת הקובץ');
+    if(uploadArea){
+      uploadArea.innerHTML='<div style="font-size:36px;margin-bottom:10px">📄</div><div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px">לחץ להעלאת PDF</div><div style="font-size:12px;color:var(--t3)">עמוד ראשון יוצג כרקע להצבת שדות</div><input type="file" id="fb-pdf-input" accept=".pdf" style="display:none" onchange="onFbPdfUpload(this)">';
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -12097,7 +12120,13 @@ function saveFormTemplate(){
   }else{
     templates.push(data);
   }
-  saveFormTemplatesArr(templates);
+  try{
+    saveFormTemplatesArr(templates);
+  }catch(e){
+    console.error('Save form error:',e);
+    alert('שגיאה בשמירה. ייתכן שהקובץ גדול מדי לאחסון מקומי.');
+    return;
+  }
 
   // Also save to Firestore for sharing via link
   if(db){
