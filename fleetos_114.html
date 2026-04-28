@@ -12218,11 +12218,41 @@ function deleteFormTemplate(tid){
 }
 
 function shareFormTemplate(tid){
-  const base=location.protocol==='file:'?'https://celebrated-rugelach-b2952e.netlify.app/':(location.origin+location.pathname);
+  const base=location.protocol==='file:'?'https://nahagon.vercel.app/fleetos_114.html':(location.origin+location.pathname);
   const url=base.replace(/[?#].*$/,'')+'?form='+tid;
-  // Try to copy to clipboard
+  // Get template name
+  var tpl=getFormTemplates().find(function(t){return t.id===tid;});
+  var formName=tpl?tpl.name:'טופס';
+  // Open share modal
+  var existing=document.getElementById('share-form-modal');if(existing)existing.remove();
+  var modal=document.createElement('div');
+  modal.id='share-form-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  var whatsappUrl='https://wa.me/?text='+encodeURIComponent('שלום, מצורף טופס למילוי: '+formName+'\n'+url);
+  var emailSubject=encodeURIComponent('טופס למילוי: '+formName);
+  var emailBody=encodeURIComponent('שלום,\n\nמצורף טופס דיגיטלי למילוי:\n'+url+'\n\nתודה');
+  var mailtoUrl='mailto:?subject='+emailSubject+'&body='+emailBody;
+  modal.innerHTML='<div style="background:var(--card);border-radius:12px;width:100%;max-width:400px;overflow:hidden" onclick="event.stopPropagation()">'
+    +'<div style="background:var(--gd);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">'
+    +'<span style="color:#fff;font-size:15px;font-weight:500">שלח טופס לנהג</span>'
+    +'<button onclick="document.getElementById(\'share-form-modal\').remove()" style="background:rgba(255,255,255,.15);border:none;width:28px;height:28px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+    +'</div>'
+    +'<div style="padding:18px">'
+    +'<div style="font-size:12px;color:var(--t2);margin-bottom:14px">טופס: <strong>'+formName+'</strong></div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+    +'<a href="'+whatsappUrl+'" target="_blank" onclick="document.getElementById(\'share-form-modal\').remove()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#E7F5EC;border:1px solid #25D366;border-radius:8px;text-decoration:none;cursor:pointer;transition:background .15s"><span style="font-size:22px">📱</span><div><div style="font-size:14px;font-weight:600;color:#128C7E">שלח בוואטסאפ</div><div style="font-size:11px;color:#075E54">ייפתח וואטסאפ עם הלינק לטופס</div></div></a>'
+    +'<a href="'+mailtoUrl+'" onclick="document.getElementById(\'share-form-modal\').remove()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#E6F1FB;border:1px solid #185FA5;border-radius:8px;text-decoration:none;cursor:pointer;transition:background .15s"><span style="font-size:22px">📧</span><div><div style="font-size:14px;font-weight:600;color:#185FA5">שלח במייל</div><div style="font-size:11px;color:#0C447C">ייפתח לקוח מייל עם הלינק לטופס</div></div></a>'
+    +'<button onclick="copyFormLink(\''+url+'\')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg2);border:1px solid var(--bdr2);border-radius:8px;cursor:pointer;font-family:inherit;text-align:right;width:100%"><span style="font-size:22px">🔗</span><div><div style="font-size:14px;font-weight:600;color:var(--t1)">העתק לינק</div><div style="font-size:11px;color:var(--t2)">העתק את הלינק ללוח</div></div></button>'
+    +'</div>'
+    +'<div style="margin-top:12px;padding:10px;background:var(--bg2);border-radius:6px;font-size:11px;color:var(--t2);word-break:break-all;direction:ltr;text-align:left">'+url+'</div>'
+    +'</div></div>';
+  document.body.appendChild(modal);
+}
+function copyFormLink(url){
   if(navigator.clipboard){
     navigator.clipboard.writeText(url).then(function(){
+      document.getElementById('share-form-modal').remove();
       showToast('הלינק הועתק ללוח ✓');
     }).catch(function(){prompt('העתק את הלינק:',url);});
   }else{
