@@ -1315,7 +1315,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <span class="cal-summary-dot" style="background:#A32D2D"></span><span class="cal-summary-label">התראות פעילות</span><span class="cal-summary-num" id="cal-sum-alerts">0</span>
         </div>
         <div class="cal-summary-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
           <span id="cal-summary-month">סיכום החודש</span>
         </div>
       </div>
@@ -2962,11 +2961,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .cal-add-btn:hover{background:#178A66}
 /* Summary bar */
 .cal-summary-bar{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.cal-summary-title{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:#5F5E5A;white-space:nowrap}
-.cal-summary-stats{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.cal-summary-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;align-self:center}
-.cal-summary-num{font-size:18px;font-weight:500;color:var(--t1);margin-left:2px}
-.cal-summary-label{font-size:11px;color:#5F5E5A;white-space:nowrap;margin-left:12px}
+.cal-summary-title{font-size:12px;font-weight:500;color:#5F5E5A;white-space:nowrap}
+.cal-summary-stats{display:flex;align-items:center;gap:6px}
+.cal-summary-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-left:14px}
+.cal-summary-num{font-size:18px;font-weight:500;color:var(--t1);line-height:1}
+.cal-summary-label{font-size:11px;color:#5F5E5A;white-space:nowrap;margin-left:2px}
 /* Main grid */
 .cal-main-grid{display:grid;grid-template-columns:300px 1fr;gap:12px;align-items:start}
 /* Alerts sidebar */
