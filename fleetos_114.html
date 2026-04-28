@@ -1328,7 +1328,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div class="cal-summary-label">איסוף לטסט</div>
           </div>
           <div class="cal-summary-stat">
-            <span class="cal-summary-dot" style="background:#B45309"></span>
+            <span class="cal-summary-dot" style="background:#FCD34D"></span>
             <div class="cal-summary-num" id="cal-sum-personal">0</div>
             <div class="cal-summary-label">תזכורות אישיות</div>
           </div>
@@ -1368,12 +1368,12 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <!-- Left column: calendar -->
         <div class="cal-calendar-card">
           <div class="cal-nav">
-            <button onclick="calPrev()" class="cal-nav-btn">→</button>
-            <div class="cal-nav-center">
+            <div class="cal-nav-arrows">
+              <button onclick="calPrev()" class="cal-nav-btn">→</button>
               <button onclick="calToday()" class="cal-today-btn">היום</button>
-              <div id="cal-title" class="cal-nav-title"></div>
+              <button onclick="calNext()" class="cal-nav-btn">←</button>
             </div>
-            <button onclick="calNext()" class="cal-nav-btn">←</button>
+            <div id="cal-title" class="cal-nav-title"></div>
           </div>
           <div id="cal-grid-area"></div>
           <div class="cal-legend" id="cal-legend">
@@ -3022,7 +3022,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-nav-btn{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:inherit;font-size:14px;color:var(--t2);transition:all .15s}
 .cal-nav-btn:hover{background:var(--bg);color:var(--t1)}
-.cal-nav-center{display:flex;align-items:center;gap:10px}
+.cal-nav-arrows{display:flex;gap:4px;align-items:center}
 .cal-nav-title{font-size:15px;font-weight:500;color:var(--t1)}
 .cal-today-btn{background:var(--green-light);color:var(--green-dark);border:1px solid var(--green);padding:4px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
 .cal-today-btn:hover{background:var(--green);color:#fff}
@@ -12504,7 +12504,7 @@ function renderCalendarMonth(events){
   // Days from previous month
   for(var i=0;i<startWeekday;i++){
     var pDay=prevDays-startWeekday+1+i;
-    html+='<div class="fc-day other"><div class="fc-day-hdr"><span class="fc-day-name">'+wdays[i]+'</span><span class="fc-day-num">'+pDay+'</span></div></div>';
+    html+='<div class="fc-day other"><div class="fc-day-hdr"><span class="fc-day-num">'+pDay+'</span><span class="fc-day-name">'+wdays[i]+'</span></div></div>';
   }
 
   // Days of current month
@@ -12518,10 +12518,10 @@ function renderCalendarMonth(events){
 
     html+='<div class="fc-day'+(isToday?' today':'')+'" onclick="openDayPicker(\''+iso+'\')">'+
       '<div class="fc-day-hdr">'+
-        '<span class="fc-day-name">'+dayName+'</span>'+
         '<span class="fc-day-num">'+d+(isToday?' · היום':'')+'</span>'+
+        '<span class="fc-day-name">'+dayName+'</span>'+
       '</div>'+
-      '<button class="fc-day-plus" onclick="event.stopPropagation();openSelfReminderModal(\''+iso+'\')">+</button>'+
+      (dayEvents.length===0?'<button class="fc-day-plus" onclick="event.stopPropagation();openSelfReminderModal(\''+iso+'\')">+</button>':'')+
       '<div class="fc-day-events">'+evHtml+'</div>'+
     '</div>';
   }
@@ -12532,7 +12532,7 @@ function renderCalendarMonth(events){
   if(remainder>0){
     for(var n=1;n<=7-remainder;n++){
       var nDow=(totalCells+n-1)%7;
-      html+='<div class="fc-day other"><div class="fc-day-hdr"><span class="fc-day-name">'+wdays[nDow]+'</span><span class="fc-day-num">'+n+'</span></div></div>';
+      html+='<div class="fc-day other"><div class="fc-day-hdr"><span class="fc-day-num">'+n+'</span><span class="fc-day-name">'+wdays[nDow]+'</span></div></div>';
     }
   }
 
@@ -12566,8 +12566,13 @@ function _buildDayEventsHtml(dayEvents){
         var clickAction='event.stopPropagation()';
         if(e.type==='personal'&&e.selfReminderId) clickAction='event.stopPropagation();openSelfReminderModal(null,\''+e.selfReminderId+'\')';
         else if(e.vehicleId) clickAction='event.stopPropagation();openDet('+e.vehicleId+')';
-        var label=e.type==='personal'?(e.title||'').substring(0,18):(e.plate||e.title||'').substring(0,18);
-        html+='<div class="fc-ev '+e.type+'" onclick="'+clickAction+'" title="'+(e.title||'').replace(/"/g,'&quot;')+'">'+label+'</div>';
+        var label;
+        if(e.type==='personal'){
+          label=e.title||'תזכורת אישית';
+        } else {
+          label=typeLabels[e.type]+(e.driverName?' · '+e.driverName:'');
+        }
+        html+='<div class="fc-ev '+e.type+'" onclick="'+clickAction+'" title="'+(e.title||'').replace(/"/g,'&quot;')+(e.driverName?' - '+e.driverName.replace(/"/g,'&quot;'):'')+'">'+label+'</div>';
         shown++;
       });
     }
