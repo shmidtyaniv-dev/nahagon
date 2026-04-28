@@ -1067,14 +1067,17 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </div>
         </div>
         <div class="svc-alert" id="svc-alert" style="display:none">
-          <div class="svc-alert-header">
+          <div class="svc-alert-header" onclick="toggleSvcAlert()" style="cursor:pointer">
             <div class="svc-alert-title">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A32D2D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               <span id="svc-alert-count">0 נהגים לא ענו מעל 5 ימים</span>
+              <span id="svc-alert-arrow" style="font-size:11px;color:#A32D2D;transition:transform .2s;display:inline-block">▼</span>
             </div>
-            <button class="svc-alert-btn" onclick="sendAllReminders()">שלח תזכורת לכולם</button>
+            <div style="display:flex;gap:8px;align-items:center" onclick="event.stopPropagation()">
+              <button class="svc-alert-btn" onclick="sendAllReminders()">שלח תזכורת לכולם</button>
+            </div>
           </div>
-          <div class="svc-alert-table">
+          <div class="svc-alert-table" id="svc-alert-body" style="display:none">
             <div class="svc-alert-row header">
               <div class="svc-col-avatar"></div>
               <div class="svc-col-name">נהג</div>
@@ -6526,10 +6529,10 @@ function renderSvcSection(){
     var footer=document.getElementById('svc-alert-footer');
     var totalSpan=document.getElementById('svc-alert-total');
     if(overdueDrivers.length>maxShow){
-      if(footer)footer.style.display='';
+      if(footer){footer.dataset.shouldShow='true';footer.style.display='none';}
       if(totalSpan)totalSpan.textContent=formatNumber(overdueDrivers.length);
     } else {
-      if(footer)footer.style.display='none';
+      if(footer){footer.dataset.shouldShow='false';footer.style.display='none';}
     }
   } else {
     if(alertEl)alertEl.style.display='none';
@@ -6537,6 +6540,16 @@ function renderSvcSection(){
 }
 function sendReminder(vid){alert('תזכורת נשלחה לנהג');}
 function sendAllReminders(){alert('תזכורות נשלחו לכל הנהגים שלא ענו');}
+function toggleSvcAlert(){
+  var body=document.getElementById('svc-alert-body');
+  var footer=document.getElementById('svc-alert-footer');
+  var arrow=document.getElementById('svc-alert-arrow');
+  if(!body)return;
+  var isOpen=body.style.display!=='none';
+  body.style.display=isOpen?'none':'';
+  if(footer&&footer.dataset.shouldShow==='true')footer.style.display=isOpen?'none':'';
+  if(arrow)arrow.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';
+}
 function showAllOverdueDrivers(){go('calendar',q('[dp=calendar]'));}
 
 function updateDashGreeting(){
