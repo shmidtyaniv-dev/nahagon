@@ -4031,14 +4031,13 @@ function uploadClientLogo(input){
   if(file.size>5*1024*1024){showToast('הקובץ גדול מ-5MB');return;}
   var reader = new FileReader();
   reader.onload = function(e){
-    _compressLogo(e.target.result, function(dataUrl){
-      saveSettings({moreB64:dataUrl});
-      var preview=document.getElementById('client-logo-preview-area');
-      if(preview) preview.innerHTML='<img src="'+dataUrl+'" style="max-height:80px;max-width:100%;object-fit:contain">';
-      var pm=document.getElementById('prev-more');if(pm)pm.src=dataUrl;
-      initLogoSidebar();
-      showToast('✓ לוגו לקוח עודכן');
-    });
+    var dataUrl = e.target.result;
+    try{saveSettings({moreB64:dataUrl});}catch(ex){showToast('שגיאה בשמירה: '+ex.message);return;}
+    var preview=document.getElementById('client-logo-preview-area');
+    if(preview) preview.innerHTML='<img src="'+dataUrl+'" style="max-height:60px;max-width:100%;object-fit:contain">';
+    var pm=document.getElementById('prev-more');if(pm)pm.src=dataUrl;
+    initLogoSidebar();
+    showToast('✓ לוגו לקוח עודכן');
   };
   reader.readAsDataURL(file);
 }
@@ -4048,14 +4047,13 @@ function uploadCompanyLogo(input){
   if(file.size>5*1024*1024){showToast('הקובץ גדול מ-5MB');return;}
   var reader=new FileReader();
   reader.onload=function(e){
-    _compressLogo(e.target.result, function(dataUrl){
-      saveSettings({colB64:dataUrl});
-      var preview=document.getElementById('company-logo-preview-area');
-      if(preview) preview.innerHTML='<img src="'+dataUrl+'" style="max-height:80px;max-width:100%;object-fit:contain">';
-      var pc=document.getElementById('prev-col');if(pc)pc.src=dataUrl;
-      initLogoSidebar();
-      showToast('✓ לוגו חברת ליסינג עודכן');
-    });
+    var dataUrl=e.target.result;
+    try{saveSettings({colB64:dataUrl});}catch(ex){showToast('שגיאה בשמירה: '+ex.message);return;}
+    var preview=document.getElementById('company-logo-preview-area');
+    if(preview) preview.innerHTML='<img src="'+dataUrl+'" style="max-height:60px;max-width:100%;object-fit:contain">';
+    var pc=document.getElementById('prev-col');if(pc)pc.src=dataUrl;
+    initLogoSidebar();
+    showToast('✓ לוגו חברת ליסינג עודכן');
   };
   reader.readAsDataURL(file);
 }
