@@ -3632,10 +3632,11 @@ function initLogoSidebar(){
   const moreImg = document.getElementById('sb-more-img');
   const moreText = document.getElementById('sb-logo-right-text');
   if(moreImg && moreB64){
-    moreImg.src = 'data:image/png;base64,'+moreB64;
+    moreImg.src = moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
     moreImg.style.display = 'block';
     if(moreText) moreText.style.display = 'none';
   } else if(moreText){
+    if(moreImg) moreImg.style.display = 'none';
     moreText.style.display = 'block';
   }
 
@@ -3643,10 +3644,11 @@ function initLogoSidebar(){
   const colImg = document.getElementById('sb-col-img');
   const colText = document.getElementById('sb-logo-left-text');
   if(colImg && colB64){
-    colImg.src = 'data:image/png;base64,'+colB64;
+    colImg.src = colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
     colImg.style.display = 'block';
     if(colText) colText.style.display = 'none';
   } else if(colText){
+    if(colImg) colImg.style.display = 'none';
     colText.style.display = 'block';
   }
 
@@ -3714,8 +3716,8 @@ function initSettingsPage(){
   // Previews
   const moreB64 = s.moreB64||DEFAULT_MORE_B64;
   const colB64  = s.colB64||DEFAULT_COL_B64;
-  document.getElementById('prev-more').src = 'data:image/png;base64,'+moreB64;
-  document.getElementById('prev-col').src  = 'data:image/png;base64,'+colB64;
+  document.getElementById('prev-more').src = moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
+  document.getElementById('prev-col').src  = colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
   updateRepPreview();
   applyLogoSettings();
   if(typeof initSchedulingSettings==='function') initSchedulingSettings();
@@ -3753,10 +3755,10 @@ function uploadClientLogo(input){
   if(!file) return;
   const reader = new FileReader();
   reader.onload = e=>{
-    const b64 = e.target.result.split(',')[1];
-    saveSettings({moreB64:b64});
-    document.getElementById('prev-more').src = e.target.result;
+    saveSettings({moreB64:e.target.result});
+    var pm=document.getElementById('prev-more');if(pm)pm.src=e.target.result;
     initLogoSidebar();
+    showToast('✓ לוגו לקוח עודכן');
   };
   reader.readAsDataURL(file);
 }
@@ -3771,8 +3773,7 @@ function uploadCompanyLogo(input){
   var file=input.files[0];if(!file)return;
   var reader=new FileReader();
   reader.onload=function(e){
-    var b64=e.target.result.split(',')[1];
-    saveSettings({colB64:b64});
+    saveSettings({colB64:e.target.result});
     var pc=document.getElementById('prev-col');if(pc)pc.src=e.target.result;
     initLogoSidebar();
     showToast('✓ לוגו חברת ליסינג עודכן');
