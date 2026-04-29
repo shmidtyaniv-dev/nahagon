@@ -1732,55 +1732,60 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </div>
           <script>
           (function(){
-            function _saveLogo(key, dataUrl){
-              try{
-                var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-                s[key]=dataUrl;
-                localStorage.setItem('fleetSettings',JSON.stringify(s));
-                return true;
-              }catch(e){alert('שגיאה בשמירה: '+e.message);return false;}
-            }
-            function _refreshSidebar(){
-              if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
-            }
-            function _handleFile(input, previewId, prevImgId, settingsKey){
-              var file=input.files[0];
-              if(!file){alert('לא נבחר קובץ');return;}
-              if(file.size>5*1024*1024){alert('הקובץ גדול מ-5MB');return;}
+            function _compressAndSave(file, storageKey, previewId, prevImgId){
               var reader=new FileReader();
               reader.onerror=function(){alert('שגיאה בקריאת הקובץ');};
               reader.onload=function(e){
-                var dataUrl=e.target.result;
-                if(!_saveLogo(settingsKey, dataUrl))return;
-                var prev=document.getElementById(previewId);
-                if(prev)prev.innerHTML='<img src="'+dataUrl+'" style="max-height:60px;max-width:100%;object-fit:contain">';
-                var img=document.getElementById(prevImgId);
-                if(img)img.src=dataUrl;
-                _refreshSidebar();
-                if(typeof showToast==='function')showToast('✓ לוגו עודכן');
+                var img=new Image();
+                img.onload=function(){
+                  // כיווץ ל-150px גובה מקסימלי - מספיק לסרגל צד
+                  var maxH=150,w=img.width,h=img.height;
+                  if(h>maxH){var r=maxH/h;w=Math.round(w*r);h=maxH;}
+                  var c=document.createElement('canvas');c.width=w;c.height=h;
+                  c.getContext('2d').drawImage(img,0,0,w,h);
+                  var small=c.toDataURL('image/png');
+                  // שמירה במפתח נפרד - לא בתוך fleetSettings
+                  try{
+                    localStorage.setItem(storageKey, small);
+                  }catch(ex){alert('שגיאה בשמירה: '+ex.message);return;}
+                  // עדכון preview
+                  var prev=document.getElementById(previewId);
+                  if(prev)prev.innerHTML='<img src="'+small+'" style="max-height:60px;max-width:100%;object-fit:contain">';
+                  var pi=document.getElementById(prevImgId);
+                  if(pi)pi.src=small;
+                  if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
+                  if(typeof showToast==='function')showToast('✓ לוגו עודכן');
+                };
+                img.onerror=function(){alert('שגיאה בטעינת התמונה');};
+                img.src=e.target.result;
               };
               reader.readAsDataURL(file);
             }
             var cf=document.getElementById('client-logo-file');
-            if(cf)cf.addEventListener('change',function(){_handleFile(this,'client-logo-preview-area','prev-more','moreB64');});
+            if(cf)cf.addEventListener('change',function(){
+              var file=this.files[0];if(!file)return;
+              if(file.size>5*1024*1024){alert('הקובץ גדול מ-5MB');return;}
+              _compressAndSave(file,'logo_client','client-logo-preview-area','prev-more');
+            });
             var comp=document.getElementById('company-logo-file');
-            if(comp)comp.addEventListener('change',function(){_handleFile(this,'company-logo-preview-area','prev-col','colB64');});
+            if(comp)comp.addEventListener('change',function(){
+              var file=this.files[0];if(!file)return;
+              if(file.size>5*1024*1024){alert('הקובץ גדול מ-5MB');return;}
+              _compressAndSave(file,'logo_company','company-logo-preview-area','prev-col');
+            });
             var slider=document.getElementById('logo-size-slider');
             if(slider)slider.addEventListener('input',function(){
               var h=+this.value;
               document.getElementById('logo-size-val').textContent=h+'px';
-              var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');s.logoH=h;
-              try{localStorage.setItem('fleetSettings',JSON.stringify(s));}catch(e){}
+              try{var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');s.logoH=h;localStorage.setItem('fleetSettings',JSON.stringify(s));}catch(e){}
               var pm=document.getElementById('prev-more');if(pm)pm.style.height=h+'px';
               var pc=document.getElementById('prev-col');if(pc)pc.style.height=h+'px';
-              _refreshSidebar();
+              if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
             });
             window._resetLogos=function(){
-              try{
-                var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-                delete s.moreB64;delete s.colB64;
-                localStorage.setItem('fleetSettings',JSON.stringify(s));
-              }catch(e){}
+              try{localStorage.removeItem('logo_client');localStorage.removeItem('logo_company');}catch(e){}
+              // גם מנקה מ-fleetSettings אם יש שם ישן
+              try{var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');delete s.moreB64;delete s.colB64;localStorage.setItem('fleetSettings',JSON.stringify(s));}catch(e){}
               document.getElementById('client-logo-preview-area').innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
               document.getElementById('company-logo-preview-area').innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
               _refreshSidebar();
@@ -3917,11 +3922,29 @@ function toggleSbUserMenu(){
   setTimeout(function(){document.addEventListener('click',function handler(e){if(!m.contains(e.target)){m.remove();document.removeEventListener('click',handler);}});},10);
 }
 
+// Migrate old logos from fleetSettings to separate keys (one-time)
+(function(){
+  try{
+    var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+    if(s.moreB64 && s.moreB64.length>100 && !localStorage.getItem('logo_client')){
+      localStorage.setItem('logo_client',s.moreB64);
+      delete s.moreB64;
+      localStorage.setItem('fleetSettings',JSON.stringify(s));
+    }
+    if(s.colB64 && s.colB64.length>100 && !localStorage.getItem('logo_company')){
+      localStorage.setItem('logo_company',s.colB64);
+      delete s.colB64;
+      localStorage.setItem('fleetSettings',JSON.stringify(s));
+    }
+  }catch(e){}
+})();
+
 // Init sidebar logos from settings
 function initLogoSidebar(){
   var s = getSettings();
-  var moreB64 = s.moreB64 || '';
-  var colB64  = s.colB64  || '';
+  // קריאה ממפתחות נפרדים (חדש) או מ-fleetSettings (ישן)
+  var moreB64 = localStorage.getItem('logo_client') || s.moreB64 || '';
+  var colB64  = localStorage.getItem('logo_company') || s.colB64 || '';
   var logoH   = s.logoH   || 36;
 
   var moreImg  = document.getElementById('sb-more-img');
@@ -3998,8 +4021,8 @@ function initSettingsPage(){
   if(logoSlider){logoSlider.value=logoH;}
   if(logoSizeVal){logoSizeVal.textContent=logoH+'px';}
   // Load logo previews in settings
-  var moreB64=s.moreB64||'';
-  var colB64=s.colB64||'';
+  var moreB64=localStorage.getItem('logo_client')||s.moreB64||'';
+  var colB64=localStorage.getItem('logo_company')||s.colB64||'';
   var clientPrev=document.getElementById('client-logo-preview-area');
   if(clientPrev){
     if(moreB64 && moreB64.length>50){
