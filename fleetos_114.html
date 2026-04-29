@@ -1740,21 +1740,21 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
             <!-- לוגו לקוח -->
-            <div style="border:1.5px dashed var(--bdr);border-radius:10px;padding:20px;text-align:center;background:var(--bg)">
+            <div style="border:1.5px dashed var(--bdr);border-radius:10px;padding:20px;text-align:center;background:var(--bg);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--gd)';this.style.background='#E1F5EE'" onmouseout="this.style.borderColor='';this.style.background='var(--bg)'" onclick="pickLogoFile('client')">
               <div style="font-size:13px;font-weight:500;color:var(--t1);margin-bottom:12px">לוגו לקוח</div>
               <div id="client-logo-preview-area" style="height:100px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;overflow:hidden;padding:8px">
-                <span style="font-size:12px;color:var(--t3)">אין לוגו</span>
+                <span style="font-size:12px;color:var(--t3)">לחץ להעלאה</span>
               </div>
-              <input type="file" accept="image/*,.webp" onchange="uploadClientLogo(this)" style="width:100%;font-size:13px;font-family:inherit;padding:6px;border:1px solid var(--bdr);border-radius:8px;background:#fff;cursor:pointer">
+              <div style="background:var(--green);color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;display:inline-block">בחר קובץ</div>
               <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, WebP, SVG - עד 5MB</div>
             </div>
             <!-- לוגו חברת ליסינג -->
-            <div style="border:1.5px dashed var(--bdr);border-radius:10px;padding:20px;text-align:center;background:var(--bg)">
+            <div style="border:1.5px dashed var(--bdr);border-radius:10px;padding:20px;text-align:center;background:var(--bg);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--gd)';this.style.background='#E1F5EE'" onmouseout="this.style.borderColor='';this.style.background='var(--bg)'" onclick="pickLogoFile('company')">
               <div style="font-size:13px;font-weight:500;color:var(--t1);margin-bottom:12px">לוגו חברת ליסינג</div>
               <div id="company-logo-preview-area" style="height:100px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;overflow:hidden;padding:8px">
-                <span style="font-size:12px;color:var(--t3)">אין לוגו</span>
+                <span style="font-size:12px;color:var(--t3)">לחץ להעלאה</span>
               </div>
-              <input type="file" accept="image/*,.webp" onchange="uploadCompanyLogo(this)" style="width:100%;font-size:13px;font-family:inherit;padding:6px;border:1px solid var(--bdr);border-radius:8px;background:#fff;cursor:pointer">
+              <div style="background:var(--green);color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;display:inline-block">בחר קובץ</div>
               <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, WebP, SVG - עד 5MB</div>
             </div>
           </div>
@@ -4077,11 +4077,14 @@ function pickLogoFile(type){
   var inp=document.createElement('input');
   inp.type='file';
   inp.accept='image/*';
+  inp.style.cssText='position:fixed;top:-9999px;left:-9999px;opacity:0';
+  document.body.appendChild(inp);
   inp.onchange=function(){
     if(type==='client') uploadClientLogo(inp);
     else uploadCompanyLogo(inp);
+    setTimeout(function(){inp.remove();},500);
   };
-  inp.click();
+  setTimeout(function(){inp.click();},50);
 }
 
 function _compressLogo(dataUrl, callback){
