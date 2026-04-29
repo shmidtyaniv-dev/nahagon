@@ -1732,29 +1732,60 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </div>
           <script>
           (function(){
-            function _compressAndSave(file, storageKey, previewId, prevImgId){
+            // IndexedDB for logos - unlimited storage
+            var DB_NAME='fleetLogosDB',STORE='logos',DB_VER=1;
+            function _openLogoDB(cb){
+              var req=indexedDB.open(DB_NAME,DB_VER);
+              req.onupgradeneeded=function(e){e.target.result.createObjectStore(STORE);};
+              req.onsuccess=function(e){cb(e.target.result);};
+              req.onerror=function(){alert('שגיאה בפתיחת מסד נתונים');};
+            }
+            function _saveLogo(key,dataUrl,cb){
+              _openLogoDB(function(db){
+                var tx=db.transaction(STORE,'readwrite');
+                tx.objectStore(STORE).put(dataUrl,key);
+                tx.oncomplete=function(){if(cb)cb(true);};
+                tx.onerror=function(){alert('שגיאה בשמירת לוגו');if(cb)cb(false);};
+              });
+            }
+            function _loadLogo(key,cb){
+              _openLogoDB(function(db){
+                var tx=db.transaction(STORE,'readonly');
+                var req=tx.objectStore(STORE).get(key);
+                req.onsuccess=function(){cb(req.result||null);};
+                req.onerror=function(){cb(null);};
+              });
+            }
+            function _deleteLogo(key,cb){
+              _openLogoDB(function(db){
+                var tx=db.transaction(STORE,'readwrite');
+                tx.objectStore(STORE).delete(key);
+                tx.oncomplete=function(){if(cb)cb();};
+              });
+            }
+            // Make load available globally for initLogoSidebar
+            window._loadLogoFromDB=_loadLogo;
+
+            function _compressAndSave(file, dbKey, previewId, prevImgId){
               var reader=new FileReader();
               reader.onerror=function(){alert('שגיאה בקריאת הקובץ');};
               reader.onload=function(e){
                 var img=new Image();
                 img.onload=function(){
-                  // כיווץ ל-150px גובה מקסימלי - מספיק לסרגל צד
-                  var maxH=150,w=img.width,h=img.height;
+                  var maxH=200,w=img.width,h=img.height;
                   if(h>maxH){var r=maxH/h;w=Math.round(w*r);h=maxH;}
                   var c=document.createElement('canvas');c.width=w;c.height=h;
                   c.getContext('2d').drawImage(img,0,0,w,h);
                   var small=c.toDataURL('image/png');
-                  // שמירה במפתח נפרד - לא בתוך fleetSettings
-                  try{
-                    localStorage.setItem(storageKey, small);
-                  }catch(ex){alert('שגיאה בשמירה: '+ex.message);return;}
-                  // עדכון preview
-                  var prev=document.getElementById(previewId);
-                  if(prev)prev.innerHTML='<img src="'+small+'" style="max-height:60px;max-width:100%;object-fit:contain">';
-                  var pi=document.getElementById(prevImgId);
-                  if(pi)pi.src=small;
-                  if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
-                  if(typeof showToast==='function')showToast('✓ לוגו עודכן');
+                  _saveLogo(dbKey,small,function(ok){
+                    if(!ok)return;
+                    var prev=document.getElementById(previewId);
+                    if(prev)prev.innerHTML='<img src="'+small+'" style="max-height:60px;max-width:100%;object-fit:contain">';
+                    var pi=document.getElementById(prevImgId);
+                    if(pi)pi.src=small;
+                    if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
+                    if(typeof showToast==='function')showToast('✓ לוגו עודכן');
+                  });
                 };
                 img.onerror=function(){alert('שגיאה בטעינת התמונה');};
                 img.src=e.target.result;
@@ -1783,8 +1814,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
             });
             window._resetLogos=function(){
+              _deleteLogo('logo_client');_deleteLogo('logo_company');
               try{localStorage.removeItem('logo_client');localStorage.removeItem('logo_company');}catch(e){}
-              // גם מנקה מ-fleetSettings אם יש שם ישן
               try{var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');delete s.moreB64;delete s.colB64;localStorage.setItem('fleetSettings',JSON.stringify(s));}catch(e){}
               document.getElementById('client-logo-preview-area').innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
               document.getElementById('company-logo-preview-area').innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
@@ -3922,59 +3953,41 @@ function toggleSbUserMenu(){
   setTimeout(function(){document.addEventListener('click',function handler(e){if(!m.contains(e.target)){m.remove();document.removeEventListener('click',handler);}});},10);
 }
 
-// Migrate old logos from fleetSettings to separate keys (one-time)
-(function(){
-  try{
-    var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-    if(s.moreB64 && s.moreB64.length>100 && !localStorage.getItem('logo_client')){
-      localStorage.setItem('logo_client',s.moreB64);
-      delete s.moreB64;
-      localStorage.setItem('fleetSettings',JSON.stringify(s));
-    }
-    if(s.colB64 && s.colB64.length>100 && !localStorage.getItem('logo_company')){
-      localStorage.setItem('logo_company',s.colB64);
-      delete s.colB64;
-      localStorage.setItem('fleetSettings',JSON.stringify(s));
-    }
-  }catch(e){}
-})();
-
-// Init sidebar logos from settings
+// Init sidebar logos - loads from IndexedDB
 function initLogoSidebar(){
   var s = getSettings();
-  // קריאה ממפתחות נפרדים (חדש) או מ-fleetSettings (ישן)
-  var moreB64 = localStorage.getItem('logo_client') || s.moreB64 || '';
-  var colB64  = localStorage.getItem('logo_company') || s.colB64 || '';
-  var logoH   = s.logoH   || 36;
+  var logoH = s.logoH || 36;
+
+  function _applyLogo(dataUrl, imgEl, textEl){
+    if(imgEl){
+      if(dataUrl && dataUrl.length>50){
+        imgEl.src = dataUrl.startsWith('data:')?dataUrl:'data:image/png;base64,'+dataUrl;
+        imgEl.style.display = 'block';
+        imgEl.style.maxHeight = logoH+'px';
+        if(textEl) textEl.style.display = 'none';
+      } else {
+        imgEl.style.display = 'none';
+        if(textEl) textEl.style.display = 'block';
+      }
+    }
+  }
 
   var moreImg  = document.getElementById('sb-more-img');
   var moreText = document.getElementById('sb-logo-right-text');
   var colImg   = document.getElementById('sb-col-img');
   var colText  = document.getElementById('sb-logo-left-text');
 
-  // Client logo
-  if(moreImg){
-    if(moreB64 && moreB64.length>50){
-      moreImg.src = moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
-      moreImg.style.display = 'block';
-      moreImg.style.maxHeight = logoH+'px';
-      if(moreText) moreText.style.display = 'none';
-    } else {
-      moreImg.style.display = 'none';
-      if(moreText) moreText.style.display = 'block';
-    }
-  }
-  // Company logo
-  if(colImg){
-    if(colB64 && colB64.length>50){
-      colImg.src = colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
-      colImg.style.display = 'block';
-      colImg.style.maxHeight = logoH+'px';
-      if(colText) colText.style.display = 'none';
-    } else {
-      colImg.style.display = 'none';
-      if(colText) colText.style.display = 'block';
-    }
+  // Try IndexedDB first (async), fallback to localStorage
+  if(typeof window._loadLogoFromDB==='function'){
+    window._loadLogoFromDB('logo_client',function(data){
+      _applyLogo(data || localStorage.getItem('logo_client') || '', moreImg, moreText);
+    });
+    window._loadLogoFromDB('logo_company',function(data){
+      _applyLogo(data || localStorage.getItem('logo_company') || '', colImg, colText);
+    });
+  } else {
+    _applyLogo(localStorage.getItem('logo_client')||'', moreImg, moreText);
+    _applyLogo(localStorage.getItem('logo_company')||'', colImg, colText);
   }
 }
 
@@ -4020,31 +4033,21 @@ function initSettingsPage(){
   var logoH=s.logoH||36;
   if(logoSlider){logoSlider.value=logoH;}
   if(logoSizeVal){logoSizeVal.textContent=logoH+'px';}
-  // Load logo previews in settings
-  var moreB64=localStorage.getItem('logo_client')||s.moreB64||'';
-  var colB64=localStorage.getItem('logo_company')||s.colB64||'';
-  var clientPrev=document.getElementById('client-logo-preview-area');
-  if(clientPrev){
-    if(moreB64 && moreB64.length>50){
-      var src=moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
-      clientPrev.innerHTML='<img src="'+src+'" style="max-height:60px;max-width:100%;object-fit:contain">';
+  // Load logo previews from IndexedDB
+  function _showLogoPreview(data, previewId, prevImgId){
+    var prev=document.getElementById(previewId);
+    var pi=document.getElementById(prevImgId);
+    if(data && data.length>50){
+      if(prev)prev.innerHTML='<img src="'+data+'" style="max-height:60px;max-width:100%;object-fit:contain">';
+      if(pi){pi.src=data;pi.style.height=logoH+'px';}
     } else {
-      clientPrev.innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
+      if(prev)prev.innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
     }
   }
-  var prevMore=document.getElementById('prev-more');
-  if(prevMore&&moreB64&&moreB64.length>50){prevMore.src=moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;prevMore.style.height=logoH+'px';}
-  var compPrev=document.getElementById('company-logo-preview-area');
-  if(compPrev){
-    if(colB64 && colB64.length>50){
-      var src2=colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
-      compPrev.innerHTML='<img src="'+src2+'" style="max-height:60px;max-width:100%;object-fit:contain">';
-    } else {
-      compPrev.innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
-    }
+  if(typeof window._loadLogoFromDB==='function'){
+    window._loadLogoFromDB('logo_client',function(d){_showLogoPreview(d,'client-logo-preview-area','prev-more');});
+    window._loadLogoFromDB('logo_company',function(d){_showLogoPreview(d,'company-logo-preview-area','prev-col');});
   }
-  var prevCol=document.getElementById('prev-col');
-  if(prevCol&&colB64&&colB64.length>50){prevCol.src=colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;prevCol.style.height=logoH+'px';}
   var prevSep=document.getElementById('prev-sep');if(prevSep)prevSep.style.height=Math.round(logoH*0.75)+'px';
   // Rep
   var repName=document.getElementById('rep-name');if(repName)repName.value=s.repName||'יניב שמידט';
