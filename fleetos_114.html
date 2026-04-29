@@ -4025,18 +4025,19 @@ function initSettingsPage(){
   if(document.getElementById('test-msg-template')) document.getElementById('test-msg-template').value = s.testMsgTemplate||TEST_MSG_DEFAULT;
   if(document.getElementById('viol-include-file')) document.getElementById('viol-include-file').checked = s.violIncludeFile!==false;
   if(document.getElementById('viol-approval-base-url')) document.getElementById('viol-approval-base-url').value = s.violApprovalBaseUrl||'';
-  // Previews
-  const moreB64 = s.moreB64||DEFAULT_MORE_B64;
-  const colB64  = s.colB64||DEFAULT_COL_B64;
-  document.getElementById('prev-more').src = moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
-  document.getElementById('prev-col').src  = colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
-  updateRepPreview();
-  applyLogoSettings();
+  // Previews (use existing moreB64/colB64 vars from above)
+  var prevMore=document.getElementById('prev-more');
+  if(prevMore) prevMore.src = moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
+  var prevCol=document.getElementById('prev-col');
+  if(prevCol) prevCol.src = colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
+  if(typeof updateRepPreview==='function') try{updateRepPreview();}catch(e){}
+  try{applyLogoSettings();}catch(e){}
   if(typeof initSchedulingSettings==='function') initSchedulingSettings();
   if(typeof initRequestTemplates==='function') initRequestTemplates();
 }
 
 function applyLogoSettings(){
+  if(!document.getElementById('logo-more-h')) return;
   const mH  = +document.getElementById('logo-more-h').value;
   const cH  = +document.getElementById('logo-col-h').value;
   const p   = +document.getElementById('logo-pad').value;
