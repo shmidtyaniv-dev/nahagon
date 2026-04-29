@@ -1746,7 +1746,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                 <span style="font-size:12px;color:var(--t3)">אין לוגו</span>
               </div>
               <button type="button" onclick="var i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=function(){uploadClientLogo(i)};i.click()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;width:100%">📁 בחר קובץ</button>
-              <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, SVG - עד 2MB</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, SVG - עד 5MB</div>
             </div>
             <!-- לוגו חברת ליסינג -->
             <div style="border:1.5px dashed var(--bdr);border-radius:10px;padding:20px;text-align:center;background:var(--bg)">
@@ -1755,7 +1755,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                 <span style="font-size:12px;color:var(--t3)">אין לוגו</span>
               </div>
               <button type="button" onclick="var i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=function(){uploadCompanyLogo(i)};i.click()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;width:100%">📁 בחר קובץ</button>
-              <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, SVG - עד 2MB</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, SVG - עד 5MB</div>
             </div>
           </div>
 
@@ -4087,7 +4087,7 @@ function pickLogoFile(type){
 function uploadClientLogo(input){
   var file = input.files[0];
   if(!file) return;
-  if(file.size>2*1024*1024){showToast('הקובץ גדול מ-2MB');return;}
+  if(file.size>5*1024*1024){showToast('הקובץ גדול מ-5MB');return;}
   var reader = new FileReader();
   reader.onload = function(e){
     var dataUrl = e.target.result;
@@ -4109,7 +4109,7 @@ function resetClientLogo(){
 
 function uploadCompanyLogo(input){
   var file=input.files[0];if(!file)return;
-  if(file.size>2*1024*1024){showToast('הקובץ גדול מ-2MB');return;}
+  if(file.size>5*1024*1024){showToast('הקובץ גדול מ-5MB');return;}
   var reader=new FileReader();
   reader.onload=function(e){
     var dataUrl=e.target.result;
