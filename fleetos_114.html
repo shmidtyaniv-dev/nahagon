@@ -858,12 +858,14 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   <div id="fleet-cnt" style="display:none"></div>
   <!-- 1. Brand logos -->
   <div class="sb-brand">
-    <div class="sb-brand-logo" id="sb-logo-left" title="Calmobil">
-      <span style="font-size:13px;font-weight:700;color:#1A4A3A;letter-spacing:.5px">Calmobil</span>
+    <div class="sb-brand-logo" id="sb-logo-right" title="לוגו לקוח">
+      <img id="sb-more-img" alt="לקוח" style="max-height:28px;max-width:100%;object-fit:contain" src="">
+      <span id="sb-logo-right-text" style="font-size:13px;font-weight:700;color:#1A4A3A;display:none">MORE</span>
     </div>
     <div class="sb-brand-divider"></div>
-    <div class="sb-brand-logo" id="sb-logo-right" title="MORE">
-      <img id="sb-more-img" alt="MORE" style="max-height:24px;max-width:100%;object-fit:contain" src="">
+    <div class="sb-brand-logo" id="sb-logo-left" title="לוגו חברת ליסינג">
+      <img id="sb-col-img" alt="כלמוביל" style="max-height:28px;max-width:100%;object-fit:contain" src="">
+      <span id="sb-logo-left-text" style="font-size:13px;font-weight:700;color:#1A4A3A;display:none">Calmobil</span>
     </div>
   </div>
 
@@ -1558,15 +1560,26 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
       </div>
 
-      <!-- Upload client logo -->
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <div style="font-size:12px;color:var(--t2)">החלפת לוגו לקוח:</div>
-        <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--gd);color:#fff;padding:6px 12px;border-radius:6px">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          העלה תמונה
-          <input type="file" accept="image/*" onchange="uploadClientLogo(this)" style="display:none">
-        </label>
-        <button onclick="resetClientLogo()" style="font-size:12px;background:transparent;border:1px solid var(--bdr2);padding:5px 10px;border-radius:6px;cursor:pointer;color:var(--t2)">איפוס</button>
+      <!-- Upload logos -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div style="background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--bdr)">
+          <div style="font-size:12px;font-weight:600;color:var(--t1);margin-bottom:8px">לוגו לקוח</div>
+          <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;background:var(--gd);color:#fff;padding:5px 10px;border-radius:6px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            העלה
+            <input type="file" accept="image/*" onchange="uploadClientLogo(this)" style="display:none">
+          </label>
+          <button onclick="resetClientLogo()" style="font-size:11px;background:transparent;border:1px solid var(--bdr2);padding:4px 8px;border-radius:6px;cursor:pointer;color:var(--t2);margin-right:4px">איפוס</button>
+        </div>
+        <div style="background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--bdr)">
+          <div style="font-size:12px;font-weight:600;color:var(--t1);margin-bottom:8px">לוגו חברת ליסינג</div>
+          <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;background:var(--gd);color:#fff;padding:5px 10px;border-radius:6px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            העלה
+            <input type="file" accept="image/*" onchange="uploadCompanyLogo(this)" style="display:none">
+          </label>
+          <button onclick="resetCompanyLogo()" style="font-size:11px;background:transparent;border:1px solid var(--bdr2);padding:4px 8px;border-radius:6px;cursor:pointer;color:var(--t2);margin-right:4px">איפוס</button>
+        </div>
       </div>
 
       <!-- Preview -->
@@ -3611,26 +3624,39 @@ function toggleSbUserMenu(){
 // Init sidebar logos from settings
 function initLogoSidebar(){
   const s = getSettings();
-  const moreH  = s.logoMoreH  || 44;
-  const colH   = s.logoColH   || 44;
-  const pad    = s.logoPad    || 10;
-  const sep    = s.logoSep    || 1;
   const show   = s.logoShow   || 'both';
   const moreB64= s.moreB64    || DEFAULT_MORE_B64;
   const colB64 = s.colB64     || DEFAULT_COL_B64;
 
+  // Client logo (right in RTL)
   const moreImg = document.getElementById('sb-more-img');
-  const colEl   = document.getElementById('sb-logo-left');
-  const sepEl   = document.querySelector('.sb-brand-divider');
+  const moreText = document.getElementById('sb-logo-right-text');
+  if(moreImg && moreB64){
+    moreImg.src = 'data:image/png;base64,'+moreB64;
+    moreImg.style.display = 'block';
+    if(moreText) moreText.style.display = 'none';
+  } else if(moreText){
+    moreText.style.display = 'block';
+  }
 
-  if(moreImg) moreImg.src = 'data:image/png;base64,'+moreB64;
+  // Company logo (left in RTL)
+  const colImg = document.getElementById('sb-col-img');
+  const colText = document.getElementById('sb-logo-left-text');
+  if(colImg && colB64){
+    colImg.src = 'data:image/png;base64,'+colB64;
+    colImg.style.display = 'block';
+    if(colText) colText.style.display = 'none';
+  } else if(colText){
+    colText.style.display = 'block';
+  }
 
   // Show/hide based on settings
   var rightLogo = document.getElementById('sb-logo-right');
-  if(moreImg) moreImg.style.display = (show==='company') ? 'none' : 'block';
-  if(colEl)   colEl.style.display   = (show==='client')  ? 'none' : 'flex';
-  if(sepEl)   sepEl.style.display   = (show==='both')    ? 'block': 'none';
+  var leftLogo = document.getElementById('sb-logo-left');
+  var sepEl = document.querySelector('.sb-brand-divider');
   if(rightLogo) rightLogo.style.display = (show==='company') ? 'none' : 'flex';
+  if(leftLogo)  leftLogo.style.display  = (show==='client')  ? 'none' : 'flex';
+  if(sepEl)     sepEl.style.display     = (show==='both')    ? 'block': 'none';
 }
 
 // Init representative from settings
@@ -3737,7 +3763,26 @@ function uploadClientLogo(input){
 
 function resetClientLogo(){
   saveSettings({moreB64: DEFAULT_MORE_B64});
-  document.getElementById('prev-more').src = 'data:image/png;base64,'+DEFAULT_MORE_B64;
+  var pm=document.getElementById('prev-more');if(pm)pm.src='data:image/png;base64,'+DEFAULT_MORE_B64;
+  initLogoSidebar();
+}
+
+function uploadCompanyLogo(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var b64=e.target.result.split(',')[1];
+    saveSettings({colB64:b64});
+    var pc=document.getElementById('prev-col');if(pc)pc.src=e.target.result;
+    initLogoSidebar();
+    showToast('✓ לוגו חברת ליסינג עודכן');
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetCompanyLogo(){
+  saveSettings({colB64: DEFAULT_COL_B64});
+  var pc=document.getElementById('prev-col');if(pc)pc.src='data:image/png;base64,'+DEFAULT_COL_B64;
   initLogoSidebar();
 }
 
