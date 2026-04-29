@@ -1545,11 +1545,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       .settings-btn-danger-outline:hover{background:#FCEBEB}
       /* Logo upload */
       .settings-logo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-      .settings-logo-uploader{border:1.5px dashed var(--bdr);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--bg)}
+      .settings-logo-uploader{border:1.5px dashed var(--bdr);border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--bg)}
       .settings-logo-uploader:hover{border-color:var(--gd);background:#E1F5EE}
-      .settings-logo-uploader-label{font-size:11px;color:var(--t2);font-weight:500;margin-bottom:8px}
-      .settings-logo-uploader-preview{height:60px;background:var(--card);border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:11px;color:var(--t3);overflow:hidden}
-      .settings-logo-uploader-preview img{max-height:48px;max-width:100%;object-fit:contain}
+      .settings-logo-uploader-label{font-size:12px;color:var(--t2);font-weight:500;margin-bottom:10px}
+      .settings-logo-uploader-preview{height:100px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;font-size:12px;color:var(--t3);overflow:hidden;padding:8px}
+      .settings-logo-uploader-preview img{max-height:80px;max-width:100%;object-fit:contain}
       .settings-logo-uploader-text{font-size:11px;color:var(--t2)}
       /* Color picker */
       .settings-color-picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
@@ -1738,32 +1738,32 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             </div>
           </div>
 
+          <input type="file" id="client-logo-input" accept="image/png,image/jpeg,image/svg+xml" onchange="uploadClientLogo(this)" style="display:none">
+          <input type="file" id="company-logo-input" accept="image/png,image/jpeg,image/svg+xml" onchange="uploadCompanyLogo(this)" style="display:none">
           <div class="settings-logo-grid">
-            <div class="settings-logo-uploader" onclick="document.getElementById('client-logo-input').click()">
+            <label for="client-logo-input" class="settings-logo-uploader">
               <div class="settings-logo-uploader-label">לוגו לקוח</div>
               <div class="settings-logo-uploader-preview" id="client-logo-preview-area">
                 <span>לחץ להעלאה</span>
               </div>
               <div class="settings-logo-uploader-text">PNG, SVG - עד 2MB</div>
-            </div>
-            <input type="file" id="client-logo-input" accept="image/*" onchange="uploadClientLogo(this)" style="display:none">
-            <div class="settings-logo-uploader" onclick="document.getElementById('company-logo-input').click()">
+            </label>
+            <label for="company-logo-input" class="settings-logo-uploader">
               <div class="settings-logo-uploader-label">לוגו חברת ליסינג</div>
               <div class="settings-logo-uploader-preview" id="company-logo-preview-area">
                 <span>לחץ להעלאה</span>
               </div>
               <div class="settings-logo-uploader-text">PNG, SVG - עד 2MB</div>
-            </div>
-            <input type="file" id="company-logo-input" accept="image/*" onchange="uploadCompanyLogo(this)" style="display:none">
+            </label>
           </div>
 
           <!-- Preview -->
-          <div style="margin-top:14px;font-size:11px;color:var(--t2);margin-bottom:6px">תצוגה מקדימה:</div>
-          <div style="background:var(--gd);border-radius:8px;padding:8px;display:inline-block">
-            <div id="settings-logo-preview" style="background:#fff;border-radius:6px;padding:10px;display:flex;align-items:center;gap:8px">
-              <img id="prev-more" style="height:44px;object-fit:contain;display:block;max-width:105px">
-              <div id="prev-sep" style="width:1px;height:33px;background:#e5e5e5;flex-shrink:0"></div>
-              <img id="prev-col" style="height:44px;object-fit:contain;display:block;max-width:90px">
+          <div style="margin-top:16px;font-size:12px;color:var(--t2);margin-bottom:8px">תצוגה מקדימה:</div>
+          <div style="background:var(--gd);border-radius:10px;padding:10px;display:inline-block">
+            <div id="settings-logo-preview" style="background:#fff;border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:12px">
+              <img id="prev-more" style="height:52px;object-fit:contain;display:block;max-width:140px">
+              <div id="prev-sep" style="width:1px;height:40px;background:#e5e5e5;flex-shrink:0"></div>
+              <img id="prev-col" style="height:52px;object-fit:contain;display:block;max-width:140px">
             </div>
           </div>
 
