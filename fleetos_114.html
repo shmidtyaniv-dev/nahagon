@@ -4084,19 +4084,35 @@ function pickLogoFile(type){
   inp.click();
 }
 
+function _compressLogo(dataUrl, callback){
+  var img=new Image();
+  img.onload=function(){
+    var maxH=500;
+    var w=img.width,h=img.height;
+    if(h>maxH){var ratio=maxH/h;w=Math.round(w*ratio);h=maxH;}
+    var canvas=document.createElement('canvas');
+    canvas.width=w;canvas.height=h;
+    var ctx=canvas.getContext('2d');
+    ctx.drawImage(img,0,0,w,h);
+    callback(canvas.toDataURL('image/png'));
+  };
+  img.src=dataUrl;
+}
+
 function uploadClientLogo(input){
   var file = input.files[0];
   if(!file) return;
   if(file.size>5*1024*1024){showToast('הקובץ גדול מ-5MB');return;}
   var reader = new FileReader();
   reader.onload = function(e){
-    var dataUrl = e.target.result;
-    saveSettings({moreB64:dataUrl});
-    var preview=document.getElementById('client-logo-preview-area');
-    if(preview) preview.innerHTML='<img src="'+dataUrl+'" style="max-height:80px;max-width:100%;object-fit:contain">';
-    var pm=document.getElementById('prev-more');if(pm)pm.src=dataUrl;
-    initLogoSidebar();
-    showToast('✓ לוגו לקוח עודכן');
+    _compressLogo(e.target.result, function(dataUrl){
+      saveSettings({moreB64:dataUrl});
+      var preview=document.getElementById('client-logo-preview-area');
+      if(preview) preview.innerHTML='<img src="'+dataUrl+'" style="max-height:80px;max-width:100%;object-fit:contain">';
+      var pm=document.getElementById('prev-more');if(pm)pm.src=dataUrl;
+      initLogoSidebar();
+      showToast('✓ לוגו לקוח עודכן');
+    });
   };
   reader.readAsDataURL(file);
 }
@@ -4112,13 +4128,14 @@ function uploadCompanyLogo(input){
   if(file.size>5*1024*1024){showToast('הקובץ גדול מ-5MB');return;}
   var reader=new FileReader();
   reader.onload=function(e){
-    var dataUrl=e.target.result;
-    saveSettings({colB64:dataUrl});
-    var preview=document.getElementById('company-logo-preview-area');
-    if(preview) preview.innerHTML='<img src="'+dataUrl+'" style="max-height:80px;max-width:100%;object-fit:contain">';
-    var pc=document.getElementById('prev-col');if(pc)pc.src=dataUrl;
-    initLogoSidebar();
-    showToast('✓ לוגו חברת ליסינג עודכן');
+    _compressLogo(e.target.result, function(dataUrl){
+      saveSettings({colB64:dataUrl});
+      var preview=document.getElementById('company-logo-preview-area');
+      if(preview) preview.innerHTML='<img src="'+dataUrl+'" style="max-height:80px;max-width:100%;object-fit:contain">';
+      var pc=document.getElementById('prev-col');if(pc)pc.src=dataUrl;
+      initLogoSidebar();
+      showToast('✓ לוגו חברת ליסינג עודכן');
+    });
   };
   reader.readAsDataURL(file);
 }
