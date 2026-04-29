@@ -3976,22 +3976,36 @@ function setTemplatesSubTab(tabName){
 // Called when opening settings page
 function initSettingsPage(){
   const s = getSettings();
-  // Logo controls
-  const mH = s.logoMoreH||44, cH=s.logoColH||44, p=s.logoPad||10, sp=s.logoSep||1;
+  // Logo controls (optional - may not exist in new layout)
+  try{
+    var el;
+    el=document.getElementById('logo-more-h');if(el)el.value=s.logoMoreH||44;
+    el=document.getElementById('logo-col-h');if(el)el.value=s.logoColH||44;
+    el=document.getElementById('logo-pad');if(el)el.value=s.logoPad||10;
+    el=document.getElementById('logo-sep');if(el)el.value=s.logoSep||1;
+    el=document.getElementById('logo-more-val');if(el)el.textContent=(s.logoMoreH||44)+'px';
+    el=document.getElementById('logo-col-val');if(el)el.textContent=(s.logoColH||44)+'px';
+    el=document.getElementById('logo-pad-val');if(el)el.textContent=(s.logoPad||10)+'px';
+    el=document.getElementById('logo-sep-val');if(el)el.textContent=(s.logoSep||1)+'px';
+  }catch(e){}
   const show = s.logoShow||'both';
-  document.getElementById('logo-more-h').value = mH;
-  document.getElementById('logo-col-h').value  = cH;
-  document.getElementById('logo-pad').value    = p;
-  document.getElementById('logo-sep').value    = sp;
-  document.getElementById('logo-more-val').textContent = mH+'px';
-  document.getElementById('logo-col-val').textContent  = cH+'px';
-  document.getElementById('logo-pad-val').textContent  = p+'px';
-  document.getElementById('logo-sep-val').textContent  = sp+'px';
-  // radio
   document.querySelectorAll('input[name="logo-show"]').forEach(r=>{ r.checked=(r.value===show); });
+  // Load logo previews in settings
+  var moreB64=s.moreB64||DEFAULT_MORE_B64;
+  var colB64=s.colB64||DEFAULT_COL_B64;
+  var clientPrev=document.getElementById('client-logo-preview-area');
+  if(clientPrev&&moreB64){
+    var src=moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
+    clientPrev.innerHTML='<img src="'+src+'" style="max-height:48px;max-width:100%;object-fit:contain">';
+  }
+  var compPrev=document.getElementById('company-logo-preview-area');
+  if(compPrev&&colB64){
+    var src2=colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
+    compPrev.innerHTML='<img src="'+src2+'" style="max-height:48px;max-width:100%;object-fit:contain">';
+  }
   // Rep
-  document.getElementById('rep-name').value = s.repName||'יניב שמידט';
-  document.getElementById('rep-role').value = s.repRole||'נציג בית לקוח';
+  var repName=document.getElementById('rep-name');if(repName)repName.value=s.repName||'יניב שמידט';
+  var repRole=document.getElementById('rep-role');if(repRole)repRole.value=s.repRole||'נציג בית לקוח';
   if(document.getElementById('rep-email')) document.getElementById('rep-email').value = s.repEmail||'';
   const pendingCb = document.getElementById('rep-show-pending-banner');
   if(pendingCb){
@@ -4054,6 +4068,9 @@ function uploadClientLogo(input){
   const reader = new FileReader();
   reader.onload = e=>{
     saveSettings({moreB64:e.target.result});
+    // Update preview in settings page
+    var preview=document.getElementById('client-logo-preview-area');
+    if(preview) preview.innerHTML='<img src="'+e.target.result+'" style="max-height:48px;max-width:100%;object-fit:contain">';
     var pm=document.getElementById('prev-more');if(pm)pm.src=e.target.result;
     initLogoSidebar();
     showToast('✓ לוגו לקוח עודכן');
@@ -4072,6 +4089,9 @@ function uploadCompanyLogo(input){
   var reader=new FileReader();
   reader.onload=function(e){
     saveSettings({colB64:e.target.result});
+    // Update preview in settings page
+    var preview=document.getElementById('company-logo-preview-area');
+    if(preview) preview.innerHTML='<img src="'+e.target.result+'" style="max-height:48px;max-width:100%;object-fit:contain">';
     var pc=document.getElementById('prev-col');if(pc)pc.src=e.target.result;
     initLogoSidebar();
     showToast('✓ לוגו חברת ליסינג עודכן');
