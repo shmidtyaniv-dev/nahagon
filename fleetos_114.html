@@ -1739,22 +1739,22 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </div>
 
           <div class="settings-logo-grid">
-            <div class="settings-logo-uploader" onclick="this.querySelector('input[type=file]').click()">
+            <div class="settings-logo-uploader" onclick="document.getElementById('client-logo-input').click()">
               <div class="settings-logo-uploader-label">לוגו לקוח</div>
               <div class="settings-logo-uploader-preview" id="client-logo-preview-area">
                 <span>לחץ להעלאה</span>
               </div>
               <div class="settings-logo-uploader-text">PNG, SVG - עד 2MB</div>
-              <input type="file" accept="image/*" onchange="uploadClientLogo(this)" style="display:none">
             </div>
-            <div class="settings-logo-uploader" onclick="this.querySelector('input[type=file]').click()">
+            <input type="file" id="client-logo-input" accept="image/*" onchange="uploadClientLogo(this)" style="display:none">
+            <div class="settings-logo-uploader" onclick="document.getElementById('company-logo-input').click()">
               <div class="settings-logo-uploader-label">לוגו חברת ליסינג</div>
               <div class="settings-logo-uploader-preview" id="company-logo-preview-area">
                 <span>לחץ להעלאה</span>
               </div>
               <div class="settings-logo-uploader-text">PNG, SVG - עד 2MB</div>
-              <input type="file" accept="image/*" onchange="uploadCompanyLogo(this)" style="display:none">
             </div>
+            <input type="file" id="company-logo-input" accept="image/*" onchange="uploadCompanyLogo(this)" style="display:none">
           </div>
 
           <!-- Preview -->
@@ -3994,14 +3994,22 @@ function initSettingsPage(){
   var moreB64=s.moreB64||DEFAULT_MORE_B64;
   var colB64=s.colB64||DEFAULT_COL_B64;
   var clientPrev=document.getElementById('client-logo-preview-area');
-  if(clientPrev&&moreB64){
-    var src=moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
-    clientPrev.innerHTML='<img src="'+src+'" style="max-height:48px;max-width:100%;object-fit:contain">';
+  if(clientPrev){
+    if(moreB64 && moreB64.length>20){
+      var src=moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
+      clientPrev.innerHTML='<img src="'+src+'" style="max-height:48px;max-width:100%;object-fit:contain">';
+    } else {
+      clientPrev.innerHTML='<span>לחץ להעלאה</span>';
+    }
   }
   var compPrev=document.getElementById('company-logo-preview-area');
-  if(compPrev&&colB64){
-    var src2=colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
-    compPrev.innerHTML='<img src="'+src2+'" style="max-height:48px;max-width:100%;object-fit:contain">';
+  if(compPrev){
+    if(colB64 && colB64.length>20){
+      var src2=colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
+      compPrev.innerHTML='<img src="'+src2+'" style="max-height:48px;max-width:100%;object-fit:contain">';
+    } else {
+      compPrev.innerHTML='<span>לחץ להעלאה</span>';
+    }
   }
   // Rep
   var repName=document.getElementById('rep-name');if(repName)repName.value=s.repName||'יניב שמידט';
