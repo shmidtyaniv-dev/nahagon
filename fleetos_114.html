@@ -1738,25 +1738,29 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             </div>
           </div>
 
-          <div class="settings-logo-grid">
-            <div class="settings-logo-uploader" onclick="pickLogoFile('client')">
-              <div class="settings-logo-uploader-label">לוגו לקוח</div>
-              <div class="settings-logo-uploader-preview" id="client-logo-preview-area">
-                <span>לחץ להעלאה</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <!-- לוגו לקוח -->
+            <div style="border:1.5px dashed var(--bdr);border-radius:10px;padding:20px;text-align:center;background:var(--bg)">
+              <div style="font-size:13px;font-weight:500;color:var(--t1);margin-bottom:12px">לוגו לקוח</div>
+              <div id="client-logo-preview-area" style="height:100px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;overflow:hidden;padding:8px">
+                <span style="font-size:12px;color:var(--t3)">אין לוגו</span>
               </div>
-              <div class="settings-logo-uploader-text">PNG, JPG, SVG - עד 2MB</div>
+              <button type="button" onclick="var i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=function(){uploadClientLogo(i)};i.click()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;width:100%">📁 בחר קובץ</button>
+              <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, SVG - עד 2MB</div>
             </div>
-            <div class="settings-logo-uploader" onclick="pickLogoFile('company')">
-              <div class="settings-logo-uploader-label">לוגו חברת ליסינג</div>
-              <div class="settings-logo-uploader-preview" id="company-logo-preview-area">
-                <span>לחץ להעלאה</span>
+            <!-- לוגו חברת ליסינג -->
+            <div style="border:1.5px dashed var(--bdr);border-radius:10px;padding:20px;text-align:center;background:var(--bg)">
+              <div style="font-size:13px;font-weight:500;color:var(--t1);margin-bottom:12px">לוגו חברת ליסינג</div>
+              <div id="company-logo-preview-area" style="height:100px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;overflow:hidden;padding:8px">
+                <span style="font-size:12px;color:var(--t3)">אין לוגו</span>
               </div>
-              <div class="settings-logo-uploader-text">PNG, JPG, SVG - עד 2MB</div>
+              <button type="button" onclick="var i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=function(){uploadCompanyLogo(i)};i.click()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;width:100%">📁 בחר קובץ</button>
+              <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, SVG - עד 2MB</div>
             </div>
           </div>
 
-          <!-- Preview -->
-          <div style="margin-top:16px;font-size:12px;color:var(--t2);margin-bottom:8px">תצוגה מקדימה:</div>
+          <!-- תצוגה מקדימה -->
+          <div style="font-size:12px;color:var(--t2);margin-bottom:8px">תצוגה מקדימה בסרגל צד:</div>
           <div style="background:var(--gd);border-radius:10px;padding:10px;display:inline-block">
             <div id="settings-logo-preview" style="background:#fff;border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:12px">
               <img id="prev-more" style="height:52px;object-fit:contain;display:block;max-width:140px">
@@ -4081,15 +4085,16 @@ function pickLogoFile(type){
 }
 
 function uploadClientLogo(input){
-  const file = input.files[0];
+  var file = input.files[0];
   if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e=>{
-    saveSettings({moreB64:e.target.result});
-    // Update preview in settings page
+  if(file.size>2*1024*1024){showToast('הקובץ גדול מ-2MB');return;}
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var dataUrl = e.target.result;
+    saveSettings({moreB64:dataUrl});
     var preview=document.getElementById('client-logo-preview-area');
-    if(preview) preview.innerHTML='<img src="'+e.target.result+'" style="max-height:48px;max-width:100%;object-fit:contain">';
-    var pm=document.getElementById('prev-more');if(pm)pm.src=e.target.result;
+    if(preview) preview.innerHTML='<img src="'+dataUrl+'" style="max-height:80px;max-width:100%;object-fit:contain">';
+    var pm=document.getElementById('prev-more');if(pm)pm.src=dataUrl;
     initLogoSidebar();
     showToast('✓ לוגו לקוח עודכן');
   };
@@ -4104,13 +4109,14 @@ function resetClientLogo(){
 
 function uploadCompanyLogo(input){
   var file=input.files[0];if(!file)return;
+  if(file.size>2*1024*1024){showToast('הקובץ גדול מ-2MB');return;}
   var reader=new FileReader();
   reader.onload=function(e){
-    saveSettings({colB64:e.target.result});
-    // Update preview in settings page
+    var dataUrl=e.target.result;
+    saveSettings({colB64:dataUrl});
     var preview=document.getElementById('company-logo-preview-area');
-    if(preview) preview.innerHTML='<img src="'+e.target.result+'" style="max-height:48px;max-width:100%;object-fit:contain">';
-    var pc=document.getElementById('prev-col');if(pc)pc.src=e.target.result;
+    if(preview) preview.innerHTML='<img src="'+dataUrl+'" style="max-height:80px;max-width:100%;object-fit:contain">';
+    var pc=document.getElementById('prev-col');if(pc)pc.src=dataUrl;
     initLogoSidebar();
     showToast('✓ לוגו חברת ליסינג עודכן');
   };
