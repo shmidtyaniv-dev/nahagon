@@ -856,6 +856,18 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 <!-- SIDEBAR -->
 <aside class="sb">
   <div id="fleet-cnt" style="display:none"></div>
+  <!-- Brand logos -->
+  <div class="sb-brand" id="sb-brand-area">
+    <div class="sb-brand-logo" id="sb-logo-right">
+      <img id="sb-more-img" style="display:none;max-width:100%;object-fit:contain" src="">
+      <span id="sb-logo-right-text" style="font-size:13px;font-weight:700;color:#1A4A3A">לקוח</span>
+    </div>
+    <div class="sb-brand-divider"></div>
+    <div class="sb-brand-logo" id="sb-logo-left">
+      <img id="sb-col-img" style="display:none;max-width:100%;object-fit:contain" src="">
+      <span id="sb-logo-left-text" style="font-size:13px;font-weight:700;color:#1A4A3A">ליסינג</span>
+    </div>
+  </div>
   <!-- Fleet stats -->
   <div class="sb-stats">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2"><path d="M14 16H9m10 0h3v-3.15a1 1 0 00-.84-.99L16 11l-2.7-3.6a1 1 0 00-.8-.4H5.24a2 2 0 00-1.8 1.1l-.8 1.63A6 6 0 002 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>
@@ -1676,6 +1688,50 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
     <!-- TAB 2: BRANDING -->
     <div class="settings-tab-content" data-settings-tab="branding">
+
+      <!-- Logos -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">לוגויים</div>
+            <div class="settings-section-desc">לוגו לקוח ולוגו חברת ליסינג יוצגו בסרגל הצד</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div style="text-align:center">
+              <div style="font-size:13px;font-weight:500;color:var(--t1);margin-bottom:8px">לוגו לקוח</div>
+              <div id="client-logo-preview-area" style="height:80px;background:var(--bg);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;overflow:hidden;padding:8px;border:1px solid var(--bdr)">
+                <span style="font-size:12px;color:var(--t3)">אין לוגו</span>
+              </div>
+              <input type="file" id="client-logo-file" accept="image/png,image/jpeg" onchange="uploadClientLogo(this)" style="font-size:12px;font-family:inherit;max-width:100%">
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:13px;font-weight:500;color:var(--t1);margin-bottom:8px">לוגו חברת ליסינג</div>
+              <div id="company-logo-preview-area" style="height:80px;background:var(--bg);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;overflow:hidden;padding:8px;border:1px solid var(--bdr)">
+                <span style="font-size:12px;color:var(--t3)">אין לוגו</span>
+              </div>
+              <input type="file" id="company-logo-file" accept="image/png,image/jpeg" onchange="uploadCompanyLogo(this)" style="font-size:12px;font-family:inherit;max-width:100%">
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <div style="font-size:12px;color:var(--t2);margin-bottom:6px">גודל לוגויים: <b id="logo-size-val">36px</b></div>
+            <input type="range" id="logo-size-slider" min="20" max="70" value="36" oninput="document.getElementById('logo-size-val').textContent=this.value+'px';applyLogoSize()" style="width:100%;accent-color:var(--gd)">
+          </div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:8px">תצוגה מקדימה:</div>
+          <div style="background:var(--bg);border-radius:8px;padding:12px;display:inline-flex;align-items:center;gap:10px;border:1px solid var(--bdr)">
+            <img id="prev-more" style="height:36px;object-fit:contain;max-width:120px">
+            <div id="prev-sep" style="width:1px;height:28px;background:var(--bdr2);flex-shrink:0"></div>
+            <img id="prev-col" style="height:36px;object-fit:contain;max-width:120px">
+          </div>
+          <div class="settings-btn-row">
+            <button class="settings-btn settings-btn-secondary" onclick="resetClientLogo();resetCompanyLogo()">איפוס</button>
+          </div>
+        </div>
+      </div>
 
       <!-- System Name -->
       <div class="settings-section">
@@ -3805,42 +3861,40 @@ function toggleSbUserMenu(){
 
 // Init sidebar logos from settings
 function initLogoSidebar(){
-  const s = getSettings();
-  const show   = s.logoShow   || 'both';
-  const moreB64= s.moreB64    || DEFAULT_MORE_B64;
-  const colB64 = s.colB64     || DEFAULT_COL_B64;
+  var s = getSettings();
+  var moreB64 = s.moreB64 || '';
+  var colB64  = s.colB64  || '';
+  var logoH   = s.logoH   || 36;
 
-  // Client logo (right in RTL)
-  const moreImg = document.getElementById('sb-more-img');
-  const moreText = document.getElementById('sb-logo-right-text');
-  if(moreImg && moreB64){
-    moreImg.src = moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
-    moreImg.style.display = 'block';
-    if(moreText) moreText.style.display = 'none';
-  } else if(moreText){
-    if(moreImg) moreImg.style.display = 'none';
-    moreText.style.display = 'block';
+  var moreImg  = document.getElementById('sb-more-img');
+  var moreText = document.getElementById('sb-logo-right-text');
+  var colImg   = document.getElementById('sb-col-img');
+  var colText  = document.getElementById('sb-logo-left-text');
+
+  // Client logo
+  if(moreImg){
+    if(moreB64 && moreB64.length>50){
+      moreImg.src = moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
+      moreImg.style.display = 'block';
+      moreImg.style.maxHeight = logoH+'px';
+      if(moreText) moreText.style.display = 'none';
+    } else {
+      moreImg.style.display = 'none';
+      if(moreText) moreText.style.display = 'block';
+    }
   }
-
-  // Company logo (left in RTL)
-  const colImg = document.getElementById('sb-col-img');
-  const colText = document.getElementById('sb-logo-left-text');
-  if(colImg && colB64){
-    colImg.src = colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
-    colImg.style.display = 'block';
-    if(colText) colText.style.display = 'none';
-  } else if(colText){
-    if(colImg) colImg.style.display = 'none';
-    colText.style.display = 'block';
+  // Company logo
+  if(colImg){
+    if(colB64 && colB64.length>50){
+      colImg.src = colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
+      colImg.style.display = 'block';
+      colImg.style.maxHeight = logoH+'px';
+      if(colText) colText.style.display = 'none';
+    } else {
+      colImg.style.display = 'none';
+      if(colText) colText.style.display = 'block';
+    }
   }
-
-  // Show/hide based on settings
-  var rightLogo = document.getElementById('sb-logo-right');
-  var leftLogo = document.getElementById('sb-logo-left');
-  var sepEl = document.querySelector('.sb-brand-divider');
-  if(rightLogo) rightLogo.style.display = (show==='company') ? 'none' : 'flex';
-  if(leftLogo)  leftLogo.style.display  = (show==='client')  ? 'none' : 'flex';
-  if(sepEl)     sepEl.style.display     = (show==='both')    ? 'block': 'none';
 }
 
 // Init representative from settings
@@ -3879,41 +3933,38 @@ function setTemplatesSubTab(tabName){
 // Called when opening settings page
 function initSettingsPage(){
   const s = getSettings();
-  // Logo controls (optional - may not exist in new layout)
-  try{
-    var el;
-    el=document.getElementById('logo-more-h');if(el)el.value=s.logoMoreH||44;
-    el=document.getElementById('logo-col-h');if(el)el.value=s.logoColH||44;
-    el=document.getElementById('logo-pad');if(el)el.value=s.logoPad||10;
-    el=document.getElementById('logo-sep');if(el)el.value=s.logoSep||1;
-    el=document.getElementById('logo-more-val');if(el)el.textContent=(s.logoMoreH||44)+'px';
-    el=document.getElementById('logo-col-val');if(el)el.textContent=(s.logoColH||44)+'px';
-    el=document.getElementById('logo-pad-val');if(el)el.textContent=(s.logoPad||10)+'px';
-    el=document.getElementById('logo-sep-val');if(el)el.textContent=(s.logoSep||1)+'px';
-  }catch(e){}
-  const show = s.logoShow||'both';
-  document.querySelectorAll('input[name="logo-show"]').forEach(r=>{ r.checked=(r.value===show); });
+  // Logo size slider
+  var logoSlider=document.getElementById('logo-size-slider');
+  var logoSizeVal=document.getElementById('logo-size-val');
+  var logoH=s.logoH||36;
+  if(logoSlider){logoSlider.value=logoH;}
+  if(logoSizeVal){logoSizeVal.textContent=logoH+'px';}
   // Load logo previews in settings
-  var moreB64=s.moreB64||DEFAULT_MORE_B64;
-  var colB64=s.colB64||DEFAULT_COL_B64;
+  var moreB64=s.moreB64||'';
+  var colB64=s.colB64||'';
   var clientPrev=document.getElementById('client-logo-preview-area');
   if(clientPrev){
-    if(moreB64 && moreB64.length>20){
+    if(moreB64 && moreB64.length>50){
       var src=moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
-      clientPrev.innerHTML='<img src="'+src+'" style="max-height:48px;max-width:100%;object-fit:contain">';
+      clientPrev.innerHTML='<img src="'+src+'" style="max-height:60px;max-width:100%;object-fit:contain">';
     } else {
-      clientPrev.innerHTML='<span>לחץ להעלאה</span>';
+      clientPrev.innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
     }
   }
+  var prevMore=document.getElementById('prev-more');
+  if(prevMore&&moreB64&&moreB64.length>50){prevMore.src=moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;prevMore.style.height=logoH+'px';}
   var compPrev=document.getElementById('company-logo-preview-area');
   if(compPrev){
-    if(colB64 && colB64.length>20){
+    if(colB64 && colB64.length>50){
       var src2=colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
-      compPrev.innerHTML='<img src="'+src2+'" style="max-height:48px;max-width:100%;object-fit:contain">';
+      compPrev.innerHTML='<img src="'+src2+'" style="max-height:60px;max-width:100%;object-fit:contain">';
     } else {
-      compPrev.innerHTML='<span>לחץ להעלאה</span>';
+      compPrev.innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
     }
   }
+  var prevCol=document.getElementById('prev-col');
+  if(prevCol&&colB64&&colB64.length>50){prevCol.src=colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;prevCol.style.height=logoH+'px';}
+  var prevSep=document.getElementById('prev-sep');if(prevSep)prevSep.style.height=Math.round(logoH*0.75)+'px';
   // Rep
   var repName=document.getElementById('rep-name');if(repName)repName.value=s.repName||'יניב שמידט';
   var repRole=document.getElementById('rep-role');if(repRole)repRole.value=s.repRole||'נציג בית לקוח';
@@ -3936,42 +3987,13 @@ function initSettingsPage(){
   if(document.getElementById('test-msg-template')) document.getElementById('test-msg-template').value = s.testMsgTemplate||TEST_MSG_DEFAULT;
   if(document.getElementById('viol-include-file')) document.getElementById('viol-include-file').checked = s.violIncludeFile!==false;
   if(document.getElementById('viol-approval-base-url')) document.getElementById('viol-approval-base-url').value = s.violApprovalBaseUrl||'';
-  // Previews (use existing moreB64/colB64 vars from above)
-  var prevMore=document.getElementById('prev-more');
-  if(prevMore) prevMore.src = moreB64.startsWith('data:')?moreB64:'data:image/png;base64,'+moreB64;
-  var prevCol=document.getElementById('prev-col');
-  if(prevCol) prevCol.src = colB64.startsWith('data:')?colB64:'data:image/png;base64,'+colB64;
   if(typeof updateRepPreview==='function') try{updateRepPreview();}catch(e){}
-  try{applyLogoSettings();}catch(e){}
   if(typeof initSchedulingSettings==='function') initSchedulingSettings();
   if(typeof initRequestTemplates==='function') initRequestTemplates();
 }
 
 function applyLogoSettings(){
-  if(!document.getElementById('logo-more-h')) return;
-  const mH  = +document.getElementById('logo-more-h').value;
-  const cH  = +document.getElementById('logo-col-h').value;
-  const p   = +document.getElementById('logo-pad').value;
-  const sp  = +document.getElementById('logo-sep').value;
-  const show= document.querySelector('input[name="logo-show"]:checked')?.value||'both';
-
-  // Update preview
-  const card = document.getElementById('settings-logo-preview');
-  const pm   = document.getElementById('prev-more');
-  const pc   = document.getElementById('prev-col');
-  const ps   = document.getElementById('prev-sep');
-  card.style.padding = p+'px';
-  pm.style.height = mH+'px';
-  pc.style.height = cH+'px';
-  ps.style.width  = sp+'px';
-  ps.style.height = Math.max(mH,cH)*0.75+'px';
-  pm.style.display = (show==='company') ? 'none' : 'block';
-  pc.style.display = (show==='client')  ? 'none' : 'block';
-  ps.style.display = (show==='both')    ? 'block': 'none';
-
-  // Save
-  saveSettings({logoMoreH:mH,logoColH:cH,logoPad:p,logoSep:sp,logoShow:show});
-  initLogoSidebar();
+  // Legacy - no longer used
 }
 
 function pickLogoFile(type){
@@ -4021,12 +4043,6 @@ function uploadClientLogo(input){
   reader.readAsDataURL(file);
 }
 
-function resetClientLogo(){
-  saveSettings({moreB64: DEFAULT_MORE_B64});
-  var pm=document.getElementById('prev-more');if(pm)pm.src='data:image/png;base64,'+DEFAULT_MORE_B64;
-  initLogoSidebar();
-}
-
 function uploadCompanyLogo(input){
   var file=input.files[0];if(!file)return;
   if(file.size>5*1024*1024){showToast('הקובץ גדול מ-5MB');return;}
@@ -4047,6 +4063,29 @@ function uploadCompanyLogo(input){
 function resetCompanyLogo(){
   saveSettings({colB64: DEFAULT_COL_B64});
   var pc=document.getElementById('prev-col');if(pc)pc.src='data:image/png;base64,'+DEFAULT_COL_B64;
+  var preview=document.getElementById('company-logo-preview-area');
+  if(preview) preview.innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
+  initLogoSidebar();
+}
+
+function resetClientLogo(){
+  saveSettings({moreB64: DEFAULT_MORE_B64});
+  var pm=document.getElementById('prev-more');if(pm)pm.src='data:image/png;base64,'+DEFAULT_MORE_B64;
+  var preview=document.getElementById('client-logo-preview-area');
+  if(preview) preview.innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
+  initLogoSidebar();
+}
+
+function applyLogoSize(){
+  var slider=document.getElementById('logo-size-slider');
+  if(!slider)return;
+  var h=+slider.value;
+  saveSettings({logoH:h});
+  // Update preview
+  var pm=document.getElementById('prev-more');if(pm)pm.style.height=h+'px';
+  var pc=document.getElementById('prev-col');if(pc)pc.style.height=h+'px';
+  var sep=document.getElementById('prev-sep');if(sep)sep.style.height=Math.round(h*0.75)+'px';
+  // Update sidebar
   initLogoSidebar();
 }
 
