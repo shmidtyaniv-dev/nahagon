@@ -2037,6 +2037,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <span class="settings-form-field-hint">ימים</span>
           </div>
           <div class="settings-schedule-input">
+            <span class="settings-schedule-input-label">התראה לפני טסט</span>
+            <input type="number" id="sched-test-reminder-days" min="1" max="90" value="30">
+            <span class="settings-form-field-hint">ימים</span>
+          </div>
+          <div class="settings-schedule-input">
             <span class="settings-schedule-input-label">כמות טיפולים מקסימלית ליום</span>
             <input type="number" id="sched-daily-capacity" min="1" max="20" value="2">
             <span class="settings-form-field-hint">רכבים</span>
@@ -6132,17 +6137,18 @@ function renderPlate(plate,big=false){
 let calOffset=0;
 function calNavPrev(){calOffset--;renderCal();}
 function calNavNext(){calOffset++;renderCal();}
-// Helper: returns true if the expiration date is within 30 days from today
-function isWithin30Days(isoDate){
+// Helper: returns true if the date is within N days from today (default 30)
+function isWithin30Days(isoDate, customDays){
   if(!isoDate) return false;
   const today = new Date();
   today.setHours(0,0,0,0);
   const d = new Date(isoDate);
   d.setHours(0,0,0,0);
   const diff = Math.round((d-today)/(1000*60*60*24));
-  // Show if within 30 days ahead OR already expired (past)
-  return diff <= 30;
+  const threshold = customDays || 30;
+  return diff <= threshold;
 }
+function isWithinDays(isoDate, days){ return isWithin30Days(isoDate, days); }
 
 function getMonthItems(mo){
   const m=mo.getMonth(),y=mo.getFullYear();
@@ -11297,32 +11303,33 @@ function go(name,el){
 }
 
 function refresh(){
-  // mv-docs removed from dashboard
-  // Count: treatments (services) + tests (vehicle licenses) within 30 days
+  // Count: treatments (services) + tests (vehicle licenses) within configurable days
+  var _sched = typeof getSchedulingSettings==='function' ? getSchedulingSettings() : {};
+  var svcDaysThreshold = _sched.reminderDays || 20;
+  var testDaysThreshold = _sched.testReminderDays || 30;
   let treatmentCount = 0;
   let testCount = 0;
   const today = new Date(); today.setHours(0,0,0,0);
   (vehicles||[]).forEach(function(v){
-    // Vehicle license (test) - within 30 days
-    if(v.licenseExp && typeof isWithin30Days==='function' && isWithin30Days(v.licenseExp)){
+    // Vehicle license (test) - within testReminderDays
+    if(v.licenseExp && typeof isWithin30Days==='function' && isWithin30Days(v.licenseExp, testDaysThreshold)){
       testCount++;
     }
-    // Annual service - within 30 days from last service anniversary
+    // Annual service - within svcReminderDays from last service anniversary
     if(typeof getVehicleLastServiceDate==='function'){
       const lastSvc = getVehicleLastServiceDate(v);
       if(lastSvc){
         const anniversary = new Date(lastSvc);
         while(anniversary<=today) anniversary.setFullYear(anniversary.getFullYear()+1);
         const annivStr = anniversary.toISOString().split('T')[0];
-        if(typeof isWithin30Days==='function' && isWithin30Days(annivStr)){
+        if(typeof isWithin30Days==='function' && isWithin30Days(annivStr, svcDaysThreshold)){
           treatmentCount++;
         }
       } else if(v.isNew && v.delivery){
-        // New vehicle - first service is 1 year from delivery
         const firstSvc = new Date(v.delivery);
         firstSvc.setFullYear(firstSvc.getFullYear()+1);
         const firstStr = firstSvc.toISOString().split('T')[0];
-        if(typeof isWithin30Days==='function' && isWithin30Days(firstStr)){
+        if(typeof isWithin30Days==='function' && isWithin30Days(firstStr, svcDaysThreshold)){
           treatmentCount++;
         }
       }
@@ -15380,7 +15387,8 @@ function getSchedulingSettings(){
   return {
     dailyCapacity: s.schedDailyCapacity||2,
     openDays: s.schedOpenDays||[0,1,2,3,4],
-    reminderDays: s.schedReminderDays||20
+    reminderDays: s.schedReminderDays||20,
+    testReminderDays: s.schedTestReminderDays||30
   };
 }
 
@@ -15388,6 +15396,8 @@ function saveSchedulingSettings(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   var remEl=document.getElementById('sched-reminder-days');
   if(remEl) s.schedReminderDays=parseInt(remEl.value)||20;
+  var testRemEl=document.getElementById('sched-test-reminder-days');
+  if(testRemEl) s.schedTestReminderDays=parseInt(testRemEl.value)||30;
   var capEl=document.getElementById('sched-daily-capacity');
   if(capEl) s.schedDailyCapacity=parseInt(capEl.value)||2;
   var daysCbs=document.querySelectorAll('.sched-day-cb');
@@ -15402,6 +15412,8 @@ function initSchedulingSettings(){
   var s=getSchedulingSettings();
   var remEl=document.getElementById('sched-reminder-days');
   if(remEl) remEl.value=s.reminderDays;
+  var testRemEl=document.getElementById('sched-test-reminder-days');
+  if(testRemEl) testRemEl.value=s.testReminderDays;
   var capEl=document.getElementById('sched-daily-capacity');
   if(capEl) capEl.value=s.dailyCapacity;
   var daysCbs=document.querySelectorAll('.sched-day-cb');
