@@ -1502,393 +1502,672 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 </div>
 
 <div class="page" id="page-settings">
-  <div style="padding:16px;max-width:1200px">
-    <div class="sect-title" style="font-size:15px;font-weight:600;color:var(--t1);margin-bottom:16px">הגדרות מערכת</div>
+  <div style="padding:16px;max-width:1100px">
+    <div class="sect-title" style="font-size:22px;font-weight:500;color:var(--t1);margin-bottom:4px">הגדרות מערכת</div>
+    <p style="font-size:13px;color:var(--t2);margin-bottom:24px">נהל את הפרופיל שלך, מיתוג, תבניות הודעות והגדרות נוספות</p>
     <style>
-      .settings-grid{column-count:2;column-gap:14px}
-      @media(max-width:1000px){.settings-grid{column-count:1}}
-      .settings-grid > div{
-        break-inside:avoid;
-        -webkit-column-break-inside:avoid;
-        page-break-inside:avoid;
-        display:block;
-        margin-bottom:14px!important;
+      /* Settings tabs */
+      .settings-tabs{background:var(--card);border-radius:12px;border:0.5px solid var(--bdr);margin-bottom:16px;padding:6px;display:flex;gap:2px;overflow-x:auto}
+      .settings-tab{flex:1;padding:10px 14px;background:transparent;border:none;border-radius:6px;font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+      .settings-tab:hover{background:var(--bg);color:var(--t1)}
+      .settings-tab.active{background:#E1F5EE;color:#0F6E56}
+      .settings-tab-content{display:none}
+      .settings-tab-content.active{display:block}
+      /* Section card */
+      .settings-section{background:var(--card);border-radius:12px;border:0.5px solid var(--bdr);margin-bottom:14px;overflow:hidden}
+      .settings-section-header{padding:16px 20px;border-bottom:0.5px solid var(--bdr);display:flex;align-items:flex-start;gap:12px}
+      .settings-section-icon{width:32px;height:32px;border-radius:6px;background:var(--bg);color:var(--t1);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+      .settings-section-title-wrapper{flex:1}
+      .settings-section-title{font-size:14px;font-weight:500;margin-bottom:2px}
+      .settings-section-desc{font-size:12px;color:var(--t2)}
+      .settings-section-body{padding:20px}
+      .settings-section.danger .settings-section-icon{background:#FCEBEB;color:#A32D2D}
+      .settings-section.danger{border-color:rgba(163,45,45,0.2)}
+      /* Form rows */
+      .settings-form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+      .settings-form-row:last-child{margin-bottom:0}
+      .settings-form-field{display:flex;flex-direction:column;gap:5px}
+      .settings-form-field.full-width{grid-column:1/-1}
+      .settings-form-field label{font-size:12px;font-weight:500;color:var(--t2)}
+      .settings-form-field input,.settings-form-field textarea,.settings-form-field select{padding:9px 12px;background:var(--bg);border:0.5px solid transparent;border-radius:6px;font-size:13px;font-family:inherit;color:var(--t1);transition:all .15s}
+      .settings-form-field input:focus,.settings-form-field textarea:focus{outline:none;background:var(--card);border-color:var(--gd)}
+      .settings-form-field-hint{font-size:11px;color:var(--t3);margin-top:2px}
+      /* Buttons */
+      .settings-btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:16px;border-top:0.5px solid var(--bdr)}
+      .settings-btn{padding:8px 18px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;border:0.5px solid transparent;transition:all .15s}
+      .settings-btn-primary{background:var(--gd);color:#fff}
+      .settings-btn-primary:hover{opacity:.9}
+      .settings-btn-secondary{background:var(--card);color:var(--t1);border-color:var(--bdr)}
+      .settings-btn-secondary:hover{background:var(--bg)}
+      .settings-btn-danger{background:#A32D2D;color:#fff}
+      .settings-btn-danger:hover{background:#8B2424}
+      .settings-btn-danger-outline{background:var(--card);color:#A32D2D;border-color:#A32D2D}
+      .settings-btn-danger-outline:hover{background:#FCEBEB}
+      /* Logo upload */
+      .settings-logo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+      .settings-logo-uploader{border:1.5px dashed var(--bdr);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:var(--bg)}
+      .settings-logo-uploader:hover{border-color:var(--gd);background:#E1F5EE}
+      .settings-logo-uploader-label{font-size:11px;color:var(--t2);font-weight:500;margin-bottom:8px}
+      .settings-logo-uploader-preview{height:60px;background:var(--card);border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;font-size:11px;color:var(--t3);overflow:hidden}
+      .settings-logo-uploader-preview img{max-height:48px;max-width:100%;object-fit:contain}
+      .settings-logo-uploader-text{font-size:11px;color:var(--t2)}
+      /* Color picker */
+      .settings-color-picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+      .settings-color-picker{display:flex;flex-direction:column;gap:6px}
+      .settings-color-picker-label{font-size:11px;color:var(--t2);font-weight:500}
+      .settings-color-picker-input-wrapper{display:flex;gap:6px;align-items:center}
+      .settings-color-swatch{width:36px;height:36px;border-radius:6px;border:0.5px solid var(--bdr);cursor:pointer;flex-shrink:0}
+      .settings-color-picker input[type="text"]{flex:1;padding:9px 12px;background:var(--bg);border:0.5px solid transparent;border-radius:6px;font-size:12px;font-family:monospace;color:var(--t1)}
+      /* Templates */
+      .settings-templates-tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:6px;margin-bottom:16px}
+      .settings-templates-tab{flex:1;padding:8px 12px;background:transparent;border:none;border-radius:4px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2);font-weight:500;transition:all .15s}
+      .settings-templates-tab.active{background:var(--card);color:var(--t1)}
+      .settings-template-item{background:var(--bg);border-radius:6px;padding:14px;margin-bottom:10px}
+      .settings-template-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+      .settings-template-item-title{font-size:13px;font-weight:500;color:var(--t1);display:flex;align-items:center;gap:6px}
+      .settings-template-textarea{width:100%;min-height:100px;padding:10px;background:var(--card);border:0.5px solid var(--bdr);border-radius:6px;font-size:12px;font-family:inherit;color:var(--t1);resize:vertical;direction:rtl}
+      .settings-template-vars-info{font-size:11px;color:#185FA5;margin-bottom:10px;background:#E6F1FB;padding:8px 10px;border-radius:6px}
+      /* Weekday toggles */
+      .settings-weekdays{display:flex;gap:6px;margin-top:6px}
+      .settings-weekday{flex:1;padding:10px 6px;background:var(--bg);border:0.5px solid transparent;border-radius:6px;text-align:center;cursor:pointer;font-size:12px;font-weight:500;color:var(--t2);transition:all .15s}
+      .settings-weekday.selected{background:#E1F5EE;color:#0F6E56;border-color:var(--gd)}
+      .settings-weekday:hover{background:var(--bg)}
+      /* Schedule inputs */
+      .settings-schedule-input{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border-radius:6px;margin-bottom:10px}
+      .settings-schedule-input-label{font-size:12px;color:var(--t2);flex:1}
+      .settings-schedule-input input{width:80px;padding:6px 10px;background:var(--card);border:0.5px solid var(--bdr);border-radius:6px;font-size:13px;font-family:inherit;text-align:center}
+      /* Export grid */
+      .settings-export-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+      .settings-export-btn{padding:12px 14px;background:var(--bg);border:0.5px solid var(--bdr);border-radius:6px;cursor:pointer;text-align:right;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:10px}
+      .settings-export-btn:hover{background:var(--card);border-color:var(--gd)}
+      .settings-export-btn-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+      .settings-export-btn-info{flex:1}
+      .settings-export-btn-title{font-size:13px;font-weight:500;color:var(--t1)}
+      .settings-export-btn-desc{font-size:11px;color:var(--t2);margin-top:2px}
+      /* Danger zone */
+      .settings-danger-item{background:#FCEBEB;border:0.5px solid rgba(163,45,45,0.2);border-radius:6px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+      .settings-danger-item-info{flex:1}
+      .settings-danger-item-title{font-size:13px;font-weight:500;color:#A32D2D;margin-bottom:2px}
+      .settings-danger-item-desc{font-size:11px;color:var(--t2)}
+      /* Status pill */
+      .settings-status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:500}
+      .settings-status-pill.success{background:#E1F5EE;color:#0F6E56}
+      .settings-status-dot{width:6px;height:6px;border-radius:50%}
+      .settings-status-pill.success .settings-status-dot{background:var(--gd)}
+      /* Responsive */
+      @media(max-width:768px){
+        .settings-tabs{flex-wrap:wrap}
+        .settings-tab{flex:0 0 auto;min-width:auto;padding:8px 10px;font-size:12px}
+        .settings-form-row{grid-template-columns:1fr}
+        .settings-logo-grid{grid-template-columns:1fr}
+        .settings-color-picker-grid{grid-template-columns:1fr}
+        .settings-export-grid{grid-template-columns:1fr}
       }
     </style>
-    <div class="settings-grid">
+    <!-- Tab Navigation -->
+    <nav class="settings-tabs">
+      <button class="settings-tab active" onclick="setSettingsTab('profile')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        פרופיל
+      </button>
+      <button class="settings-tab" onclick="setSettingsTab('branding')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+        מיתוג
+      </button>
+      <button class="settings-tab" onclick="setSettingsTab('templates')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        תבניות הודעות
+      </button>
+      <button class="settings-tab" onclick="setSettingsTab('automation')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        אוטומציה
+      </button>
+      <button class="settings-tab" onclick="setSettingsTab('export')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        ייצוא
+      </button>
+      <button class="settings-tab" onclick="setSettingsTab('advanced')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        מתקדם
+      </button>
+    </nav>
 
-    <!-- LOGO SETTINGS -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg>
-        לוגו בסרגל הצד
-      </div>
-
-      <!-- Which logos to show -->
-      <div style="margin-bottom:12px">
-        <div style="font-size:12px;color:var(--t2);margin-bottom:8px">הצגת לוגואים</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg);padding:5px 10px;border-radius:6px;border:1px solid var(--bdr2)">
-            <input type="radio" name="logo-show" value="both" onchange="applyLogoSettings()" style="accent-color:var(--gd)"> שניהם
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg);padding:5px 10px;border-radius:6px;border:1px solid var(--bdr2)">
-            <input type="radio" name="logo-show" value="client" onchange="applyLogoSettings()" style="accent-color:var(--gd)"> לוגו לקוח בלבד
-          </label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg);padding:5px 10px;border-radius:6px;border:1px solid var(--bdr2)">
-            <input type="radio" name="logo-show" value="company" onchange="applyLogoSettings()" style="accent-color:var(--gd)"> לוגו כלמוביל בלבד
-          </label>
-        </div>
-      </div>
-
-      <!-- Size sliders -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <div>
-          <div style="font-size:11px;color:var(--t2);margin-bottom:4px">גובה לוגו לקוח: <b id="logo-more-val">44px</b></div>
-          <input type="range" id="logo-more-h" min="20" max="80" value="44" oninput="document.getElementById('logo-more-val').textContent=this.value+'px';applyLogoSettings()" style="width:100%;accent-color:var(--gd)">
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--t2);margin-bottom:4px">גובה לוגו כלמוביל: <b id="logo-col-val">44px</b></div>
-          <input type="range" id="logo-col-h" min="20" max="80" value="44" oninput="document.getElementById('logo-col-val').textContent=this.value+'px';applyLogoSettings()" style="width:100%;accent-color:var(--gd)">
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--t2);margin-bottom:4px">padding כרטיס: <b id="logo-pad-val">10px</b></div>
-          <input type="range" id="logo-pad" min="4" max="20" value="10" oninput="document.getElementById('logo-pad-val').textContent=this.value+'px';applyLogoSettings()" style="width:100%;accent-color:var(--gd)">
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--t2);margin-bottom:4px">מפריד: <b id="logo-sep-val">1px</b></div>
-          <input type="range" id="logo-sep" min="0" max="3" step="0.5" value="1" oninput="document.getElementById('logo-sep-val').textContent=this.value+'px';applyLogoSettings()" style="width:100%;accent-color:var(--gd)">
-        </div>
-      </div>
-
-      <!-- Upload logos -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div style="background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--bdr)">
-          <div style="font-size:12px;font-weight:600;color:var(--t1);margin-bottom:8px">לוגו לקוח</div>
-          <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;background:var(--gd);color:#fff;padding:5px 10px;border-radius:6px">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            העלה
-            <input type="file" accept="image/*" onchange="uploadClientLogo(this)" style="display:none">
-          </label>
-          <button onclick="resetClientLogo()" style="font-size:11px;background:transparent;border:1px solid var(--bdr2);padding:4px 8px;border-radius:6px;cursor:pointer;color:var(--t2);margin-right:4px">איפוס</button>
-        </div>
-        <div style="background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--bdr)">
-          <div style="font-size:12px;font-weight:600;color:var(--t1);margin-bottom:8px">לוגו חברת ליסינג</div>
-          <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;background:var(--gd);color:#fff;padding:5px 10px;border-radius:6px">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            העלה
-            <input type="file" accept="image/*" onchange="uploadCompanyLogo(this)" style="display:none">
-          </label>
-          <button onclick="resetCompanyLogo()" style="font-size:11px;background:transparent;border:1px solid var(--bdr2);padding:4px 8px;border-radius:6px;cursor:pointer;color:var(--t2);margin-right:4px">איפוס</button>
-        </div>
-      </div>
-
-      <!-- Preview -->
-      <div style="margin-top:12px;font-size:11px;color:var(--t2);margin-bottom:6px">תצוגה מקדימה:</div>
-      <div style="background:var(--gd);border-radius:8px;padding:8px;display:inline-block">
-        <div id="settings-logo-preview" style="background:#fff;border-radius:6px;padding:10px;display:flex;align-items:center;gap:8px">
-          <img id="prev-more" style="height:44px;object-fit:contain;display:block;max-width:105px">
-          <div id="prev-sep" style="width:1px;height:33px;background:#e5e5e5;flex-shrink:0"></div>
-          <img id="prev-col" style="height:44px;object-fit:contain;display:block;max-width:90px">
-        </div>
-      </div>
-    </div>
-
-    <!-- REPRESENTATIVE SETTINGS -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
-        פרטי נציג בית לקוח
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <div>
-          <div style="font-size:11px;color:var(--t2);margin-bottom:4px">שם מלא</div>
-          <input type="text" id="rep-name" placeholder="יניב שמידט" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)">
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--t2);margin-bottom:4px">תפקיד</div>
-          <input type="text" id="rep-role" placeholder="נציג בית לקוח" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)">
-        </div>
-      </div>
-      <!-- Preview -->
-      <div style="font-size:11px;color:var(--t2);margin-bottom:6px">תצוגה מקדימה:</div>
-      <div style="background:var(--gd);border-radius:8px;padding:8px 10px;display:inline-flex;align-items:center;gap:8px">
-        <div id="prev-avatar" style="width:28px;height:28px;background:var(--gl);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">יש</div>
-        <div>
-          <div id="prev-name" style="font-size:12px;font-weight:500;color:#fff">יניב שמידט</div>
-          <div id="prev-role-display" style="font-size:10px;color:rgba(255,255,255,.45)">נציג בית לקוח</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-        <div>
-          <div style="font-size:11px;color:var(--t2);margin-bottom:4px">מייל לתזכורות</div>
-          <input type="email" id="rep-email" placeholder="name@company.co.il" dir="ltr" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)">
-        </div>
-      </div>
-      <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--bdr)">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--t2)">
-          <input type="checkbox" id="rep-show-pending-banner" style="accent-color:var(--gd);width:15px;height:15px;cursor:pointer">
-          <span>הצג באנר "תזכורות ממתינות לשליחה" בעליית המערכת</span>
-        </label>
-        <div style="font-size:10px;color:var(--t3);margin-top:3px;margin-right:23px">אם מבוטל - התזכורות יוצגו רק בפאנל הימני ביומן</div>
-      </div>
-      <div style="margin-top:12px">
-        <button onclick="saveRepSettings()" style="background:var(--gd);color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">שמור שינויים</button>
-        <span id="rep-saved" style="font-size:12px;color:var(--green);margin-right:8px;opacity:0;transition:opacity .3s"></span>
-      </div>
-    </div>
-
-    <!-- AI API KEY -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px;display:flex;align-items:center;gap:6px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7DC242" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-        סריקת AI - רישיון רכב ונהיגה
-      </div>
-      <div style="font-size:12px;color:var(--t2);margin-bottom:10px;line-height:1.5">
-        הגדר מפתח Google Gemini API (חינמי) כדי להפעיל סריקה אוטומטית של רישיון רכב ורישיון נהיגה בעת הוספת רכב חדש.
-      </div>
-      <div style="background:#fffbf0;border:1px solid #fde68a;border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:#92400e;line-height:1.5">
-        ⚠️ <b>הערה חשובה:</b> המפתח נשמר מקומית בדפדפן שלך (localStorage) ונשלח ישירות מהדפדפן ל-Anthropic. בפרודקשן בשרת אמיתי, ה-API Key צריך להיות מאחורי proxy בצד שרת. זה מתאים רק לדמו מקומי שלך.
-      </div>
-      <div style="display:flex;gap:8px;align-items:flex-end">
-        <div style="flex:1">
-          <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">Google Gemini API Key (חינמי)</label>
-          <input id="ai-api-key" type="password" dir="ltr" placeholder="AIzaSy..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:monospace;background:var(--bg);color:var(--t1)">
-        </div>
-        <button onclick="saveAiApiKey()" style="padding:9px 16px;background:var(--gd);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">שמור מפתח</button>
-      </div>
-      <div id="ai-key-status" style="font-size:11px;margin-top:6px;min-height:14px"></div>
-    </div>
-
-    <!-- EXPORT TO EXCEL -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
-        ייצוא נתונים לאקסל
-      </div>
-      <div style="font-size:12px;color:var(--t2);margin-bottom:12px;line-height:1.5">
-        בחר מה לייצא. הקובץ יורד כ-Excel (.xlsx) ונפתח ישירות ב-Excel / Google Sheets.
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button onclick="exportToExcel('vehicles')" style="background:#f0fdf4;border:1.5px solid #86efac;color:#166534;padding:10px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;text-align:right;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">🚗</span><span>רכבים ונהגים</span>
-        </button>
-        <button onclick="exportToExcel('tasks')" style="background:#eff6ff;border:1.5px solid #93c5fd;color:#1e40af;padding:10px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;text-align:right;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">📋</span><span>משימות</span>
-        </button>
-        <button onclick="exportToExcel('violations')" style="background:#fffbeb;border:1.5px solid #fde68a;color:#92400e;padding:10px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;text-align:right;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">⚠️</span><span>דוחות תנועה</span>
-        </button>
-        <button onclick="exportToExcel('accidents')" style="background:#fef2f2;border:1.5px solid #fca5a5;color:#991b1b;padding:10px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;text-align:right;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">💥</span><span>תאונות</span>
-        </button>
-        <button onclick="exportToExcel('events')" style="background:#f5f3ff;border:1.5px solid #c4b5fd;color:#5b21b6;padding:10px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;text-align:right;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">📅</span><span>יומן אירועים</span>
-        </button>
-        <button onclick="exportToExcel('reminders')" style="background:#fff7ed;border:1.5px solid #fdba74;color:#9a3412;padding:10px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;text-align:right;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">🔔</span><span>תזכורות מותאמות</span>
-        </button>
-        <button onclick="exportToExcel('handover')" style="background:#f0f9ff;border:1.5px solid #7dd3fc;color:#0c4a6e;padding:10px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;text-align:right;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">📄</span><span>טפסי מסירה</span>
-        </button>
-        <button onclick="exportToExcel('history')" style="background:#ecfdf5;border:1.5px solid #86efac;color:#065f46;padding:10px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;text-align:right;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">🔧</span><span>טיפולים</span>
-        </button>
-        <button onclick="exportToExcel('all')" style="background:var(--gd);border:1.5px solid var(--gd);color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;text-align:right;display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">📊</span><span>הכל (קובץ אחד)</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- DATA MANAGEMENT -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-        ניהול נתונים
-      </div>
-      <div style="font-size:12px;color:var(--t2);margin-bottom:10px;line-height:1.5">
-        פעולות לניהול הנתונים במערכת. שים לב - פעולות אלה אינן ניתנות לשחזור.
-      </div>
-      <button onclick="clearAllVehiclesData()" style="background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;padding:8px 16px;border-radius:6px;font-size:12px;font-family:inherit;cursor:pointer;font-weight:500">🗑 נקה את כל נתוני הרכבים</button>
-      <div style="font-size:11px;color:var(--t3);margin-top:6px">ימחק את כל הרכבים, הנהגים וההיסטוריה מ-Firestore</div>
-    </div>
-
-    <!-- VIOLATION MESSAGE TEMPLATES -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        תבניות הודעות דוחות תנועה
-      </div>
-      <div style="font-size:11px;color:var(--t2);margin-bottom:8px">ניתן להשתמש במשתנים הבאים: <span style="font-family:monospace;color:var(--gd)">{נהג}</span>, <span style="font-family:monospace;color:var(--gd)">{מספר_דוח}</span>, <span style="font-family:monospace;color:var(--gd)">{רכב}</span>, <span style="font-family:monospace;color:var(--gd)">{תאריך}</span>, <span style="font-family:monospace;color:var(--gd)">{מקור}</span>, <span style="font-family:monospace;color:var(--gd)">{לינק}</span>, <span style="font-family:monospace;color:var(--gd)">{קובץ}</span></div>
-
-      <!-- Template 1: Notice -->
-      <div style="margin-top:12px">
-        <div style="font-size:12px;font-weight:600;color:#92400e;margin-bottom:5px;display:flex;align-items:center;gap:5px">
-          <span>📢</span> תבנית 1: עדכון על קיום הדוח (שלב ראשון)
-        </div>
-        <textarea id="viol-msg-template" rows="7" style="width:100%;padding:10px;border:1px solid #fde68a;border-radius:6px;font-size:13px;font-family:inherit;background:#fffbeb;color:var(--t1);resize:vertical;direction:rtl" placeholder="שלום {נהג}..."></textarea>
-      </div>
-
-      <!-- Template 2: Transfer -->
-      <div style="margin-top:12px">
-        <div style="font-size:12px;font-weight:600;color:#991b1b;margin-bottom:5px;display:flex;align-items:center;gap:5px">
-          <span>⚖️</span> תבנית 2: עדכון על הסבת הדוח על שם הנהג (שלב שני)
-        </div>
-        <textarea id="viol-msg-transfer-template" rows="7" style="width:100%;padding:10px;border:1px solid #fca5a5;border-radius:6px;font-size:13px;font-family:inherit;background:#fef2f2;color:var(--t1);resize:vertical;direction:rtl" placeholder="שלום {נהג}, הדוח הוסב על שמך..."></textarea>
-      </div>
-
-      <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--t2)">
-          <input type="checkbox" id="viol-include-file" style="accent-color:var(--gd);width:15px;height:15px">
-          <span>צרף קובץ הדוח כברירת מחדל (במייל)</span>
-        </label>
-      </div>
-      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-        <button onclick="saveViolMsgTemplate()" style="background:var(--gd);color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">שמור תבניות</button>
-        <button onclick="resetViolMsgTemplate()" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);padding:7px 14px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">ברירת מחדל</button>
-        <span id="viol-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
-      </div>
-    </div>
-
-    <!-- SERVICE/TEST MESSAGE TEMPLATES -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        תבניות הודעות טיפול וטסט
-      </div>
-      <div style="font-size:11px;color:var(--t2);margin-bottom:8px">
-        הודעות אלה נשלחות לנהג כשנקבע תור לטיפול/טסט. משתנים: <span style="font-family:monospace;color:var(--gd)">{נהג}</span>, <span style="font-family:monospace;color:var(--gd)">{רכב}</span>, <span style="font-family:monospace;color:var(--gd)">{תאריך}</span>, <span style="font-family:monospace;color:var(--gd)">{סוג}</span>
-      </div>
-
-      <!-- Service template -->
-      <div style="margin-top:12px">
-        <div style="font-size:12px;font-weight:600;color:#1e40af;margin-bottom:5px;display:flex;align-items:center;gap:5px">
-          <span>🔧</span> תבנית: הודעה על תור לטיפול
-        </div>
-        <textarea id="svc-msg-template" rows="6" style="width:100%;padding:10px;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;font-family:inherit;background:#eff6ff;color:var(--t1);resize:vertical;direction:rtl" placeholder="שלום {נהג}, נקבע טיפול..."></textarea>
-      </div>
-
-      <!-- Test template -->
-      <div style="margin-top:12px">
-        <div style="font-size:12px;font-weight:600;color:#854d0e;margin-bottom:5px;display:flex;align-items:center;gap:5px">
-          <span>📋</span> תבנית: הודעה על תור לטסט
-        </div>
-        <textarea id="test-msg-template" rows="6" style="width:100%;padding:10px;border:1px solid #fde68a;border-radius:6px;font-size:13px;font-family:inherit;background:#fffbeb;color:var(--t1);resize:vertical;direction:rtl" placeholder="שלום {נהג}, נקבע טסט..."></textarea>
-      </div>
-
-      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-        <button onclick="saveSvcMsgTemplate()" style="background:var(--gd);color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">שמור תבניות</button>
-        <button onclick="resetSvcMsgTemplate()" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);padding:7px 14px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">ברירת מחדל</button>
-        <span id="svc-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
-      </div>
-    </div>
-
-    <!-- KM & DOC REQUEST TEMPLATES -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        תבניות הודעות בקשות לנהג
-      </div>
-      <div style="font-size:11px;color:var(--t2);margin-bottom:8px">
-        הודעות אלה נשלחות לנהג כשמבקשים ממנו לעדכן ק"מ או להעלות מסמך. משתנים: <span style="font-family:monospace;color:var(--gd)">{נהג}</span>, <span style="font-family:monospace;color:var(--gd)">{רכב}</span>, <span style="font-family:monospace;color:var(--gd)">{לינק}</span>, <span style="font-family:monospace;color:var(--gd)">{מסמך}</span>
-      </div>
-
-      <div style="margin-top:12px">
-        <div style="font-size:12px;font-weight:600;color:#1e40af;margin-bottom:5px;display:flex;align-items:center;gap:5px">
-          <span>📍</span> תבנית: בקשת עדכון ק"מ
-        </div>
-        <textarea id="km-msg-template" rows="5" style="width:100%;padding:10px;border:1px solid #bfdbfe;border-radius:6px;font-size:13px;font-family:inherit;background:#eff6ff;color:var(--t1);resize:vertical;direction:rtl"></textarea>
-      </div>
-
-      <div style="margin-top:12px">
-        <div style="font-size:12px;font-weight:600;color:#166534;margin-bottom:5px;display:flex;align-items:center;gap:5px">
-          <span>📄</span> תבנית: בקשת העלאת מסמך
-        </div>
-        <textarea id="doc-msg-template" rows="5" style="width:100%;padding:10px;border:1px solid #bbf7d0;border-radius:6px;font-size:13px;font-family:inherit;background:#f0fdf4;color:var(--t1);resize:vertical;direction:rtl"></textarea>
-      </div>
-
-      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-        <button onclick="saveRequestTemplates()" style="background:var(--gd);color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">שמור תבניות</button>
-        <button onclick="resetRequestTemplates()" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);padding:7px 14px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">ברירת מחדל</button>
-        <span id="req-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
-      </div>
-    </div>
-
-    <!-- SYSTEM NAME -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        🏢 שם המערכת
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="text" id="system-name-input" value="מרכז הרכב של מור השקעות" style="flex:1;padding:8px 12px;border:1px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;color:var(--t1);direction:rtl">
-        <button onclick="saveSystemName()" style="background:var(--gd);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap">שמור</button>
-      </div>
-    </div>
-
-    <!-- THEME COLORS -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        🎨 צבעי ממשק
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-        <div>
-          <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:4px">צבע Topbar</label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="color" id="theme-topbar-color" value="#ffffff" oninput="document.querySelector('.topbar').style.background=this.value" style="width:40px;height:32px;border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;padding:2px">
-            <input type="text" id="theme-topbar-hex" value="#ffffff" oninput="document.querySelector('.topbar').style.background=this.value;document.getElementById('theme-topbar-color').value=this.value" style="width:80px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:monospace;direction:ltr">
+    <!-- TAB 1: PROFILE -->
+    <div class="settings-tab-content active" data-settings-tab="profile">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">פרטי המשתמש</div>
+            <div class="settings-section-desc">המידע שלך כפי שיוצג במערכת</div>
           </div>
         </div>
-        <div>
-          <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:4px">צבע תפריט צד</label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="color" id="theme-sidebar-color" value="#ffffff" oninput="document.querySelector('.sb').style.background=this.value" style="width:40px;height:32px;border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;padding:2px">
-            <input type="text" id="theme-sidebar-hex" value="#ffffff" oninput="document.querySelector('.sb').style.background=this.value;document.getElementById('theme-sidebar-color').value=this.value" style="width:80px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:monospace;direction:ltr">
+        <div class="settings-section-body">
+          <div class="settings-form-row">
+            <div class="settings-form-field">
+              <label>שם מלא</label>
+              <input type="text" id="rep-name" placeholder="יניב שמידט">
+            </div>
+            <div class="settings-form-field">
+              <label>תפקיד</label>
+              <input type="text" id="rep-role" placeholder="נציג בית לקוח">
+            </div>
           </div>
-        </div>
-        <div>
-          <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:4px">צבע רקע ראשי</label>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="color" id="theme-bg-color" value="#f5f5f0" oninput="document.querySelector('.content').style.background=this.value;document.body.style.background=this.value" style="width:40px;height:32px;border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;padding:2px">
-            <input type="text" id="theme-bg-hex" value="#f5f5f0" oninput="document.querySelector('.content').style.background=this.value;document.body.style.background=this.value;document.getElementById('theme-bg-color').value=this.value" style="width:80px;padding:4px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:monospace;direction:ltr">
+          <div class="settings-form-row">
+            <div class="settings-form-field full-width">
+              <label>אימייל לתזכורות</label>
+              <input type="email" id="rep-email" placeholder="name@company.co.il" dir="ltr">
+              <span class="settings-form-field-hint">לכתובת זו יישלחו תזכורות מערכת ועדכונים</span>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--bdr)">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--t2)">
+              <input type="checkbox" id="rep-show-pending-banner" style="accent-color:var(--gd);width:15px;height:15px;cursor:pointer">
+              <span>הצג באנר "תזכורות ממתינות לשליחה" בעליית המערכת</span>
+            </label>
+            <div style="font-size:10px;color:var(--t3);margin-top:3px;margin-right:23px">אם מבוטל - התזכורות יוצגו רק בפאנל הימני ביומן</div>
+          </div>
+          <!-- Preview -->
+          <div style="margin-top:14px;font-size:11px;color:var(--t2);margin-bottom:6px">תצוגה מקדימה:</div>
+          <div style="background:var(--gd);border-radius:8px;padding:8px 10px;display:inline-flex;align-items:center;gap:8px">
+            <div id="prev-avatar" style="width:28px;height:28px;background:var(--gl);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">יש</div>
+            <div>
+              <div id="prev-name" style="font-size:12px;font-weight:500;color:#fff">יניב שמידט</div>
+              <div id="prev-role-display" style="font-size:10px;color:rgba(255,255,255,.45)">נציג בית לקוח</div>
+            </div>
+          </div>
+          <span id="rep-saved" style="font-size:12px;color:var(--green);margin-right:8px;opacity:0;transition:opacity .3s"></span>
+          <div class="settings-btn-row">
+            <button class="settings-btn settings-btn-secondary" onclick="initSettingsPage()">ביטול</button>
+            <button class="settings-btn settings-btn-primary" onclick="saveRepSettings()">שמור שינויים</button>
           </div>
         </div>
       </div>
-      <div style="margin-top:10px;display:flex;gap:8px">
-        <button onclick="saveThemeColors()" style="background:var(--gd);color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">שמור צבעים</button>
-        <button onclick="resetThemeColors()" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">ברירת מחדל</button>
-      </div>
     </div>
 
-    <!-- SCHEDULING SETTINGS -->
-    <div style="background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:14px;border:1px solid var(--bdr)">
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        הגדרות לוח טיפולים
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <label style="font-size:12px;color:var(--t2);white-space:nowrap">התראה לפני טיפול (ימים):</label>
-        <input type="number" id="sched-reminder-days" min="1" max="90" value="20" style="width:60px;padding:5px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;text-align:center">
-        <span style="font-size:10px;color:var(--t3)">ברירת מחדל: 20</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <label style="font-size:12px;color:var(--t2);white-space:nowrap">כמות טיפולים ליום:</label>
-        <input type="number" id="sched-daily-capacity" min="1" max="20" value="2" style="width:60px;padding:5px 8px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;text-align:center">
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <label style="font-size:12px;color:var(--t2);white-space:nowrap">ימים פתוחים לשיבוץ:</label>
-        <div style="display:flex;gap:4px;flex-wrap:wrap" id="sched-days-checkboxes">
-          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="0" checked style="accent-color:var(--gd)">א</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="1" checked style="accent-color:var(--gd)">ב</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="2" checked style="accent-color:var(--gd)">ג</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="3" checked style="accent-color:var(--gd)">ד</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="4" checked style="accent-color:var(--gd)">ה</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="5" style="accent-color:var(--gd)">ו</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" class="sched-day-cb" value="6" style="accent-color:var(--gd)">ש</label>
+    <!-- TAB 2: BRANDING -->
+    <div class="settings-tab-content" data-settings-tab="branding">
+
+      <!-- Logos -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">לוגויים</div>
+            <div class="settings-section-desc">הלוגויים יוצגו בסיידבר ובמיילים אוטומטיים</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <!-- Which logos to show -->
+          <div style="margin-bottom:14px">
+            <div style="font-size:12px;color:var(--t2);margin-bottom:8px">הצגת לוגואים</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg);padding:5px 10px;border-radius:6px;border:1px solid var(--bdr)">
+                <input type="radio" name="logo-show" value="both" onchange="applyLogoSettings()" style="accent-color:var(--gd)"> שניהם
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg);padding:5px 10px;border-radius:6px;border:1px solid var(--bdr)">
+                <input type="radio" name="logo-show" value="client" onchange="applyLogoSettings()" style="accent-color:var(--gd)"> לוגו לקוח בלבד
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:var(--bg);padding:5px 10px;border-radius:6px;border:1px solid var(--bdr)">
+                <input type="radio" name="logo-show" value="company" onchange="applyLogoSettings()" style="accent-color:var(--gd)"> לוגו כלמוביל בלבד
+              </label>
+            </div>
+          </div>
+
+          <!-- Size sliders -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+            <div>
+              <div style="font-size:11px;color:var(--t2);margin-bottom:4px">גובה לוגו לקוח: <b id="logo-more-val">44px</b></div>
+              <input type="range" id="logo-more-h" min="20" max="80" value="44" oninput="document.getElementById('logo-more-val').textContent=this.value+'px';applyLogoSettings()" style="width:100%;accent-color:var(--gd)">
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--t2);margin-bottom:4px">גובה לוגו כלמוביל: <b id="logo-col-val">44px</b></div>
+              <input type="range" id="logo-col-h" min="20" max="80" value="44" oninput="document.getElementById('logo-col-val').textContent=this.value+'px';applyLogoSettings()" style="width:100%;accent-color:var(--gd)">
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--t2);margin-bottom:4px">padding כרטיס: <b id="logo-pad-val">10px</b></div>
+              <input type="range" id="logo-pad" min="4" max="20" value="10" oninput="document.getElementById('logo-pad-val').textContent=this.value+'px';applyLogoSettings()" style="width:100%;accent-color:var(--gd)">
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--t2);margin-bottom:4px">מפריד: <b id="logo-sep-val">1px</b></div>
+              <input type="range" id="logo-sep" min="0" max="3" step="0.5" value="1" oninput="document.getElementById('logo-sep-val').textContent=this.value+'px';applyLogoSettings()" style="width:100%;accent-color:var(--gd)">
+            </div>
+          </div>
+
+          <div class="settings-logo-grid">
+            <div class="settings-logo-uploader" onclick="this.querySelector('input[type=file]').click()">
+              <div class="settings-logo-uploader-label">לוגו לקוח</div>
+              <div class="settings-logo-uploader-preview" id="client-logo-preview-area">
+                <span>לחץ להעלאה</span>
+              </div>
+              <div class="settings-logo-uploader-text">PNG, SVG - עד 2MB</div>
+              <input type="file" accept="image/*" onchange="uploadClientLogo(this)" style="display:none">
+            </div>
+            <div class="settings-logo-uploader" onclick="this.querySelector('input[type=file]').click()">
+              <div class="settings-logo-uploader-label">לוגו חברת ליסינג</div>
+              <div class="settings-logo-uploader-preview" id="company-logo-preview-area">
+                <span>לחץ להעלאה</span>
+              </div>
+              <div class="settings-logo-uploader-text">PNG, SVG - עד 2MB</div>
+              <input type="file" accept="image/*" onchange="uploadCompanyLogo(this)" style="display:none">
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div style="margin-top:14px;font-size:11px;color:var(--t2);margin-bottom:6px">תצוגה מקדימה:</div>
+          <div style="background:var(--gd);border-radius:8px;padding:8px;display:inline-block">
+            <div id="settings-logo-preview" style="background:#fff;border-radius:6px;padding:10px;display:flex;align-items:center;gap:8px">
+              <img id="prev-more" style="height:44px;object-fit:contain;display:block;max-width:105px">
+              <div id="prev-sep" style="width:1px;height:33px;background:#e5e5e5;flex-shrink:0"></div>
+              <img id="prev-col" style="height:44px;object-fit:contain;display:block;max-width:90px">
+            </div>
+          </div>
+
+          <div class="settings-btn-row">
+            <button class="settings-btn settings-btn-secondary" onclick="resetClientLogo();resetCompanyLogo()">איפוס</button>
+            <button class="settings-btn settings-btn-primary" onclick="applyLogoSettings()">שמור</button>
+          </div>
         </div>
       </div>
-      <button onclick="saveSchedulingSettings()" style="background:var(--gd);color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">שמור הגדרות</button>
+
+      <!-- System Name -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">שם המערכת</div>
+            <div class="settings-section-desc">הכותרת שתוצג בראש כל עמוד</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <div class="settings-form-field">
+            <input type="text" id="system-name-input" value="מרכז הרכב של מור השקעות" style="direction:rtl">
+          </div>
+          <div class="settings-btn-row">
+            <button class="settings-btn settings-btn-primary" onclick="saveSystemName()">שמור</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Theme Colors -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">צבעי ממשק</div>
+            <div class="settings-section-desc">התאם את הצבעים של המערכת</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <div class="settings-color-picker-grid">
+            <div class="settings-color-picker">
+              <div class="settings-color-picker-label">סרגל עליון</div>
+              <div class="settings-color-picker-input-wrapper">
+                <input type="color" id="theme-topbar-color" value="#ffffff" class="settings-color-swatch" oninput="document.querySelector('.topbar').style.background=this.value;document.getElementById('theme-topbar-hex').value=this.value">
+                <input type="text" id="theme-topbar-hex" value="#ffffff" dir="ltr" oninput="document.querySelector('.topbar').style.background=this.value;document.getElementById('theme-topbar-color').value=this.value">
+              </div>
+            </div>
+            <div class="settings-color-picker">
+              <div class="settings-color-picker-label">תפריט הצד</div>
+              <div class="settings-color-picker-input-wrapper">
+                <input type="color" id="theme-sidebar-color" value="#ffffff" class="settings-color-swatch" oninput="document.querySelector('.sb').style.background=this.value;document.getElementById('theme-sidebar-hex').value=this.value">
+                <input type="text" id="theme-sidebar-hex" value="#ffffff" dir="ltr" oninput="document.querySelector('.sb').style.background=this.value;document.getElementById('theme-sidebar-color').value=this.value">
+              </div>
+            </div>
+            <div class="settings-color-picker">
+              <div class="settings-color-picker-label">רקע ראשי</div>
+              <div class="settings-color-picker-input-wrapper">
+                <input type="color" id="theme-bg-color" value="#f5f5f0" class="settings-color-swatch" oninput="document.querySelector('.content').style.background=this.value;document.body.style.background=this.value;document.getElementById('theme-bg-hex').value=this.value">
+                <input type="text" id="theme-bg-hex" value="#f5f5f0" dir="ltr" oninput="document.querySelector('.content').style.background=this.value;document.body.style.background=this.value;document.getElementById('theme-bg-color').value=this.value">
+              </div>
+            </div>
+          </div>
+          <div class="settings-btn-row">
+            <button class="settings-btn settings-btn-secondary" onclick="resetThemeColors()">איפוס לברירת מחדל</button>
+            <button class="settings-btn settings-btn-primary" onclick="saveThemeColors()">שמור צבעים</button>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <!-- TAB 3: TEMPLATES -->
+    <div class="settings-tab-content" data-settings-tab="templates">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">תבניות הודעות אוטומטיות</div>
+            <div class="settings-section-desc">המערכת תשלח את התבניות האלה אוטומטית במקרים השונים</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+
+          <!-- Inner pill tabs -->
+          <div class="settings-templates-tabs">
+            <button class="settings-templates-tab active" onclick="setTemplatesSubTab('violations')">דוחות תנועה</button>
+            <button class="settings-templates-tab" onclick="setTemplatesSubTab('service')">טיפול וטסט</button>
+            <button class="settings-templates-tab" onclick="setTemplatesSubTab('requests')">בקשות לנהג</button>
+          </div>
+
+          <!-- Sub-tab: Violations -->
+          <div class="settings-templates-content" data-templates-tab="violations" style="display:block">
+            <div class="settings-template-vars-info">
+              ניתן להשתמש במשתנים: {נהג}, {מספר_דוח}, {רכב}, {תאריך}, {מקור}, {לינק}, {קובץ}
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">
+                  שלב 1 - עדכון על קיום הדוח
+                </div>
+              </div>
+              <textarea id="viol-msg-template" class="settings-template-textarea" rows="7" placeholder="שלום {נהג}..."></textarea>
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">
+                  שלב 2 - עדכון על הסבת הדוח
+                </div>
+              </div>
+              <textarea id="viol-msg-transfer-template" class="settings-template-textarea" rows="7" placeholder="שלום {נהג}, הדוח הוסב על שמך..."></textarea>
+            </div>
+
+            <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--t2)">
+                <input type="checkbox" id="viol-include-file" style="accent-color:var(--gd);width:15px;height:15px">
+                <span>צרף קובץ הדוח כברירת מחדל (במייל)</span>
+              </label>
+            </div>
+
+            <div class="settings-btn-row">
+              <button class="settings-btn settings-btn-secondary" onclick="resetViolMsgTemplate()">שחזר ברירת מחדל</button>
+              <button class="settings-btn settings-btn-primary" onclick="saveViolMsgTemplate()">שמור תבניות</button>
+            </div>
+            <span id="viol-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
+          </div>
+
+          <!-- Sub-tab: Service/Test -->
+          <div class="settings-templates-content" data-templates-tab="service" style="display:none">
+            <div class="settings-template-vars-info">
+              ניתן להשתמש במשתנים: {נהג}, {רכב}, {תאריך}, {סוג}
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">
+                  הודעה על תור לטיפול
+                </div>
+              </div>
+              <textarea id="svc-msg-template" class="settings-template-textarea" rows="6" placeholder="שלום {נהג}, נקבע טיפול..."></textarea>
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">
+                  הודעה על תור לטסט
+                </div>
+              </div>
+              <textarea id="test-msg-template" class="settings-template-textarea" rows="6" placeholder="שלום {נהג}, נקבע טסט..."></textarea>
+            </div>
+
+            <div class="settings-btn-row">
+              <button class="settings-btn settings-btn-secondary" onclick="resetSvcMsgTemplate()">שחזר ברירת מחדל</button>
+              <button class="settings-btn settings-btn-primary" onclick="saveSvcMsgTemplate()">שמור תבניות</button>
+            </div>
+            <span id="svc-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
+          </div>
+
+          <!-- Sub-tab: Requests (km/doc) -->
+          <div class="settings-templates-content" data-templates-tab="requests" style="display:none">
+            <div class="settings-template-vars-info">
+              ניתן להשתמש במשתנים: {נהג}, {רכב}, {לינק}, {מסמך}
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">
+                  בקשת עדכון ק"מ
+                </div>
+              </div>
+              <textarea id="km-msg-template" class="settings-template-textarea" rows="5"></textarea>
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">
+                  בקשת העלאת מסמך
+                </div>
+              </div>
+              <textarea id="doc-msg-template" class="settings-template-textarea" rows="5"></textarea>
+            </div>
+
+            <div class="settings-btn-row">
+              <button class="settings-btn settings-btn-secondary" onclick="resetRequestTemplates()">שחזר ברירת מחדל</button>
+              <button class="settings-btn settings-btn-primary" onclick="saveRequestTemplates()">שמור תבניות</button>
+            </div>
+            <span id="req-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
+          </div>
+
+        </div>
+      </div>
     </div>
+
+    <!-- TAB 4: AUTOMATION -->
+    <div class="settings-tab-content" data-settings-tab="automation">
+
+      <!-- Scheduling -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">לוח טיפולים אוטומטי</div>
+            <div class="settings-section-desc">איך המערכת מנהלת תיאומי טיפולים וטסטים</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <div class="settings-schedule-input">
+            <span class="settings-schedule-input-label">התראה לפני טיפול</span>
+            <input type="number" id="sched-reminder-days" min="1" max="90" value="20">
+            <span class="settings-form-field-hint">ימים</span>
+          </div>
+          <div class="settings-schedule-input">
+            <span class="settings-schedule-input-label">כמות טיפולים מקסימלית ליום</span>
+            <input type="number" id="sched-daily-capacity" min="1" max="20" value="2">
+            <span class="settings-form-field-hint">רכבים</span>
+          </div>
+
+          <div style="margin-top:16px">
+            <label style="font-size:12px;font-weight:500;color:var(--t2);margin-bottom:8px;display:block">ימים פתוחים לשיבוץ</label>
+            <div class="settings-weekdays" id="sched-days-checkboxes">
+              <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="0" checked style="display:none">א'</div>
+              <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="1" checked style="display:none">ב'</div>
+              <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="2" checked style="display:none">ג'</div>
+              <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="3" checked style="display:none">ד'</div>
+              <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="4" checked style="display:none">ה'</div>
+              <div class="settings-weekday" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="5" style="display:none">ו'</div>
+              <div class="settings-weekday" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="6" style="display:none">ש'</div>
+            </div>
+          </div>
+
+          <div class="settings-btn-row">
+            <button class="settings-btn settings-btn-primary" onclick="saveSchedulingSettings()">שמור הגדרות</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Scan -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">סריקת AI - רישיון רכב ונהיגה</div>
+            <div class="settings-section-desc">סריקה אוטומטית של מסמכים בעזרת Google Gemini</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <div class="settings-form-field">
+            <label>Google Gemini API Key</label>
+            <input id="ai-api-key" type="password" dir="ltr" placeholder="AIzaSy..." style="font-family:monospace">
+            <span class="settings-form-field-hint">המפתח נשמר בדפדפן ונשלח רק ל-Google. <a href="#" style="color:#185FA5">איך להשיג מפתח חינמי?</a></span>
+          </div>
+
+          <div id="ai-key-status" style="margin-top:12px;min-height:14px;font-size:11px"></div>
+
+          <div class="settings-btn-row">
+            <button class="settings-btn settings-btn-secondary" onclick="document.getElementById('ai-api-key').value='';saveAiApiKey()">הסר מפתח</button>
+            <button class="settings-btn settings-btn-primary" onclick="saveAiApiKey()">שמור מפתח</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: EXPORT -->
+    <div class="settings-tab-content" data-settings-tab="export">
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">ייצוא נתונים לאקסל</div>
+            <div class="settings-section-desc">הקובץ ירד כ-xlsx ויפתח ישירות ב-Excel או Google Sheets</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <div class="settings-export-grid">
+            <button class="settings-export-btn" onclick="exportToExcel('vehicles')">
+              <div class="settings-export-btn-icon" style="background:#E1F5EE;color:#0F6E56">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/></svg>
+              </div>
+              <div class="settings-export-btn-info">
+                <div class="settings-export-btn-title">רכבים ונהגים</div>
+                <div class="settings-export-btn-desc">פרטים, היסטוריה ומסמכים</div>
+              </div>
+            </button>
+            <button class="settings-export-btn" onclick="exportToExcel('tasks')">
+              <div class="settings-export-btn-icon" style="background:#E6F1FB;color:#185FA5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="settings-export-btn-info">
+                <div class="settings-export-btn-title">משימות</div>
+                <div class="settings-export-btn-desc">משימות פתוחות וסגורות</div>
+              </div>
+            </button>
+            <button class="settings-export-btn" onclick="exportToExcel('violations')">
+              <div class="settings-export-btn-icon" style="background:#FAEEDA;color:#854F0B">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              </div>
+              <div class="settings-export-btn-info">
+                <div class="settings-export-btn-title">דוחות תנועה</div>
+                <div class="settings-export-btn-desc">היסטוריית דוחות מלאה</div>
+              </div>
+            </button>
+            <button class="settings-export-btn" onclick="exportToExcel('accidents')">
+              <div class="settings-export-btn-icon" style="background:#FCEBEB;color:#A32D2D">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+              </div>
+              <div class="settings-export-btn-info">
+                <div class="settings-export-btn-title">תאונות</div>
+                <div class="settings-export-btn-desc">דיווחי תאונות מפורטים</div>
+              </div>
+            </button>
+            <button class="settings-export-btn" onclick="exportToExcel('events')">
+              <div class="settings-export-btn-icon" style="background:#EEEDFE;color:#3C3489">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+              </div>
+              <div class="settings-export-btn-info">
+                <div class="settings-export-btn-title">יומן אירועים</div>
+                <div class="settings-export-btn-desc">איסופים ותזכורות</div>
+              </div>
+            </button>
+            <button class="settings-export-btn" onclick="exportToExcel('reminders')">
+              <div class="settings-export-btn-icon" style="background:#FEF3E2;color:#92400E">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+              </div>
+              <div class="settings-export-btn-info">
+                <div class="settings-export-btn-title">תזכורות מותאמות</div>
+                <div class="settings-export-btn-desc">תזכורות אישיות שיצרת</div>
+              </div>
+            </button>
+            <button class="settings-export-btn" onclick="exportToExcel('handover')">
+              <div class="settings-export-btn-icon" style="background:#E6F1FB;color:#185FA5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+              </div>
+              <div class="settings-export-btn-info">
+                <div class="settings-export-btn-title">טפסי מסירה</div>
+                <div class="settings-export-btn-desc">חתומים ולא חתומים</div>
+              </div>
+            </button>
+            <button class="settings-export-btn" onclick="exportToExcel('history')">
+              <div class="settings-export-btn-icon" style="background:#E1F5EE;color:#0F6E56">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77"/></svg>
+              </div>
+              <div class="settings-export-btn-info">
+                <div class="settings-export-btn-title">טיפולים</div>
+                <div class="settings-export-btn-desc">היסטוריית טיפולים וטסטים</div>
+              </div>
+            </button>
+          </div>
+          <button class="settings-btn settings-btn-primary" onclick="exportToExcel('all')" style="width:100%;margin-top:14px;padding:12px;text-align:center">
+            ייצוא הכל בקובץ אחד
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: ADVANCED -->
+    <div class="settings-tab-content" data-settings-tab="advanced">
+      <div class="settings-section danger">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">אזור מסוכן</div>
+            <div class="settings-section-desc">פעולות אלו אינן ניתנות לשחזור - שים לב!</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <div class="settings-danger-item">
+            <div class="settings-danger-item-info">
+              <div class="settings-danger-item-title">נקה את כל נתוני הרכבים</div>
+              <div class="settings-danger-item-desc">ימחק את כל הרכבים, הנהגים וההיסטוריה מ-Firestore</div>
+            </div>
+            <button class="settings-btn settings-btn-danger-outline" onclick="clearAllVehiclesData()">מחק נתונים</button>
+          </div>
+          <div class="settings-danger-item">
+            <div class="settings-danger-item-info">
+              <div class="settings-danger-item-title">איפוס כל ההגדרות</div>
+              <div class="settings-danger-item-desc">מחזיר את כל ההגדרות לברירת מחדל - לוגויים, צבעים, תבניות</div>
+            </div>
+            <button class="settings-btn settings-btn-danger-outline" onclick="if(confirm('האם אתה בטוח שברצונך לאפס את כל ההגדרות?')){localStorage.removeItem('fleetos_settings');location.reload()}">אפס הגדרות</button>
+          </div>
+          <div class="settings-danger-item">
+            <div class="settings-danger-item-info">
+              <div class="settings-danger-item-title">מחק חשבון משתמש</div>
+              <div class="settings-danger-item-desc">פעולה סופית - מסיר את כל הגישה שלך למערכת</div>
+            </div>
+            <button class="settings-btn settings-btn-danger" onclick="if(confirm('האם אתה בטוח שברצונך למחוק את החשבון? פעולה זו אינה ניתנת לשחזור!')){alert('פנה למנהל המערכת למחיקת חשבון')}">מחק חשבון</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -3673,6 +3952,25 @@ function initRepSidebar(){
   if(uname) uname.textContent = name;
   if(urole) urole.textContent = role;
   if(uav)   uav.textContent  = initials;
+}
+
+// Settings tab switching
+function setSettingsTab(tabName){
+  document.querySelectorAll('.settings-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.settings-tab-content').forEach(c=>c.classList.remove('active'));
+  const btn = document.querySelector('.settings-tab[onclick*="\''+tabName+'\'"]');
+  if(btn) btn.classList.add('active');
+  const content = document.querySelector('.settings-tab-content[data-settings-tab="'+tabName+'"]');
+  if(content) content.classList.add('active');
+}
+
+function setTemplatesSubTab(tabName){
+  document.querySelectorAll('.settings-templates-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.settings-templates-content').forEach(c=>c.style.display='none');
+  const btn = document.querySelector('.settings-templates-tab[onclick*="\''+tabName+'\'"]');
+  if(btn) btn.classList.add('active');
+  const content = document.querySelector('.settings-templates-content[data-templates-tab="'+tabName+'"]');
+  if(content) content.style.display='block';
 }
 
 // Called when opening settings page
