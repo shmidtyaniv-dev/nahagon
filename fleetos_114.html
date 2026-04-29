@@ -1738,23 +1738,21 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             </div>
           </div>
 
-          <input type="file" id="client-logo-input" accept="image/*" onchange="uploadClientLogo(this)" style="display:none">
-          <input type="file" id="company-logo-input" accept="image/*" onchange="uploadCompanyLogo(this)" style="display:none">
           <div class="settings-logo-grid">
-            <label for="client-logo-input" class="settings-logo-uploader">
+            <div class="settings-logo-uploader" onclick="pickLogoFile('client')">
               <div class="settings-logo-uploader-label">לוגו לקוח</div>
               <div class="settings-logo-uploader-preview" id="client-logo-preview-area">
                 <span>לחץ להעלאה</span>
               </div>
-              <div class="settings-logo-uploader-text">PNG, SVG - עד 2MB</div>
-            </label>
-            <label for="company-logo-input" class="settings-logo-uploader">
+              <div class="settings-logo-uploader-text">PNG, JPG, SVG - עד 2MB</div>
+            </div>
+            <div class="settings-logo-uploader" onclick="pickLogoFile('company')">
               <div class="settings-logo-uploader-label">לוגו חברת ליסינג</div>
               <div class="settings-logo-uploader-preview" id="company-logo-preview-area">
                 <span>לחץ להעלאה</span>
               </div>
-              <div class="settings-logo-uploader-text">PNG, SVG - עד 2MB</div>
-            </label>
+              <div class="settings-logo-uploader-text">PNG, JPG, SVG - עד 2MB</div>
+            </div>
           </div>
 
           <!-- Preview -->
@@ -4069,6 +4067,17 @@ function applyLogoSettings(){
   // Save
   saveSettings({logoMoreH:mH,logoColH:cH,logoPad:p,logoSep:sp,logoShow:show});
   initLogoSidebar();
+}
+
+function pickLogoFile(type){
+  var inp=document.createElement('input');
+  inp.type='file';
+  inp.accept='image/*';
+  inp.onchange=function(){
+    if(type==='client') uploadClientLogo(inp);
+    else uploadCompanyLogo(inp);
+  };
+  inp.click();
 }
 
 function uploadClientLogo(input){
