@@ -1745,8 +1745,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <div id="client-logo-preview-area" style="height:100px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;overflow:hidden;padding:8px">
                 <span style="font-size:12px;color:var(--t3)">אין לוגו</span>
               </div>
-              <button type="button" onclick="var i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=function(){uploadClientLogo(i)};i.click()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;width:100%">📁 בחר קובץ</button>
-              <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, SVG - עד 5MB</div>
+              <input type="file" accept="image/*,.webp" onchange="uploadClientLogo(this)" style="width:100%;font-size:13px;font-family:inherit;padding:6px;border:1px solid var(--bdr);border-radius:8px;background:#fff;cursor:pointer">
+              <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, WebP, SVG - עד 5MB</div>
             </div>
             <!-- לוגו חברת ליסינג -->
             <div style="border:1.5px dashed var(--bdr);border-radius:10px;padding:20px;text-align:center;background:var(--bg)">
@@ -1754,8 +1754,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <div id="company-logo-preview-area" style="height:100px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;overflow:hidden;padding:8px">
                 <span style="font-size:12px;color:var(--t3)">אין לוגו</span>
               </div>
-              <button type="button" onclick="var i=document.createElement('input');i.type='file';i.accept='image/*';i.onchange=function(){uploadCompanyLogo(i)};i.click()" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;width:100%">📁 בחר קובץ</button>
-              <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, SVG - עד 5MB</div>
+              <input type="file" accept="image/*,.webp" onchange="uploadCompanyLogo(this)" style="width:100%;font-size:13px;font-family:inherit;padding:6px;border:1px solid var(--bdr);border-radius:8px;background:#fff;cursor:pointer">
+              <div style="font-size:11px;color:var(--t3);margin-top:6px">PNG, JPG, WebP, SVG - עד 5MB</div>
             </div>
           </div>
 
