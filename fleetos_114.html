@@ -6954,7 +6954,9 @@ function openSvcStatusModal(type){
   var titles={'need':'דורש שיבוץ','sent':'מיילים נשלחו','waiting':'ממתין לתשובה','scheduled':'מועד נקבע'};
   var colors={'need':'#5F5E5A','sent':'#185FA5','waiting':'#854F0B','scheduled':'#0F6E56'};
   var bgColors={'need':'#F1EFE8','sent':'#E6F1FB','waiting':'#FAEEDA','scheduled':'#E1F5EE'};
-  var bookings=typeof getServiceBookings==='function'?getServiceBookings():[];
+  var allBookings=typeof getServiceBookings==='function'?getServiceBookings():[];
+  // Filter out bookings for archived/deleted vehicles
+  var bookings=allBookings.filter(function(b){return vehicles.some(function(v){return String(v.id)===String(b.vid);});});
   var needs=typeof getVehiclesNeedingService==='function'?getVehiclesNeedingService(60):[];
   var items=[];
 
@@ -7095,8 +7097,8 @@ function renderSvcSection(){
   if(_svcFilter==='svc')filtered=allItems.filter(function(it){return it.type==='svc'});
   else if(_svcFilter==='test')filtered=allItems.filter(function(it){return it.type==='test'});
 
-  // Real data from service bookings
-  var bookings=typeof getServiceBookings==='function'?getServiceBookings():[];
+  // Real data from service bookings (filter out archived vehicles)
+  var bookings=(typeof getServiceBookings==='function'?getServiceBookings():[]).filter(function(b){return vehicles.some(function(v){return String(v.id)===String(b.vid);});});
   var now_y=now.getFullYear(),now_m=now.getMonth();
   // Filter bookings to current month only
   var monthBookings=bookings.filter(function(b){
