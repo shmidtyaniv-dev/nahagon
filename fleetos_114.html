@@ -7953,8 +7953,7 @@ function openDet(vid){
       </div>
       <div class="vc-info-box">
         <div class="vc-info-label">כבישי אגרה</div>
-        <div style="font-size:14px;font-weight:500">${(v.tolls||[]).length?'מורשה ל'+v.tolls[0]:'אין מנויים'}</div>
-        <div class="vc-info-sublabel">${(v.tolls||[]).length>1?v.tolls.slice(1).join(', '):'לא מורשה למנהרות כרמל'}</div>
+        <div style="font-size:14px;font-weight:500">${(v.tolls||[]).length?v.tolls.join(', '):'אין מנויים'}</div>
       </div>
     </div>`;
 
