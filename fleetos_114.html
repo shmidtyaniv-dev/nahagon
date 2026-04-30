@@ -6846,45 +6846,59 @@ function renderDocsModal(){
   if(_docsModalFilter==='expired')filtered=issues.filter(function(d){return d.reason==='expired'});
   else if(_docsModalFilter==='expiring')filtered=issues.filter(function(d){return d.reason==='expiring'});
   else if(_docsModalFilter==='missing')filtered=issues.filter(function(d){return d.reason==='missing'});
-  // Pagination
-  var totalPages=Math.max(1,Math.ceil(filtered.length/_docsModalPerPage));
+  var avatarColors=[{bg:'#FBEAF0',fg:'#72243E'},{bg:'#E6F1FB',fg:'#185FA5'},{bg:'#EAF3DE',fg:'#3B6D11'},{bg:'#EEEDFE',fg:'#3C3489'},{bg:'#FAEEDA',fg:'#854F0B'}];
+  // Group by driver (vid)
+  var grouped={};
+  filtered.forEach(function(d){
+    if(!grouped[d.vid]) grouped[d.vid]={vid:d.vid,driver:d.driver,company:d.company,plate:d.plate,docs:[]};
+    grouped[d.vid].docs.push(d);
+  });
+  var groupedArr=Object.values(grouped);
+  // Pagination on grouped
+  var totalPages=Math.max(1,Math.ceil(groupedArr.length/_docsModalPerPage));
   if(_docsModalPage>totalPages)_docsModalPage=totalPages;
   var start=(_docsModalPage-1)*_docsModalPerPage;
-  var pageItems=filtered.slice(start,start+_docsModalPerPage);
-  var avatarColors=[{bg:'#FBEAF0',fg:'#72243E'},{bg:'#E6F1FB',fg:'#185FA5'},{bg:'#EAF3DE',fg:'#3B6D11'},{bg:'#EEEDFE',fg:'#3C3489'},{bg:'#FAEEDA',fg:'#854F0B'}];
+  var pageItems=groupedArr.slice(start,start+_docsModalPerPage);
+
   var rows='';
   if(pageItems.length===0){
     rows='<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">אין מסמכים בקטגוריה זו</div>';
   } else {
-    pageItems.forEach(function(d,i){
+    pageItems.forEach(function(g,i){
       var ac=avatarColors[(start+i)%avatarColors.length];
-      var initials=(d.driver||'').split(' ').map(function(w){return w.charAt(0)}).join('').slice(0,2);
-      var reasonLabel,reasonBg,reasonColor;
-      if(d.reason==='expired'){reasonLabel='פג תוקף';reasonBg='#FCEBEB';reasonColor='#A32D2D';}
-      else if(d.reason==='expiring'){reasonLabel='יפוג בקרוב';reasonBg='#FAEEDA';reasonColor='#854F0B';}
-      else{reasonLabel='חסר';reasonBg='#F1EFE8';reasonColor='#5F5E5A';}
-      var dateText=d.date?fd(d.date):'—';
-      var daysText='';
-      if(d.daysLeft!==null){
-        if(d.daysLeft<0)daysText='<span style="color:#A32D2D;font-weight:600">פג לפני '+Math.abs(d.daysLeft)+' ימים</span>';
-        else if(d.daysLeft===0)daysText='<span style="color:#A32D2D;font-weight:600">פג היום</span>';
-        else daysText='<span style="color:#854F0B">עוד '+d.daysLeft+' ימים</span>';
-      }
-      rows+='<div class="docs-modal-row" onclick="closeDocsModal();openDet('+d.vid+')">'
+      var initials=(g.driver||'').split(' ').map(function(w){return w.charAt(0)}).join('').slice(0,2);
+      // Build docs summary
+      var docTags=g.docs.map(function(d){
+        var color,bg;
+        if(d.reason==='expired'){color='#A32D2D';bg='#FCEBEB';}
+        else if(d.reason==='expiring'){color='#854F0B';bg='#FAEEDA';}
+        else{color='#5F5E5A';bg='#F1EFE8';}
+        var extra='';
+        if(d.daysLeft!==null && d.daysLeft>=0) extra=' ('+d.daysLeft+' ימים)';
+        else if(d.daysLeft!==null && d.daysLeft<0) extra=' (פג)';
+        return '<span style="background:'+bg+';color:'+color+';padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500;display:inline-block;margin:2px">'+d.doc+extra+'</span>';
+      }).join('');
+      // Worst status
+      var hasExpired=g.docs.some(function(d){return d.reason==='expired'});
+      var hasExpiring=g.docs.some(function(d){return d.reason==='expiring'});
+      var statusLabel=hasExpired?'פג תוקף':hasExpiring?'יפוג בקרוב':'חסר';
+      var statusBg=hasExpired?'#FCEBEB':hasExpiring?'#FAEEDA':'#F1EFE8';
+      var statusColor=hasExpired?'#A32D2D':hasExpiring?'#854F0B':'#5F5E5A';
+      rows+='<div class="docs-modal-row" onclick="closeDocsModal();openDet('+g.vid+')" style="align-items:flex-start">'
         +'<div class="docs-modal-avatar"><div class="svc-avatar" style="background:'+ac.bg+';color:'+ac.fg+'">'+initials+'</div></div>'
-        +'<div class="docs-modal-driver">'+d.driver+'</div>'
-        +'<div class="docs-modal-company">'+d.company+'</div>'
-        +'<div class="docs-modal-plate">'+(d.plate||'')+'</div>'
-        +'<div class="docs-modal-doc">'+d.doc+'</div>'
-        +'<div class="docs-modal-status"><span style="background:'+reasonBg+';color:'+reasonColor+';padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500">'+reasonLabel+'</span></div>'
-        +'<div class="docs-modal-date" style="font-size:11px">'+dateText+(daysText?' · '+daysText:'')+'</div>'
+        +'<div class="docs-modal-driver">'+g.driver+'</div>'
+        +'<div class="docs-modal-company">'+g.company+'</div>'
+        +'<div class="docs-modal-plate">'+(g.plate||'')+'</div>'
+        +'<div class="docs-modal-doc" style="white-space:normal">'+docTags+'</div>'
+        +'<div class="docs-modal-status"><span style="background:'+statusBg+';color:'+statusColor+';padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500">'+statusLabel+'</span></div>'
+        +'<div class="docs-modal-date" style="font-size:11px">'+g.docs.length+' מסמכים</div>'
         +'</div>';
     });
   }
   // Pagination controls
   var pagHtml='';
   if(totalPages>1){
-    pagHtml='<div class="docs-modal-pagination"><span style="font-size:11px;color:var(--t2)">'+formatNumber(filtered.length)+' פריטים</span><div class="pagination-controls">';
+    pagHtml='<div class="docs-modal-pagination"><span style="font-size:11px;color:var(--t2)">'+formatNumber(groupedArr.length)+' נהגים</span><div class="pagination-controls">';
     pagHtml+='<button class="page-btn" onclick="_docsModalPage=Math.max(1,_docsModalPage-1);renderDocsModal()"'+(_docsModalPage===1?' disabled':'')+'><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>';
     for(var p=1;p<=Math.min(totalPages,5);p++){pagHtml+='<button class="page-btn'+(p===_docsModalPage?' active':'')+'" onclick="_docsModalPage='+p+';renderDocsModal()">'+p+'</button>';}
     if(totalPages>5)pagHtml+='<span style="margin:0 4px">…</span><button class="page-btn'+(totalPages===_docsModalPage?' active':'')+'" onclick="_docsModalPage='+totalPages+';renderDocsModal()">'+totalPages+'</button>';
