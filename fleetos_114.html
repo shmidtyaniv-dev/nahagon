@@ -14116,8 +14116,7 @@ function sendEventMsgEmail(evId){
 /* ── PENDING REMINDERS CHECK ON LOAD ── */
 function checkPendingReminders(){
   const settings = JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  // Setting: banner disabled
-  if(settings.showPendingBanner === false) return;
+  const bannerEnabled = settings.showPendingBanner !== false;
   const myEmail = (settings.repEmail||'').trim();
   const now = new Date();
 
@@ -14259,7 +14258,8 @@ function checkPendingReminders(){
     return;
   }
 
-  // FALLBACK: Show banner (original flow)
+  // FALLBACK: Show banner (only if banner setting enabled)
+  if(!bannerEnabled) return;
   const ex = document.getElementById('pending-reminders-banner');
   if(ex) ex.remove();
   const banner = document.createElement('div');
