@@ -4711,6 +4711,12 @@ function confirmArchive(vid){
     record.action='contract_ended';
   }
 
+  // Delete from Firestore
+  if(db && reason!=='deal_ended'){
+    db.collection('vehicles').doc(String(v.id)).delete().catch(function(e){console.error('delete vehicle from firestore:',e);});
+  } else if(db && reason==='deal_ended'){
+    persistVehicle(v);
+  }
   document.getElementById('archive-modal').remove();
   go('vehicles',document.querySelector('.ni[dp="vehicles"]'));
   refresh();
@@ -9365,8 +9371,8 @@ function saveEditVehicle(){
     // Update historyLog if date changed - so calcNextSvc picks it up
     if(lastSvc.value!==oldLastSvc){
       if(!v.historyLog)v.historyLog=[];
-      // Remove old service entries that were auto-generated
-      v.historyLog=v.historyLog.filter(function(h){return h.kind!=='service'||h.source!=='edit';});
+      // Remove ALL old service entries - the edited date is the source of truth
+      v.historyLog=v.historyLog.filter(function(h){return h.kind!=='service';});
       var svcKm=parseInt(id('ev-svc-type')?.value)||v.serviceKm||0;
       v.historyLog.push({id:'h'+Date.now(),kind:'service',desc:'טיפול '+(svcKm?svcKm.toLocaleString('he-IL')+' ק"מ':'שנתי'),km:svcKm,createdAt:lastSvc.value+'T12:00:00',source:'edit'});
     }
