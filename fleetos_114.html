@@ -745,6 +745,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .v-table-row:not(.header):hover{background:#FAFAF7}
 .v-table-row>div{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;justify-content:center}
 .driver-cell{display:flex;align-items:center;gap:8px;overflow:visible!important;text-align:right;justify-content:flex-start}
+.driver-name-block{display:flex;align-items:center}
 .driver-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0}
 .driver-avatar.pink{background:var(--pink-light);color:var(--pink-dark)}
 .driver-avatar.purple{background:var(--purple-light);color:var(--purple-dark)}
@@ -6568,12 +6569,9 @@ function nextSvcCell(v){
   return'<span style="color:var(--t2)">'+s+'</span>';
 }
 function dRow(v){
-  var avatarColors=['pink','purple','blue','green','amber'];
-  var h=0;for(var i=0;i<(v.driver.name||'').length;i++)h=((h<<5)-h)+(v.driver.name||'').charCodeAt(i);
-  var acls=avatarColors[Math.abs(h)%avatarColors.length];
   var st=getVehicleStatus(v);
   return'<div class="v-table-row" onclick="openDet('+v.id+')">'
-    +'<div class="driver-cell"><div class="driver-avatar '+acls+'">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div></div>'+altBadge(v.id)+'</div>'
+    +'<div class="driver-cell"><div class="driver-avatar" style="background:'+avatarColor(v.driver.name)+';color:#fff">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div></div>'+altBadge(v.id)+'</div>'
     +'<div>'+renderPlate(v.plate)+'</div>'
     +'<div class="muted">'+v.make+' '+v.model+'</div>'
     +'<div><span class="status-pill-sm '+st.cls+'">'+st.label+'</span></div>'
@@ -6582,12 +6580,9 @@ function dRow(v){
     +'</div>';
 }
 function fRow(v){
-  var avatarColors=['pink','purple','blue','green','amber'];
-  var h=0;for(var i=0;i<(v.driver.name||'').length;i++)h=((h<<5)-h)+(v.driver.name||'').charCodeAt(i);
-  var acls=avatarColors[Math.abs(h)%avatarColors.length];
   var st=getVehicleStatus(v);
   return'<div class="v-table-row" onclick="openDet('+v.id+')">'
-    +'<div class="driver-cell"><div class="driver-avatar '+acls+'">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div></div>'+altBadge(v.id)+'</div>'
+    +'<div class="driver-cell"><div class="driver-avatar" style="background:'+avatarColor(v.driver.name)+';color:#fff">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div></div>'+altBadge(v.id)+'</div>'
     +'<div>'+renderPlate(v.plate)+'</div>'
     +'<div class="muted">'+v.make+' '+v.model+'</div>'
     +'<div><span class="status-pill-sm '+st.cls+'">'+st.label+'</span></div>'
