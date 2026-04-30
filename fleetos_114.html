@@ -14126,7 +14126,45 @@ function checkPendingReminders(){
     return dt <= now;
   });
 
-  const total = pendingSelf.length + pendingPre.length;
+  // 3. Service/test reminders - vehicles with upcoming service/test within threshold
+  var pendingSvc=[];
+  if(typeof isEmailJSConfigured==='function' && isEmailJSConfigured()){
+    var _ss=typeof getSchedulingSettings==='function'?getSchedulingSettings():{};
+    var svcThreshold=_ss.reminderDays||20;
+    var testThreshold=_ss.testReminderDays||30;
+    var sentKey='_svcRemindersSent';
+    var sentMap=JSON.parse(localStorage.getItem(sentKey)||'{}');
+    var today=new Date();today.setHours(0,0,0,0);
+    var todayStr=today.toISOString().split('T')[0];
+    (vehicles||[]).forEach(function(v){
+      if(!v.driver||!v.driver.email||v.status==='waiting_vehicle')return;
+      // Check service
+      if(typeof calcNextSvc==='function'){
+        var nxt=calcNextSvc(v);
+        if(nxt.date){
+          var svcDiff=Math.round((new Date(nxt.date)-today)/86400000);
+          if(svcDiff>=0 && svcDiff<=svcThreshold){
+            var svcKey=v.id+'-svc-'+nxt.date;
+            if(!sentMap[svcKey]){
+              pendingSvc.push({vid:v.id,email:v.driver.email,name:v.driver.name||'',plate:v.plate,type:'טיפול',date:nxt.date,key:svcKey});
+            }
+          }
+        }
+      }
+      // Check test (license expiry)
+      if(v.licenseExp){
+        var testDiff=Math.round((new Date(v.licenseExp)-today)/86400000);
+        if(testDiff>=0 && testDiff<=testThreshold){
+          var testKey=v.id+'-test-'+v.licenseExp;
+          if(!sentMap[testKey]){
+            pendingSvc.push({vid:v.id,email:v.driver.email,name:v.driver.name||'',plate:v.plate,type:'טסט רישוי',date:v.licenseExp,key:testKey});
+          }
+        }
+      }
+    });
+  }
+
+  const total = pendingSelf.length + pendingPre.length + pendingSvc.length;
   if(total===0) return;
 
   // AUTO-SEND via EmailJS if configured
@@ -14152,9 +14190,22 @@ function checkPendingReminders(){
         return {ok:true,type:'pre',title:e.title};
       }).catch(function(err){return {ok:false,type:'pre',title:e.title,err:err.message};}));
     });
+    // Service/test reminders to drivers
+    var svcSentMap=JSON.parse(localStorage.getItem('_svcRemindersSent')||'{}');
+    pendingSvc.forEach(function(item){
+      var subj='תזכורת '+item.type+' - רכב '+item.plate;
+      var body='שלום '+item.name+',\n\nרכב '+item.plate+' צריך '+item.type+' בתאריך '+(typeof fd==='function'?fd(item.date):item.date)+'.\n\nנא ליצור קשר לתיאום מועד.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+      promises.push(sendViaEmailJS(item.email,subj,body).then(function(){
+        svcSentMap[item.key]=new Date().toISOString();
+        return {ok:true,type:'svc',title:item.type+' '+item.plate};
+      }).catch(function(err){return {ok:false,type:'svc',title:item.type+' '+item.plate,err:err.message};}));
+    });
+
     Promise.allSettled(promises).then(function(results){
       if(typeof persistSelfReminders==='function') persistSelfReminders();
       if(typeof saveFleetEvents==='function') saveFleetEvents(evts);
+      // Save service reminder sent map
+      try{localStorage.setItem('_svcRemindersSent',JSON.stringify(svcSentMap));}catch(e){}
       var sent=results.filter(function(r){return r.value&&r.value.ok;}).length;
       var failed=results.filter(function(r){return r.value&&!r.value.ok;}).length;
       if(sent>0) showToast('✓ '+sent+' תזכורות נשלחו אוטומטית במייל');
