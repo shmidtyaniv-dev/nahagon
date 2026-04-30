@@ -8924,7 +8924,7 @@ async function callClaudeWithDoc(file,prompt){
   const mimeType=isImg?file.type:'application/pdf';
 
   // Models to try in order (fallback chain)
-  const models=['gemini-2.0-flash','gemini-1.5-flash'];
+  const models=['gemini-2.0-flash','gemini-1.5-flash-latest','gemini-pro'];
   var lastError=null;
 
   for(var mi=0;mi<models.length;mi++){
