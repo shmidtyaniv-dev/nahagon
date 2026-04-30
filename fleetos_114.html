@@ -2081,7 +2081,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div class="settings-form-field">
             <label>Google Gemini API Key</label>
             <input id="ai-api-key" type="password" dir="ltr" placeholder="AIzaSy..." style="font-family:monospace">
-            <span class="settings-form-field-hint">המפתח נשמר בדפדפן ונשלח רק ל-Google. <a href="#" style="color:#185FA5">איך להשיג מפתח חינמי?</a></span>
+            <span class="settings-form-field-hint">המפתח נשמר בדפדפן ונשלח רק ל-Google. <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#185FA5">להשיג מפתח חינמי מ-Google AI Studio →</a></span>
           </div>
 
           <div id="ai-key-status" style="margin-top:12px;min-height:14px;font-size:11px"></div>
@@ -8923,24 +8923,49 @@ async function callClaudeWithDoc(file,prompt){
   const isImg=file.type.startsWith('image/');
   const mimeType=isImg?file.type:'application/pdf';
 
-  // Use Google Gemini API (free tier)
-  const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+apiKey,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      contents:[{parts:[
-        {inline_data:{mime_type:mimeType,data:b64}},
-        {text:prompt}
-      ]}],
-      generationConfig:{temperature:0,maxOutputTokens:600}
-    })
-  });
-  if(!resp.ok){const t=await resp.text();throw new Error(`${resp.status}: ${t.slice(0,200)}`)}
-  const data=await resp.json();
-  const txt=(data.candidates||[])[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
-  const m=txt.match(/\{[\s\S]*?\}/);
-  if(!m)throw new Error('no JSON: '+txt.slice(0,100));
-  return JSON.parse(m[0]);
+  // Models to try in order (fallback chain)
+  const models=['gemini-2.0-flash','gemini-1.5-flash'];
+  var lastError=null;
+
+  for(var mi=0;mi<models.length;mi++){
+    var model=models[mi];
+    // Retry up to 3 times on 429 errors
+    for(var attempt=0;attempt<3;attempt++){
+      try{
+        const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+apiKey,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            contents:[{parts:[
+              {inline_data:{mime_type:mimeType,data:b64}},
+              {text:prompt}
+            ]}],
+            generationConfig:{temperature:0,maxOutputTokens:600}
+          })
+        });
+        if(resp.status===429){
+          // Rate limit - wait and retry
+          lastError=new Error('מגבלת שימוש (429). ממתין ומנסה שוב...');
+          await new Promise(r=>setTimeout(r,(attempt+1)*3000));
+          continue;
+        }
+        if(!resp.ok){
+          var t=await resp.text();
+          if(resp.status===400 && mi<models.length-1){lastError=new Error(t);break;} // try next model
+          throw new Error(resp.status+': '+t.slice(0,200));
+        }
+        const data=await resp.json();
+        const txt=(data.candidates||[])[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
+        const m=txt.match(/\{[\s\S]*?\}/);
+        if(!m)throw new Error('לא התקבל JSON מהסריקה');
+        return JSON.parse(m[0]);
+      }catch(e){
+        lastError=e;
+        if(e.message.indexOf('429')===-1) break; // don't retry non-429 errors
+      }
+    }
+  }
+  throw lastError||new Error('הסריקה נכשלה');
 }
 
 // Pending scanned files, to be attached to vehicle after save
