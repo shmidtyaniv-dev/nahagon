@@ -7095,9 +7095,8 @@ function checkAutoReminders(){
 function renderSvcSection(){
   var allItems=getSvcItems();
   var now=new Date();
-  var monthName=HEM[now.getMonth()]+' '+now.getFullYear();
   var titleEl=document.getElementById('svc-title');
-  if(titleEl)titleEl.textContent='טיפולים וטסטים — '+monthName;
+  if(titleEl)titleEl.textContent='טיפולים וטסטים';
 
   var svcCount=allItems.filter(function(it){return it.type==='svc'}).length;
   var testCount=allItems.filter(function(it){return it.type==='test'}).length;
@@ -7115,12 +7114,8 @@ function renderSvcSection(){
 
   // Real data from service bookings (filter out archived vehicles)
   var bookings=(typeof getServiceBookings==='function'?getServiceBookings():[]).filter(function(b){return vehicles.some(function(v){return String(v.id)===String(b.vid);});});
-  var now_y=now.getFullYear(),now_m=now.getMonth();
-  // Filter bookings to current month only
-  var monthBookings=bookings.filter(function(b){
-    var d=new Date(b.createdAt||b.bookedDate||'');
-    return d.getFullYear()===now_y && d.getMonth()===now_m;
-  });
+  // All active bookings (not limited to current month)
+  var monthBookings=bookings.filter(function(b){return b.status!=='cancelled';});
   var totalFiltered=filtered.length;
   var sent=monthBookings.filter(function(b){return b.status==='pending'||b.status==='booked'||b.status==='confirmed'}).length;
   var waiting=monthBookings.filter(function(b){return b.status==='booked'&&!b.confirmedAt}).length;
@@ -11590,10 +11585,10 @@ if(checkViolApproval()){
 }
 refresh();
 
-// Check pending reminders on load (after everything else)
+// Check pending reminders on load (wait for Firestore vehicles to load)
 setTimeout(function(){
   try{ if(typeof checkPendingReminders==='function') checkPendingReminders(); }catch(e){ console.error('pending reminders check error:',e); }
-}, 1500);
+}, 5000);
 
 // openUpdateModal and setUpdateMode defined earlier (line ~4570)
 
