@@ -9358,7 +9358,19 @@ function saveEditVehicle(){
   v.driver.licenseExp=id('ev-dlic').value;
   v.driver.address=id('ev-daddress').value.trim();
   v.driver.company=id('ev-dcompany')?.value||v.driver.company||'';
-  const lastSvc=id('ev-svc');if(lastSvc&&lastSvc.value)v.lastService=lastSvc.value;
+  const lastSvc=id('ev-svc');
+  if(lastSvc&&lastSvc.value){
+    var oldLastSvc=v.lastService||'';
+    v.lastService=lastSvc.value;
+    // Update historyLog if date changed - so calcNextSvc picks it up
+    if(lastSvc.value!==oldLastSvc){
+      if(!v.historyLog)v.historyLog=[];
+      // Remove old service entries that were auto-generated
+      v.historyLog=v.historyLog.filter(function(h){return h.kind!=='service'||h.source!=='edit';});
+      var svcKm=parseInt(id('ev-svc-type')?.value)||v.serviceKm||0;
+      v.historyLog.push({id:'h'+Date.now(),kind:'service',desc:'טיפול '+(svcKm?svcKm.toLocaleString('he-IL')+' ק"מ':'שנתי'),km:svcKm,createdAt:lastSvc.value+'T12:00:00',source:'edit'});
+    }
+  }
   const svcType=parseInt(id('ev-svc-type')?.value)||0;
   if(svcType){v.serviceKm=svcType;const next=svcType+15000;v.nextServiceType=`${next.toLocaleString('he-IL')} ק"מ`;}
   const ckmVal=id('ev-ckm');if(ckmVal)v.currentKm=getRawKm('ev-ckm');
