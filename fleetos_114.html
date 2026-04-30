@@ -6932,26 +6932,28 @@ function setSvcFilter(f,btn){
 }
 function getSvcItems(){
   var now=new Date();now.setHours(0,0,0,0);
-  var y=now.getFullYear(),m=now.getMonth();
-  var monthStart=new Date(y,m,1);
-  var monthEnd=new Date(y,m+1,0);
-  var startStr=monthStart.toISOString().split('T')[0];
-  var endStr=monthEnd.toISOString().split('T')[0];
   var todayStr=now.toISOString().split('T')[0];
+  // Use reminder thresholds from settings
+  var _ss=typeof getSchedulingSettings==='function'?getSchedulingSettings():{};
+  var svcDays=_ss.reminderDays||20;
+  var testDays=_ss.testReminderDays||30;
+  var maxDays=Math.max(svcDays,testDays);
+  var limitDate=new Date(now.getTime()+maxDays*86400000);
+  var limitStr=limitDate.toISOString().split('T')[0];
   var items=[];
   (vehicles||[]).forEach(function(v){
     if(v.status==='waiting_vehicle')return;
     var drv=v.driver||{};
-    // Service needed this month
+    // Service within threshold
     var nxt=calcNextSvc(v);
-    if(nxt.date && nxt.date>=startStr && nxt.date<=endStr){
+    if(nxt.date && nxt.date<=limitStr && nxt.date>=todayStr){
       items.push({vid:v.id,type:'svc',driver:drv.name||'',company:drv.company||drv.address||'',plate:v.plate,detail:(nxt.km?fkm(nxt.km)+' ק"מ':'')+(v.plate?' · '+v.plate:''),date:nxt.date});
     }
-    // Test needed this month (license expiry)
-    if(v.licenseExp && v.licenseExp>=startStr && v.licenseExp<=endStr){
+    // Test within threshold (license expiry)
+    if(v.licenseExp && v.licenseExp<=limitStr && v.licenseExp>=todayStr){
       items.push({vid:v.id,type:'test',driver:drv.name||'',company:drv.company||drv.address||'',plate:v.plate,detail:'טסט'+(v.plate?' · '+v.plate:''),date:v.licenseExp});
     }
-    // Also include overdue items
+    // Overdue items
     if(nxt.date && nxt.date<todayStr){
       items.push({vid:v.id,type:'svc',driver:drv.name||'',company:drv.company||drv.address||'',plate:v.plate,detail:'באיחור'+(v.plate?' · '+v.plate:''),date:nxt.date,overdue:true});
     }
