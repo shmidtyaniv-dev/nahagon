@@ -6536,7 +6536,7 @@ function altBadge(vid){
   return `<span title="${tip}" style="display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;background:${bg};color:${clr};margin-right:6px;vertical-align:middle">${txt}</span>`;
 }
 function avatarColor(name){var colors=['#16a34a','#3b82f6','#f59e0b','#ec4899','#06b6d4','#8b5cf6','#ef4444','#14b8a6','#f97316','#6366f1'];var h=0;for(var i=0;i<(name||'').length;i++)h=((h<<5)-h)+(name||'').charCodeAt(i);return colors[Math.abs(h)%colors.length];}
-function driverCell(v){return`<div class="dc"><div class="av" style="background:${avatarColor(v.driver.name)}">${inits(v.driver.name)}</div><div><div style="font-weight:600;font-size:13px;color:var(--t1)">${v.driver.name}</div><div style="font-size:10px;color:var(--t3)">${v.driver.company||v.driver.address||''}</div></div>${altBadge(v.id)}</div>`;}
+function driverCell(v){return`<div class="dc"><div class="av" style="background:${avatarColor(v.driver.name)}">${inits(v.driver.name)}</div><div><div style="font-weight:600;font-size:13px;color:var(--t1)">${v.driver.name}</div></div>${altBadge(v.id)}</div>`;}
 function getVehicleStatus(v){
   if(!v)return{cls:'success',label:'תקין'};
   // Check for open accident
@@ -6573,7 +6573,7 @@ function dRow(v){
   var acls=avatarColors[Math.abs(h)%avatarColors.length];
   var st=getVehicleStatus(v);
   return'<div class="v-table-row" onclick="openDet('+v.id+')">'
-    +'<div class="driver-cell"><div class="driver-avatar '+acls+'">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div><div class="driver-company">'+(v.driver.company||v.driver.address||'')+'</div></div>'+altBadge(v.id)+'</div>'
+    +'<div class="driver-cell"><div class="driver-avatar '+acls+'">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div></div>'+altBadge(v.id)+'</div>'
     +'<div>'+renderPlate(v.plate)+'</div>'
     +'<div class="muted">'+v.make+' '+v.model+'</div>'
     +'<div><span class="status-pill-sm '+st.cls+'">'+st.label+'</span></div>'
@@ -6587,7 +6587,7 @@ function fRow(v){
   var acls=avatarColors[Math.abs(h)%avatarColors.length];
   var st=getVehicleStatus(v);
   return'<div class="v-table-row" onclick="openDet('+v.id+')">'
-    +'<div class="driver-cell"><div class="driver-avatar '+acls+'">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div><div class="driver-company">'+(v.driver.company||v.driver.address||'')+'</div></div>'+altBadge(v.id)+'</div>'
+    +'<div class="driver-cell"><div class="driver-avatar '+acls+'">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div></div>'+altBadge(v.id)+'</div>'
     +'<div>'+renderPlate(v.plate)+'</div>'
     +'<div class="muted">'+v.make+' '+v.model+'</div>'
     +'<div><span class="status-pill-sm '+st.cls+'">'+st.label+'</span></div>'
