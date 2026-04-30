@@ -4036,7 +4036,10 @@ function sendViaEmailJS(toEmail, subject, bodyText){
       subject: subject,
       message: bodyText,
       from_name: s.repName||'מרכז הרכב של מור בית השקעות'
-    }, s.emailjsPublicKey).then(resolve, reject);
+    }, s.emailjsPublicKey).then(resolve).catch(function(err){
+      var msg = (err && err.text) || (err && err.message) || JSON.stringify(err) || 'שגיאה לא ידועה';
+      reject(new Error(msg));
+    });
   });
 }
 
