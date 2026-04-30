@@ -3993,13 +3993,21 @@ function saveEmailJSSettings(){
   var si=document.getElementById('emailjs-service-id');
   var ti=document.getElementById('emailjs-template-id');
   if(!pk||!si||!ti)return;
-  saveSettings({
-    emailjsPublicKey:pk.value.trim(),
-    emailjsServiceId:si.value.trim(),
-    emailjsTemplateId:ti.value.trim()
-  });
+  var pkv=pk.value.trim(), siv=si.value.trim(), tiv=ti.value.trim();
+  try{
+    // Clean old logo data from fleetSettings to free space
+    var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+    delete s.moreB64; delete s.colB64;
+    s.emailjsPublicKey=pkv;
+    s.emailjsServiceId=siv;
+    s.emailjsTemplateId=tiv;
+    localStorage.setItem('fleetSettings',JSON.stringify(s));
+  }catch(e){
+    alert('שגיאה בשמירה: '+e.message);
+    return;
+  }
   var st=document.getElementById('emailjs-status');
-  if(st) st.innerHTML=pk.value.trim()?'<span style="color:#16a34a">✓ הגדרות נשמרו</span>':'<span style="color:var(--t3)">לא מוגדר</span>';
+  if(st) st.innerHTML=pkv?'<span style="color:#16a34a">✓ הגדרות נשמרו</span>':'<span style="color:var(--t3)">לא מוגדר</span>';
   showToast('✓ הגדרות EmailJS נשמרו');
 }
 
