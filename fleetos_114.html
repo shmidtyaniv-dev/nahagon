@@ -2092,6 +2092,41 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </div>
         </div>
       </div>
+
+      <!-- EmailJS -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">שליחת מייל אוטומטית (EmailJS)</div>
+            <div class="settings-section-desc">שלח תזכורות מייל אוטומטית בלי לפתוח תוכנת מייל. עד 200 מיילים/חודש בחינם.</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <div class="settings-form-field">
+            <label>Public Key (מפתח ציבורי)</label>
+            <input id="emailjs-public-key" type="text" dir="ltr" placeholder="YLyGgocolnxCkPllb" style="font-family:monospace">
+          </div>
+          <div class="settings-form-field">
+            <label>Service ID (מזהה שירות)</label>
+            <input id="emailjs-service-id" type="text" dir="ltr" placeholder="service_xxxxxxx" style="font-family:monospace">
+          </div>
+          <div class="settings-form-field">
+            <label>Template ID (מזהה תבנית)</label>
+            <input id="emailjs-template-id" type="text" dir="ltr" placeholder="template_xxxxxxx" style="font-family:monospace">
+            <span class="settings-form-field-hint"><a href="https://dashboard.emailjs.com/" target="_blank" style="color:#185FA5">לוח הבקרה של EmailJS →</a></span>
+          </div>
+
+          <div id="emailjs-status" style="margin-top:8px;min-height:14px;font-size:11px"></div>
+
+          <div class="settings-btn-row">
+            <button class="settings-btn settings-btn-secondary" onclick="testEmailJS()">שלח מייל ניסיון</button>
+            <button class="settings-btn settings-btn-primary" onclick="saveEmailJSSettings()">שמור</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- TAB 5: EXPORT -->
@@ -3536,6 +3571,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <!-- SheetJS for Excel export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <script>
 // ── Firebase Initialization ──
@@ -3946,6 +3982,72 @@ function saveAiApiKey(){
   showToast(key?'✓ מפתח AI נשמר':'המפתח נמחק');
 }
 
+// ── EmailJS ──
+function isEmailJSConfigured(){
+  var s=getSettings();
+  return !!(s.emailjsPublicKey && s.emailjsServiceId && s.emailjsTemplateId);
+}
+
+function saveEmailJSSettings(){
+  var pk=document.getElementById('emailjs-public-key');
+  var si=document.getElementById('emailjs-service-id');
+  var ti=document.getElementById('emailjs-template-id');
+  if(!pk||!si||!ti)return;
+  saveSettings({
+    emailjsPublicKey:pk.value.trim(),
+    emailjsServiceId:si.value.trim(),
+    emailjsTemplateId:ti.value.trim()
+  });
+  var st=document.getElementById('emailjs-status');
+  if(st) st.innerHTML=pk.value.trim()?'<span style="color:#16a34a">✓ הגדרות נשמרו</span>':'<span style="color:var(--t3)">לא מוגדר</span>';
+  showToast('✓ הגדרות EmailJS נשמרו');
+}
+
+function loadEmailJSSettings(){
+  var s=getSettings();
+  var pk=document.getElementById('emailjs-public-key');if(pk)pk.value=s.emailjsPublicKey||'';
+  var si=document.getElementById('emailjs-service-id');if(si)si.value=s.emailjsServiceId||'';
+  var ti=document.getElementById('emailjs-template-id');if(ti)ti.value=s.emailjsTemplateId||'';
+  var st=document.getElementById('emailjs-status');
+  if(st) st.innerHTML=s.emailjsPublicKey?'<span style="color:#16a34a">✓ מוגדר</span>':'<span style="color:var(--t3)">לא מוגדר - מיילים יישלחו דרך תוכנת המייל</span>';
+}
+
+function sendViaEmailJS(toEmail, subject, bodyText){
+  return new Promise(function(resolve, reject){
+    var s=getSettings();
+    if(!s.emailjsPublicKey||!s.emailjsServiceId||!s.emailjsTemplateId){
+      reject(new Error('EmailJS not configured'));
+      return;
+    }
+    if(typeof emailjs==='undefined'){
+      reject(new Error('EmailJS SDK not loaded'));
+      return;
+    }
+    emailjs.send(s.emailjsServiceId, s.emailjsTemplateId, {
+      to_email: toEmail,
+      subject: subject,
+      message: bodyText,
+      from_name: s.repName||'מרכז הרכב של מור בית השקעות'
+    }, s.emailjsPublicKey).then(resolve, reject);
+  });
+}
+
+function testEmailJS(){
+  var s=getSettings();
+  var to=s.repEmail||'';
+  if(!to){showToast('הגדר קודם כתובת מייל בפרופיל');return;}
+  if(!isEmailJSConfigured()){showToast('מלא את כל שדות EmailJS');return;}
+  var st=document.getElementById('emailjs-status');
+  if(st) st.innerHTML='<span style="color:var(--t2)">שולח מייל ניסיון...</span>';
+  sendViaEmailJS(to,'מייל ניסיון - מרכז הרכב של מור','זהו מייל ניסיון מהמערכת.\nאם קיבלת אותו - EmailJS מוגדר ועובד!').then(function(){
+    if(st) st.innerHTML='<span style="color:#16a34a">✓ מייל ניסיון נשלח בהצלחה ל-'+to+'</span>';
+    showToast('✓ מייל ניסיון נשלח!');
+  }).catch(function(e){
+    if(st) st.innerHTML='<span style="color:#dc2626">✗ שגיאה: '+e.message+'</span>';
+    showToast('שגיאה בשליחה: '+e.message);
+  });
+}
+
 // Toggle sidebar user menu
 function toggleSbUserMenu(){
   var existing=document.getElementById('sb-user-menu');
@@ -4079,6 +4181,7 @@ function initSettingsPage(){
   if(typeof updateRepPreview==='function') try{updateRepPreview();}catch(e){}
   if(typeof initSchedulingSettings==='function') initSchedulingSettings();
   if(typeof initRequestTemplates==='function') initRequestTemplates();
+  if(typeof loadEmailJSSettings==='function') loadEmailJSSettings();
 }
 
 function applyLogoSettings(){
@@ -14000,7 +14103,41 @@ function checkPendingReminders(){
   const total = pendingSelf.length + pendingPre.length;
   if(total===0) return;
 
-  // Show banner
+  // AUTO-SEND via EmailJS if configured
+  if(typeof isEmailJSConfigured==='function' && isEmailJSConfigured()){
+    var promises=[];
+    pendingSelf.forEach(function(r){
+      if(!myEmail) return;
+      var subj='תזכורת: '+r.title;
+      var body='תזכורת אישית:\n'+r.title+'\n\nנקבעה ל: '+(typeof fd==='function'?fd(r.date):r.date)+' '+r.time+'\n\n'+(r.note||'')+'\n\n---\nמרכז הרכב של מור בית השקעות';
+      promises.push(sendViaEmailJS(myEmail,subj,body).then(function(){
+        r.sent=true;r.sentAt=new Date().toISOString();
+        return {ok:true,type:'self',title:r.title};
+      }).catch(function(e){return {ok:false,type:'self',title:r.title,err:e.message};}));
+    });
+    var evts=getFleetEvents();
+    pendingPre.forEach(function(e){
+      var v=vehicles.find(function(x){return x.id===e.vehicleId;});
+      if(!v||!v.driver||!v.driver.email) return;
+      var subj='תזכורת: '+e.title+' - '+v.plate;
+      var body='שלום '+(v.driver.name||'')+',\n\nתזכורת: נקבע '+e.title+' לרכב '+v.plate+' בתאריך '+(typeof fd==='function'?fd(e.date):e.date)+(e.time?' בשעה '+e.time:'')+'.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+      promises.push(sendViaEmailJS(v.driver.email,subj,body).then(function(){
+        e.preReminderSent=true;e.preReminderSentAt=new Date().toISOString();
+        return {ok:true,type:'pre',title:e.title};
+      }).catch(function(err){return {ok:false,type:'pre',title:e.title,err:err.message};}));
+    });
+    Promise.allSettled(promises).then(function(results){
+      if(typeof persistSelfReminders==='function') persistSelfReminders();
+      if(typeof saveFleetEvents==='function') saveFleetEvents(evts);
+      var sent=results.filter(function(r){return r.value&&r.value.ok;}).length;
+      var failed=results.filter(function(r){return r.value&&!r.value.ok;}).length;
+      if(sent>0) showToast('✓ '+sent+' תזכורות נשלחו אוטומטית במייל');
+      if(failed>0) showToast('⚠ '+failed+' תזכורות נכשלו בשליחה');
+    });
+    return;
+  }
+
+  // FALLBACK: Show banner (original flow)
   const ex = document.getElementById('pending-reminders-banner');
   if(ex) ex.remove();
   const banner = document.createElement('div');
@@ -14074,13 +14211,16 @@ function fireSelfReminderMail(id){
   if(!email) return;
   const r = selfReminders.find(x=>x.id===id);
   if(!r) return;
-  const subj = encodeURIComponent('תזכורת: '+r.title);
-  const body = encodeURIComponent('תזכורת אישית:\n'+r.title+'\n\nנקבעה ל: '+fd(r.date)+' '+r.time+'\n\n'+(r.note||'')+'\n\n---\nמרכז הרכב של מור בית השקעות');
-  window.open('mailto:'+email+'?subject='+subj+'&body='+body);
-  r.sent = true;
-  r.sentAt = new Date().toISOString();
-  persistSelfReminders();
-  renderSelfReminders();
+  var subjRaw='תזכורת: '+r.title;
+  var bodyRaw='תזכורת אישית:\n'+r.title+'\n\nנקבעה ל: '+fd(r.date)+' '+r.time+'\n\n'+(r.note||'')+'\n\n---\nמרכז הרכב של מור בית השקעות';
+  function _markSent(){r.sent=true;r.sentAt=new Date().toISOString();persistSelfReminders();renderSelfReminders();}
+  if(isEmailJSConfigured()){
+    sendViaEmailJS(email,subjRaw,bodyRaw).then(function(){_markSent();showToast('✓ תזכורת נשלחה במייל');}).catch(function(){
+      window.open('mailto:'+email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
+    });
+  } else {
+    window.open('mailto:'+email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
+  }
 }
 
 function firePreReminderMail(evId){
@@ -14089,12 +14229,16 @@ function firePreReminderMail(evId){
   if(!e) return;
   const v = vehicles.find(x=>x.id===e.vehicleId);
   if(!v||!v.driver?.email) return;
-  const subj = encodeURIComponent('תזכורת: '+e.title+' - '+v.plate);
-  const body = encodeURIComponent('שלום '+(v.driver.name||'')+',\n\nתזכורת: נקבע '+e.title+' לרכב '+v.plate+' בתאריך '+fd(e.date)+(e.time?' בשעה '+e.time:'')+'.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות');
-  window.open('mailto:'+v.driver.email+'?subject='+subj+'&body='+body);
-  e.preReminderSent = true;
-  e.preReminderSentAt = new Date().toISOString();
-  saveFleetEvents(events);
+  var subjRaw='תזכורת: '+e.title+' - '+v.plate;
+  var bodyRaw='שלום '+(v.driver.name||'')+',\n\nתזכורת: נקבע '+e.title+' לרכב '+v.plate+' בתאריך '+fd(e.date)+(e.time?' בשעה '+e.time:'')+'.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+  function _markSent(){e.preReminderSent=true;e.preReminderSentAt=new Date().toISOString();saveFleetEvents(events);}
+  if(isEmailJSConfigured()){
+    sendViaEmailJS(v.driver.email,subjRaw,bodyRaw).then(function(){_markSent();showToast('✓ תזכורת נשלחה לנהג');}).catch(function(){
+      window.open('mailto:'+v.driver.email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
+    });
+  } else {
+    window.open('mailto:'+v.driver.email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
+  }
 }
 
 function openCustomReminderModalForDate(iso){
