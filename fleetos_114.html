@@ -13603,8 +13603,8 @@ function _buildDayEventsHtml(dayEvents){
       arr.forEach(function(e){
         if(shown>=3) return;
         var clickAction='event.stopPropagation()';
-        if(e.type==='personal'&&e.selfReminderId) clickAction='event.stopPropagation();openCalEventEditModal({type:"personal",selfReminderId:"'+e.selfReminderId+'"})';
-        else if(e.vehicleId) clickAction='event.stopPropagation();openCalEventEditModal({type:"'+e.type+'",vehicleId:'+e.vehicleId+',currentDate:"'+(e.date||'')+'",title:"'+(e.title||'').replace(/"/g,'&quot;')+'"})';
+        if(e.type==='personal'&&e.selfReminderId) clickAction="event.stopPropagation();openCalEventEditModal({type:'personal',selfReminderId:'"+e.selfReminderId+"'})";
+        else if(e.vehicleId) clickAction="event.stopPropagation();openCalEventEditModal({type:'"+e.type+"',vehicleId:"+e.vehicleId+",currentDate:'"+(e.date||'')+"',title:'"+(e.title||'').replace(/'/g,"\\'")+"'})";
         var label;
         if(e.type==='personal'){
           label=e.title||'תזכורת אישית';
@@ -14583,8 +14583,8 @@ function renderCalendarDay(events){
       var col=typeColors[e.type]||'#6b7280';
       var bg=typeBgs[e.type]||'var(--bg)';
       var clickAction='';
-      if(e.type==='personal'&&e.selfReminderId) clickAction='openCalEventEditModal({type:"personal",selfReminderId:"'+e.selfReminderId+'"})';
-      else if(e.vehicleId) clickAction='openCalEventEditModal({type:"'+e.type+'",vehicleId:'+e.vehicleId+',currentDate:"'+(e.date||'')+'",title:"'+(e.title||'').replace(/"/g,'&quot;')+'"})';
+      if(e.type==='personal'&&e.selfReminderId) clickAction="openCalEventEditModal({type:'personal',selfReminderId:'"+e.selfReminderId+"'})";
+      else if(e.vehicleId) clickAction="openCalEventEditModal({type:'"+e.type+"',vehicleId:"+e.vehicleId+",currentDate:'"+(e.date||'')+"',title:'"+(e.title||'').replace(/'/g,"\\'")+"'})";
       html+='<div onclick="'+clickAction+'" style="background:var(--card);border:1px solid var(--bdr);border-right:4px solid '+col+';border-radius:9px;padding:11px 14px;margin-bottom:8px;cursor:pointer;transition:box-shadow .15s"  onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'none\'">';
       html+='<div style="display:flex;align-items:center;gap:10px">';
       html+='<div style="width:32px;height:32px;border-radius:8px;background:'+bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:14px;color:'+col+';font-weight:700">'+(e.type==='svc-pickup'?'T':e.type==='test-pickup'?'R':'A')+'</span></div>';
@@ -14815,8 +14815,8 @@ function renderSystemAlerts(){
     else if(a.days===1) daysText='מחר';
     else daysText='בעוד '+a.days+' ימים';
 
-    var actionLabel=a.actionType==='renew'?'עריכה':'עריכה';
-    var editClick='openCalEventEditModal({alertType:"'+a.type+'",vehicleId:'+a.vehicleId+',currentDate:"'+a.date+'",title:"'+(a.title||'').replace(/"/g,'&quot;')+'"'+(a.familyIdx!==undefined?',familyIdx:'+a.familyIdx:'')+'})';
+    var actionLabel='עריכה';
+    var editClick="openCalEventEditModal({alertType:'"+a.type+"',vehicleId:"+a.vehicleId+",currentDate:'"+a.date+"',title:'"+(a.title||'').replace(/'/g,"\\'")+"'"+(a.familyIdx!==undefined?",familyIdx:"+a.familyIdx:"")+"})";
 
     html+='<div onclick="'+editClick+'" style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .15s;border-radius:6px;padding-right:6px;padding-left:6px" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">';
     // Icon
