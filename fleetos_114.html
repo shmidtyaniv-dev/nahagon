@@ -13378,9 +13378,10 @@ function setAlertRange(days,btn){
 function getCalendarEvents(){
   var out=[];
   (vehicles||[]).forEach(function(v){
-    // svc-pickup: vehicles needing service (from calcNextSvc)
-    var nxt=calcNextSvc(v);
-    if(nxt&&nxt.date){
+    // svc-pickup: vehicles needing service (from calcNextSvc or override)
+    var svcDate=v.nextSvcOverride||null;
+    if(!svcDate){ var nxt=calcNextSvc(v); if(nxt&&nxt.date) svcDate=nxt.date; }
+    if(svcDate){
       out.push({
         id:'cal-svc-'+v.id,
         type:'svc-pickup',
@@ -13388,7 +13389,7 @@ function getCalendarEvents(){
         label:(v.make||'')+' '+(v.model||''),
         plate:v.plate,
         driverName:v.driver?.name||'',
-        date:nxt.date,
+        date:svcDate,
         vehicleId:v.id
       });
     }
@@ -13594,15 +13595,16 @@ function _buildDayEventsHtml(dayEvents){
     if(!groups[t]||shown>=3) return;
     var arr=groups[t];
     if(arr.length>=3){
-      // Grouped display
-      html+='<div class="fc-ev '+t+' grouped" onclick="event.stopPropagation()" title="'+typeLabels[t]+' - '+arr.length+' פריטים">'+typeLabels[t]+' · '+arr.length+' רכבים</div>';
+      // Grouped display - click jumps to day view
+      var groupDate=arr[0].date||'';
+      html+='<div class="fc-ev '+t+' grouped" onclick="event.stopPropagation();openDayPicker(\''+groupDate+'\')" style="cursor:pointer" title="'+typeLabels[t]+' - '+arr.length+' פריטים (לחץ לצפייה)">'+typeLabels[t]+' · '+arr.length+' רכבים</div>';
       shown++;
     } else {
       arr.forEach(function(e){
         if(shown>=3) return;
         var clickAction='event.stopPropagation()';
-        if(e.type==='personal'&&e.selfReminderId) clickAction='event.stopPropagation();openSelfReminderModal(null,\''+e.selfReminderId+'\')';
-        else if(e.vehicleId) clickAction='event.stopPropagation();openDet('+e.vehicleId+')';
+        if(e.type==='personal'&&e.selfReminderId) clickAction='event.stopPropagation();openCalEventEditModal({type:"personal",selfReminderId:"'+e.selfReminderId+'"})';
+        else if(e.vehicleId) clickAction='event.stopPropagation();openCalEventEditModal({type:"'+e.type+'",vehicleId:'+e.vehicleId+',currentDate:"'+(e.date||'')+'",title:"'+(e.title||'').replace(/"/g,'&quot;')+'"})';
         var label;
         if(e.type==='personal'){
           label=e.title||'תזכורת אישית';
@@ -13830,6 +13832,141 @@ function sendSelfReminderNow(id){
   persistSelfReminders();
   renderSelfReminders();
   showToast('✓ נפתח לקוח מייל');
+}
+
+/* ── UNIVERSAL CALENDAR EVENT EDIT MODAL ── */
+function openCalEventEditModal(info){
+  // info = { type, vehicleId, selfReminderId, alertType, currentDate, title }
+  // For personal reminders → delegate to existing modal
+  if((info.type==='personal'||info.type==='selfReminder') && info.selfReminderId){
+    openSelfReminderModal(null, info.selfReminderId);
+    return;
+  }
+  // For fleet events with enhType → delegate to enhanced event modal
+  if(info.fleetEventId){
+    openEnhancedEventModal(info.fleetEventId);
+    return;
+  }
+  // For vehicle-based events (svc-pickup, test-pickup, alerts)
+  var v = vehicles.find(function(x){return x.id===info.vehicleId;});
+  if(!v){ showToast('רכב לא נמצא'); return; }
+
+  var existing = document.getElementById('cal-event-edit-modal');
+  if(existing) existing.remove();
+
+  // Determine which field to edit based on type
+  var fieldLabel='', fieldKey='', currentVal='', eventTitle='';
+  if(info.type==='test-pickup'||info.alertType==='vehicle-license'){
+    fieldLabel='תאריך פקיעת רישיון רכב';
+    fieldKey='licenseExp';
+    currentVal=v.licenseExp||info.currentDate||'';
+    eventTitle=info.title||'איסוף לטסט';
+  } else if(info.alertType==='driver-license'){
+    fieldLabel='תאריך פקיעת רישיון נהיגה';
+    fieldKey='driverLicenseExp';
+    currentVal=(v.driver&&v.driver.licenseExp)||info.currentDate||'';
+    eventTitle=info.title||'פקיעת רישיון נהיגה';
+  } else if(info.alertType==='insurance'){
+    fieldLabel='תאריך פקיעת ביטוח';
+    fieldKey='insuranceExp';
+    currentVal=v.insuranceExp||info.currentDate||'';
+    eventTitle=info.title||'פקיעת ביטוח';
+  } else if(info.alertType==='family-license'){
+    fieldLabel='תאריך פקיעת רישיון (בן משפחה)';
+    fieldKey='familyLicenseExp';
+    currentVal=info.currentDate||'';
+    eventTitle=info.title||'פקיעת רישיון נהיגה';
+  } else if(info.type==='svc-pickup'){
+    fieldLabel='תאריך טיפול הבא';
+    fieldKey='nextSvcOverride';
+    currentVal=v.nextSvcOverride||info.currentDate||'';
+    eventTitle=info.title||'איסוף לטיפול';
+  } else {
+    fieldLabel='תאריך';
+    fieldKey='licenseExp';
+    currentVal=info.currentDate||'';
+    eventTitle=info.title||'אירוע';
+  }
+
+  var driverName=v.driver&&v.driver.name||'';
+  var plateStr=v.plate||'';
+  var familyIdx=info.familyIdx!==undefined?info.familyIdx:-1;
+
+  var modal = document.createElement('div');
+  modal.id = 'cal-event-edit-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
+
+  var typeColor = info.type==='svc-pickup'?'#C9302C':info.type==='test-pickup'?'#D97706':'#6366f1';
+  var typeIcon = info.type==='svc-pickup'?'🔧':info.type==='test-pickup'?'📋':'⚠️';
+
+  modal.innerHTML = '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:460px;direction:rtl;max-height:90vh;overflow-y:auto">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+    +'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">'+typeIcon+'</span><span style="font-size:16px;font-weight:700;color:'+typeColor+'">עריכת אירוע</span></div>'
+    +'<button onclick="document.getElementById(\'cal-event-edit-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">&times;</button>'
+    +'</div>'
+    // Vehicle info card
+    +'<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:9px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px">'
+    +'<div style="width:36px;height:36px;border-radius:9px;background:'+typeColor+'15;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:16px">🚗</span></div>'
+    +'<div><div style="font-size:13px;font-weight:600;color:var(--t1)">'+plateStr+'</div>'
+    +'<div style="font-size:11px;color:var(--t3)">'+driverName+'</div></div></div>'
+    // Title
+    +'<div style="margin-bottom:12px">'
+    +'<label style="font-size:12px;color:var(--t3);display:block;margin-bottom:5px">כותרת</label>'
+    +'<input id="cev-title" type="text" value="'+eventTitle.replace(/"/g,'&quot;')+'" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">'
+    +'</div>'
+    // Date
+    +'<div style="margin-bottom:12px">'
+    +'<label style="font-size:12px;color:var(--t3);display:block;margin-bottom:5px">'+fieldLabel+'</label>'
+    +'<input id="cev-date" type="date" value="'+currentVal+'" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)">'
+    +'</div>'
+    // Notes
+    +'<div style="margin-bottom:16px">'
+    +'<label style="font-size:12px;color:var(--t3);display:block;margin-bottom:5px">הערות (אופציונלי)</label>'
+    +'<textarea id="cev-notes" rows="2" placeholder="הערות נוספות..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl;resize:vertical">'+(v._calNotes&&v._calNotes[fieldKey]||'')+'</textarea>'
+    +'</div>'
+    // Buttons
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="document.getElementById(\'cal-event-edit-modal\').remove()" style="flex:1;padding:11px;background:var(--bg);color:var(--t2);border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">ביטול</button>'
+    +'<button onclick="document.getElementById(\'cal-event-edit-modal\').remove();openDet('+v.id+')" style="padding:11px 14px;background:#f0f9ff;color:#0369a1;border:1.5px solid #bae6fd;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">פתח כרטיס רכב</button>'
+    +'<button onclick="saveCalEventEdit('+v.id+',\''+fieldKey+'\','+familyIdx+')" style="flex:2;padding:11px;background:'+typeColor+';color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">שמור שינויים</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(modal);
+}
+
+function saveCalEventEdit(vehicleId, fieldKey, familyIdx){
+  var v = vehicles.find(function(x){return x.id===vehicleId;});
+  if(!v){ showToast('רכב לא נמצא'); return; }
+  var newDate = document.getElementById('cev-date').value;
+  var newNotes = document.getElementById('cev-notes').value.trim();
+  if(!newDate){ showToast('נא לבחור תאריך'); return; }
+
+  // Save the date to the correct field
+  if(fieldKey==='licenseExp'){
+    v.licenseExp = newDate;
+  } else if(fieldKey==='driverLicenseExp'){
+    if(!v.driver) v.driver={};
+    v.driver.licenseExp = newDate;
+  } else if(fieldKey==='insuranceExp'){
+    v.insuranceExp = newDate;
+  } else if(fieldKey==='familyLicenseExp' && familyIdx>=0 && v.family && v.family[familyIdx]){
+    v.family[familyIdx].licenseExp = newDate;
+  } else if(fieldKey==='nextSvcOverride'){
+    v.nextSvcOverride = newDate;
+  }
+
+  // Save notes
+  if(!v._calNotes) v._calNotes = {};
+  v._calNotes[fieldKey] = newNotes;
+
+  // Persist
+  persistVehicle(v);
+  try{ localStorage.setItem('vehicles', JSON.stringify(vehicles)); }catch(e){}
+
+  document.getElementById('cal-event-edit-modal').remove();
+  renderCalendar();
+  showToast('✓ האירוע עודכן');
 }
 
 /* ── ENHANCED EVENT MODAL ── */
@@ -14446,9 +14583,9 @@ function renderCalendarDay(events){
       var col=typeColors[e.type]||'#6b7280';
       var bg=typeBgs[e.type]||'var(--bg)';
       var clickAction='';
-      if(e.type==='personal'&&e.selfReminderId) clickAction='openSelfReminderModal(null,\''+e.selfReminderId+'\')';
-      else if(e.vehicleId) clickAction='openDet('+e.vehicleId+')';
-      html+='<div onclick="'+clickAction+'" style="background:var(--card);border:1px solid var(--bdr);border-right:4px solid '+col+';border-radius:9px;padding:11px 14px;margin-bottom:8px;cursor:pointer">';
+      if(e.type==='personal'&&e.selfReminderId) clickAction='openCalEventEditModal({type:"personal",selfReminderId:"'+e.selfReminderId+'"})';
+      else if(e.vehicleId) clickAction='openCalEventEditModal({type:"'+e.type+'",vehicleId:'+e.vehicleId+',currentDate:"'+(e.date||'')+'",title:"'+(e.title||'').replace(/"/g,'&quot;')+'"})';
+      html+='<div onclick="'+clickAction+'" style="background:var(--card);border:1px solid var(--bdr);border-right:4px solid '+col+';border-radius:9px;padding:11px 14px;margin-bottom:8px;cursor:pointer;transition:box-shadow .15s"  onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'none\'">';
       html+='<div style="display:flex;align-items:center;gap:10px">';
       html+='<div style="width:32px;height:32px;border-radius:8px;background:'+bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:14px;color:'+col+';font-weight:700">'+(e.type==='svc-pickup'?'T':e.type==='test-pickup'?'R':'A')+'</span></div>';
       html+='<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--t1)">'+e.title+'</div>';
@@ -14457,6 +14594,7 @@ function renderCalendarDay(events){
       if(e.label&&e.type==='personal') html+='<div style="font-size:11px;color:var(--t3);margin-top:2px">'+e.label+'</div>';
       html+='</div>';
       html+='<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:'+bg+';color:'+col+';font-weight:600">'+typeLabels[e.type]+'</span>';
+      html+='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2" style="flex-shrink:0;opacity:.5"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
       html+='</div></div>';
     });
   }
@@ -14631,6 +14769,7 @@ function renderSystemAlerts(){
             date:f.licenseExp,
             days:days,
             vehicleId:v.id,
+            familyIdx:fidx,
             familyRel:f.rel||'בן משפחה',
             primaryDriver:driverName,
             actionType:'remind'
@@ -14676,10 +14815,10 @@ function renderSystemAlerts(){
     else if(a.days===1) daysText='מחר';
     else daysText='בעוד '+a.days+' ימים';
 
-    var actionLabel=a.actionType==='renew'?'חידוש':'שלח תזכורת';
-    var actionClick='openDet('+a.vehicleId+')';
+    var actionLabel=a.actionType==='renew'?'עריכה':'עריכה';
+    var editClick='openCalEventEditModal({alertType:"'+a.type+'",vehicleId:'+a.vehicleId+',currentDate:"'+a.date+'",title:"'+(a.title||'').replace(/"/g,'&quot;')+'"'+(a.familyIdx!==undefined?',familyIdx:'+a.familyIdx:'')+'})';
 
-    html+='<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--bdr)">';
+    html+='<div onclick="'+editClick+'" style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .15s;border-radius:6px;padding-right:6px;padding-left:6px" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">';
     // Icon
     html+='<div style="width:32px;height:32px;border-radius:8px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#A32D2D">'+iconSvg+'</div>';
     // Content
@@ -14692,10 +14831,10 @@ function renderSystemAlerts(){
     html+='<div style="font-size:11px;color:var(--t3);margin-top:2px">'+fd(a.date)+'</div>';
     if(a.type==='family-license') html+='<div style="margin-top:3px"><span style="font-size:9px;background:#fce7f3;color:#9f1239;padding:1px 6px;border-radius:999px;font-weight:600">בן משפחה'+(a.primaryDriver?' של '+a.primaryDriver:'')+'</span></div>';
     html+='</div>';
-    // Right side: days + action
+    // Right side: days + edit
     html+='<div style="text-align:left;flex-shrink:0">';
     html+='<div style="font-size:11px;font-weight:600;color:#DC2626;margin-bottom:6px;white-space:nowrap">'+daysText+'</div>';
-    html+='<button onclick="'+actionClick+'" style="font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--bdr);background:var(--bg);color:var(--t1);cursor:pointer;font-family:inherit;font-weight:500;white-space:nowrap">'+actionLabel+'</button>';
+    html+='<button onclick="event.stopPropagation();'+editClick+'" style="font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--bdr);background:var(--bg);color:var(--t1);cursor:pointer;font-family:inherit;font-weight:500;white-space:nowrap">✏️ '+actionLabel+'</button>';
     html+='</div>';
     html+='</div>';
   });
