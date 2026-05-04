@@ -1630,6 +1630,61 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 @media (max-width: 768px) {
   .trt-notif-panel { width: 320px; left: auto; right: -60px; }
 }
+
+/* === הגדרות לוח טיפולים v2 === */
+.sched-group-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--blue-dark);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 0.5px solid var(--bdr);
+}
+.sched-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.sched-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg2);
+  border-radius: var(--rs);
+  margin-bottom: 6px;
+}
+.sched-field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--t1);
+  flex: 1;
+}
+.sched-field input {
+  width: 70px;
+  padding: 5px 8px;
+  background: var(--card);
+  border: 0.5px solid var(--bdr2);
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  text-align: center;
+  color: var(--t1);
+}
+.sched-field input:focus {
+  outline: none;
+  border-color: var(--green);
+}
+.sched-field-unit {
+  font-size: 12px;
+  color: var(--t2);
+  min-width: 40px;
+}
+@media (max-width: 768px) {
+  .sched-grid-2col { grid-template-columns: 1fr; }
+}
 </style>
 <script>
 (function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')||p.get('book')||p.get('km')){document.documentElement.style.visibility='hidden';}})();
@@ -2849,58 +2904,70 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </div>
         </div>
         <div class="settings-section-body">
-          <div class="settings-schedule-input">
-            <span class="settings-schedule-input-label">התראה לפני טיפול</span>
-            <input type="number" id="sched-reminder-days" min="1" max="90" value="20">
-            <span class="settings-form-field-hint">ימים</span>
+
+          <!-- קבוצה 1: סריקה והתראות -->
+          <div class="sched-group-title">סריקה והתראות</div>
+          <div class="sched-grid-2col">
+            <div class="sched-field">
+              <span class="sched-field-label">התראה לפני טיפול</span>
+              <input type="number" id="sched-reminder-days" min="1" max="90" value="20">
+              <span class="sched-field-unit">ימים</span>
+            </div>
+            <div class="sched-field">
+              <span class="sched-field-label">התראה לפני טסט</span>
+              <input type="number" id="sched-test-reminder-days" min="1" max="90" value="30">
+              <span class="sched-field-unit">ימים</span>
+            </div>
           </div>
-          <div class="settings-schedule-input">
-            <span class="settings-schedule-input-label">התראה לפני טסט</span>
-            <input type="number" id="sched-test-reminder-days" min="1" max="90" value="30">
-            <span class="settings-form-field-hint">ימים</span>
-          </div>
-          <div class="settings-schedule-input">
-            <span class="settings-schedule-input-label">כמות טיפולים מקסימלית ליום</span>
-            <input type="number" id="sched-daily-capacity" min="1" max="20" value="2">
-            <span class="settings-form-field-hint">רכבים</span>
-          </div>
-          <div class="settings-schedule-input">
-            <span class="settings-schedule-input-label">טווח סריקה קדימה</span>
+          <div class="sched-field" style="margin-bottom:16px">
+            <span class="sched-field-label">טווח סריקה קדימה</span>
             <input type="number" id="sched-scan-range" min="1" max="180" value="30">
-            <span class="settings-form-field-hint">ימים</span>
-          </div>
-          <div class="settings-schedule-input">
-            <span class="settings-schedule-input-label">שעת איסוף הרכב</span>
-            <input type="number" id="sched-appointment-hour" min="6" max="20" value="9">
-            <span class="settings-form-field-hint">:00</span>
-          </div>
-          <div class="settings-schedule-input">
-            <span class="settings-schedule-input-label">תזכורת לנהג שלא ענה (כל)</span>
-            <input type="number" id="sched-driver-reminder" min="1" max="30" value="5">
-            <span class="settings-form-field-hint">ימים</span>
-          </div>
-          <div class="settings-schedule-input">
-            <span class="settings-schedule-input-label">SLA אישור (כמה ימים מבטיחים לנהג)</span>
-            <input type="number" id="sched-approval-sla" min="1" max="14" value="3">
-            <span class="settings-form-field-hint">ימי עבודה</span>
-          </div>
-          <div class="settings-schedule-input">
-            <span class="settings-schedule-input-label">תזכורת אם לא עדכנת בכרטיס רכב (אחרי)</span>
-            <input type="number" id="sched-post-reminder" min="1" max="30" value="5">
-            <span class="settings-form-field-hint">ימים מהטיפול</span>
+            <span class="sched-field-unit">ימים</span>
           </div>
 
-          <div style="margin-top:16px">
-            <label style="font-size:12px;font-weight:500;color:var(--t2);margin-bottom:8px;display:block">ימים פתוחים לשיבוץ</label>
-            <div class="settings-weekdays" id="sched-days-checkboxes">
-              <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="0" checked style="display:none">א'</div>
-              <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="1" checked style="display:none">ב'</div>
-              <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="2" checked style="display:none">ג'</div>
-              <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="3" checked style="display:none">ד'</div>
-              <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="4" checked style="display:none">ה'</div>
-              <div class="settings-weekday" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="5" style="display:none">ו'</div>
-              <div class="settings-weekday" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="6" style="display:none">ש'</div>
+          <!-- קבוצה 2: תפעול שוטף -->
+          <div class="sched-group-title">תפעול שוטף</div>
+          <div class="sched-grid-2col" style="margin-bottom:16px">
+            <div class="sched-field">
+              <span class="sched-field-label">כמות מקסימלית ליום</span>
+              <input type="number" id="sched-daily-capacity" min="1" max="20" value="2">
+              <span class="sched-field-unit">רכבים</span>
             </div>
+            <div class="sched-field">
+              <span class="sched-field-label">שעת איסוף הרכב</span>
+              <input type="number" id="sched-appointment-hour" min="6" max="20" value="9">
+              <span class="sched-field-unit">:00</span>
+            </div>
+          </div>
+
+          <!-- קבוצה 3: תזכורות אוטומטיות -->
+          <div class="sched-group-title">תזכורות אוטומטיות</div>
+          <div class="sched-field">
+            <span class="sched-field-label">תזכורת לנהג שלא ענה</span>
+            <input type="number" id="sched-driver-reminder" min="1" max="30" value="5">
+            <span class="sched-field-unit">ימים</span>
+          </div>
+          <div class="sched-field">
+            <span class="sched-field-label">SLA אישור</span>
+            <input type="number" id="sched-approval-sla" min="1" max="14" value="3">
+            <span class="sched-field-unit">ימי עבודה</span>
+          </div>
+          <div class="sched-field" style="margin-bottom:16px">
+            <span class="sched-field-label">תזכורת אם לא עדכנת בכרטיס רכב</span>
+            <input type="number" id="sched-post-reminder" min="1" max="30" value="5">
+            <span class="sched-field-unit">ימים</span>
+          </div>
+
+          <!-- קבוצה 4: ימים פתוחים -->
+          <div class="sched-group-title">ימים פתוחים לשיבוץ</div>
+          <div class="settings-weekdays" id="sched-days-checkboxes">
+            <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="0" checked style="display:none">א'</div>
+            <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="1" checked style="display:none">ב'</div>
+            <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="2" checked style="display:none">ג'</div>
+            <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="3" checked style="display:none">ד'</div>
+            <div class="settings-weekday selected" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="4" checked style="display:none">ה'</div>
+            <div class="settings-weekday" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="5" style="display:none">ו'</div>
+            <div class="settings-weekday" onclick="this.classList.toggle('selected');this.querySelector('input').checked=this.classList.contains('selected')"><input type="checkbox" class="sched-day-cb" value="6" style="display:none">ש'</div>
           </div>
 
           <div class="settings-btn-row">
