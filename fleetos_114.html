@@ -1505,6 +1505,130 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   .trt-channel-options,
   .trt-channel-grid { grid-template-columns: 1fr; }
 }
+
+/* === פעמון התראות === */
+.trt-bell-wrap { position: relative; flex-shrink: 0; }
+.trt-bell-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 0.5px solid var(--bdr2);
+  background: var(--card);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--t2);
+  transition: background 0.15s;
+  position: relative;
+}
+.trt-bell-btn:hover { background: var(--bg2); }
+.trt-bell-badge {
+  position: absolute;
+  top: -4px; left: -4px;
+  min-width: 16px; height: 16px;
+  background: var(--red);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 999px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  border: 1.5px solid var(--card);
+}
+.trt-notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 370px;
+  max-height: 440px;
+  background: var(--card);
+  border: 0.5px solid var(--bdr2);
+  border-radius: var(--r);
+  box-shadow: 0 10px 40px rgba(0,0,0,.18);
+  z-index: 500;
+  direction: rtl;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.trt-notif-header {
+  padding: 12px 16px;
+  border-bottom: 0.5px solid var(--bdr);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.trt-notif-header-title { font-size: 13px; font-weight: 600; color: var(--t1); }
+.trt-notif-mark-read {
+  font-size: 11px;
+  color: var(--blue-dark);
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+.trt-notif-mark-read:hover { text-decoration: underline; }
+.trt-notif-list {
+  overflow-y: auto;
+  flex: 1;
+  max-height: 380px;
+}
+.trt-notif-item {
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--bdr);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.trt-notif-item:hover { background: var(--bg); }
+.trt-notif-item.unread { background: #FAFAF7; }
+.trt-notif-item.unread:hover { background: var(--bg2); }
+.trt-notif-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.trt-notif-dot-amber { background: var(--amber); }
+.trt-notif-dot-red { background: var(--red); }
+.trt-notif-dot-gray { background: #B4B2A9; }
+.trt-notif-content { flex: 1; min-width: 0; }
+.trt-notif-title { font-size: 12px; font-weight: 500; color: var(--t1); margin-bottom: 2px; }
+.trt-notif-detail { font-size: 11px; color: var(--t2); }
+.trt-notif-time { font-size: 10px; color: var(--t2); margin-top: 3px; }
+.trt-notif-action {
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 0.5px solid var(--bdr2);
+  background: var(--card);
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  align-self: center;
+  transition: background 0.1s;
+}
+.trt-notif-action:hover { background: var(--bg2); }
+.trt-notif-action.primary {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green-dark);
+}
+.trt-notif-action.primary:hover { background: var(--green-dark); }
+.trt-notif-empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--t2);
+}
+@media (max-width: 768px) {
+  .trt-notif-panel { width: 320px; left: auto; right: -60px; }
+}
 </style>
 <script>
 (function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')||p.get('book')||p.get('km')){document.documentElement.style.visibility='hidden';}})();
@@ -1622,6 +1746,20 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <!-- System name -->
     <span id="topbar-system-name" style="font-size:14px;font-weight:500;color:var(--t1);white-space:nowrap;flex-shrink:0">מרכז הרכב של מור השקעות</span>
     <span style="flex:1"></span>
+    <!-- Bell notifications -->
+    <div class="trt-bell-wrap" id="trt-bell-wrap">
+      <button class="trt-bell-btn" id="trt-bell-btn" onclick="toggleNotificationsPanel()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="trt-bell-badge" id="trt-bell-badge">0</span>
+      </button>
+      <div class="trt-notif-panel" id="trt-notifications-panel" style="display:none">
+        <div class="trt-notif-header">
+          <span class="trt-notif-header-title">התראות</span>
+          <button class="trt-notif-mark-read" onclick="markAllNotificationsRead()">סמן הכל כנקרא</button>
+        </div>
+        <div class="trt-notif-list" id="trt-notif-list"></div>
+      </div>
+    </div>
     <!-- Add button -->
     <button onclick="openAdd()" style="height:34px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;background:#1D9E75;color:#fff;border:none;white-space:nowrap;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוסף רכב</button>
     <div class="pt" id="page-title" style="display:none">דשבורד</div>
@@ -17882,6 +18020,7 @@ function renderTreatments() {
   updateTrtProgressBar(stats);
   updateFilterCounts();
   renderPendingApprovalList(filtered);
+  if (typeof updateBellBadge === 'function') updateBellBadge();
 }
 
 function filterTreatments(treatments) {
@@ -18531,7 +18670,185 @@ async function confirmTreatmentDone() {
 
 
 // ============================================================
-// 22. אתחול בעת טעינה
+// 22. מערכת התראות (פעמון)
+// ============================================================
+var _readNotifications = JSON.parse(localStorage.getItem('trt_read_notifications') || '[]');
+
+function getRelativeTime(date) {
+  if (!date) return '';
+  var now = new Date();
+  var d = new Date(date);
+  var diffMs = now - d;
+  var diffMin = Math.floor(diffMs / 60000);
+  var diffHr = Math.floor(diffMs / 3600000);
+  var diffDays = Math.floor(diffMs / 86400000);
+  if (diffMin < 1) return 'הרגע';
+  if (diffMin < 60) return 'לפני ' + diffMin + ' דקות';
+  if (diffHr === 1) return 'לפני שעה';
+  if (diffHr < 24) return 'לפני ' + diffHr + ' שעות';
+  if (diffDays === 1) return 'אתמול';
+  if (diffDays < 30) return 'לפני ' + diffDays + ' ימים';
+  return formatTreatmentDateShort(date);
+}
+
+function isNotificationRead(id) {
+  return _readNotifications.indexOf(id) >= 0;
+}
+
+function markNotificationRead(id) {
+  if (_readNotifications.indexOf(id) < 0) {
+    _readNotifications.push(id);
+    localStorage.setItem('trt_read_notifications', JSON.stringify(_readNotifications));
+  }
+  updateBellBadge();
+  renderNotificationsPanel();
+}
+
+function markAllNotificationsRead() {
+  var all = getTreatmentNotifications();
+  all.forEach(function(n) {
+    if (_readNotifications.indexOf(n.id) < 0) _readNotifications.push(n.id);
+  });
+  localStorage.setItem('trt_read_notifications', JSON.stringify(_readNotifications));
+  updateBellBadge();
+  renderNotificationsPanel();
+}
+
+function getTreatmentNotifications() {
+  var notifications = [];
+  if (!TREATMENT_STATE || !TREATMENT_STATE.treatments) return notifications;
+
+  TREATMENT_STATE.treatments.forEach(function(t) {
+    if (t.status === 'closed') return;
+
+    // סוג א: נהג בחר תאריך - ממתין לאישור
+    if (t.status === 'pending_approval') {
+      notifications.push({
+        id: 'pending_' + t.id,
+        type: 'pending_approval',
+        dotClass: 'trt-notif-dot-amber',
+        title: t.driverName + ' בחר תאריך',
+        detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + t.licensePlate + ' · ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate),
+        actionText: 'אשר',
+        actionClass: 'primary',
+        actionFn: "openApproveModal('" + t.id + "')",
+        time: t.selectedDateAt,
+        treatmentId: t.id
+      });
+    }
+
+    // סוג ב: נהג לא ענה X+ ימים
+    if (t.status === 'awaiting_choice' && t.lastEmailSentAt) {
+      var daysSinceEmail = daysSince(t.lastEmailSentAt);
+      if (daysSinceEmail >= (TREATMENT_STATE.settings.reminderIntervalDays || 5)) {
+        notifications.push({
+          id: 'noresponse_' + t.id,
+          type: 'no_response',
+          dotClass: 'trt-notif-dot-red',
+          title: t.driverName + ' לא ענה ' + daysSinceEmail + ' ימים',
+          detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + t.licensePlate,
+          actionText: 'תזכורת',
+          actionClass: '',
+          actionFn: "openReminderModal('" + t.id + "')",
+          time: t.lastEmailSentAt,
+          treatmentId: t.id
+        });
+      }
+    }
+
+    // סוג ג: טיפול שנקבע ועבר X ימים ולא סגרו
+    if (t.status === 'scheduled' && t.selectedDate) {
+      var daysSinceScheduled = daysSince(t.selectedDate);
+      if (daysSinceScheduled >= (TREATMENT_STATE.settings.postTreatmentReminderDays || 5)) {
+        notifications.push({
+          id: 'forgot_' + t.id,
+          type: 'forgot_to_close',
+          dotClass: 'trt-notif-dot-gray',
+          title: 'לא עדכנת שטופל: ' + t.driverName,
+          detail: 'הטיפול היה ב-' + formatTreatmentDateShort(t.selectedDate) + ' · ' + t.licensePlate,
+          actionText: 'בוצע ✓',
+          actionClass: 'primary',
+          actionFn: "openMarkDoneModal('" + t.id + "')",
+          time: t.selectedDate,
+          treatmentId: t.id
+        });
+      }
+    }
+  });
+
+  // מיון: pending_approval ראשון, no_response, forgot. בתוך כל קטגוריה - חדש קודם
+  notifications.sort(function(a, b) {
+    var priority = { pending_approval: 0, no_response: 1, forgot_to_close: 2 };
+    var pa = priority[a.type] || 9;
+    var pb = priority[b.type] || 9;
+    if (pa !== pb) return pa - pb;
+    return new Date(b.time || 0) - new Date(a.time || 0);
+  });
+
+  return notifications;
+}
+
+function updateBellBadge() {
+  var notifications = getTreatmentNotifications();
+  var unread = notifications.filter(function(n) { return !isNotificationRead(n.id); }).length;
+  var badge = document.getElementById('trt-bell-badge');
+  if (badge) {
+    if (unread > 99) {
+      badge.textContent = '99+';
+    } else {
+      badge.textContent = unread;
+    }
+    badge.style.display = unread > 0 ? 'flex' : 'none';
+  }
+}
+
+function toggleNotificationsPanel() {
+  var panel = document.getElementById('trt-notifications-panel');
+  if (!panel) return;
+  if (panel.style.display === 'none') {
+    renderNotificationsPanel();
+    panel.style.display = 'flex';
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function renderNotificationsPanel() {
+  var list = document.getElementById('trt-notif-list');
+  if (!list) return;
+  var notifications = getTreatmentNotifications();
+
+  if (notifications.length === 0) {
+    list.innerHTML = '<div class="trt-notif-empty">אין התראות חדשות</div>';
+    return;
+  }
+
+  list.innerHTML = notifications.map(function(n) {
+    var read = isNotificationRead(n.id);
+    return '<div class="trt-notif-item ' + (read ? '' : 'unread') + '" onclick="markNotificationRead(\'' + n.id + '\')">'
+      + '<div class="trt-notif-dot ' + n.dotClass + '"></div>'
+      + '<div class="trt-notif-content">'
+      + '<div class="trt-notif-title">' + n.title + '</div>'
+      + '<div class="trt-notif-detail">' + n.detail + '</div>'
+      + '<div class="trt-notif-time">' + getRelativeTime(n.time) + '</div>'
+      + '</div>'
+      + '<button class="trt-notif-action ' + n.actionClass + '" onclick="event.stopPropagation();markNotificationRead(\'' + n.id + '\');' + n.actionFn + '">' + n.actionText + '</button>'
+      + '</div>';
+  }).join('');
+}
+
+// סגירה בלחיצה מחוץ לחלונית
+document.addEventListener('click', function(e) {
+  var panel = document.getElementById('trt-notifications-panel');
+  var wrap = document.getElementById('trt-bell-wrap');
+  if (panel && panel.style.display !== 'none' && wrap && !wrap.contains(e.target)) {
+    panel.style.display = 'none';
+  }
+});
+
+
+// ============================================================
+// 23. אתחול בעת טעינה
 // ============================================================
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function() {
