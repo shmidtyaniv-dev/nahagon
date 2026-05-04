@@ -432,6 +432,9 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   /* "הוסף רכב" - רק אייקון + */
   .topbar > button[onclick*="openAdd"] { font-size:0!important;gap:0!important;padding:0!important;width:36px!important;height:36px!important;justify-content:center }
   .topbar > button[onclick*="openAdd"] svg { width:16px!important;height:16px!important }
+  /* כל grid 2 עמודות עם inline style - הופך לעמודה אחת במובייל */
+  div[style*="grid-template-columns:1fr 1fr"],
+  div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns:1fr!important }
   /* שורת חיפוש מובייל */
   .mobile-search-bar{display:flex!important;align-items:center;gap:8px;padding:8px 14px;background:var(--card);border-bottom:0.5px solid var(--bdr);position:sticky;top:54px;z-index:99}
   .mobile-search-bar input{flex:1;border:none;background:transparent;font-size:16px;font-family:inherit;color:var(--t1);outline:none}
