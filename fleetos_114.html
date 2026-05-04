@@ -416,6 +416,22 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .main{margin-right:0!important}
   .content{padding:8px 10px}
   .topbar{padding:0 10px;gap:6px}
+  /* === Topbar מובייל - הסתרת אלמנטים שלא נחוצים === */
+  /* הסתר את שורת החיפוש (div עם width:350px inline) */
+  .topbar > div[style*="width:350px"] { display:none!important }
+  /* הסתר את שם המערכת */
+  #topbar-system-name { display:none!important }
+  /* הסתר את ה-spacers (span flex:1) */
+  .topbar > span[style*="flex:1"] { display:none!important }
+  /* הסתר את התאריך והקו המפריד בתוך בלוק הברכה */
+  #topbar-date { display:none!important }
+  .topbar > div[style*="gap:10px"] > div[style*="width:1px"] { display:none!important }
+  /* ברכה - מצומצמת, מאפשרת גלישה */
+  #topbar-greet-text { font-size:13px!important;white-space:normal!important }
+  .topbar > div[style*="gap:10px"] { flex-shrink:1!important;min-width:0!important;overflow:hidden!important }
+  /* "הוסף רכב" - רק אייקון + */
+  .topbar > button[onclick*="openAdd"] { font-size:0!important;gap:0!important;padding:0!important;width:36px!important;height:36px!important;justify-content:center }
+  .topbar > button[onclick*="openAdd"] svg { width:16px!important;height:16px!important }
   .metrics{grid-template-columns:1fr 1fr;gap:6px}
   .cal-grid{grid-template-columns:1fr!important}
   .cal-item{padding:6px 10px;gap:6px}
@@ -1892,7 +1908,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
     </div>
     <!-- Add button -->
-    <button onclick="openAdd()" style="height:34px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;background:#1D9E75;color:#fff;border:none;white-space:nowrap;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוסף רכב</button>
+    <button title="הוסף רכב" onclick="openAdd()" style="height:34px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;background:#1D9E75;color:#fff;border:none;white-space:nowrap;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוסף רכב</button>
     <div class="pt" id="page-title" style="display:none">דשבורד</div>
   </div>
 
