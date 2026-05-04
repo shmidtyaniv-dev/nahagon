@@ -1499,12 +1499,85 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .trt-btn-primary.trt-btn-green { background: var(--green); border-color: var(--green-dark); }
 .trt-btn-primary.trt-btn-green:hover { background: var(--green-dark); }
 
-/* === Responsive === */
+/* === Responsive — טאבלט + טלפון === */
 @media (max-width: 768px) {
-  .status-cards-grid { grid-template-columns: 1fr; }
-  .treatments-header { flex-direction: column; gap: 12px; }
+  /* כרטיסי סטטוס */
+  .status-cards-grid { grid-template-columns: 1fr; gap: 8px; }
+  .treatments-section { padding: 12px; }
+  .treatments-header { flex-direction: column; gap: 10px; }
+  .status-card { padding: 10px; }
+
+  /* מודאלים — bottom sheet */
+  .trt-modal-overlay { align-items: flex-end; padding: 0; }
+  .trt-modal-container {
+    margin: 0;
+    border-radius: 14px 14px 0 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  .trt-modal-list { max-height: 50vh; }
+  .trt-modal-actions { flex-direction: column; }
+  .trt-modal-actions button { width: 100%; }
+  .trt-btn-primary, .trt-btn-secondary { padding: 12px; font-size: 14px; }
+
+  /* שורות נהגים — layout אנכי */
+  .trt-driver-row { flex-wrap: wrap; }
+  .trt-driver-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 6px;
+    border-top: 0.5px solid var(--bdr);
+    margin-top: 6px;
+  }
+  .trt-btn-action { padding: 8px 14px; font-size: 12px; min-height: 44px; }
+
+  /* ערוצי שליחה */
   .trt-channel-options,
   .trt-channel-grid { grid-template-columns: 1fr; }
+
+  /* טפסים — מניעת zoom באייפון */
+  .trt-form-field input,
+  .trt-form-field select { font-size: 16px; padding: 10px 12px; }
+  .trt-personal-note-input { font-size: 16px; }
+  .trt-approve-summary { font-size: 13px; }
+
+  /* פעמון — חלונית fullwidth */
+  .trt-bell-wrap { position: static; }
+  .trt-notif-panel {
+    position: fixed;
+    top: 54px;
+    left: 0; right: 0;
+    width: 100%;
+    max-height: calc(100vh - 54px);
+    border-radius: 0;
+  }
+  .trt-notif-item { padding: 12px 14px; min-height: 44px; }
+}
+
+/* === Responsive — טלפון מודרני (iPhone 17 Pro 402px) === */
+@media (max-width: 430px) {
+  .status-card-number { font-size: 26px; }
+  .status-card-label { font-size: 12px; }
+  .treatments-section { padding: 10px; }
+
+  .trt-modal-header { padding: 12px 14px; }
+  .trt-modal-body { padding: 14px; }
+  .trt-modal-filters { padding: 10px 14px; }
+
+  .trt-driver-avatar { width: 28px; height: 28px; font-size: 10px; }
+  .trt-driver-name { font-size: 13px; }
+  .trt-driver-meta { font-size: 10px; }
+  .trt-driver-tag { font-size: 9px; }
+
+  .trt-notif-panel { top: 54px; }
+  .trt-notif-title { font-size: 11px; }
+  .trt-notif-detail { font-size: 10px; }
+
+  .sched-field-label { font-size: 12px; }
+  .sched-field input { font-size: 16px; width: 60px; }
+  .sched-field-unit { font-size: 11px; }
 }
 
 /* === פעמון התראות === */
