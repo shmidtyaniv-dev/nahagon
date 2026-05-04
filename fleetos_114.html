@@ -1577,12 +1577,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   /* פעמון — חלונית fullwidth */
   .trt-bell-wrap { position: static; }
   .trt-notif-panel {
-    position: fixed;
-    top: 54px;
-    left: 0; right: 0;
-    width: 100%;
-    max-height: calc(100vh - 54px);
-    border-radius: 0;
+    position: fixed !important;
+    top: 54px !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-height: calc(100vh - 54px) !important;
+    border-radius: 0 !important;
   }
   .trt-notif-item { padding: 12px 14px; min-height: 44px; }
 }
