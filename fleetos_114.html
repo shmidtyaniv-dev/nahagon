@@ -417,7 +417,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .content{padding:8px 10px}
   .topbar{padding:0 10px;gap:6px}
   /* === Topbar מובייל - הסתרת אלמנטים שלא נחוצים === */
-  /* הסתר את שורת החיפוש (div עם width:350px inline) */
+  /* הסתר את שורת החיפוש הדסקטופית (global-search-results הוזז ל-body ב-JS) */
   .topbar > div[style*="width:350px"] { display:none!important }
   /* הסתר את שם המערכת */
   #topbar-system-name { display:none!important }
@@ -19024,6 +19024,15 @@ document.addEventListener('click', function(e) {
 // ============================================================
 // 23. אתחול בעת טעינה
 // ============================================================
+
+// הזז את global-search-results ל-body כדי שלא יוסתר כשה-parent מוסתר במובייל
+(function(){
+  var resultsEl = document.getElementById('global-search-results');
+  if (resultsEl && resultsEl.parentNode !== document.body) {
+    document.body.appendChild(resultsEl);
+  }
+})();
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function() {
     if (typeof db !== 'undefined' && db) initTreatmentsSystem();
