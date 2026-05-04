@@ -12483,7 +12483,7 @@ function toggleSidebar(){
 document.addEventListener('click',e=>{
   const sb=document.querySelector('.sb');
   if(window.innerWidth<=768&&sb&&sb.classList.contains('open')){
-    if(!sb.contains(e.target)&&!e.target.classList.contains('mobile-menu-btn')){
+    if(!sb.contains(e.target)&&!e.target.closest('.mobile-menu-btn')){
       sb.classList.remove('open');
     }
   }
