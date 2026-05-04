@@ -2740,8 +2740,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                 tx.oncomplete=function(){if(cb)cb();};
               });
             }
-            // Make load available globally for initLogoSidebar
+            // Make load/save available globally for initLogoSidebar + Firestore sync
             window._loadLogoFromDB=_loadLogo;
+            window._saveLogoToDB=_saveLogo;
 
             function _compressAndSave(file, dbKey, previewId, prevImgId){
               var reader=new FileReader();
@@ -2761,6 +2762,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                     var pi=document.getElementById(prevImgId);
                     if(pi)pi.src=small;
                     if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
+                    // שמור גם ל-Firestore (עד 700KB)
+                    if(small.length<=700000 && typeof db!=='undefined' && db){
+                      var logoData={};logoData[dbKey]=small;
+                      db.collection('settings').doc('logos').set(logoData,{merge:true}).catch(function(e){console.error('שגיאה בשמירת לוגו ל-Firestore:',e);});
+                    }
                     if(typeof showToast==='function')showToast('✓ לוגו עודכן');
                   });
                 };
@@ -2793,7 +2799,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             window._resetLogos=function(){
               _deleteLogo('logo_client');_deleteLogo('logo_company');
               try{localStorage.removeItem('logo_client');localStorage.removeItem('logo_company');}catch(e){}
+              try{localStorage.removeItem('logo_logo_client_synced_at');localStorage.removeItem('logo_logo_company_synced_at');}catch(e){}
               try{var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');delete s.moreB64;delete s.colB64;localStorage.setItem('fleetSettings',JSON.stringify(s));}catch(e){}
+              // מחק גם מ-Firestore
+              if(typeof db!=='undefined'&&db){db.collection('settings').doc('logos').delete().catch(function(e){console.error('שגיאה במחיקת לוגואים מ-Firestore:',e);});}
               document.getElementById('client-logo-preview-area').innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
               document.getElementById('company-logo-preview-area').innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
               _refreshSidebar();
@@ -5111,17 +5120,37 @@ function initLogoSidebar(){
   var colImg   = document.getElementById('sb-col-img');
   var colText  = document.getElementById('sb-logo-left-text');
 
-  // Try IndexedDB first (async), fallback to localStorage
+  // Try IndexedDB first (async), fallback to Firestore, then localStorage
+  function _tryFirestoreLogo(key, imgEl, textEl){
+    var local=localStorage.getItem(key);
+    if(local && local.length>50){ _applyLogo(local, imgEl, textEl); return; }
+    var lastSync=localStorage.getItem('logo_'+key+'_synced_at');
+    var oneDay=24*60*60*1000;
+    if(lastSync && (Date.now()-parseInt(lastSync))<oneDay) return;
+    if(typeof db!=='undefined' && db){
+      db.collection('settings').doc('logos').get().then(function(doc){
+        try{localStorage.setItem('logo_'+key+'_synced_at',String(Date.now()));}catch(e){}
+        if(doc.exists && doc.data()[key] && doc.data()[key].length>50){
+          _applyLogo(doc.data()[key], imgEl, textEl);
+          if(typeof window._saveLogoToDB==='function'){try{window._saveLogoToDB(key,doc.data()[key]);}catch(e){}}
+          try{localStorage.setItem(key,doc.data()[key]);}catch(e){}
+        }
+      }).catch(function(){});
+    }
+  }
+
   if(typeof window._loadLogoFromDB==='function'){
     window._loadLogoFromDB('logo_client',function(data){
-      _applyLogo(data || localStorage.getItem('logo_client') || '', moreImg, moreText);
+      if(data){ _applyLogo(data, moreImg, moreText); }
+      else { _tryFirestoreLogo('logo_client', moreImg, moreText); }
     });
     window._loadLogoFromDB('logo_company',function(data){
-      _applyLogo(data || localStorage.getItem('logo_company') || '', colImg, colText);
+      if(data){ _applyLogo(data, colImg, colText); }
+      else { _tryFirestoreLogo('logo_company', colImg, colText); }
     });
   } else {
-    _applyLogo(localStorage.getItem('logo_client')||'', moreImg, moreText);
-    _applyLogo(localStorage.getItem('logo_company')||'', colImg, colText);
+    _tryFirestoreLogo('logo_client', moreImg, moreText);
+    _tryFirestoreLogo('logo_company', colImg, colText);
   }
 }
 
