@@ -432,6 +432,12 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   /* "הוסף רכב" - רק אייקון + */
   .topbar > button[onclick*="openAdd"] { font-size:0!important;gap:0!important;padding:0!important;width:36px!important;height:36px!important;justify-content:center }
   .topbar > button[onclick*="openAdd"] svg { width:16px!important;height:16px!important }
+  /* שורת חיפוש מובייל */
+  .mobile-search-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--card);border-bottom:0.5px solid var(--bdr);position:sticky;top:54px;z-index:99}
+  .mobile-search-bar input{flex:1;border:none;background:transparent;font-size:16px;font-family:inherit;color:var(--t1);outline:none}
+  .mobile-search-bar input::placeholder{color:var(--t3)}
+  /* תוצאות חיפוש - מיקום מובייל */
+  #global-search-results{position:fixed!important;top:108px!important;right:10px!important;left:10px!important;width:auto!important}
   .metrics{grid-template-columns:1fr 1fr;gap:6px}
   .cal-grid{grid-template-columns:1fr!important}
   .cal-item{padding:6px 10px;gap:6px}
@@ -484,6 +490,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .il-plate-big{font-size:16px!important}
 }
 .mobile-menu-btn{display:none;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.75);padding:4px;align-items:center;justify-content:center}
+.mobile-search-bar{display:none}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;cursor:pointer}
 .sb-overlay.open{display:block}
 
@@ -1910,6 +1917,12 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <!-- Add button -->
     <button title="הוסף רכב" onclick="openAdd()" style="height:34px;padding:0 12px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;background:#1D9E75;color:#fff;border:none;white-space:nowrap;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>הוסף רכב</button>
     <div class="pt" id="page-title" style="display:none">דשבורד</div>
+  </div>
+
+  <!-- שורת חיפוש מובייל - מוצגת רק מתחת ל-768px -->
+  <div class="mobile-search-bar" id="mobile-search-bar">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="mobile-srch-inp" placeholder="חיפוש: רכב, נהג, יצרן, דוח..." oninput="document.getElementById('srch-inp').value=this.value;globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off">
   </div>
 
   <div class="content">
