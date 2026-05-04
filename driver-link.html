@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>קביעת מועד טיפול</title>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #F1EFE8;
+      min-height: 100vh;
+      direction: rtl;
+      color: #2C2C2A;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #fff;
+      min-height: 100vh;
+    }
+    .header {
+      background: #1A4A3A;
+      color: white;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo {
+      width: 32px; height: 32px;
+      background: white;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: #1A4A3A;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .header-text { font-size: 13px; font-weight: 500; }
+
+    .content { padding: 20px; }
+
+    .greeting { font-size: 17px; font-weight: 500; margin-bottom: 6px; line-height: 1.4; }
+    .greeting-sub { font-size: 13px; color: #6B6A65; line-height: 1.6; margin-bottom: 20px; }
+
+    .vehicle-summary {
+      background: #F8F7F3;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .summary-row:last-child { margin-bottom: 0; }
+    .summary-label { font-size: 11px; color: #6B6A65; }
+    .summary-value { font-size: 12px; font-weight: 500; }
+    .summary-value.highlight { color: #185FA5; }
+
+    .deadline-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #FAEEDA;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .deadline-icon {
+      width: 16px; height: 16px;
+      background: #BA7517;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-size: 11px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .deadline-text { font-size: 11px; color: #633806; line-height: 1.5; }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .month-name { font-size: 14px; font-weight: 500; }
+    .nav-btns { display: flex; gap: 4px; }
+    .nav-btn {
+      font-size: 11px;
+      padding: 4px 10px;
+      border: 0.5px solid #E5E3DC;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .day-cell {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      font-size: 13px;
+      border-radius: 8px;
+    }
+    .day-cell.empty { background: transparent; }
+    .day-cell.weekend { color: #D3D1C7; }
+    .day-cell.past { color: #B4B2A9; }
+    .day-cell.today {
+      background: #FCEBEB;
+      color: #791F1F;
+      font-weight: 500;
+      border: 1.5px solid #A32D2D;
+    }
+    .day-cell.full {
+      background: #F1EFE8;
+      color: #B4B2A9;
+    }
+    .day-cell.full .day-num { text-decoration: line-through; }
+    .day-cell.available {
+      background: white;
+      color: #2C2C2A;
+      border: 0.5px solid #E5E3DC;
+      cursor: pointer;
+    }
+    .day-cell.available:hover { background: #F8F7F3; }
+    .day-cell.selected {
+      background: #1D9E75 !important;
+      color: white !important;
+      font-weight: 500;
+      border: none !important;
+    }
+    .day-cell.selected .day-name { color: white !important; }
+
+    .day-name { font-size: 9px; color: #6B6A65; }
+    .day-num { font-size: 12px; }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+      font-size: 10px;
+      color: #6B6A65;
+      flex-wrap: wrap;
+    }
+    .legend-item { display: inline-flex; align-items: center; gap: 4px; }
+    .legend-box { width: 8px; height: 8px; border-radius: 2px; }
+
+    .selected-display {
+      background: #E1F5EE;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 20px;
+      display: none;
+    }
+    .selected-display.visible { display: block; }
+    .selected-label { font-size: 11px; color: #0F6E56; margin-bottom: 4px; }
+    .selected-date { font-size: 14px; font-weight: 500; color: #04342C; margin-bottom: 2px; }
+    .selected-time { font-size: 12px; color: #0F6E56; }
+
+    .notes-section { margin-top: 20px; }
+    .notes-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .notes-label { font-size: 13px; font-weight: 500; }
+    .notes-optional { font-size: 11px; color: #6B6A65; }
+    .notes-input {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px 12px;
+      font-size: 12px;
+      border-radius: 8px;
+      border: 0.5px solid #E5E3DC;
+      font-family: inherit;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .submit-btn {
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      background: #1D9E75;
+      color: white;
+      border: 0.5px solid #0F6E56;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .submit-btn:disabled {
+      background: #B4B2A9;
+      border-color: #B4B2A9;
+      cursor: not-allowed;
+    }
+    .submit-btn:hover:not(:disabled) { background: #178862; }
+
+    .submit-note {
+      text-align: center;
+      font-size: 10px;
+      color: #6B6A65;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    .success-screen {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .success-icon {
+      width: 64px; height: 64px;
+      background: #E1F5EE;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      color: #1D9E75;
+    }
+    .success-title { font-size: 20px; font-weight: 500; margin-bottom: 8px; }
+    .success-text { font-size: 14px; color: #6B6A65; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="container" id="container">
+
+    <div class="header">
+      <div class="logo">מר</div>
+      <div>
+        <div class="header-text">מרכז הרכב של מור</div>
+      </div>
+    </div>
+
+    <div id="loading" class="content" style="text-align: center; padding: 60px 20px;">
+      <div style="font-size: 14px; color: #6B6A65;">טוען...</div>
+    </div>
+
+    <div class="content" id="main-content" style="display: none;">
+
+      <div class="greeting">שלום <span id="driver-firstname">--</span> 👋</div>
+      <div class="greeting-sub" id="greeting-sub">הגיע מועד הטיפול לרכב שלך. אנא בחר יום שנוח לך לאיסוף הרכב.</div>
+
+      <!-- סיכום הרכב -->
+      <div class="vehicle-summary">
+        <div class="summary-row">
+          <span class="summary-label">הרכב</span>
+          <span class="summary-value" id="license-plate">--</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">דגם</span>
+          <span class="summary-value" id="vehicle-model">--</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">קילומטראז'</span>
+          <span class="summary-value" id="vehicle-mileage">--</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">סוג טיפול</span>
+          <span class="summary-value highlight" id="treatment-type">--</span>
+        </div>
+      </div>
+
+      <!-- דדליין -->
+      <div class="deadline-banner">
+        <div class="deadline-icon">!</div>
+        <div class="deadline-text">
+          הטיפול חייב להתבצע עד <strong id="deadline-date">--</strong> · נותרו <span id="days-remaining">--</span> ימים
+        </div>
+      </div>
+
+      <!-- כותרת חודש -->
+      <div class="calendar-header">
+        <div class="month-name" id="month-name">--</div>
+        <div class="nav-btns">
+          <button class="nav-btn" id="prev-month-btn" onclick="changeMonth(-1)">→</button>
+          <button class="nav-btn" id="next-month-btn" onclick="changeMonth(1)">←</button>
+        </div>
+      </div>
+
+      <!-- לוח השנה -->
+      <div class="calendar-grid" id="calendar-grid"></div>
+
+      <!-- מקרא -->
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-box" style="background: #1D9E75;"></span>
+          נבחר
+        </div>
+        <div class="legend-item">
+          <span class="legend-box" style="background: #F1EFE8; border: 0.5px solid #E5E3DC;"></span>
+          תפוס
+        </div>
+        <div class="legend-item">
+          <span class="legend-box" style="background: #FCEBEB; border: 1px solid #A32D2D;"></span>
+          היום
+        </div>
+        <div class="legend-item">
+          <span class="legend-box" style="background: white; border: 0.5px solid #E5E3DC;"></span>
+          פנוי
+        </div>
+      </div>
+
+      <!-- תצוגת בחירה -->
+      <div class="selected-display" id="selected-display">
+        <div class="selected-label">בחרת:</div>
+        <div class="selected-date" id="selected-text">--</div>
+        <div class="selected-time">איסוף הרכב בשעה <span id="hour-display">09:00</span></div>
+      </div>
+
+      <!-- הערות -->
+      <div class="notes-section">
+        <div class="notes-label-row">
+          <label class="notes-label">הערות לטיפול</label>
+          <span class="notes-optional">אופציונלי</span>
+        </div>
+        <textarea class="notes-input" id="driver-notes"></textarea>
+      </div>
+
+      <!-- כפתור שליחה -->
+      <button class="submit-btn" id="submit-btn" onclick="submitChoice()" disabled>שלח בקשה לאישור</button>
+      <div class="submit-note">תקבל אישור סופי בוואטסאפ תוך <span id="sla-display">3</span> ימי עבודה</div>
+
+    </div>
+
+    <!-- מסך הצלחה -->
+    <div id="success-screen" class="success-screen" style="display: none;">
+      <div class="success-icon">✓</div>
+      <div class="success-title">הבקשה נשלחה!</div>
+      <div class="success-text">
+        תקבל אישור סופי בוואטסאפ תוך <span id="sla-success">3</span> ימי עבודה.<br>
+        תוכל לסגור את החלון.
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC3VMcLRen5FxO8iphsgzeov1NFQQsSuo8",
+      authDomain: "crmsystem-3dfd8.firebaseapp.com",
+      projectId: "crmsystem-3dfd8",
+      storageBucket: "crmsystem-3dfd8.firebasestorage.app",
+      messagingSenderId: "478918834303",
+      appId: "1:478918834303:web:59b3b2f3e0a34c5ba1e74a"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let TREATMENT = null;
+    let SETTINGS = null;
+    let SCHEDULED_TREATMENTS = [];
+    let SELECTED_DATE = null;
+    let CURRENT_MONTH = new Date();
+
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const treatmentId = params.get('id');
+
+      if (!treatmentId) {
+        showError('קישור לא תקין');
+        return;
+      }
+
+      try {
+        const [tDoc, sDoc] = await Promise.all([
+          db.collection('treatments').doc(treatmentId).get(),
+          db.collection('settings').doc('treatments').get()
+        ]);
+
+        if (!tDoc.exists) { showError('הבקשה לא נמצאה'); return; }
+
+        TREATMENT = { id: tDoc.id, ...tDoc.data() };
+        SETTINGS = sDoc.exists ? sDoc.data() : {
+          scanRangeDays: 30,
+          maxTreatmentsPerDay: 2,
+          openDays: [0, 1, 2, 3, 4],
+          appointmentHour: 9,
+          approvalSlaDays: 3
+        };
+
+        const scheduled = await db.collection('treatments').where('status', '==', 'scheduled').get();
+        SCHEDULED_TREATMENTS = scheduled.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        renderForm();
+      } catch (err) {
+        console.error(err);
+        showError('שגיאה בטעינה. נסה שוב.');
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('loading').innerHTML =
+        '<div style="font-size: 14px; color: #A32D2D;">' + msg + '</div>';
+    }
+
+    function renderForm() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+
+      const firstName = (TREATMENT.driverName || '').split(' ')[0];
+      document.getElementById('driver-firstname').textContent = firstName;
+      document.getElementById('greeting-sub').textContent = TREATMENT.kind === 'test'
+        ? 'הגיע מועד הטסט לרכב שלך. אנא בחר יום שנוח לך לאיסוף הרכב.'
+        : 'הגיע מועד הטיפול לרכב שלך. אנא בחר יום שנוח לך לאיסוף הרכב.';
+
+      document.getElementById('license-plate').textContent = TREATMENT.licensePlate;
+      document.getElementById('vehicle-model').textContent = TREATMENT.vehicleModel;
+      document.getElementById('vehicle-mileage').textContent = TREATMENT.currentMileage
+        ? Number(TREATMENT.currentMileage).toLocaleString() + ' ק"מ' : '--';
+
+      // סוג טיפול - תצוגה מותאמת לטסט
+      var typeDisplay = TREATMENT.treatmentType ||
+        (TREATMENT.kind === 'treatment' ? 'טיפול שנתי' : 'טסט רישוי');
+      if (TREATMENT.kind === 'test' && TREATMENT.dueDate) {
+        typeDisplay += ' \u2014 תוקף עד ' + formatHeb(new Date(TREATMENT.dueDate));
+      }
+      document.getElementById('treatment-type').textContent = typeDisplay;
+
+      const dueDate = new Date(TREATMENT.dueDate);
+      document.getElementById('deadline-date').textContent = formatHeb(dueDate);
+      const today = new Date(); today.setHours(0,0,0,0);
+      const daysRemaining = Math.floor((dueDate - today) / 86400000);
+      document.getElementById('days-remaining').textContent = daysRemaining;
+
+      document.getElementById('hour-display').textContent =
+        String(SETTINGS.appointmentHour).padStart(2, '0') + ':00';
+      document.getElementById('sla-display').textContent = SETTINGS.approvalSlaDays;
+      document.getElementById('sla-success').textContent = SETTINGS.approvalSlaDays;
+
+      if (TREATMENT.selectedDate) {
+        SELECTED_DATE = new Date(TREATMENT.selectedDate);
+      }
+
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const year = CURRENT_MONTH.getFullYear();
+      const month = CURRENT_MONTH.getMonth();
+
+      const monthNames = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+      document.getElementById('month-name').textContent = monthNames[month] + ' ' + year;
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const today = new Date(); today.setHours(0,0,0,0);
+      const dueDate = new Date(TREATMENT.dueDate); dueDate.setHours(0,0,0,0);
+
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      const startWeekDay = firstDay.getDay();
+      for (let i = 0; i < startWeekDay; i++) {
+        grid.appendChild(createCell('', '', 'empty'));
+      }
+
+      const dayLetters = ['א','ב','ג','ד','ה','ו','ש'];
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(year, month, day);
+        date.setHours(0,0,0,0);
+        const weekDay = date.getDay();
+        const dayLetter = dayLetters[weekDay];
+
+        let cls = '';
+        let clickable = false;
+
+        const isToday = date.getTime() === today.getTime();
+        const isPast = date < today;
+        const isFuture = date > dueDate;
+        const isOpenDay = SETTINGS.openDays.includes(weekDay);
+        const isFull = countTreatmentsOnDate(date) >= SETTINGS.maxTreatmentsPerDay;
+
+        if (isToday) cls = 'today';
+        else if (isPast || isFuture) cls = 'past';
+        else if (!isOpenDay) cls = 'weekend';
+        else if (isFull) cls = 'full';
+        else { cls = 'available'; clickable = true; }
+
+        if (SELECTED_DATE && SELECTED_DATE.getTime() === date.getTime()) cls = 'selected';
+
+        const cell = createCell(dayLetter, day, cls);
+        if (clickable || cls === 'selected') {
+          cell.onclick = () => selectDate(date);
+        }
+        grid.appendChild(cell);
+      }
+
+      const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const maxMonth = new Date(dueDate.getFullYear(), dueDate.getMonth(), 1);
+      document.getElementById('prev-month-btn').disabled = CURRENT_MONTH <= minMonth;
+      document.getElementById('next-month-btn').disabled = CURRENT_MONTH >= maxMonth;
+    }
+
+    function createCell(dayLetter, dayNum, cls) {
+      const cell = document.createElement('div');
+      cell.className = 'day-cell ' + cls;
+      if (cls !== 'empty') {
+        cell.innerHTML = '<span class="day-name">' + dayLetter + '</span><span class="day-num">' + dayNum + '</span>';
+      }
+      return cell;
+    }
+
+    function countTreatmentsOnDate(date) {
+      return SCHEDULED_TREATMENTS.filter(function(t) {
+        if (!t.selectedDate) return false;
+        var sd = new Date(t.selectedDate);
+        sd.setHours(0,0,0,0);
+        return sd.getTime() === date.getTime();
+      }).length;
+    }
+
+    function changeMonth(delta) {
+      CURRENT_MONTH = new Date(CURRENT_MONTH.getFullYear(), CURRENT_MONTH.getMonth() + delta, 1);
+      renderCalendar();
+    }
+
+    function selectDate(date) {
+      SELECTED_DATE = date;
+      renderCalendar();
+
+      const display = document.getElementById('selected-display');
+      display.classList.add('visible');
+
+      const days = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+      document.getElementById('selected-text').textContent =
+        'יום ' + days[date.getDay()] + ' · ' + formatHeb(date);
+
+      document.getElementById('submit-btn').disabled = false;
+    }
+
+    function formatHeb(date) {
+      var d = new Date(date);
+      return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear();
+    }
+
+    async function submitChoice() {
+      if (!SELECTED_DATE) return;
+
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'שולח...';
+
+      try {
+        const note = document.getElementById('driver-notes').value.trim();
+
+        await db.collection('treatments').doc(TREATMENT.id).update({
+          status: 'pending_approval',
+          selectedDate: SELECTED_DATE.toISOString(),
+          selectedDateAt: new Date().toISOString(),
+          driverNote: note
+        });
+
+        document.getElementById('main-content').style.display = 'none';
+        document.getElementById('success-screen').style.display = 'block';
+      } catch (err) {
+        console.error(err);
+        alert('שגיאה. נסה שוב.');
+        btn.disabled = false;
+        btn.textContent = 'שלח בקשה לאישור';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

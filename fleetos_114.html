@@ -845,6 +845,670 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   .vc-overview-layout{grid-template-columns:1fr!important}
   #vc-sidebar-col{position:static!important}
 }
+
+/* ═══════════════════════════════════════════════════════════
+   TREATMENTS & TESTS SYSTEM - CSS
+   ═══════════════════════════════════════════════════════════ */
+
+/* === מבנה כללי === */
+.treatments-section {
+  background: var(--card);
+  border: 0.5px solid var(--bdr2);
+  border-radius: var(--r);
+  padding: 20px;
+  margin-bottom: 16px;
+  direction: rtl;
+  font-family: inherit;
+}
+
+/* === כותרת === */
+.treatments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.treatments-title {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+  color: var(--t1);
+}
+.treatments-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--t2);
+  flex-wrap: wrap;
+}
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.live-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  display: inline-block;
+  animation: trt-pulse-dot 2s ease-in-out infinite;
+}
+@keyframes trt-pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* === פילטרים עליונים === */
+.treatments-filters {
+  display: flex;
+  gap: 6px;
+}
+.filter-pill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 0.5px solid var(--bdr2);
+  background: transparent;
+  color: var(--t2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.filter-pill.active {
+  background: var(--bg2);
+  color: var(--t1);
+  font-weight: 500;
+  border-color: transparent;
+}
+.filter-pill:hover:not(.active) {
+  background: var(--bg);
+}
+
+/* === 3 כרטיסי סטטוס === */
+.status-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.status-card {
+  padding: 16px;
+  border-radius: var(--rs);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.status-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.status-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.status-card-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+.status-card-percent {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.status-card-number {
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.status-card-info {
+  font-size: 11px;
+  font-weight: 500;
+}
+.status-card-detail {
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+/* כחול */
+.status-card-blue { background: var(--blue-light); }
+.status-card-blue .status-card-label { color: var(--blue-dark); }
+.status-card-blue .status-card-percent { color: var(--blue-dark); background: #B5D4F4; }
+.status-card-blue .status-card-number { color: var(--blue-dark); }
+.status-card-blue .status-card-info { color: var(--blue-dark); }
+.status-card-blue .status-card-detail { color: var(--blue-dark); }
+
+/* כתום */
+.status-card-amber { background: var(--amber-light); border: 2px solid var(--amber); }
+.status-card-amber .status-card-label { color: var(--amber-dark); }
+.status-card-amber .status-card-percent { color: var(--amber-dark); background: #FAC775; }
+.status-card-amber .status-card-number { color: var(--amber-dark); }
+.status-card-amber .status-card-info { color: var(--amber-dark); font-weight: 500; }
+.status-card-amber .status-card-detail { color: var(--amber-dark); }
+
+/* ירוק */
+.status-card-green { background: var(--green-light); }
+.status-card-green .status-card-label { color: var(--green-dark); }
+.status-card-green .status-card-percent { color: var(--green-dark); background: #C0DD97; }
+.status-card-green .status-card-number { color: var(--green-dark); }
+.status-card-green .status-card-info { color: var(--green-dark); }
+.status-card-green .status-card-detail { color: var(--green-dark); }
+
+/* === פס התקדמות === */
+.trt-progress-bar-container {
+  background: var(--bg2);
+  border-radius: 6px;
+  padding: 4px;
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  margin-bottom: 4px;
+}
+.trt-progress-bar-segment {
+  height: 100%;
+  border-radius: 2px;
+  transition: flex 0.3s;
+}
+.trt-progress-blue { background: #85B7EB; }
+.trt-progress-amber { background: var(--amber); }
+.trt-progress-green { background: #97C459; }
+
+/* === סקציית "ממתין לאישור" נפתחת === */
+.pending-approval-section {
+  border-top: 0.5px solid var(--bdr2);
+  padding-top: 16px;
+  margin-top: 20px;
+}
+.pending-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.pending-section-title {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+.pending-section-subtitle {
+  font-size: 11px;
+  color: var(--t2);
+}
+.pending-section-filters {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.trt-filter-label {
+  font-size: 11px;
+  color: var(--t2);
+}
+.mini-pill {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--t2);
+  cursor: pointer;
+  font-family: inherit;
+}
+.mini-pill.active {
+  background: var(--bg2);
+  color: var(--t1);
+  font-weight: 500;
+}
+.mini-pill-red.active {
+  background: var(--red-light);
+  color: var(--red-dark);
+}
+.mini-pill-green.active {
+  background: var(--green-light);
+  color: var(--green-dark);
+}
+
+/* === רשימת נהגים === */
+.trt-pending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.trt-driver-row {
+  background: var(--card);
+  border: 0.5px solid var(--bdr2);
+  border-radius: var(--rs);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.trt-driver-row:hover {
+  background: var(--bg);
+}
+.trt-driver-row.urgent-3plus {
+  border: 0.5px solid var(--red-border);
+  border-right: 3px solid var(--red-dark);
+}
+.trt-driver-row.urgent-2 {
+  border: 0.5px solid #FAC775;
+  border-right: 3px solid var(--amber-dark);
+}
+.trt-driver-row.urgent-low {
+  border-right: 3px solid #B4B2A9;
+}
+.trt-driver-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.trt-driver-avatar-red { background: var(--red-light); color: var(--red-dark); }
+.trt-driver-avatar-amber { background: var(--amber-light); color: var(--amber-dark); }
+.trt-driver-avatar-blue { background: var(--blue-light); color: var(--blue-dark); }
+.trt-driver-avatar-green { background: var(--green-light); color: var(--green-dark); }
+
+.trt-driver-info { flex: 1; min-width: 0; }
+.trt-driver-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}
+.trt-driver-name { font-size: 13px; font-weight: 500; }
+.trt-driver-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.trt-driver-tag-red { color: var(--red-dark); background: var(--red-light); font-weight: 500; }
+.trt-driver-tag-amber { color: var(--amber-dark); background: var(--amber-light); }
+.trt-driver-tag-blue { color: var(--blue-dark); background: var(--blue-light); }
+.trt-driver-tag-green { color: var(--green-dark); background: var(--green-light); font-weight: 500; }
+.trt-driver-tag-gray { color: #444441; background: var(--bg2); }
+.trt-driver-tag-note { color: var(--blue-dark); background: var(--blue-light); }
+
+.trt-driver-meta { font-size: 11px; color: var(--t2); }
+.trt-driver-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* תיבת תאריך (במודאל ירוק) */
+.trt-driver-date-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  flex-shrink: 0;
+  padding: 8px 4px;
+  border-radius: 6px;
+  background: var(--bg2);
+}
+.trt-driver-date-box.urgent { background: var(--green-light); }
+.trt-driver-date-day { font-size: 9px; font-weight: 500; color: var(--t2); }
+.trt-driver-date-day.urgent { color: var(--green-dark); }
+.trt-driver-date-num { font-size: 17px; font-weight: 500; line-height: 1.1; color: var(--t1); }
+.trt-driver-date-num.urgent { color: var(--green-dark); }
+.trt-driver-date-time { font-size: 9px; margin-top: 2px; color: var(--t2); }
+.trt-driver-date-time.urgent { color: var(--green-dark); }
+
+/* === כפתורים === */
+.trt-btn-action {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 0.5px solid var(--bdr2);
+  background: var(--card);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.trt-btn-action:hover { background: var(--bg); }
+.trt-btn-action-primary {
+  background: var(--green);
+  color: white;
+  border: 0.5px solid var(--green-dark);
+  padding: 5px 14px;
+}
+.trt-btn-action-primary:hover { background: var(--green-dark); }
+.trt-btn-action-primary:disabled {
+  background: var(--card);
+  border: 0.5px solid var(--bdr2);
+  color: #B4B2A9;
+  cursor: not-allowed;
+}
+.trt-btn-action-danger { color: var(--red-dark); }
+
+.trt-show-more-btn {
+  text-align: center;
+  padding: 10px;
+  font-size: 12px;
+  color: var(--blue-dark);
+  cursor: pointer;
+  background: var(--bg);
+  border-radius: var(--rs);
+  margin-top: 8px;
+}
+
+/* === מודאלים === */
+.trt-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+  z-index: 9999;
+  overflow-y: auto;
+}
+.trt-modal-container {
+  background: var(--card);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-top: 40px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.trt-modal-large { width: 620px; max-width: 100%; }
+.trt-modal-medium { width: 480px; max-width: 100%; }
+.trt-modal-small { width: 420px; max-width: 100%; }
+
+.trt-modal-header {
+  padding: 16px 20px;
+  border-bottom: 0.5px solid var(--bdr2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.trt-modal-title { font-size: 14px; font-weight: 500; color: var(--t1); }
+.trt-modal-subtitle { font-size: 11px; color: var(--t2); margin-top: 2px; }
+.trt-modal-close {
+  font-size: 18px;
+  color: var(--t2);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.trt-modal-close:hover { background: var(--bg2); }
+
+.trt-modal-filters {
+  padding: 12px 20px;
+  background: var(--bg);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-bottom: 0.5px solid var(--bdr2);
+  flex-wrap: wrap;
+}
+.trt-modal-list { max-height: 480px; overflow-y: auto; }
+.trt-modal-list .trt-driver-row {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 0.5px solid var(--bdr2);
+}
+.trt-modal-list .trt-driver-row.urgent-3plus,
+.trt-modal-list .trt-driver-row.urgent-2,
+.trt-modal-list .trt-driver-row.urgent-low {
+  border-right: 3px solid;
+}
+.trt-modal-list .trt-driver-row.urgent-3plus { border-right-color: var(--red-dark); }
+.trt-modal-list .trt-driver-row.urgent-2 { border-right-color: var(--amber-dark); }
+.trt-modal-list .trt-driver-row.urgent-low { border-right-color: #B4B2A9; }
+.trt-modal-list .trt-scheduled-row { border-right: 3px solid var(--green) !important; }
+.trt-modal-list .trt-scheduled-row.future { border-right-color: #97C459 !important; }
+
+.trt-modal-footer {
+  padding: 12px 20px;
+  border-top: 0.5px solid var(--bdr2);
+  background: var(--bg);
+  text-align: center;
+}
+.trt-footer-text { font-size: 11px; color: var(--t2); }
+
+.trt-modal-body { padding: 20px; }
+.trt-modal-description {
+  font-size: 12px;
+  color: var(--t2);
+  margin: 0 0 20px 0;
+  line-height: 1.6;
+}
+
+/* === מודאל אישור === */
+.trt-approve-summary {
+  background: var(--bg);
+  border-radius: var(--rs);
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+.trt-summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.trt-summary-row:last-child { margin-bottom: 0; }
+.trt-summary-label { color: var(--t2); font-size: 11px; }
+.trt-summary-value { font-weight: 500; color: var(--t1); }
+.trt-summary-note {
+  font-weight: normal;
+  font-size: 11px;
+  text-align: right;
+  max-width: 60%;
+  color: var(--t1);
+}
+
+.trt-section-label {
+  font-size: 12px;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8px;
+  color: var(--t1);
+}
+.trt-section-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.trt-link-btn {
+  font-size: 11px;
+  color: var(--blue-dark);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.trt-channel-section { margin-bottom: 20px; }
+.trt-channel-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.trt-channel-option {
+  border: 0.5px solid var(--bdr2);
+  border-radius: var(--rs);
+  padding: 14px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s;
+}
+.trt-channel-option:hover { background: var(--bg); }
+.trt-channel-option.active {
+  border: 2px solid var(--green);
+  background: var(--green-light);
+}
+.trt-channel-check {
+  position: absolute;
+  top: 8px; left: 8px;
+  width: 16px; height: 16px;
+  background: var(--green);
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 10px;
+}
+.trt-channel-option.active .trt-channel-check { display: flex; }
+.trt-channel-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; color: var(--t1); }
+.trt-channel-option.active .trt-channel-name { color: var(--green-dark); }
+.trt-channel-detail { font-size: 11px; color: var(--t2); margin-bottom: 8px; }
+.trt-channel-option.active .trt-channel-detail { color: var(--green-dark); }
+.trt-channel-tag {
+  font-size: 10px;
+  color: var(--green-dark);
+  background: #9FE1CB;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.trt-channel-tag-secondary { font-size: 10px; color: var(--t2); }
+
+.trt-preview-section { margin-bottom: 20px; }
+.trt-preview-content {
+  background: var(--bg);
+  border-radius: var(--rs);
+  padding: 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--t1);
+}
+
+.trt-personal-note-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--amber-light);
+  border-radius: var(--rs);
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.trt-personal-note-toggle label {
+  font-size: 12px;
+  color: var(--amber-dark);
+  cursor: pointer;
+  margin: 0;
+}
+.trt-personal-note-input {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 0.5px solid var(--bdr2);
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+  background: var(--card);
+  color: var(--t1);
+}
+
+/* === מודאל תזכורת === */
+.trt-channel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.trt-channel-card {
+  border: 0.5px solid var(--bdr2);
+  border-radius: var(--rs);
+  padding: 16px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.trt-channel-card:hover {
+  background: var(--bg);
+  transform: translateY(-1px);
+}
+.trt-channel-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trt-channel-icon-whatsapp { background: var(--green-light); }
+.trt-channel-icon-email { background: var(--blue-light); }
+.trt-channel-card-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.trt-channel-card-detail { font-size: 10px; color: var(--t2); }
+
+/* === טפסים במודאל === */
+.trt-form-field { margin-bottom: 14px; }
+.trt-form-field label {
+  font-size: 12px;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 6px;
+  color: var(--t1);
+}
+.trt-field-meta { font-size: 10px; color: var(--t2); font-weight: normal; }
+.trt-form-field input,
+.trt-form-field select {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 0.5px solid var(--bdr2);
+  font-family: inherit;
+  box-sizing: border-box;
+  background: var(--card);
+  color: var(--t1);
+}
+.trt-form-field input:focus,
+.trt-form-field select:focus {
+  outline: none;
+  border-color: var(--green);
+}
+.trt-field-hint { font-size: 10px; color: var(--t2); margin-top: 4px; }
+
+/* === פעולות === */
+.trt-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+.trt-btn-primary, .trt-btn-secondary {
+  font-size: 13px;
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: 0.5px solid var(--bdr2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.1s;
+}
+.trt-btn-secondary { background: var(--card); color: var(--t1); }
+.trt-btn-secondary:hover { background: var(--bg); }
+.trt-btn-primary { background: var(--t1); color: white; border-color: var(--t1); }
+.trt-btn-primary.trt-btn-green { background: var(--green); border-color: var(--green-dark); }
+.trt-btn-primary.trt-btn-green:hover { background: var(--green-dark); }
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  .status-cards-grid { grid-template-columns: 1fr; }
+  .treatments-header { flex-direction: column; gap: 12px; }
+  .trt-channel-options,
+  .trt-channel-grid { grid-template-columns: 1fr; }
+}
 </style>
 <script>
 (function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')||p.get('book')||p.get('km')){document.documentElement.style.visibility='hidden';}})();
@@ -1040,86 +1704,113 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
       </div>
 
-      <!-- service & test scheduling section -->
+      <!-- OLD svc-section BACKUP (start) ===
       <div class="svc-section" id="svc-section">
-        <div class="svc-header">
-          <div class="svc-header-right">
-            <div class="svc-title" id="svc-title">טיפולים וטסטים — </div>
-            <div class="svc-subtitle">תזכורת אוטומטית כל 3 ימים לנהגים שלא בחרו מועד איסוף</div>
-          </div>
-          <div class="svc-tabs" id="svc-tabs">
-            <button class="svc-tab active" onclick="setSvcFilter('all',this)">הכל · <span id="svc-tab-all">0</span></button>
-            <button class="svc-tab" onclick="setSvcFilter('svc',this)">טיפולים · <span id="svc-tab-svc">0</span></button>
-            <button class="svc-tab" onclick="setSvcFilter('test',this)">טסטים · <span id="svc-tab-test">0</span></button>
-          </div>
-        </div>
-        <div class="svc-status-grid">
-          <div class="svc-status-card" style="background:#F1EFE8;cursor:pointer" onclick="openSvcStatusModal('need')">
-            <div class="svc-status-dot" style="background:#888780"></div>
-            <div class="svc-status-label">דורש שיבוץ</div>
-            <div class="svc-status-value" id="svc-need" style="color:#5F5E5A">0</div>
-            <div class="svc-status-sub">נהגים</div>
-            <div class="svc-status-detail" id="svc-need-detail">0 טיפולים · 0 טסטים</div>
-          </div>
-          <div class="svc-status-card" style="background:#E6F1FB;cursor:pointer" onclick="openSvcStatusModal('sent')">
-            <div class="svc-status-dot" style="background:#185FA5"></div>
-            <div class="svc-status-label" style="color:#185FA5">מיילים נשלחו</div>
-            <div class="svc-status-value" id="svc-sent" style="color:#0C447C">0</div>
-            <div class="svc-status-sub" id="svc-sent-sub">מ-0</div>
-            <div class="svc-status-detail" id="svc-sent-detail" style="color:#185FA5">0 ממתינים לשליחה</div>
-          </div>
-          <div class="svc-status-card" style="background:#FAEEDA;cursor:pointer" onclick="openSvcStatusModal('waiting')">
-            <div class="svc-status-dot" style="background:#BA7517"></div>
-            <div class="svc-status-label" style="color:#854F0B">ממתין לתשובה</div>
-            <div class="svc-status-value" id="svc-waiting" style="color:#854F0B">0</div>
-            <div class="svc-status-sub">נהגים</div>
-            <div class="svc-status-detail" id="svc-waiting-detail" style="color:#854F0B"></div>
-          </div>
-          <div class="svc-status-card" style="background:#E1F5EE;cursor:pointer" onclick="openSvcStatusModal('scheduled')">
-            <div class="svc-status-dot" style="background:#0F6E56"></div>
-            <div class="svc-status-label" style="color:#0F6E56">מועד נקבע</div>
-            <div class="svc-status-value" id="svc-scheduled" style="color:#0F6E56">0</div>
-            <div class="svc-status-sub">נהגים</div>
-            <div class="svc-status-detail" id="svc-scheduled-detail" style="color:#0F6E56"></div>
-          </div>
-        </div>
-        <div class="svc-progress-bar">
-          <div class="svc-progress-header">
-            <span>התקדמות החודש</span>
-            <span id="svc-progress-summary">0 נקבעו · 0 ממתינים · 0 לא נשלחו</span>
-          </div>
-          <div class="svc-progress-track">
-            <div class="svc-progress-fill svc-progress-green" id="svc-prog-green" style="width:0%"></div>
-            <div class="svc-progress-fill svc-progress-orange" id="svc-prog-orange" style="width:0%"></div>
-            <div class="svc-progress-fill svc-progress-gray" id="svc-prog-gray" style="width:100%"></div>
-          </div>
-        </div>
-        <div class="svc-alert" id="svc-alert" style="display:none">
-          <div class="svc-alert-header" onclick="toggleSvcAlert()" style="cursor:pointer">
-            <div class="svc-alert-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A32D2D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              <span id="svc-alert-count">0 נהגים לא ענו מעל 5 ימים</span>
-              <span id="svc-alert-arrow" style="font-size:11px;color:#A32D2D;transition:transform .2s;display:inline-block">▼</span>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center" onclick="event.stopPropagation()">
-              <button class="svc-alert-btn" onclick="sendAllReminders()">שלח תזכורת לכולם</button>
+        ... (see fleetos_114.backup.html lines 1044-1123 for full original)
+      </div>
+      === OLD svc-section BACKUP (end) -->
+
+      <!-- NEW: treatments & tests section -->
+      <div class="treatments-section" id="treatments-section">
+
+        <!-- כותרת + פילטרים -->
+        <div class="treatments-header">
+          <div class="treatments-title-block">
+            <h3 class="treatments-title">טיפולים וטסטים</h3>
+            <div class="treatments-subtitle">
+              <span class="live-indicator">
+                <span class="live-dot"></span>
+                חי · מסונכרן עם היומן
+              </span>
+              <span>·</span>
+              <span>טווח סריקה: <span id="scan-range-display">30</span> יום קדימה</span>
+              <span>·</span>
+              <span><span id="total-drivers-count">0</span> נהגים בציר</span>
             </div>
           </div>
-          <div class="svc-alert-table" id="svc-alert-body" style="display:none">
-            <div class="svc-alert-row header">
-              <div class="svc-col-avatar"></div>
-              <div class="svc-col-name">נהג</div>
-              <div class="svc-col-type">סוג + פרטים</div>
-              <div class="svc-col-company">חברה</div>
-              <div class="svc-col-days">ללא תשובה</div>
-              <div class="svc-col-action"></div>
-            </div>
-            <div id="svc-alert-tbody"></div>
-          </div>
-          <div class="svc-alert-footer" id="svc-alert-footer" style="display:none">
-            <button class="svc-alert-showall" id="svc-alert-showall" onclick="showAllOverdueDrivers()">צפה בכל <span id="svc-alert-total">0</span> הנהגים →</button>
+          <div class="treatments-filters">
+            <button class="filter-pill active" data-filter="all">הכל · <span id="filter-all-count">0</span></button>
+            <button class="filter-pill" data-filter="treatment">טיפולים · <span id="filter-treatment-count">0</span></button>
+            <button class="filter-pill" data-filter="test">טסטים · <span id="filter-test-count">0</span></button>
           </div>
         </div>
+
+        <!-- 3 כרטיסי הסטטוס -->
+        <div class="status-cards-grid">
+
+          <!-- כרטיס כחול: ממתין לבחירת תאריך -->
+          <div class="status-card status-card-blue" id="card-awaiting-choice" onclick="openAwaitingChoiceModal()">
+            <div class="status-card-header">
+              <span class="status-card-label">ממתין לבחירת תאריך</span>
+              <span class="status-card-percent" id="awaiting-choice-percent">0%</span>
+            </div>
+            <div class="status-card-number" id="awaiting-choice-count">0</div>
+            <div class="status-card-info">הכדור אצל הנהג</div>
+            <div class="status-card-detail" id="awaiting-choice-detail">--</div>
+          </div>
+
+          <!-- כרטיס כתום: ממתין לאישור -->
+          <div class="status-card status-card-amber" id="card-pending-approval" onclick="togglePendingApprovalSection()">
+            <div class="status-card-header">
+              <span class="status-card-label">ממתין לאישור</span>
+              <span class="status-card-percent" id="pending-approval-percent">0%</span>
+            </div>
+            <div class="status-card-number" id="pending-approval-count">0</div>
+            <div class="status-card-info">הכדור אצלך</div>
+            <div class="status-card-detail">
+              לחץ להרחבה <span id="pending-chevron">↓</span>
+            </div>
+          </div>
+
+          <!-- כרטיס ירוק: מועד נקבע -->
+          <div class="status-card status-card-green" id="card-scheduled" onclick="openScheduledModal()">
+            <div class="status-card-header">
+              <span class="status-card-label">מועד נקבע</span>
+              <span class="status-card-percent" id="scheduled-percent">0%</span>
+            </div>
+            <div class="status-card-number" id="scheduled-count">0</div>
+            <div class="status-card-info">סגור · ביומן</div>
+            <div class="status-card-detail" id="scheduled-detail">--</div>
+          </div>
+
+        </div>
+
+        <!-- פס התקדמות -->
+        <div class="trt-progress-bar-container">
+          <div class="trt-progress-bar-segment trt-progress-blue" id="trt-progress-blue" style="flex: 0;"></div>
+          <div class="trt-progress-bar-segment trt-progress-amber" id="trt-progress-amber" style="flex: 0;"></div>
+          <div class="trt-progress-bar-segment trt-progress-green" id="trt-progress-green" style="flex: 0;"></div>
+        </div>
+
+        <!-- סקציית "ממתין לאישור" - מתרחבת/נסגרת -->
+        <div class="pending-approval-section" id="pending-approval-section" style="display: none;">
+
+          <div class="pending-section-header">
+            <div>
+              <div class="pending-section-title">
+                <span id="pending-section-count">0</span> ממתינים לאישור
+              </div>
+              <div class="pending-section-subtitle">מסודר לפי דחיפות · עבור אחד-אחד</div>
+            </div>
+            <div class="pending-section-filters">
+              <span class="trt-filter-label">סנן:</span>
+              <button class="mini-pill active" data-pending-filter="all">הכל</button>
+              <button class="mini-pill" data-pending-filter="urgent">דחוף</button>
+            </div>
+          </div>
+
+          <!-- רשימת נהגים שממתינים לאישור -->
+          <div class="trt-pending-list" id="pending-approval-list">
+            <!-- ימולא דינמית מ-JavaScript -->
+          </div>
+
+          <!-- כפתור "הצג עוד" -->
+          <div class="trt-show-more-btn" id="pending-show-more" onclick="showMorePending()" style="display: none;">
+            הצג עוד <span id="pending-remaining">0</span> ←
+          </div>
+
+        </div>
+
       </div>
 
       <!-- vehicles table -->
@@ -2046,6 +2737,31 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <span class="settings-schedule-input-label">כמות טיפולים מקסימלית ליום</span>
             <input type="number" id="sched-daily-capacity" min="1" max="20" value="2">
             <span class="settings-form-field-hint">רכבים</span>
+          </div>
+          <div class="settings-schedule-input">
+            <span class="settings-schedule-input-label">טווח סריקה קדימה</span>
+            <input type="number" id="sched-scan-range" min="1" max="180" value="30">
+            <span class="settings-form-field-hint">ימים</span>
+          </div>
+          <div class="settings-schedule-input">
+            <span class="settings-schedule-input-label">שעת איסוף הרכב</span>
+            <input type="number" id="sched-appointment-hour" min="6" max="20" value="9">
+            <span class="settings-form-field-hint">:00</span>
+          </div>
+          <div class="settings-schedule-input">
+            <span class="settings-schedule-input-label">תזכורת לנהג שלא ענה (כל)</span>
+            <input type="number" id="sched-driver-reminder" min="1" max="30" value="5">
+            <span class="settings-form-field-hint">ימים</span>
+          </div>
+          <div class="settings-schedule-input">
+            <span class="settings-schedule-input-label">SLA אישור (כמה ימים מבטיחים לנהג)</span>
+            <input type="number" id="sched-approval-sla" min="1" max="14" value="3">
+            <span class="settings-form-field-hint">ימי עבודה</span>
+          </div>
+          <div class="settings-schedule-input">
+            <span class="settings-schedule-input-label">תזכורת אם לא עדכנת בכרטיס רכב (אחרי)</span>
+            <input type="number" id="sched-post-reminder" min="1" max="30" value="5">
+            <span class="settings-form-field-hint">ימים מהטיפול</span>
           </div>
 
           <div style="margin-top:16px">
@@ -8384,6 +9100,9 @@ function startVehiclesListener(){
     // Refresh UI
     if(typeof refresh==='function')refresh();
     if(typeof renderV==='function')renderV();
+    // Hook: refresh treatments system when vehicles change
+    if(typeof TREATMENT_STATE!=='undefined'){ TREATMENT_STATE.vehicles=vehicles||[]; }
+    if(typeof performLocalScan==='function'){ try{performLocalScan();}catch(e){console.error('[Treatments] scan error:',e);} }
     if(_currentVid){
       const stillExists=vehicles.find(function(v){return v.id===_currentVid;});
       if(stillExists){
@@ -15823,6 +16542,7 @@ function getSchedulingSettings(){
 
 function saveSchedulingSettings(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  // שדות קיימים
   var remEl=document.getElementById('sched-reminder-days');
   if(remEl) s.schedReminderDays=parseInt(remEl.value)||20;
   var testRemEl=document.getElementById('sched-test-reminder-days');
@@ -15833,12 +16553,38 @@ function saveSchedulingSettings(){
   var days=[];
   daysCbs.forEach(function(cb){if(cb.checked) days.push(parseInt(cb.value));});
   s.schedOpenDays=days;
+  // שדות חדשים
+  var scanEl=document.getElementById('sched-scan-range');
+  if(scanEl) s.schedScanRange=parseInt(scanEl.value)||30;
+  var hourEl=document.getElementById('sched-appointment-hour');
+  if(hourEl) s.schedAppointmentHour=parseInt(hourEl.value)||9;
+  var drvRemEl=document.getElementById('sched-driver-reminder');
+  if(drvRemEl) s.schedDriverReminder=parseInt(drvRemEl.value)||5;
+  var slaEl=document.getElementById('sched-approval-sla');
+  if(slaEl) s.schedApprovalSla=parseInt(slaEl.value)||3;
+  var postEl=document.getElementById('sched-post-reminder');
+  if(postEl) s.schedPostReminder=parseInt(postEl.value)||5;
   localStorage.setItem('fleetSettings',JSON.stringify(s));
+  // שמור גם ל-Firestore settings/treatments
+  if(typeof db!=='undefined'&&db){
+    db.collection('settings').doc('treatments').set({
+      scanRangeDays:s.schedScanRange||30,
+      reminderIntervalDays:s.schedDriverReminder||5,
+      maxTreatmentsPerDay:s.schedDailyCapacity||2,
+      openDays:s.schedOpenDays||[0,1,2,3,4],
+      appointmentHour:s.schedAppointmentHour||9,
+      approvalSlaDays:s.schedApprovalSla||3,
+      postTreatmentReminderDays:s.schedPostReminder||5
+    },{merge:true}).catch(function(e){console.error('שגיאה בשמירת הגדרות טיפולים:',e);});
+  }
+  // רענן את מערכת הטיפולים
+  if(typeof loadTreatmentSettings==='function'){loadTreatmentSettings();}
   showToast('✓ הגדרות לוח טיפולים נשמרו');
 }
 
 function initSchedulingSettings(){
   var s=getSchedulingSettings();
+  // שדות קיימים
   var remEl=document.getElementById('sched-reminder-days');
   if(remEl) remEl.value=s.reminderDays;
   var testRemEl=document.getElementById('sched-test-reminder-days');
@@ -15849,6 +16595,24 @@ function initSchedulingSettings(){
   daysCbs.forEach(function(cb){
     cb.checked=s.openDays.indexOf(parseInt(cb.value))>=0;
   });
+  // שדות חדשים - טען מ-Firestore אם זמין, אחרת localStorage
+  if(typeof TREATMENT_STATE!=='undefined'){
+    var ts=TREATMENT_STATE.settings;
+    var el;
+    el=document.getElementById('sched-scan-range');if(el)el.value=ts.scanRangeDays||30;
+    el=document.getElementById('sched-appointment-hour');if(el)el.value=ts.appointmentHour||9;
+    el=document.getElementById('sched-driver-reminder');if(el)el.value=ts.reminderIntervalDays||5;
+    el=document.getElementById('sched-approval-sla');if(el)el.value=ts.approvalSlaDays||3;
+    el=document.getElementById('sched-post-reminder');if(el)el.value=ts.postTreatmentReminderDays||5;
+  }else{
+    var ls=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+    var el;
+    el=document.getElementById('sched-scan-range');if(el)el.value=ls.schedScanRange||30;
+    el=document.getElementById('sched-appointment-hour');if(el)el.value=ls.schedAppointmentHour||9;
+    el=document.getElementById('sched-driver-reminder');if(el)el.value=ls.schedDriverReminder||5;
+    el=document.getElementById('sched-approval-sla');if(el)el.value=ls.schedApprovalSla||3;
+    el=document.getElementById('sched-post-reminder');if(el)el.value=ls.schedPostReminder||5;
+  }
 }
 
 function getVehiclesNeedingService(withinDays){
@@ -16530,6 +17294,1262 @@ function showBookingSuccess(date){
     <div id="docs-modal-body" style="padding:16px 20px;overflow-y:auto;flex:1"></div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TREATMENTS SYSTEM - MODALS (5)
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- ============================================================ -->
+<!-- מודאל 1: ממתין לבחירת תאריך (חלון צף כחול)                    -->
+<!-- ============================================================ -->
+<div class="trt-modal-overlay" id="modal-awaiting-choice" style="display: none;" onclick="closeTreatmentModalOnBackdrop(event, 'modal-awaiting-choice')">
+  <div class="trt-modal-container trt-modal-large" onclick="event.stopPropagation()">
+
+    <div class="trt-modal-header">
+      <div>
+        <div class="trt-modal-title">
+          ממתין לבחירת תאריך · <span id="awaiting-modal-count">0</span> נהגים
+        </div>
+        <div class="trt-modal-subtitle">
+          תזכורת אוטומטית כל <span id="reminder-days-display">5</span> ימים · ניתן לשנות בהגדרות
+        </div>
+      </div>
+      <span class="trt-modal-close" onclick="closeTreatmentModal('modal-awaiting-choice')">×</span>
+    </div>
+
+    <div class="trt-modal-filters">
+      <span class="trt-filter-label">סנן:</span>
+      <button class="mini-pill active" data-awaiting-filter="all">הכל · <span id="awaiting-all-count">0</span></button>
+      <button class="mini-pill mini-pill-red" data-awaiting-filter="late">לא ענו 5+ ימים · <span id="awaiting-late-count">0</span></button>
+      <button class="mini-pill" data-awaiting-filter="treatment">טיפולים</button>
+      <button class="mini-pill" data-awaiting-filter="test">טסטים</button>
+    </div>
+
+    <div class="trt-modal-list" id="awaiting-choice-list">
+      <!-- ימולא דינמית -->
+    </div>
+
+    <div class="trt-modal-footer">
+      <span class="trt-footer-text">לחיצה על נהג פותחת את כרטיס הרכב שלו</span>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- מודאל 2: מועד נקבע (חלון צף ירוק)                             -->
+<!-- ============================================================ -->
+<div class="trt-modal-overlay" id="modal-scheduled" style="display: none;" onclick="closeTreatmentModalOnBackdrop(event, 'modal-scheduled')">
+  <div class="trt-modal-container trt-modal-large" onclick="event.stopPropagation()">
+
+    <div class="trt-modal-header">
+      <div>
+        <div class="trt-modal-title">
+          מועד נקבע · <span id="scheduled-modal-count">0</span> נהגים
+        </div>
+        <div class="trt-modal-subtitle">
+          מסודר לפי קרבת התאריך · מסונכרן עם היומן
+        </div>
+      </div>
+      <span class="trt-modal-close" onclick="closeTreatmentModal('modal-scheduled')">×</span>
+    </div>
+
+    <div class="trt-modal-filters">
+      <span class="trt-filter-label">סנן:</span>
+      <button class="mini-pill active" data-scheduled-filter="all">הכל</button>
+      <button class="mini-pill mini-pill-green" data-scheduled-filter="this-week">השבוע</button>
+      <button class="mini-pill" data-scheduled-filter="treatment">טיפולים</button>
+      <button class="mini-pill" data-scheduled-filter="test">טסטים</button>
+    </div>
+
+    <div class="trt-modal-list" id="scheduled-list">
+      <!-- ימולא דינמית -->
+    </div>
+
+    <div class="trt-modal-footer">
+      <span class="trt-footer-text">"בוצע" זמין מיום הטיפול ואילך · לחיצה על נהג פותחת את כרטיס הרכב</span>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- מודאל 3: אישור מועד (לחיצה על "אשר" בכרטיס כתום)               -->
+<!-- ============================================================ -->
+<div class="trt-modal-overlay" id="modal-approve" style="display: none;" onclick="closeTreatmentModalOnBackdrop(event, 'modal-approve')">
+  <div class="trt-modal-container trt-modal-medium" onclick="event.stopPropagation()">
+
+    <div class="trt-modal-header">
+      <div class="trt-modal-title">
+        אישור מועד · <span id="approve-driver-name">--</span>
+      </div>
+      <span class="trt-modal-close" onclick="closeTreatmentModal('modal-approve')">×</span>
+    </div>
+
+    <div class="trt-modal-body">
+
+      <!-- סיכום הפרטים -->
+      <div class="trt-approve-summary">
+        <div class="trt-summary-row">
+          <span class="trt-summary-label">תאריך שנבחר</span>
+          <span class="trt-summary-value" id="approve-selected-date">--</span>
+        </div>
+        <div class="trt-summary-row">
+          <span class="trt-summary-label">רכב</span>
+          <span class="trt-summary-value" id="approve-vehicle">--</span>
+        </div>
+        <div class="trt-summary-row">
+          <span class="trt-summary-label">סוג</span>
+          <span class="trt-summary-value" id="approve-type">--</span>
+        </div>
+        <div class="trt-summary-row" id="approve-note-row" style="display: none;">
+          <span class="trt-summary-label">📝 הערת הנהג</span>
+          <span class="trt-summary-value trt-summary-note" id="approve-driver-note">--</span>
+        </div>
+      </div>
+
+      <!-- בחירת ערוץ -->
+      <div class="trt-channel-section">
+        <div class="trt-section-label">שלח אישור באמצעות</div>
+        <div class="trt-channel-options">
+          <div class="trt-channel-option active" data-channel="whatsapp" onclick="selectChannel('whatsapp')">
+            <div class="trt-channel-check">✓</div>
+            <div class="trt-channel-name">וואטסאפ</div>
+            <div class="trt-channel-detail" id="approve-whatsapp">052-***-****</div>
+            <div class="trt-channel-tag">מומלץ · נקרא בדרך כלל</div>
+          </div>
+          <div class="trt-channel-option" data-channel="email" onclick="selectChannel('email')">
+            <div class="trt-channel-name">מייל</div>
+            <div class="trt-channel-detail" id="approve-email">***@***</div>
+            <div class="trt-channel-tag-secondary">נשלח גם לעותק שלך</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- תצוגה מקדימה -->
+      <div class="trt-preview-section">
+        <div class="trt-section-label-row">
+          <span class="trt-section-label">תצוגה מקדימה</span>
+          <a class="trt-link-btn" onclick="go('settings',null)">ערוך תבנית ←</a>
+        </div>
+        <div class="trt-preview-content" id="approve-preview">
+          <!-- ימולא דינמית -->
+        </div>
+      </div>
+
+      <!-- הערה אישית -->
+      <div class="trt-personal-note-toggle">
+        <input type="checkbox" id="trt-add-personal-note" onchange="togglePersonalNote()">
+        <label for="trt-add-personal-note">הוסף הערה אישית (כתובת איסוף, שעה מדויקת...)</label>
+      </div>
+      <textarea id="trt-personal-note-text" class="trt-personal-note-input" placeholder="הערה שתתווסף להודעה" style="display: none;"></textarea>
+
+      <!-- כפתורי פעולה -->
+      <div class="trt-modal-actions">
+        <button class="trt-btn-secondary" onclick="closeTreatmentModal('modal-approve')">בטל</button>
+        <button class="trt-btn-primary trt-btn-green" id="approve-confirm-btn" onclick="confirmApproval()">
+          אשר ושלח <span id="approve-channel-name">וואטסאפ</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- מודאל 4: תזכורת ידנית (לחיצה על "תזכורת" בכרטיס כחול)           -->
+<!-- ============================================================ -->
+<div class="trt-modal-overlay" id="modal-reminder" style="display: none;" onclick="closeTreatmentModalOnBackdrop(event, 'modal-reminder')">
+  <div class="trt-modal-container trt-modal-small" onclick="event.stopPropagation()">
+
+    <div class="trt-modal-header">
+      <div>
+        <div class="trt-modal-title">
+          שלח תזכורת · <span id="reminder-driver-name">--</span>
+        </div>
+        <div class="trt-modal-subtitle" id="reminder-status">--</div>
+      </div>
+      <span class="trt-modal-close" onclick="closeTreatmentModal('modal-reminder')">×</span>
+    </div>
+
+    <div class="trt-modal-body">
+      <p class="trt-modal-description">
+        איך לשלוח את התזכורת? אותה הודעת בקשה לבחירת תאריך תישלח שוב בערוץ הנבחר.
+      </p>
+
+      <div class="trt-channel-grid">
+        <div class="trt-channel-card" onclick="sendManualReminder('whatsapp')">
+          <div class="trt-channel-icon trt-channel-icon-whatsapp">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+          </div>
+          <div class="trt-channel-card-name">וואטסאפ</div>
+          <div class="trt-channel-card-detail" id="reminder-whatsapp">052-***-****</div>
+        </div>
+        <div class="trt-channel-card" onclick="sendManualReminder('email')">
+          <div class="trt-channel-icon trt-channel-icon-email">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </div>
+          <div class="trt-channel-card-name">מייל</div>
+          <div class="trt-channel-card-detail" id="reminder-email">***@***</div>
+        </div>
+      </div>
+
+      <div class="trt-modal-actions">
+        <button class="trt-btn-secondary" onclick="closeTreatmentModal('modal-reminder')">בטל</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- מודאל 5: סגירת טיפול ("בוצע ✓" בכרטיס ירוק)                   -->
+<!-- ============================================================ -->
+<div class="trt-modal-overlay" id="modal-mark-done" style="display: none;" onclick="closeTreatmentModalOnBackdrop(event, 'modal-mark-done')">
+  <div class="trt-modal-container trt-modal-medium" onclick="event.stopPropagation()">
+
+    <div class="trt-modal-header">
+      <div>
+        <div class="trt-modal-title">
+          סיום טיפול · <span id="done-driver-name">--</span>
+        </div>
+        <div class="trt-modal-subtitle" id="done-vehicle">--</div>
+      </div>
+      <span class="trt-modal-close" onclick="closeTreatmentModal('modal-mark-done')">×</span>
+    </div>
+
+    <div class="trt-modal-body">
+      <p class="trt-modal-description">
+        עדכון הפרטים יסגור את הטיפול ויעדכן את כרטיס הרכב לקראת הסריקה הבאה (בעוד שנה).
+      </p>
+
+      <div class="trt-form-field">
+        <label>תאריך ביצוע</label>
+        <input type="date" id="done-date" />
+        <div class="trt-field-hint">ברירת מחדל: התאריך שנקבע</div>
+      </div>
+
+      <div class="trt-form-field">
+        <label>סוג הטיפול שבוצע</label>
+        <input type="text" id="done-type" />
+      </div>
+
+      <div class="trt-form-field">
+        <label>קילומטראז' נוכחי</label>
+        <input type="text" id="done-mileage" placeholder="לדוגמה: 32150" />
+      </div>
+
+      <div class="trt-form-field">
+        <label>סוג טיפול הבא <span class="trt-field-meta">(יוצג לנהג בפעם הבאה)</span></label>
+        <input type="text" id="done-next-type" placeholder='לדוגמה: טיפול 60,000 ק"מ' />
+      </div>
+
+      <div class="trt-modal-actions">
+        <button class="trt-btn-secondary" onclick="closeTreatmentModal('modal-mark-done')">בטל</button>
+        <button class="trt-btn-primary trt-btn-green" onclick="confirmTreatmentDone()">
+          סגור טיפול ועדכן כרטיס
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TREATMENTS SYSTEM - JAVASCRIPT
+     04_core.js + 05_render.js + 06_actions.js (adapted)
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+// ============================================================
+// 1. הגדרות ברירת מחדל
+// ============================================================
+var TREATMENT_SETTINGS_DEFAULTS = {
+  scanRangeDays: 30,
+  reminderIntervalDays: 5,
+  maxTreatmentsPerDay: 2,
+  openDays: [0, 1, 2, 3, 4],
+  appointmentHour: 9,
+  approvalSlaDays: 3,
+  postTreatmentReminderDays: 5,
+  scanTime: '06:00'
+};
+
+// ============================================================
+// 2. סטייט גלובלי
+// ============================================================
+var TREATMENT_STATE = {
+  settings: Object.assign({}, TREATMENT_SETTINGS_DEFAULTS),
+  vehicles: [],
+  treatments: [],
+  currentFilter: 'all',
+  currentPendingFilter: 'all',
+  currentApproveContext: null,
+  currentReminderContext: null,
+  currentDoneContext: null,
+  pendingDisplayLimit: 5,
+  selectedChannel: 'whatsapp'
+};
+
+// ============================================================
+// 3. אתחול
+// ============================================================
+async function initTreatmentsSystem() {
+  console.log('[Treatments] מאתחל מערכת טיפולים וטסטים...');
+  await loadTreatmentSettings();
+  subscribeToVehicles();
+  subscribeToTreatments();
+  setupTreatmentFilterButtons();
+  performLocalScan();
+  console.log('[Treatments] מערכת מוכנה');
+}
+
+// ============================================================
+// 4. טעינת הגדרות מ-Firestore
+// ============================================================
+async function loadTreatmentSettings() {
+  try {
+    var doc = await db.collection('settings').doc('treatments').get();
+    if (doc.exists) {
+      TREATMENT_STATE.settings = Object.assign({}, TREATMENT_SETTINGS_DEFAULTS, doc.data());
+    } else {
+      await db.collection('settings').doc('treatments').set(TREATMENT_SETTINGS_DEFAULTS);
+    }
+    var rangeEl = document.getElementById('scan-range-display');
+    if (rangeEl) rangeEl.textContent = TREATMENT_STATE.settings.scanRangeDays;
+    var reminderEl = document.getElementById('reminder-days-display');
+    if (reminderEl) reminderEl.textContent = TREATMENT_STATE.settings.reminderIntervalDays;
+  } catch (err) {
+    console.error('[Treatments] שגיאה בטעינת הגדרות:', err);
+  }
+}
+
+// ============================================================
+// 5. האזנה real-time
+// ============================================================
+function subscribeToVehicles() {
+  // vehicles כבר מסונכרן real-time דרך startVehiclesListener
+  TREATMENT_STATE.vehicles = vehicles || [];
+}
+
+function subscribeToTreatments() {
+  db.collection('treatments').onSnapshot(function(snapshot) {
+    TREATMENT_STATE.treatments = snapshot.docs.map(function(doc) {
+      return Object.assign({ id: doc.id }, doc.data());
+    });
+    renderTreatments();
+  });
+}
+
+// ============================================================
+// 6. סריקה מקומית (גרסה מתוקנת - עם הגנת כפילויות)
+// ============================================================
+var _scanInProgress = false;
+
+async function performLocalScan() {
+  if (_scanInProgress) return;
+  _scanInProgress = true;
+  try {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var range = TREATMENT_STATE.settings.scanRangeDays;
+
+    for (var i = 0; i < TREATMENT_STATE.vehicles.length; i++) {
+      var vehicle = TREATMENT_STATE.vehicles[i];
+      if (!vehicle.id) continue;
+
+      // === טיפול: שנה מהטיפול האחרון ===
+      var lastSvcDate = null;
+      if (vehicle.historyLog && vehicle.historyLog.length) {
+        var services = vehicle.historyLog.filter(function(h) { return h.kind === 'service'; });
+        if (services.length) {
+          var sorted = services.slice().sort(function(a, b) {
+            return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+          });
+          if (sorted[0].createdAt) lastSvcDate = sorted[0].createdAt.split('T')[0];
+        }
+      }
+      if (!lastSvcDate && vehicle.lastService) lastSvcDate = vehicle.lastService;
+
+      if (lastSvcDate) {
+        var nextTreatmentDate = addYears(parseTreatmentDate(lastSvcDate), 1);
+        var daysUntilTreatment = daysBetween(today, nextTreatmentDate);
+        if (daysUntilTreatment <= range) {
+          await createTreatmentIfNotExists(vehicle, 'treatment', nextTreatmentDate);
+        }
+      }
+
+      // === טסט: ישירות מתאריך פקיעת הרישיון ===
+      if (vehicle.licenseExp) {
+        var testDueDate = parseTreatmentDate(vehicle.licenseExp);
+        var daysUntilTest = daysBetween(today, testDueDate);
+        if (daysUntilTest <= range) {
+          await createTreatmentIfNotExists(vehicle, 'test', testDueDate);
+        }
+      }
+    }
+
+    renderTreatments();
+  } finally {
+    _scanInProgress = false;
+  }
+}
+
+// בדיקה ב-Firestore ישירות לפני יצירה (מונע כפילויות)
+async function createTreatmentIfNotExists(vehicle, kind, dueDate) {
+  try {
+    var existingQuery = await db.collection('treatments')
+      .where('vehicleId', '==', String(vehicle.id))
+      .where('kind', '==', kind)
+      .get();
+
+    var hasActive = false;
+    existingQuery.forEach(function(doc) {
+      if (doc.data().status !== 'closed') hasActive = true;
+    });
+
+    if (hasActive) return;
+
+    await createTreatmentRecord(vehicle, kind, dueDate);
+  } catch (err) {
+    console.error('[Treatments] שגיאה בבדיקת כפילות:', err);
+  }
+}
+
+// ניקוי כפילויות חד-פעמי (להרצה ידנית מהקונסול)
+async function cleanupDuplicateTreatments() {
+  console.log('[Treatments] מנקה כפילויות...');
+  var snap = await db.collection('treatments').get();
+  var seen = {};
+  var toDelete = [];
+
+  snap.forEach(function(doc) {
+    var d = doc.data();
+    if (d.status === 'closed') return;
+    var key = d.vehicleId + '_' + d.kind;
+    if (seen[key]) {
+      toDelete.push(doc.id);
+    } else {
+      seen[key] = doc.id;
+    }
+  });
+
+  for (var i = 0; i < toDelete.length; i++) {
+    await db.collection('treatments').doc(toDelete[i]).delete();
+    console.log('[Treatments] נמחקה כפילות:', toDelete[i]);
+  }
+  console.log('[Treatments] ניקוי הושלם. נמחקו ' + toDelete.length + ' כפילויות.');
+}
+
+// ============================================================
+// 7. יצירת רשומת טיפול (מיפוי שדות)
+// ============================================================
+async function createTreatmentRecord(vehicle, kind, dueDate) {
+  var driverName = (vehicle.driver && vehicle.driver.name) || '';
+  var driverEmail = (vehicle.driver && vehicle.driver.email) || '';
+  var driverPhone = (vehicle.driver && vehicle.driver.phone) || '';
+  var vehicleModel = ((vehicle.make || '') + ' ' + (vehicle.model || '')).trim();
+  var licensePlate = vehicle.plate || '';
+  var currentMileage = vehicle.currentKm || vehicle.curKm || 0;
+
+  var treatmentType;
+  if (kind === 'test') {
+    treatmentType = 'טסט רישוי';
+  } else {
+    treatmentType = vehicle.nextTreatmentType || 'טיפול שנתי';
+  }
+
+  var record = {
+    vehicleId: String(vehicle.id),
+    licensePlate: licensePlate,
+    driverName: driverName,
+    driverEmail: driverEmail,
+    driverPhone: driverPhone,
+    vehicleModel: vehicleModel,
+    currentMileage: currentMileage,
+    kind: kind,
+    treatmentType: treatmentType,
+    dueDate: dueDate.toISOString(),
+    status: 'awaiting_choice',
+    emailsSent: 1,
+    lastEmailSentAt: new Date().toISOString(),
+    selectedDate: null,
+    approvedAt: null,
+    driverNote: '',
+    createdAt: new Date().toISOString()
+  };
+
+  var docRef = await db.collection('treatments').add(record);
+  await sendDriverEmail(vehicle, kind, docRef.id);
+  console.log('[Treatments] נוצרה רשומה ל' + driverName + ' (' + kind + ')');
+}
+
+// ============================================================
+// 8. שליחת מייל לנהג
+// ============================================================
+async function sendDriverEmail(vehicle, kind, treatmentId) {
+  var driverLinkUrl = window.location.origin + '/driver-link.html?id=' + treatmentId;
+  var driverEmail = (vehicle.driver && vehicle.driver.email) || vehicle.driverEmail || '';
+  var driverName = (vehicle.driver && vehicle.driver.name) || vehicle.driverName || '';
+  var licensePlate = vehicle.plate || vehicle.licensePlate || '';
+  var vehicleModel = ((vehicle.make || '') + ' ' + (vehicle.model || '')).trim() || vehicle.vehicleModel || '';
+
+  if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured()) {
+    try {
+      var settings = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
+      await emailjs.send(settings.emailjsServiceId, settings.emailjsTemplateId, {
+        to_email: driverEmail,
+        to_name: driverName,
+        license_plate: licensePlate,
+        vehicle_model: vehicleModel,
+        link: driverLinkUrl,
+        kind: kind === 'treatment' ? 'טיפול' : 'טסט'
+      });
+      console.log('[Treatments] מייל נשלח ל', driverEmail);
+    } catch (err) {
+      console.error('[Treatments] שגיאה בשליחת מייל:', err);
+    }
+  } else {
+    console.log('[Treatments] EmailJS לא מוגדר, דילוג על שליחת מייל. קישור:', driverLinkUrl);
+  }
+}
+
+// ============================================================
+// 9. עזרים - חישובי תאריכים (עם prefix)
+// ============================================================
+function parseTreatmentDate(dateStr) {
+  if (dateStr instanceof Date) return dateStr;
+  if (dateStr && dateStr.toDate) return dateStr.toDate();
+  return new Date(dateStr);
+}
+
+function addYears(date, years) {
+  var d = new Date(date);
+  d.setFullYear(d.getFullYear() + years);
+  return d;
+}
+
+function daysBetween(d1, d2) {
+  var ms = parseTreatmentDate(d2) - parseTreatmentDate(d1);
+  return Math.floor(ms / (1000 * 60 * 60 * 24));
+}
+
+function daysSince(date) {
+  return daysBetween(parseTreatmentDate(date), new Date());
+}
+
+function formatTreatmentDate(date) {
+  var d = parseTreatmentDate(date);
+  return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear();
+}
+
+function formatTreatmentDateShort(date) {
+  var d = parseTreatmentDate(date);
+  return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function getHebrewDayName(date) {
+  var days = ['יום א\'', 'יום ב\'', 'יום ג\'', 'יום ד\'', 'יום ה\'', 'יום ו\'', 'שבת'];
+  return days[parseTreatmentDate(date).getDay()];
+}
+
+function getInitials(name) {
+  if (!name) return '??';
+  var parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2);
+  return parts[0][0] + parts[parts.length - 1][0];
+}
+
+function maskPhone(phone) {
+  if (!phone) return '---';
+  var cleaned = phone.replace(/\D/g, '');
+  if (cleaned.length < 7) return phone;
+  return cleaned.slice(0, 3) + '-***-' + cleaned.slice(-4);
+}
+
+function maskEmail(email) {
+  if (!email) return '---';
+  var parts = email.split('@');
+  if (!parts[1]) return email;
+  return parts[0].slice(0, 2) + '***@***.' + parts[1].split('.').pop();
+}
+
+
+// ============================================================
+// 10. רינדור ראשי
+// ============================================================
+function renderTreatments() {
+  var filtered = filterTreatments(TREATMENT_STATE.treatments);
+  var stats = calculateStats(filtered);
+  updateCardCounts(stats);
+  updateTrtProgressBar(stats);
+  updateFilterCounts();
+  renderPendingApprovalList(filtered);
+}
+
+function filterTreatments(treatments) {
+  var filter = TREATMENT_STATE.currentFilter;
+  if (filter === 'all') return treatments;
+  return treatments.filter(function(t) { return t.kind === filter; });
+}
+
+function calculateStats(treatments) {
+  var stats = { awaitingChoice: 0, pendingApproval: 0, scheduled: 0, closed: 0, total: 0 };
+  treatments.forEach(function(t) {
+    if (t.status === 'awaiting_choice') stats.awaitingChoice++;
+    else if (t.status === 'pending_approval') stats.pendingApproval++;
+    else if (t.status === 'scheduled') stats.scheduled++;
+    else if (t.status === 'closed') stats.closed++;
+  });
+  stats.total = stats.awaitingChoice + stats.pendingApproval + stats.scheduled;
+  return stats;
+}
+
+function updateCardCounts(stats) {
+  var el;
+  el = document.getElementById('awaiting-choice-count'); if (el) el.textContent = stats.awaitingChoice;
+  el = document.getElementById('pending-approval-count'); if (el) el.textContent = stats.pendingApproval;
+  el = document.getElementById('scheduled-count'); if (el) el.textContent = stats.scheduled;
+  el = document.getElementById('total-drivers-count'); if (el) el.textContent = TREATMENT_STATE.vehicles.length;
+
+  var total = stats.total || 1;
+  el = document.getElementById('awaiting-choice-percent'); if (el) el.textContent = Math.round(stats.awaitingChoice / total * 100) + '%';
+  el = document.getElementById('pending-approval-percent'); if (el) el.textContent = Math.round(stats.pendingApproval / total * 100) + '%';
+  el = document.getElementById('scheduled-percent'); if (el) el.textContent = Math.round(stats.scheduled / total * 100) + '%';
+
+  var lateCount = TREATMENT_STATE.treatments.filter(function(t) {
+    return t.status === 'awaiting_choice' && t.lastEmailSentAt && daysSince(t.lastEmailSentAt) >= 5;
+  }).length;
+  el = document.getElementById('awaiting-choice-detail');
+  if (el) el.textContent = lateCount > 0 ? lateCount + ' לא ענו 5+ ימים' : 'הכל בטווח';
+
+  var upcoming = TREATMENT_STATE.treatments
+    .filter(function(t) { return t.status === 'scheduled' && t.selectedDate; })
+    .sort(function(a, b) { return parseTreatmentDate(a.selectedDate) - parseTreatmentDate(b.selectedDate); })[0];
+  el = document.getElementById('scheduled-detail');
+  if (el) el.textContent = upcoming ? 'הקרוב: ' + getHebrewDayName(upcoming.selectedDate) + ' ' + formatTreatmentDateShort(upcoming.selectedDate) : '--';
+}
+
+function updateTrtProgressBar(stats) {
+  var el;
+  el = document.getElementById('trt-progress-blue'); if (el) el.style.flex = stats.awaitingChoice;
+  el = document.getElementById('trt-progress-amber'); if (el) el.style.flex = stats.pendingApproval;
+  el = document.getElementById('trt-progress-green'); if (el) el.style.flex = stats.scheduled;
+}
+
+function updateFilterCounts() {
+  var all = TREATMENT_STATE.treatments.filter(function(t) { return t.status !== 'closed'; }).length;
+  var treatments = TREATMENT_STATE.treatments.filter(function(t) { return t.kind === 'treatment' && t.status !== 'closed'; }).length;
+  var tests = TREATMENT_STATE.treatments.filter(function(t) { return t.kind === 'test' && t.status !== 'closed'; }).length;
+  var el;
+  el = document.getElementById('filter-all-count'); if (el) el.textContent = all;
+  el = document.getElementById('filter-treatment-count'); if (el) el.textContent = treatments;
+  el = document.getElementById('filter-test-count'); if (el) el.textContent = tests;
+}
+
+
+// ============================================================
+// 11. רשימת "ממתין לאישור" בדשבורד
+// ============================================================
+function renderPendingApprovalList(treatments) {
+  var pending = treatments.filter(function(t) { return t.status === 'pending_approval'; });
+  if (TREATMENT_STATE.currentPendingFilter === 'urgent') {
+    pending = pending.filter(function(t) { return daysSince(t.selectedDateAt) >= 2; });
+  }
+  pending.sort(function(a, b) { return parseTreatmentDate(a.selectedDateAt) - parseTreatmentDate(b.selectedDateAt); });
+
+  var list = document.getElementById('pending-approval-list');
+  if (!list) return;
+  var countEl = document.getElementById('pending-section-count');
+  if (countEl) countEl.textContent = pending.length;
+
+  if (pending.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--t2);font-size:12px">אין נהגים ממתינים לאישור</div>';
+    var smb = document.getElementById('pending-show-more'); if (smb) smb.style.display = 'none';
+    return;
+  }
+
+  var limit = TREATMENT_STATE.pendingDisplayLimit;
+  var displayed = pending.slice(0, limit);
+  var remaining = pending.length - limit;
+  list.innerHTML = displayed.map(function(t) { return renderPendingRow(t); }).join('');
+
+  var showMoreBtn = document.getElementById('pending-show-more');
+  if (showMoreBtn) {
+    if (remaining > 0) {
+      showMoreBtn.style.display = 'block';
+      var remEl = document.getElementById('pending-remaining'); if (remEl) remEl.textContent = remaining;
+    } else {
+      showMoreBtn.style.display = 'none';
+    }
+  }
+}
+
+function renderPendingRow(t) {
+  var days = t.selectedDateAt ? daysSince(t.selectedDateAt) : 0;
+  var urgencyClass = 'urgent-low';
+  var timeTagClass = 'trt-driver-tag-gray';
+  var timeTag = days === 0 ? 'היום' : days + ' ימים';
+
+  if (days >= 3) { urgencyClass = 'urgent-3plus'; timeTagClass = 'trt-driver-tag-red'; }
+  else if (days === 2) { urgencyClass = 'urgent-2'; timeTagClass = 'trt-driver-tag-amber'; }
+
+  var avatarClass = days >= 3 ? 'trt-driver-avatar-red' : (days === 2 ? 'trt-driver-avatar-amber' : 'trt-driver-avatar-green');
+  var noteTag = t.driverNote ? '<span class="trt-driver-tag trt-driver-tag-note">📝 הערה</span>' : '';
+  var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
+
+  return '<div class="trt-driver-row ' + urgencyClass + '" data-treatment-id="' + t.id + '" onclick="openVehicleCard(\'' + t.vehicleId + '\')">'
+    + '<div class="trt-driver-avatar ' + avatarClass + '">' + getInitials(t.driverName) + '</div>'
+    + '<div class="trt-driver-info">'
+    + '<div class="trt-driver-info-row">'
+    + '<span class="trt-driver-name">' + t.driverName + '</span>'
+    + '<span class="trt-driver-tag ' + timeTagClass + '">' + timeTag + '</span>'
+    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + '</span>'
+    + noteTag
+    + '</div>'
+    + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · בחר: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + hour + ':00</div>'
+    + '</div>'
+    + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
+    + '<button class="trt-btn-action trt-btn-action-danger" onclick="rejectDate(\'' + t.id + '\')">דחה</button>'
+    + '<button class="trt-btn-action trt-btn-action-primary" onclick="openApproveModal(\'' + t.id + '\')">אשר</button>'
+    + '</div></div>';
+}
+
+
+// ============================================================
+// 12. אינטראקציות - פתיחה/סגירה
+// ============================================================
+function togglePendingApprovalSection() {
+  var section = document.getElementById('pending-approval-section');
+  var chevron = document.getElementById('pending-chevron');
+  if (!section) return;
+  if (section.style.display === 'none') {
+    section.style.display = 'block';
+    if (chevron) chevron.textContent = '↑';
+  } else {
+    section.style.display = 'none';
+    if (chevron) chevron.textContent = '↓';
+  }
+}
+
+function showMorePending() {
+  TREATMENT_STATE.pendingDisplayLimit += 5;
+  renderTreatments();
+}
+
+function setupTreatmentFilterButtons() {
+  document.querySelectorAll('.filter-pill').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-pill').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      TREATMENT_STATE.currentFilter = btn.getAttribute('data-filter');
+      renderTreatments();
+    });
+  });
+  document.querySelectorAll('[data-pending-filter]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[data-pending-filter]').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      TREATMENT_STATE.currentPendingFilter = btn.getAttribute('data-pending-filter');
+      renderTreatments();
+    });
+  });
+}
+
+
+// ============================================================
+// 13. מודאל "ממתין לבחירת תאריך" (כחול)
+// ============================================================
+function openAwaitingChoiceModal() {
+  var modal = document.getElementById('modal-awaiting-choice');
+  var list = document.getElementById('awaiting-choice-list');
+  if (!modal || !list) return;
+
+  var awaiting = filterTreatments(TREATMENT_STATE.treatments)
+    .filter(function(t) { return t.status === 'awaiting_choice'; });
+  awaiting.sort(function(a, b) { return daysSince(b.lastEmailSentAt) - daysSince(a.lastEmailSentAt); });
+
+  var el;
+  el = document.getElementById('awaiting-modal-count'); if (el) el.textContent = awaiting.length;
+  el = document.getElementById('awaiting-all-count'); if (el) el.textContent = awaiting.length;
+  el = document.getElementById('awaiting-late-count');
+  if (el) el.textContent = awaiting.filter(function(t) { return daysSince(t.lastEmailSentAt) >= 5; }).length;
+
+  list.innerHTML = awaiting.map(function(t) { return renderAwaitingRow(t); }).join('')
+    || '<div style="padding:32px;text-align:center;color:var(--t2)">אין נהגים ממתינים לבחירת תאריך</div>';
+  modal.style.display = 'flex';
+}
+
+function renderAwaitingRow(t) {
+  var daysSinceEmail = daysSince(t.lastEmailSentAt);
+  var urgencyClass = 'urgent-low';
+  var tagClass = 'trt-driver-tag-blue';
+  var tagText = daysSinceEmail === 0 ? 'היום' : daysSinceEmail + ' ימים';
+
+  if (daysSinceEmail >= 5) { urgencyClass = 'urgent-3plus'; tagClass = 'trt-driver-tag-red'; tagText = 'לא ענה ' + daysSinceEmail + ' ימים'; }
+  else if (daysSinceEmail >= 3) { urgencyClass = 'urgent-2'; tagClass = 'trt-driver-tag-amber'; tagText = daysSinceEmail + ' ימים'; }
+
+  var avatarClass = daysSinceEmail >= 5 ? 'trt-driver-avatar-red' : daysSinceEmail >= 3 ? 'trt-driver-avatar-amber' : 'trt-driver-avatar-blue';
+
+  return '<div class="trt-driver-row ' + urgencyClass + '" onclick="openVehicleCard(\'' + t.vehicleId + '\')">'
+    + '<div class="trt-driver-avatar ' + avatarClass + '">' + getInitials(t.driverName) + '</div>'
+    + '<div class="trt-driver-info">'
+    + '<div class="trt-driver-info-row">'
+    + '<span class="trt-driver-name">' + t.driverName + '</span>'
+    + '<span class="trt-driver-tag ' + tagClass + '">' + tagText + '</span>'
+    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + '</span>'
+    + '</div>'
+    + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · נשלח: ' + formatTreatmentDate(t.lastEmailSentAt) + ' · פוקע: ' + formatTreatmentDate(t.dueDate) + '</div>'
+    + '</div>'
+    + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
+    + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">תזכורת ↗</button>'
+    + '</div></div>';
+}
+
+
+// ============================================================
+// 14. מודאל "מועד נקבע" (ירוק)
+// ============================================================
+function openScheduledModal() {
+  var modal = document.getElementById('modal-scheduled');
+  var list = document.getElementById('scheduled-list');
+  if (!modal || !list) return;
+
+  var scheduled = filterTreatments(TREATMENT_STATE.treatments)
+    .filter(function(t) { return t.status === 'scheduled'; });
+  scheduled.sort(function(a, b) { return parseTreatmentDate(a.selectedDate) - parseTreatmentDate(b.selectedDate); });
+
+  var el = document.getElementById('scheduled-modal-count'); if (el) el.textContent = scheduled.length;
+
+  list.innerHTML = scheduled.map(function(t) { return renderScheduledRow(t); }).join('')
+    || '<div style="padding:32px;text-align:center;color:var(--t2)">אין מועדים שנקבעו</div>';
+  modal.style.display = 'flex';
+}
+
+function renderScheduledRow(t) {
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var treatmentDate = parseTreatmentDate(t.selectedDate); treatmentDate.setHours(0, 0, 0, 0);
+  var daysToDate = daysBetween(today, treatmentDate);
+  var isPast = daysToDate < 0;
+  var isToday = daysToDate === 0;
+  var isTomorrow = daysToDate === 1;
+  var isWithinWeek = daysToDate >= 0 && daysToDate <= 7;
+  var canMarkDone = daysToDate <= 0;
+
+  var timeTag, timeTagClass;
+  if (isPast) { timeTag = 'לפני ' + Math.abs(daysToDate) + ' ימים'; timeTagClass = 'trt-driver-tag-red'; }
+  else if (isToday) { timeTag = 'היום'; timeTagClass = 'trt-driver-tag-green'; }
+  else if (isTomorrow) { timeTag = 'מחר'; timeTagClass = 'trt-driver-tag-green'; }
+  else { timeTag = 'בעוד ' + daysToDate + ' ימים'; timeTagClass = 'trt-driver-tag-gray'; }
+
+  var dateBoxUrgent = isWithinWeek ? 'urgent' : '';
+  var noteTag = t.driverNote ? '<span class="trt-driver-tag trt-driver-tag-note">📝 הערה</span>' : '';
+  var rowClass = isWithinWeek ? 'trt-scheduled-row' : 'trt-scheduled-row future';
+  var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
+
+  return '<div class="trt-driver-row ' + rowClass + '" onclick="openVehicleCard(\'' + t.vehicleId + '\')">'
+    + '<div class="trt-driver-date-box ' + dateBoxUrgent + '">'
+    + '<span class="trt-driver-date-day ' + dateBoxUrgent + '">' + getHebrewDayName(t.selectedDate) + '</span>'
+    + '<span class="trt-driver-date-num ' + dateBoxUrgent + '">' + formatTreatmentDateShort(t.selectedDate) + '</span>'
+    + '<span class="trt-driver-date-time ' + dateBoxUrgent + '">' + hour + ':00</span>'
+    + '</div>'
+    + '<div class="trt-driver-info">'
+    + '<div class="trt-driver-info-row">'
+    + '<span class="trt-driver-name">' + t.driverName + '</span>'
+    + '<span class="trt-driver-tag ' + timeTagClass + '">' + timeTag + '</span>'
+    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.treatmentType || (t.kind === 'treatment' ? 'טיפול' : 'טסט')) + '</span>'
+    + noteTag
+    + '</div>'
+    + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · אושר ב-' + formatTreatmentDate(t.approvedAt) + ' ב' + (t.approvedChannel === 'whatsapp' ? 'וואטסאפ' : 'מייל') + '</div>'
+    + '</div>'
+    + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
+    + '<button class="trt-btn-action trt-btn-action-danger" onclick="cancelScheduled(\'' + t.id + '\')">בטל</button>'
+    + '<button class="trt-btn-action trt-btn-action-primary" ' + (canMarkDone ? '' : 'disabled') + ' onclick="openMarkDoneModal(\'' + t.id + '\')">בוצע ✓</button>'
+    + '</div></div>';
+}
+
+
+// ============================================================
+// 15. סגירת מודאלים + ניווט
+// ============================================================
+function closeTreatmentModal(modalId) {
+  var el = document.getElementById(modalId);
+  if (el) el.style.display = 'none';
+}
+
+function closeTreatmentModalOnBackdrop(event, modalId) {
+  if (event.target.id === modalId) closeTreatmentModal(modalId);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.trt-modal-overlay').forEach(function(m) { m.style.display = 'none'; });
+  }
+});
+
+function openVehicleCard(vehicleId) {
+  if (typeof openDet === 'function') {
+    openDet(parseInt(vehicleId));
+  } else {
+    console.warn('[Treatments] openDet not found');
+  }
+  document.querySelectorAll('.trt-modal-overlay').forEach(function(m) { m.style.display = 'none'; });
+}
+
+
+// ============================================================
+// 16. מודאל אישור - פתיחה
+// ============================================================
+function openApproveModal(treatmentId) {
+  var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
+  if (!t) return;
+
+  TREATMENT_STATE.currentApproveContext = t;
+  TREATMENT_STATE.selectedChannel = 'whatsapp';
+
+  var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
+  var el;
+  el = document.getElementById('approve-driver-name'); if (el) el.textContent = t.driverName;
+  el = document.getElementById('approve-selected-date');
+  if (el) el.textContent = getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + hour + ':00';
+  el = document.getElementById('approve-vehicle'); if (el) el.textContent = t.licensePlate + ' · ' + t.vehicleModel;
+  el = document.getElementById('approve-type'); if (el) el.textContent = t.treatmentType || (t.kind === 'treatment' ? 'טיפול שנתי' : 'טסט רישוי');
+
+  var noteRow = document.getElementById('approve-note-row');
+  if (noteRow) {
+    if (t.driverNote) {
+      noteRow.style.display = 'flex';
+      var noteEl = document.getElementById('approve-driver-note'); if (noteEl) noteEl.textContent = t.driverNote;
+    } else {
+      noteRow.style.display = 'none';
+    }
+  }
+
+  el = document.getElementById('approve-whatsapp'); if (el) el.textContent = maskPhone(t.driverPhone);
+  el = document.getElementById('approve-email'); if (el) el.textContent = maskEmail(t.driverEmail);
+
+  document.querySelectorAll('.trt-channel-option').forEach(function(el) { el.classList.remove('active'); });
+  var waOpt = document.querySelector('.trt-channel-option[data-channel="whatsapp"]');
+  if (waOpt) waOpt.classList.add('active');
+  el = document.getElementById('approve-channel-name'); if (el) el.textContent = 'וואטסאפ';
+
+  var cb = document.getElementById('trt-add-personal-note'); if (cb) cb.checked = false;
+  var ta = document.getElementById('trt-personal-note-text'); if (ta) { ta.style.display = 'none'; ta.value = ''; }
+
+  updateApprovePreview();
+  var modal = document.getElementById('modal-approve'); if (modal) modal.style.display = 'flex';
+}
+
+function selectChannel(channel) {
+  TREATMENT_STATE.selectedChannel = channel;
+  document.querySelectorAll('.trt-channel-option').forEach(function(el) { el.classList.remove('active'); });
+  var opt = document.querySelector('.trt-channel-option[data-channel="' + channel + '"]');
+  if (opt) opt.classList.add('active');
+  var el = document.getElementById('approve-channel-name');
+  if (el) el.textContent = channel === 'whatsapp' ? 'וואטסאפ' : 'מייל';
+}
+
+function togglePersonalNote() {
+  var checkbox = document.getElementById('trt-add-personal-note');
+  var textarea = document.getElementById('trt-personal-note-text');
+  if (!checkbox || !textarea) return;
+  textarea.style.display = checkbox.checked ? 'block' : 'none';
+  if (checkbox.checked) textarea.focus();
+}
+
+function updateApprovePreview() {
+  var t = TREATMENT_STATE.currentApproveContext;
+  if (!t) return;
+  var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
+  var dateStr = getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + hour + ':00';
+  var preview = '<div style="font-weight:500;margin-bottom:8px">שלום ' + (t.driverName || '').split(' ')[0] + ',</div>'
+    + '<div style="color:var(--t2);margin-bottom:8px">המועד שבחרת ל' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' אושר ✓</div>'
+    + '<div style="color:var(--t2);margin-bottom:4px">📅 ' + dateStr + '</div>'
+    + '<div style="color:var(--t2);margin-bottom:4px">🚗 איסוף הרכב מהמקום הקבוע</div>'
+    + '<div style="color:var(--t2)">⏱ הרכב יוחזר עד סוף היום</div>';
+  var el = document.getElementById('approve-preview'); if (el) el.innerHTML = preview;
+}
+
+
+// ============================================================
+// 17. אישור סופי
+// ============================================================
+async function confirmApproval() {
+  var t = TREATMENT_STATE.currentApproveContext;
+  if (!t) return;
+
+  var channel = TREATMENT_STATE.selectedChannel;
+  var cb = document.getElementById('trt-add-personal-note');
+  var ta = document.getElementById('trt-personal-note-text');
+  var personalNote = (cb && cb.checked && ta) ? ta.value : '';
+
+  try {
+    await db.collection('treatments').doc(t.id).update({
+      status: 'scheduled',
+      approvedAt: new Date().toISOString(),
+      approvedChannel: channel,
+      approvedPersonalNote: personalNote
+    });
+    await sendApprovalMessage(t, channel, personalNote);
+    await addTreatmentToCalendar(t);
+    closeTreatmentModal('modal-approve');
+    showToast('האישור נשלח ל' + t.driverName + ' ב' + (channel === 'whatsapp' ? 'וואטסאפ' : 'מייל'));
+  } catch (err) {
+    console.error('[Treatments] שגיאה באישור:', err);
+    alert('שגיאה באישור. נסה שוב.');
+  }
+}
+
+async function sendApprovalMessage(treatment, channel, personalNote) {
+  console.log('[Treatments] שולח אישור ל' + treatment.driverName + ' ב' + channel);
+  if (channel === 'whatsapp') {
+    if (window.location.protocol === 'file:') {
+      console.log('[Treatments] אישור WhatsApp (מקומי) - דילוג על פתיחת חלון');
+      return;
+    }
+    var phone = (treatment.driverPhone || '').replace(/\D/g, '');
+    var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
+    var text = encodeURIComponent('שלום ' + (treatment.driverName || '').split(' ')[0]
+      + ', המועד ל' + (treatment.kind === 'treatment' ? 'טיפול' : 'טסט')
+      + ' אושר ✓\n📅 ' + getHebrewDayName(treatment.selectedDate) + ' ' + formatTreatmentDate(treatment.selectedDate) + ' ' + hour + ':00'
+      + '\n🚗 איסוף הרכב מהמקום הקבוע'
+      + (personalNote ? '\n\n' + personalNote : ''));
+    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
+  } else if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured()) {
+    var settings = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
+    try {
+      await emailjs.send(settings.emailjsServiceId, settings.emailjsTemplateId, {
+        to_email: treatment.driverEmail,
+        to_name: treatment.driverName,
+        date: formatTreatmentDate(treatment.selectedDate),
+        day_name: getHebrewDayName(treatment.selectedDate),
+        personal_note: personalNote
+      });
+    } catch (err) {
+      console.error('[Treatments] שגיאה בשליחת אישור:', err);
+    }
+  }
+}
+
+async function addTreatmentToCalendar(treatment) {
+  // הוסף אירוע ליומן הקיים כ-fleetEvent
+  if (typeof getFleetEvents === 'function' && typeof saveFleetEvents === 'function') {
+    var events = getFleetEvents();
+    events.push({
+      id: 'trt-' + treatment.id,
+      type: treatment.kind === 'treatment' ? 'service' : 'test',
+      enhType: treatment.kind === 'treatment' ? 'service' : 'test',
+      title: (treatment.kind === 'treatment' ? 'טיפול' : 'טסט') + ' - ' + treatment.driverName,
+      vehicleId: parseInt(treatment.vehicleId) || null,
+      date: parseTreatmentDate(treatment.selectedDate).toISOString().split('T')[0],
+      time: String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0') + ':00',
+      desc: treatment.licensePlate + ' · ' + treatment.vehicleModel,
+      status: 'planned',
+      treatmentId: treatment.id,
+      createdAt: new Date().toISOString()
+    });
+    saveFleetEvents(events);
+    if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
+  }
+}
+
+
+// ============================================================
+// 18. דחיית תאריך
+// ============================================================
+async function rejectDate(treatmentId) {
+  if (!confirm('לדחות את התאריך שהנהג בחר? תישלח לו בקשה לבחור תאריך אחר.')) return;
+  var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
+  if (!t) return;
+
+  await db.collection('treatments').doc(t.id).update({
+    status: 'awaiting_choice',
+    selectedDate: null,
+    selectedDateAt: null,
+    lastEmailSentAt: new Date().toISOString(),
+    emailsSent: (t.emailsSent || 0) + 1,
+    rejectedAt: new Date().toISOString()
+  });
+  await sendDriverEmail(t, t.kind, t.id);
+  showToast('התאריך נדחה. נשלחה בקשה לתאריך חדש.');
+}
+
+
+// ============================================================
+// 19. מודאל תזכורת ידנית
+// ============================================================
+function openReminderModal(treatmentId) {
+  var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
+  if (!t) return;
+  TREATMENT_STATE.currentReminderContext = t;
+
+  var el;
+  el = document.getElementById('reminder-driver-name'); if (el) el.textContent = t.driverName;
+  el = document.getElementById('reminder-status'); if (el) el.textContent = 'לא ענה ' + daysSince(t.lastEmailSentAt) + ' ימים';
+  el = document.getElementById('reminder-whatsapp'); if (el) el.textContent = maskPhone(t.driverPhone);
+  el = document.getElementById('reminder-email'); if (el) el.textContent = maskEmail(t.driverEmail);
+
+  var modal = document.getElementById('modal-reminder'); if (modal) modal.style.display = 'flex';
+}
+
+async function sendManualReminder(channel) {
+  var t = TREATMENT_STATE.currentReminderContext;
+  if (!t) return;
+
+  try {
+    await db.collection('treatments').doc(t.id).update({
+      lastEmailSentAt: new Date().toISOString(),
+      emailsSent: (t.emailsSent || 0) + 1,
+      lastReminderChannel: channel,
+      lastReminderManual: true
+    });
+
+    if (channel === 'whatsapp') {
+      var link = window.location.origin + '/driver-link.html?id=' + t.id;
+
+      // הגנה: סביבה מקומית (file://) לא תומכת בפתיחת קישורים
+      if (window.location.protocol === 'file:') {
+        console.log('[Treatments] קישור (מקומי):', link);
+        closeTreatmentModal('modal-reminder');
+        alert('זוהי גרסה מקומית. הקישור יישלח רק כשהמערכת תעלה לאוויר (Vercel).\n\nקישור הנהג:\n' + link);
+        return;
+      }
+
+      var phone = (t.driverPhone || '').replace(/\D/g, '');
+      var text = encodeURIComponent('שלום ' + (t.driverName || '').split(' ')[0] + ', נא לבחור תאריך ' + (t.kind === 'treatment' ? 'לטיפול' : 'לטסט') + ' ברכב: ' + link);
+      window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
+    } else {
+      await sendDriverEmail(t, t.kind, t.id);
+    }
+
+    closeTreatmentModal('modal-reminder');
+    showToast('התזכורת נשלחה ל' + t.driverName + ' ב' + (channel === 'whatsapp' ? 'וואטסאפ' : 'מייל'));
+  } catch (err) {
+    console.error('שגיאה בשליחת תזכורת:', err);
+    alert('שגיאה. נסה שוב.');
+  }
+}
+
+
+// ============================================================
+// 20. ביטול מועד שנקבע
+// ============================================================
+async function cancelScheduled(treatmentId) {
+  if (!confirm('לבטל את המועד שנקבע? הנהג יקבל הודעה ויצטרך לבחור מחדש.')) return;
+  var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
+  if (!t) return;
+
+  await db.collection('treatments').doc(t.id).update({
+    status: 'awaiting_choice',
+    selectedDate: null,
+    selectedDateAt: null,
+    approvedAt: null,
+    approvedChannel: null,
+    cancelledAt: new Date().toISOString(),
+    lastEmailSentAt: new Date().toISOString(),
+    emailsSent: (t.emailsSent || 0) + 1
+  });
+
+  // הסר מהיומן הקיים
+  if (typeof getFleetEvents === 'function' && typeof saveFleetEvents === 'function') {
+    var events = getFleetEvents().filter(function(e) { return e.treatmentId !== t.id; });
+    saveFleetEvents(events);
+    if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
+  }
+
+  await sendDriverEmail(t, t.kind, t.id);
+  showToast('המועד בוטל. הנהג קיבל הודעה.');
+}
+
+
+// ============================================================
+// 21. מודאל "סגירת טיפול"
+// ============================================================
+function openMarkDoneModal(treatmentId) {
+  var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
+  if (!t) return;
+  TREATMENT_STATE.currentDoneContext = t;
+
+  var el;
+  el = document.getElementById('done-driver-name'); if (el) el.textContent = t.driverName;
+  el = document.getElementById('done-vehicle'); if (el) el.textContent = t.licensePlate + ' · ' + t.vehicleModel;
+
+  var dateInput = document.getElementById('done-date');
+  if (dateInput) dateInput.value = parseTreatmentDate(t.selectedDate).toISOString().slice(0, 10);
+  el = document.getElementById('done-type'); if (el) el.value = t.treatmentType || '';
+  el = document.getElementById('done-mileage'); if (el) el.value = '';
+  el = document.getElementById('done-next-type'); if (el) el.value = '';
+
+  var modal = document.getElementById('modal-mark-done'); if (modal) modal.style.display = 'flex';
+}
+
+async function confirmTreatmentDone() {
+  var t = TREATMENT_STATE.currentDoneContext;
+  if (!t) return;
+
+  var doneDate = document.getElementById('done-date').value;
+  var doneType = document.getElementById('done-type').value;
+  var mileage = parseInt(document.getElementById('done-mileage').value) || 0;
+  var nextType = document.getElementById('done-next-type').value;
+
+  if (!doneDate || !doneType) { alert('יש למלא תאריך וסוג טיפול'); return; }
+
+  try {
+    await db.collection('treatments').doc(t.id).update({
+      status: 'closed',
+      closedAt: new Date().toISOString(),
+      actualDate: doneDate,
+      actualType: doneType,
+      mileageAtTreatment: mileage
+    });
+
+    // עדכן את כרטיס הרכב
+    var vehicleUpdate = {};
+    if (mileage) vehicleUpdate.currentKm = mileage;
+    if (nextType) vehicleUpdate.nextTreatmentType = nextType;
+
+    if (t.kind === 'treatment') {
+      vehicleUpdate.lastService = doneDate;
+    } else {
+      vehicleUpdate.licenseExp = doneDate;
+    }
+
+    // עדכן רכב מקומי
+    var v = (vehicles || []).find(function(x) { return String(x.id) === String(t.vehicleId); });
+    if (v) {
+      Object.assign(v, vehicleUpdate);
+      if (typeof persistVehicle === 'function') persistVehicle(v);
+    }
+
+    // עדכן גם ב-Firestore ישירות
+    await db.collection('vehicles').doc(String(t.vehicleId)).update(vehicleUpdate);
+
+    closeTreatmentModal('modal-mark-done');
+    showToast('הטיפול נסגר. כרטיס הרכב עודכן.');
+  } catch (err) {
+    console.error('שגיאה בסגירת טיפול:', err);
+    alert('שגיאה בסגירת הטיפול. נסה שוב.');
+  }
+}
+
+
+// ============================================================
+// 22. אתחול בעת טעינה
+// ============================================================
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof db !== 'undefined' && db) initTreatmentsSystem();
+  });
+} else {
+  if (typeof db !== 'undefined' && db) initTreatmentsSystem();
+}
+</script>
 
 </body>
 </html>
