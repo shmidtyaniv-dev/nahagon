@@ -761,6 +761,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .status-pill-sm.warn{background:var(--amber-light);color:var(--amber-dark)}
 .status-pill-sm.success{background:var(--green-light);color:var(--green-dark)}
 .status-pill-sm.danger{background:var(--red-light);color:var(--red-dark)}
+.status-pill-sm.info{background:var(--blue-light);color:var(--blue-dark)}
 .date-warn{color:var(--amber-dark);font-weight:500}
 .date-danger{color:var(--red-dark);font-weight:500}
 .docs-mini{display:flex;gap:3px}
@@ -7386,26 +7387,30 @@ function altBadge(vid){
 function avatarColor(name){var colors=['#16a34a','#3b82f6','#f59e0b','#ec4899','#06b6d4','#8b5cf6','#ef4444','#14b8a6','#f97316','#6366f1'];var h=0;for(var i=0;i<(name||'').length;i++)h=((h<<5)-h)+(name||'').charCodeAt(i);return colors[Math.abs(h)%colors.length];}
 function driverCell(v){return`<div class="dc"><div class="av" style="background:${avatarColor(v.driver.name)}">${inits(v.driver.name)}</div><div><div style="font-weight:600;font-size:13px;color:var(--t1)">${v.driver.name}</div></div>${altBadge(v.id)}</div>`;}
 function getVehicleStatus(v){
-  if(!v)return{cls:'success',label:'תקין'};
-  // Check for open accident
+  if(!v)return{cls:'success',label:'הכל תקין'};
+  // 1. תאונה פתוחה
   var hasAccident=(typeof accidentsList!=='undefined'?accidentsList:[]).some(function(a){return a.vehicleId===v.id&&a.status!=='closed';});
   if(hasAccident)return{cls:'danger',label:'תאונה פתוחה'};
-  // Check overdue service
-  var nxt=calcNextSvc(v);
-  if(nxt.km){var kLeft=nxt.km-(v.currentKm||0);if(kLeft<=0)return{cls:'danger',label:'דחוף'};}
-  // Check expired license
+  // 2. רישיון פג
   var licDays=dys(v.licenseExp);
   if(licDays<0)return{cls:'danger',label:'רישיון פג'};
-  // Check missing docs
+  // 3. מסמכים חסרים
   if(hasMissingDocs(v))return{cls:'danger',label:'מסמכים חסרים'};
-  // Check waiting vehicle
-  if(v.status==='waiting_vehicle')return{cls:'warn',label:'ממתין לרכב'};
-  // Check service within 30 days
+  // 4-5. דוחות תנועה פתוחים
+  var openViols=(typeof violationsList!=='undefined'?violationsList:[]).filter(function(vl){return vl.vehicleId===v.id&&vl.status!=='done'&&vl.status!=='closed';});
+  if(openViols.length){var viol=openViols[0];if(viol.status==='waiting')return{cls:'warn',label:'דוח - ממתין להסבה'};return{cls:'warn',label:'דוח - נשלח להסבה'};}
+  // 6. רכב חלופי
+  if(typeof getAltVehicleStatus==='function'){var alt=getAltVehicleStatus(v.id);if(alt)return{cls:'info',label:'עם חלופי'};}
+  // 7. טיפול ק"מ עבר
+  var nxt=calcNextSvc(v);
+  if(nxt.km){var kLeft=nxt.km-(v.currentKm||0);if(kLeft<=0)return{cls:'danger',label:'דחוף'};}
+  // 8. טיפול קרוב
   if(nxt.date){var svcDays=dys(nxt.date);if(svcDays>=0&&svcDays<30)return{cls:'warn',label:'טיפול קרוב'};}
   if(nxt.km){var kLeft2=nxt.km-(v.currentKm||0);if(kLeft2>0&&kLeft2<2000)return{cls:'warn',label:'טיפול קרוב'};}
-  // Check license within 30 days
+  // 9. טסט קרוב
   if(licDays>=0&&licDays<30)return{cls:'warn',label:'טסט קרוב'};
-  return{cls:'success',label:'תקין'};
+  // 10. הכל תקין
+  return{cls:'success',label:'הכל תקין'};
 }
 function nextSvcCell(v){
   var nxt=calcNextSvc(v);
