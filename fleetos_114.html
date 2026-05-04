@@ -1956,12 +1956,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <button class="quick-filter qf-warn" onclick="setDashFilter('warn',this)"><span class="quick-filter-count" id="qf-warn"></span> אזהרה</button>
               <button class="quick-filter qf-ok" onclick="setDashFilter('ok',this)"><span class="quick-filter-count" id="qf-ok"></span> תקין</button>
             </div>
-            <div class="vehicles-controls">
-              <div class="dash-search-wrap">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" class="dash-search-input" id="dash-search" placeholder="חפש נהג, רישוי, חברה..." oninput="onDashSearch(this.value)">
-              </div>
-            </div>
+            <!-- חיפוש הוסר - משתמשים בחיפוש הגלובלי בהדר -->
+            <input type="hidden" id="dash-search" value="">
           </div>
         </div>
         <div class="v-table-row header">
