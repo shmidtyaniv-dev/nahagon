@@ -706,11 +706,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 /* Updated vehicles card / table */
 .vehicles-card{background:#fff;border-radius:var(--r);border:0.5px solid var(--bdr);overflow:hidden}
-.vehicles-header{padding:14px 18px;border-bottom:0.5px solid var(--bdr)}
-.vehicles-title-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.vehicles-header{padding:10px 18px;border-bottom:0.5px solid var(--bdr)}
+.vehicles-title-row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:0;flex-wrap:wrap}
 .vehicles-title-group{display:flex;align-items:center;gap:10px}
-.vehicles-title{margin:0;font-size:14px;font-weight:500}
-.vehicles-count{background:var(--bg2);color:var(--t2);font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px}
+.vehicles-title{margin:0;font-size:15px;font-weight:600}
+.vehicles-count{display:none}
 .vehicles-controls{display:flex;align-items:center;gap:8px}
 .dash-search-wrap{display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:8px;padding:5px 12px;min-width:200px}
 .dash-search-wrap svg{color:var(--t2);flex-shrink:0}
@@ -1950,18 +1950,18 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <h4 class="vehicles-title">הרכבים שלי</h4>
               <span class="vehicles-count" id="dash-cnt">0 רכבים</span>
             </div>
+            <div class="quick-filters" id="dash-quick-filters">
+              <button class="quick-filter active" onclick="setDashFilter('all',this)">הכל<span class="quick-filter-count" id="qf-all"></span></button>
+              <button class="quick-filter qf-danger" onclick="setDashFilter('alerts',this)"><span class="quick-filter-count" id="qf-alerts"></span> דחוף</button>
+              <button class="quick-filter qf-warn" onclick="setDashFilter('warn',this)"><span class="quick-filter-count" id="qf-warn"></span> אזהרה</button>
+              <button class="quick-filter qf-ok" onclick="setDashFilter('ok',this)"><span class="quick-filter-count" id="qf-ok"></span> תקין</button>
+            </div>
             <div class="vehicles-controls">
               <div class="dash-search-wrap">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="text" class="dash-search-input" id="dash-search" placeholder="חפש נהג, רישוי, חברה..." oninput="onDashSearch(this.value)">
               </div>
             </div>
-          </div>
-          <div class="quick-filters" id="dash-quick-filters">
-            <button class="quick-filter active" onclick="setDashFilter('all',this)">הכל<span class="quick-filter-count" id="qf-all"></span></button>
-            <button class="quick-filter qf-danger" onclick="setDashFilter('alerts',this)"><span class="quick-filter-count" id="qf-alerts"></span> דחוף</button>
-            <button class="quick-filter qf-warn" onclick="setDashFilter('warn',this)"><span class="quick-filter-count" id="qf-warn"></span> אזהרה</button>
-            <button class="quick-filter qf-ok" onclick="setDashFilter('ok',this)"><span class="quick-filter-count" id="qf-ok"></span> תקין</button>
           </div>
         </div>
         <div class="v-table-row header">
