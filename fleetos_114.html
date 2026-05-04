@@ -2930,8 +2930,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div class="sched-grid-2col" style="margin-bottom:16px">
             <div class="sched-field">
               <span class="sched-field-label">שעת איסוף הרכב</span>
-              <span class="sched-field-unit" style="min-width:auto">:00</span>
-              <input type="number" id="sched-appointment-hour" min="6" max="20" value="9">
+              <div style="display:flex;align-items:center;gap:2px;direction:ltr">
+                <input type="number" id="sched-appointment-hour" min="6" max="20" value="9">
+                <span class="sched-field-unit" style="min-width:auto">:00</span>
+              </div>
             </div>
             <div class="sched-field">
               <span class="sched-field-label">כמות מקסימלית ליום</span>
