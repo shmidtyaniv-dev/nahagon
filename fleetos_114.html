@@ -10293,15 +10293,19 @@ async function scanVehicleDoc(input){
     reader.readAsDataURL(file);
 
     const p=await callClaudeWithDoc(file,
-`זהו רישיון רכב ישראלי רשמי ממשרד התחבורה.
-מצא בדיוק את הנתונים הבאים:
-1. מספר רכב: הערך בשדה "מספר רכב" (מספר ארוך כמו 76328602)
-2. בתוקף עד: תאריך בשדה "בתוקף עד" (למשל 01/02/2027)
-3. תוצר: שם יצרן הרכב בשדה "תוצר" (למשל יונדאי)
-4. כינוי מסחרי: דגם הרכב בשדה "כינוי מסחרי" (למשל TUCSON)
+`This is a photo of an Israeli vehicle license (רישיון רכב).
+The document may be photographed on a table, at an angle, with glare or shadows.
+Focus ONLY on the document - ignore the background.
 
-החזר JSON בלבד ללא שום טקסט נוסף:
-{"plate":"מספר הרכב","licenseExp":"DD/MM/YYYY","make":"יצרן","model":"דגם"}`
+Israeli vehicle license layout:
+- "מספר רכב" = Vehicle plate number (7-8 digits, e.g. 76328602)
+- "בתוקף עד" = Expiry date (DD/MM/YYYY)
+- "תוצר" = Manufacturer (e.g. יונדאי, טויוטה, סקודה)
+- "כינוי מסחרי" = Model (e.g. TUCSON, COROLLA)
+
+Extract these 4 fields. If image is blurry, look for the labeled fields.
+Return ONLY valid JSON, no extra text:
+{"plate":"76328602","licenseExp":"DD/MM/YYYY","make":"יצרן","model":"MODEL"}`
     );
     if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה — הגדר מפתח API)';st.style.color='var(--t3)';sp.style.display='none';return;}
     if(p.plate)id('fa-plate').value=p.plate;
@@ -10330,17 +10334,28 @@ async function scanDriverDoc(input){
     reader.readAsDataURL(file);
 
     const p=await callClaudeWithDoc(file,
-`זהו רישיון נהיגה ישראלי רשמי ממשרד התחבורה.
-ברישיון PDF: מצא שורת שם (כמו "שמידט יניב"), תאריך "בתוקף עד", ומספר "מס ת"ז" / "ID No".
-ברישיון JPG בכרטיס: שדה 1=שם משפחה, שדה 2=שם פרטי, שדה 4b=תוקף, שדה 5=מספר זהות.
+`This is a photo of an Israeli driving license (רישיון נהיגה).
+The card may be photographed on a table, at an angle, with glare, shadows, or partial reflections.
+Focus ONLY on the card itself - ignore the background completely.
 
-חלץ:
-1. שם מלא בעברית (שם פרטי + שם משפחה)
-2. תוקף הרישיון (תאריך DD/MM/YYYY)
-3. מספר תעודת זהות (עם מקף, למשל 30125689-7)
+Israeli driving license layout:
+- Top: "DRIVING LICENCE רישיון נהיגה" header
+- Field 1: Family name (שם משפחה) in Hebrew AND English
+- Field 2: First name (שם פרטי) in Hebrew AND English
+- Field 3: Date of birth
+- Field 4a: Issue date
+- Field 4b: Expiry date (תוקף) - THIS IS THE LICENSE EXPIRATION
+- Field 5: ID number (מספר ת"ז)
+- Field 8: Address
 
-החזר JSON בלבד ללא שום טקסט נוסף:
-{"fullName":"שם מלא","licenseExp":"DD/MM/YYYY","id":"מספר-תז"}`
+Extract these 3 fields:
+1. Full name in Hebrew: first name (field 2) + family name (field 1). Example: "יניב שמידט"
+2. License expiry date (field 4b) in DD/MM/YYYY format
+3. ID number (field 5) with check digit, format: XXXXXXXX-X
+
+IMPORTANT: If the image is blurry or at angle, try harder - look for the numbered fields (1., 2., 4b., 5.).
+Return ONLY valid JSON, no extra text:
+{"fullName":"שם פרטי שם משפחה","licenseExp":"DD/MM/YYYY","id":"XXXXXXXX-X"}`
     );
     if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה — הגדר מפתח API)';st.style.color='var(--t3)';sp.style.display='none';return;}
     if(p.fullName)id('fa-dname').value=p.fullName;
