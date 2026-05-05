@@ -19032,7 +19032,7 @@ async function addTreatmentToCalendar(treatment) {
 // 18. דחיית תאריך
 // ============================================================
 async function rejectDate(treatmentId) {
-  if (!confirm('לדחות את התאריך שהנהג בחר? תישלח לו בקשה לבחור תאריך אחר.')) return;
+  if (!confirm('לדחות את התאריך שהנהג בחר?')) return;
   var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
   if (!t) return;
 
@@ -19044,16 +19044,15 @@ async function rejectDate(treatmentId) {
     emailsSent: (t.emailsSent || 0) + 1,
     rejectedAt: new Date().toISOString()
   });
-  var emailResult = await sendDriverEmail(t, t.kind, t.id);
-  if (emailResult === 'sent') {
-    showToast('התאריך נדחה. נשלח מייל לנהג עם בקשה לתאריך חדש.');
-  } else if (emailResult === 'no_email') {
-    showToast('התאריך נדחה. לנהג אין כתובת מייל - יש לעדכן אותו ידנית.');
-  } else if (emailResult === 'not_configured') {
-    showToast('התאריך נדחה. שליחת מייל לא מוגדרת - יש לעדכן את הנהג ידנית.');
-  } else {
-    showToast('התאריך נדחה. שגיאה בשליחת מייל - יש לעדכן את הנהג ידנית.');
+
+  // שלח WhatsApp לנהג עם הודעה שהתאריך נדחה
+  var phone = (t.driverPhone || '').replace(/\D/g, '');
+  var link = window.location.origin + '/driver-link.html?id=' + t.id;
+  var text = encodeURIComponent('שלום ' + (t.driverName || '').split(' ')[0] + ', התאריך שבחרת ל' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' לא מתאים. נא לבחור תאריך חדש: ' + link);
+  if (phone) {
+    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
   }
+  showToast('התאריך נדחה.' + (phone ? ' נפתח WhatsApp לשליחת הודעה לנהג.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
 
 
@@ -19139,16 +19138,14 @@ async function cancelScheduled(treatmentId) {
     if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
   }
 
-  var emailResult = await sendDriverEmail(t, t.kind, t.id);
-  if (emailResult === 'sent') {
-    showToast('המועד בוטל. נשלח מייל לנהג עם בקשה לתאריך חדש.');
-  } else if (emailResult === 'no_email') {
-    showToast('המועד בוטל. לנהג אין כתובת מייל - יש לעדכן אותו ידנית.');
-  } else if (emailResult === 'not_configured') {
-    showToast('המועד בוטל. שליחת מייל לא מוגדרת - יש לעדכן את הנהג ידנית.');
-  } else {
-    showToast('המועד בוטל. שגיאה בשליחת מייל - יש לעדכן את הנהג ידנית.');
+  // שלח WhatsApp לנהג עם הודעה שהמועד בוטל
+  var phone = (t.driverPhone || '').replace(/\D/g, '');
+  var link = window.location.origin + '/driver-link.html?id=' + t.id;
+  var text = encodeURIComponent('שלום ' + (t.driverName || '').split(' ')[0] + ', המועד ל' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' בוטל. נא לבחור תאריך חדש: ' + link);
+  if (phone) {
+    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
   }
+  showToast('המועד בוטל.' + (phone ? ' נפתח WhatsApp לשליחת הודעה לנהג.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
 
 
