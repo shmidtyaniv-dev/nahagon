@@ -18462,6 +18462,7 @@ async function sendDriverEmail(vehicle, kind, treatmentId) {
   var licensePlate = vehicle.plate || vehicle.licensePlate || '';
   var vehicleModel = ((vehicle.make || '') + ' ' + (vehicle.model || '')).trim() || vehicle.vehicleModel || '';
 
+  console.log('[Treatments] sendDriverEmail:', {emailjs: typeof emailjs, configured: typeof isEmailJSConfigured === 'function' ? isEmailJSConfigured() : 'N/A', driverEmail: driverEmail});
   if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured()) {
     if (!driverEmail) { console.warn('[Treatments] אין מייל לנהג'); return 'no_email'; }
     try {
