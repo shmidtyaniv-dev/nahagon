@@ -10185,14 +10185,51 @@ function toIsoDate(val){
   return null;
 }
 
+// דחיסת תמונה לפני סריקה - מקסימום 1500px, איכות 85%
+async function compressImageForScan(file){
+  if(!file.type.startsWith('image/')) return null; // לא תמונה - לא דוחסים
+  return new Promise(function(resolve){
+    var img=new Image();
+    img.onload=function(){
+      var maxDim=1500;
+      var w=img.width, h=img.height;
+      // אם התמונה כבר קטנה - לא דוחסים
+      if(w<=maxDim && h<=maxDim && file.size<=500000){ resolve(null); return; }
+      if(w>maxDim||h>maxDim){
+        var ratio=Math.min(maxDim/w, maxDim/h);
+        w=Math.round(w*ratio);
+        h=Math.round(h*ratio);
+      }
+      var c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      var dataUrl=c.toDataURL('image/jpeg',0.85);
+      var b64=dataUrl.split(',')[1];
+      console.log('[AI Scan] דחיסה: '+img.width+'x'+img.height+' → '+w+'x'+h+' ('+Math.round(b64.length/1024)+'KB)');
+      resolve({b64:b64, mimeType:'image/jpeg'});
+    };
+    img.onerror=function(){ resolve(null); };
+    var reader=new FileReader();
+    reader.onload=function(e){ img.src=e.target.result; };
+    reader.readAsDataURL(file);
+  });
+}
+
 async function callClaudeWithDoc(file,prompt){
   const apiKey = (JSON.parse(localStorage.getItem('fleetSettings')||'{}').aiApiKey)||'';
   if(!apiKey){
     return null;
   }
-  const b64=await fileToBase64(file);
-  const isImg=file.type.startsWith('image/');
-  const mimeType=isImg?file.type:'application/pdf';
+  // נסה לדחוס תמונה לפני שליחה
+  var compressed = await compressImageForScan(file);
+  var b64, mimeType;
+  if(compressed){
+    b64 = compressed.b64;
+    mimeType = compressed.mimeType;
+  } else {
+    b64 = await fileToBase64(file);
+    var isImg = file.type.startsWith('image/');
+    mimeType = isImg ? file.type : 'application/pdf';
+  }
 
   // Models to try in order (fallback chain)
   const models=['gemini-2.5-flash','gemini-2.0-flash','gemini-2.0-flash-lite'];
