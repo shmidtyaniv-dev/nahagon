@@ -10312,6 +10312,8 @@ function parseIsraeliDriverLicense(text) {
   var m2 = allText.match(/2\.\s*([A-Z][A-Za-z]{1,20})/);
   if (m1) familyName = m1[1];
   if (m2) firstName = m2[1];
+  console.log('[OCR] שדה 1 (משפחה):', m1 ? m1[0] : 'לא נמצא', '→', familyName);
+  console.log('[OCR] שדה 2 (פרטי):', m2 ? m2[0] : 'לא נמצא', '→', firstName);
 
   // בנה שם: שם פרטי (2) + שם משפחה (1)
   if (firstName && familyName) {
