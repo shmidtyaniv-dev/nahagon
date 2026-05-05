@@ -1758,6 +1758,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .trt-notif-dot-amber { background: var(--amber); }
 .trt-notif-dot-red { background: var(--red); }
 .trt-notif-dot-gray { background: #B4B2A9; }
+.trt-notif-dot-purple { background: var(--purple-dark); }
 .trt-notif-content { flex: 1; min-width: 0; }
 .trt-notif-title { font-size: 12px; font-weight: 500; color: var(--t1); margin-bottom: 2px; }
 .trt-notif-detail { font-size: 11px; color: var(--t2); }
@@ -19066,9 +19067,29 @@ function getTreatmentNotifications() {
     }
   });
 
-  // מיון: pending_approval ראשון, no_response, forgot. בתוך כל קטגוריה - חדש קודם
+  // סוג ד: תזכורות אישיות מהיומן (שהתאריך שלהן הגיע)
+  var today = new Date(); today.setHours(0,0,0,0);
+  (typeof selfReminders !== 'undefined' ? selfReminders : []).forEach(function(r) {
+    if (!r.date || r.sent) return;
+    var rDate = new Date(r.date); rDate.setHours(0,0,0,0);
+    if (rDate <= today) {
+      notifications.push({
+        id: 'reminder_' + r.id,
+        type: 'self_reminder',
+        dotClass: 'trt-notif-dot-purple',
+        title: r.title || 'תזכורת',
+        detail: (r.note ? r.note + ' · ' : '') + formatTreatmentDateShort(r.date) + (r.time ? ' ' + r.time : ''),
+        actionText: 'פתח',
+        actionClass: '',
+        actionFn: "openSelfReminderModal(null,'" + r.id + "')",
+        time: r.date + 'T' + (r.time || '09:00') + ':00'
+      });
+    }
+  });
+
+  // מיון: pending_approval ראשון, no_response, forgot, reminders. בתוך כל קטגוריה - חדש קודם
   notifications.sort(function(a, b) {
-    var priority = { pending_approval: 0, no_response: 1, forgot_to_close: 2 };
+    var priority = { pending_approval: 0, no_response: 1, forgot_to_close: 2, self_reminder: 3 };
     var pa = priority[a.type] || 9;
     var pb = priority[b.type] || 9;
     if (pa !== pb) return pa - pb;
