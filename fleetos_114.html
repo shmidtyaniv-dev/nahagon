@@ -18090,23 +18090,11 @@ function showBookingSuccess(date){
         </div>
       </div>
 
-      <!-- תצוגה מקדימה -->
-      <div class="trt-preview-section">
-        <div class="trt-section-label-row">
-          <span class="trt-section-label">תצוגה מקדימה</span>
-          <a class="trt-link-btn" onclick="go('settings',null)">ערוך תבנית ←</a>
-        </div>
-        <div class="trt-preview-content" id="approve-preview">
-          <!-- ימולא דינמית -->
-        </div>
+      <!-- הודעה לנהג - ניתנת לעריכה -->
+      <div style="margin-bottom:14px">
+        <div class="trt-section-label" style="margin-bottom:6px">הודעה לנהג (ניתן לערוך):</div>
+        <textarea id="approve-message-text" rows="5" style="width:100%;padding:10px 12px;border:1px solid var(--bdr2);border-radius:var(--rs);font-size:13px;font-family:inherit;resize:vertical;direction:rtl;background:var(--bg);color:var(--t1)"></textarea>
       </div>
-
-      <!-- הערה אישית -->
-      <div class="trt-personal-note-toggle">
-        <input type="checkbox" id="trt-add-personal-note" onchange="togglePersonalNote()">
-        <label for="trt-add-personal-note">הוסף הערה אישית (כתובת איסוף, שעה מדויקת...)</label>
-      </div>
-      <textarea id="trt-personal-note-text" class="trt-personal-note-input" placeholder="הערה שתתווסף להודעה" style="display: none;"></textarea>
 
       <!-- כפתורי פעולה -->
       <div class="trt-modal-actions">
@@ -18935,12 +18923,12 @@ function updateApprovePreview() {
   if (!t) return;
   var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
   var dateStr = getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + hour + ':00';
-  var preview = '<div style="font-weight:500;margin-bottom:8px">שלום ' + (t.driverName || '').split(' ')[0] + ',</div>'
-    + '<div style="color:var(--t2);margin-bottom:8px">המועד שבחרת ל' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' אושר ✓</div>'
-    + '<div style="color:var(--t2);margin-bottom:4px">📅 ' + dateStr + '</div>'
-    + '<div style="color:var(--t2);margin-bottom:4px">🚗 איסוף הרכב מהמקום הקבוע</div>'
-    + '<div style="color:var(--t2)">⏱ הרכב יוחזר עד סוף היום</div>';
-  var el = document.getElementById('approve-preview'); if (el) el.innerHTML = preview;
+  var msg = 'שלום ' + (t.driverName || '').split(' ')[0] + ',\n'
+    + 'המועד שבחרת ל' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' אושר ✓\n'
+    + '📅 ' + dateStr + '\n'
+    + '🚗 איסוף הרכב מהמקום הקבוע\n'
+    + '⏱ הרכב יוחזר עד סוף היום';
+  var el = document.getElementById('approve-message-text'); if (el) el.value = msg;
 }
 
 
@@ -18952,18 +18940,17 @@ async function confirmApproval() {
   if (!t) return;
 
   var channel = TREATMENT_STATE.selectedChannel;
-  var cb = document.getElementById('trt-add-personal-note');
-  var ta = document.getElementById('trt-personal-note-text');
-  var personalNote = (cb && cb.checked && ta) ? ta.value : '';
+  var msgEl = document.getElementById('approve-message-text');
+  var customMessage = msgEl ? msgEl.value : '';
 
   try {
     await db.collection('treatments').doc(t.id).update({
       status: 'scheduled',
       approvedAt: new Date().toISOString(),
       approvedChannel: channel,
-      approvedPersonalNote: personalNote
+      approvedMessage: customMessage
     });
-    await sendApprovalMessage(t, channel, personalNote);
+    await sendApprovalMessage(t, channel, customMessage);
     await addTreatmentToCalendar(t);
     closeTreatmentModal('modal-approve');
     showToast('האישור נשלח ל' + t.driverName + ' ב' + (channel === 'whatsapp' ? 'וואטסאפ' : 'מייל'));
@@ -18973,20 +18960,15 @@ async function confirmApproval() {
   }
 }
 
-async function sendApprovalMessage(treatment, channel, personalNote) {
+async function sendApprovalMessage(treatment, channel, customMessage) {
   console.log('[Treatments] שולח אישור ל' + treatment.driverName + ' ב' + channel);
   if (channel === 'whatsapp') {
     if (window.location.protocol === 'file:') {
-      console.log('[Treatments] אישור WhatsApp (מקומי) - דילוג על פתיחת חלון');
+      console.log('[Treatments] אישור WhatsApp (מקומי) - דילוג');
       return;
     }
     var phone = (treatment.driverPhone || '').replace(/\D/g, '');
-    var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
-    var text = encodeURIComponent('שלום ' + (treatment.driverName || '').split(' ')[0]
-      + ', המועד ל' + (treatment.kind === 'treatment' ? 'טיפול' : 'טסט')
-      + ' אושר ✓\n📅 ' + getHebrewDayName(treatment.selectedDate) + ' ' + formatTreatmentDate(treatment.selectedDate) + ' ' + hour + ':00'
-      + '\n🚗 איסוף הרכב מהמקום הקבוע'
-      + (personalNote ? '\n\n' + personalNote : ''));
+    var text = encodeURIComponent(customMessage);
     window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
   } else if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured()) {
     var settings = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
