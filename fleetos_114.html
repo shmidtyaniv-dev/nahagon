@@ -18463,6 +18463,7 @@ async function sendDriverEmail(vehicle, kind, treatmentId) {
   var vehicleModel = ((vehicle.make || '') + ' ' + (vehicle.model || '')).trim() || vehicle.vehicleModel || '';
 
   if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured()) {
+    if (!driverEmail) { console.warn('[Treatments] אין מייל לנהג'); return 'no_email'; }
     try {
       var settings = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
       await emailjs.send(settings.emailjsServiceId, settings.emailjsTemplateId, {
@@ -18474,11 +18475,14 @@ async function sendDriverEmail(vehicle, kind, treatmentId) {
         kind: kind === 'treatment' ? 'טיפול' : 'טסט'
       });
       console.log('[Treatments] מייל נשלח ל', driverEmail);
+      return 'sent';
     } catch (err) {
       console.error('[Treatments] שגיאה בשליחת מייל:', err);
+      return 'error';
     }
   } else {
-    console.log('[Treatments] EmailJS לא מוגדר, דילוג על שליחת מייל. קישור:', driverLinkUrl);
+    console.log('[Treatments] EmailJS לא מוגדר. קישור:', driverLinkUrl);
+    return 'not_configured';
   }
 }
 
@@ -19039,8 +19043,16 @@ async function rejectDate(treatmentId) {
     emailsSent: (t.emailsSent || 0) + 1,
     rejectedAt: new Date().toISOString()
   });
-  await sendDriverEmail(t, t.kind, t.id);
-  showToast('התאריך נדחה. נשלחה בקשה לתאריך חדש.');
+  var emailResult = await sendDriverEmail(t, t.kind, t.id);
+  if (emailResult === 'sent') {
+    showToast('התאריך נדחה. נשלח מייל לנהג עם בקשה לתאריך חדש.');
+  } else if (emailResult === 'no_email') {
+    showToast('התאריך נדחה. לנהג אין כתובת מייל - יש לעדכן אותו ידנית.');
+  } else if (emailResult === 'not_configured') {
+    showToast('התאריך נדחה. שליחת מייל לא מוגדרת - יש לעדכן את הנהג ידנית.');
+  } else {
+    showToast('התאריך נדחה. שגיאה בשליחת מייל - יש לעדכן את הנהג ידנית.');
+  }
 }
 
 
@@ -19126,8 +19138,16 @@ async function cancelScheduled(treatmentId) {
     if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
   }
 
-  await sendDriverEmail(t, t.kind, t.id);
-  showToast('המועד בוטל. הנהג קיבל הודעה.');
+  var emailResult = await sendDriverEmail(t, t.kind, t.id);
+  if (emailResult === 'sent') {
+    showToast('המועד בוטל. נשלח מייל לנהג עם בקשה לתאריך חדש.');
+  } else if (emailResult === 'no_email') {
+    showToast('המועד בוטל. לנהג אין כתובת מייל - יש לעדכן אותו ידנית.');
+  } else if (emailResult === 'not_configured') {
+    showToast('המועד בוטל. שליחת מייל לא מוגדרת - יש לעדכן את הנהג ידנית.');
+  } else {
+    showToast('המועד בוטל. שגיאה בשליחת מייל - יש לעדכן את הנהג ידנית.');
+  }
 }
 
 
