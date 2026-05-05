@@ -3029,35 +3029,45 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <span id="viol-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
           </div>
 
-          <!-- Sub-tab: Service/Test -->
+          <!-- Sub-tab: Service/Test (מערכת טיפולים חדשה) -->
           <div class="settings-templates-content" data-templates-tab="service" style="display:none">
             <div class="settings-template-vars-info">
-              ניתן להשתמש במשתנים: {נהג}, {רכב}, {תאריך}, {סוג}
+              הודעות ברירת מחדל לשלבים במערכת טיפולים וטסטים. ניתן לערוך לפני כל שליחה.
             </div>
 
             <div class="settings-template-item">
               <div class="settings-template-item-header">
-                <div class="settings-template-item-title">
-                  הודעה על תור לטיפול
-                </div>
+                <div class="settings-template-item-title">תזכורת לנהג (בחירת תאריך)</div>
               </div>
-              <textarea id="svc-msg-template" class="settings-template-textarea" rows="6" placeholder="שלום {נהג}, נקבע טיפול..."></textarea>
+              <textarea id="trt-tpl-reminder" class="settings-template-textarea" rows="4"></textarea>
             </div>
 
             <div class="settings-template-item">
               <div class="settings-template-item-header">
-                <div class="settings-template-item-title">
-                  הודעה על תור לטסט
-                </div>
+                <div class="settings-template-item-title">אישור מועד לנהג</div>
               </div>
-              <textarea id="test-msg-template" class="settings-template-textarea" rows="6" placeholder="שלום {נהג}, נקבע טסט..."></textarea>
+              <textarea id="trt-tpl-approval" class="settings-template-textarea" rows="5"></textarea>
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">דחיית תאריך</div>
+              </div>
+              <textarea id="trt-tpl-reject" class="settings-template-textarea" rows="4"></textarea>
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">ביטול מועד</div>
+              </div>
+              <textarea id="trt-tpl-cancel" class="settings-template-textarea" rows="4"></textarea>
             </div>
 
             <div class="settings-btn-row">
-              <button class="settings-btn settings-btn-secondary" onclick="resetSvcMsgTemplate()">שחזר ברירת מחדל</button>
-              <button class="settings-btn settings-btn-primary" onclick="saveSvcMsgTemplate()">שמור תבניות</button>
+              <button class="settings-btn settings-btn-secondary" onclick="resetTrtTemplates()">שחזר ברירת מחדל</button>
+              <button class="settings-btn settings-btn-primary" onclick="saveTrtTemplates()">שמור תבניות</button>
             </div>
-            <span id="svc-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
+            <span id="trt-tpl-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
           </div>
 
           <!-- Sub-tab: Requests (km/doc) -->
@@ -18923,12 +18933,7 @@ function updateApprovePreview() {
   if (!t) return;
   var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
   var dateStr = getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + hour + ':00';
-  var msg = 'שלום ' + (t.driverName || '').split(' ')[0] + ',\n'
-    + 'המועד שבחרת ל' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' אושר ✓\n'
-    + '📅 ' + dateStr + '\n'
-    + '🚗 איסוף הרכב מהמקום הקבוע\n'
-    + '⏱ הרכב יוחזר עד סוף היום';
-  var el = document.getElementById('approve-message-text'); if (el) el.value = msg;
+  var el = document.getElementById('approve-message-text'); if (el) el.value = buildTrtMessage('approval', t);
 }
 
 
@@ -19026,14 +19031,13 @@ async function rejectDate(treatmentId) {
     rejectedAt: new Date().toISOString()
   });
 
-  // שלח WhatsApp לנהג עם הודעה שהתאריך נדחה
+  // שלח WhatsApp לנהג
   var phone = (t.driverPhone || '').replace(/\D/g, '');
-  var link = window.location.origin + '/driver-link.html?id=' + t.id;
-  var text = encodeURIComponent('שלום ' + (t.driverName || '').split(' ')[0] + ', התאריך שבחרת ל' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' לא מתאים. נא לבחור תאריך חדש: ' + link);
+  var msg = buildTrtMessage('reject', t);
   if (phone) {
-    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
+    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg));
   }
-  showToast('התאריך נדחה.' + (phone ? ' נפתח WhatsApp לשליחת הודעה לנהג.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
+  showToast('התאריך נדחה.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
 
 
@@ -19051,10 +19055,8 @@ function openReminderModal(treatmentId) {
   el = document.getElementById('reminder-whatsapp'); if (el) el.textContent = maskPhone(t.driverPhone);
   el = document.getElementById('reminder-email'); if (el) el.textContent = maskEmail(t.driverEmail);
 
-  // מלא הודעה ברירת מחדל
-  var link = window.location.origin + '/driver-link.html?id=' + t.id;
-  var defaultMsg = 'שלום ' + (t.driverName || '').split(' ')[0] + ', נא לבחור תאריך ' + (t.kind === 'treatment' ? 'לטיפול' : 'לטסט') + ' ברכב: ' + link;
-  el = document.getElementById('reminder-message-text'); if (el) el.value = defaultMsg;
+  // מלא הודעה מתבנית
+  el = document.getElementById('reminder-message-text'); if (el) el.value = buildTrtMessage('reminder', t);
 
   var modal = document.getElementById('modal-reminder'); if (modal) modal.style.display = 'flex';
 }
@@ -19124,14 +19126,13 @@ async function cancelScheduled(treatmentId) {
     if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
   }
 
-  // שלח WhatsApp לנהג עם הודעה שהמועד בוטל
+  // שלח WhatsApp לנהג
   var phone = (t.driverPhone || '').replace(/\D/g, '');
-  var link = window.location.origin + '/driver-link.html?id=' + t.id;
-  var text = encodeURIComponent('שלום ' + (t.driverName || '').split(' ')[0] + ', המועד ל' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' בוטל. נא לבחור תאריך חדש: ' + link);
+  var msg = buildTrtMessage('cancel', t);
   if (phone) {
-    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
+    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg));
   }
-  showToast('המועד בוטל.' + (phone ? ' נפתח WhatsApp לשליחת הודעה לנהג.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
+  showToast('המועד בוטל.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
 
 
@@ -19405,6 +19406,72 @@ document.addEventListener('click', function(e) {
 
 
 // ============================================================
+// ============================================================
+// 22b. תבניות הודעות ברירת מחדל לטיפולים וטסטים
+// ============================================================
+var TRT_TPL_DEFAULTS = {
+  reminder: 'שלום {נהג}, נא לבחור תאריך {סוג} ברכב: {לינק}',
+  approval: 'שלום {נהג},\nהמועד שבחרת ל{סוג} אושר ✓\n📅 {תאריך}\n🚗 איסוף הרכב מהמקום הקבוע\n⏱ הרכב יוחזר עד סוף היום',
+  reject: 'שלום {נהג}, התאריך שבחרת ל{סוג} לא מתאים. נא לבחור תאריך חדש: {לינק}',
+  cancel: 'שלום {נהג}, המועד ל{סוג} בוטל. נא לבחור תאריך חדש: {לינק}'
+};
+
+function getTrtTemplates() {
+  var s = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
+  return {
+    reminder: s.trtTplReminder || TRT_TPL_DEFAULTS.reminder,
+    approval: s.trtTplApproval || TRT_TPL_DEFAULTS.approval,
+    reject: s.trtTplReject || TRT_TPL_DEFAULTS.reject,
+    cancel: s.trtTplCancel || TRT_TPL_DEFAULTS.cancel
+  };
+}
+
+function buildTrtMessage(templateKey, t) {
+  var tpl = getTrtTemplates()[templateKey];
+  var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
+  var dateStr = t.selectedDate ? getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + hour + ':00' : '';
+  var link = window.location.origin + '/driver-link.html?id=' + t.id;
+  return tpl
+    .replace(/\{נהג\}/g, (t.driverName || '').split(' ')[0])
+    .replace(/\{סוג\}/g, t.kind === 'treatment' ? 'טיפול' : 'טסט')
+    .replace(/\{תאריך\}/g, dateStr)
+    .replace(/\{רכב\}/g, t.licensePlate || '')
+    .replace(/\{לינק\}/g, link);
+}
+
+function saveTrtTemplates() {
+  var s = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
+  var el;
+  el = document.getElementById('trt-tpl-reminder'); if (el) s.trtTplReminder = el.value;
+  el = document.getElementById('trt-tpl-approval'); if (el) s.trtTplApproval = el.value;
+  el = document.getElementById('trt-tpl-reject'); if (el) s.trtTplReject = el.value;
+  el = document.getElementById('trt-tpl-cancel'); if (el) s.trtTplCancel = el.value;
+  localStorage.setItem('fleetSettings', JSON.stringify(s));
+  showToast('✓ תבניות הודעות נשמרו');
+  var saved = document.getElementById('trt-tpl-saved');
+  if (saved) { saved.style.opacity = '1'; setTimeout(function() { saved.style.opacity = '0'; }, 2000); }
+}
+
+function resetTrtTemplates() {
+  var el;
+  el = document.getElementById('trt-tpl-reminder'); if (el) el.value = TRT_TPL_DEFAULTS.reminder;
+  el = document.getElementById('trt-tpl-approval'); if (el) el.value = TRT_TPL_DEFAULTS.approval;
+  el = document.getElementById('trt-tpl-reject'); if (el) el.value = TRT_TPL_DEFAULTS.reject;
+  el = document.getElementById('trt-tpl-cancel'); if (el) el.value = TRT_TPL_DEFAULTS.cancel;
+  showToast('✓ תבניות שוחזרו לברירת מחדל');
+}
+
+function initTrtTemplates() {
+  var tpl = getTrtTemplates();
+  var el;
+  el = document.getElementById('trt-tpl-reminder'); if (el) el.value = tpl.reminder;
+  el = document.getElementById('trt-tpl-approval'); if (el) el.value = tpl.approval;
+  el = document.getElementById('trt-tpl-reject'); if (el) el.value = tpl.reject;
+  el = document.getElementById('trt-tpl-cancel'); if (el) el.value = tpl.cancel;
+}
+// טען תבניות בטעינה
+setTimeout(initTrtTemplates, 500);
+
 // 23. אתחול בעת טעינה
 // ============================================================
 
