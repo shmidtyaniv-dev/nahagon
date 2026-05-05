@@ -9805,6 +9805,7 @@ function submitKmUpdate(token, vid){
 
 function startDocUploadsListener(){
   if(!db) return;
+  var _docUploadsInitialLoad = true;
   db.collection('docUploads').onSnapshot(function(snap){
     snap.docChanges().forEach(function(change){
       if(change.type==='added'||change.type==='modified'){
@@ -9818,9 +9819,13 @@ function startDocUploadsListener(){
         if(_currentVid===d.vid){
           try{ openDet(d.vid); vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]); }catch(e){}
         }
-        showToast('📄 מסמך חדש התקבל: '+(d.fileName||d.docKey));
+        // הצג toast רק לשינויים אחרי הטעינה הראשונה
+        if(!_docUploadsInitialLoad){
+          showToast('📄 מסמך חדש התקבל: '+(d.fileName||d.docKey));
+        }
       }
     });
+    _docUploadsInitialLoad = false;
   });
 }
 
