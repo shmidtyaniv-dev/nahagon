@@ -6,8 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>מרכז הרכב של מור בית השקעות</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<!-- Tesseract.js - OCR בדפדפן (fallback כשאין Gemini API) -->
+<!-- OCR מקומי - Tesseract.js + PDF.js -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(typeof pdfjsLib!=='undefined')pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <script>
 // Hide dashboard immediately if this is an approval/form link (prevents flicker)
 if(location.search.indexOf('approve=')!==-1 || location.search.indexOf('form=')!==-1){
@@ -3178,31 +3180,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
           <div class="settings-btn-row">
             <button class="settings-btn settings-btn-primary" onclick="saveSchedulingSettings()">שמור הגדרות</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- AI Scan -->
-      <div class="settings-section">
-        <div class="settings-section-header">
-          <div class="settings-section-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-          </div>
-          <div class="settings-section-title-wrapper">
-            <div class="settings-section-title">סריקת AI - רישיון רכב ונהיגה</div>
-            <div class="settings-section-desc">סריקה אוטומטית של מסמכים. עם מפתח API - סריקה מדויקת בעברית. בלי מפתח - סריקה בסיסית באנגלית.</div>
-          </div>
-        </div>
-        <div class="settings-section-body">
-          <div class="settings-form-field">
-            <label>Google Gemini API Key</label>
-            <input id="ai-api-key" type="password" dir="ltr" placeholder="AIzaSy..." style="font-family:monospace">
-            <span class="settings-form-field-hint">המפתח נשמר בדפדפן ונשלח רק ל-Google. <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#185FA5">להשיג מפתח חינמי מ-Google AI Studio →</a></span>
-          </div>
-          <div id="ai-key-status" style="margin-top:12px;min-height:14px;font-size:11px"></div>
-          <div class="settings-btn-row">
-            <button class="settings-btn settings-btn-secondary" onclick="document.getElementById('ai-api-key').value='';saveAiApiKey()">הסר מפתח</button>
-            <button class="settings-btn settings-btn-primary" onclick="saveAiApiKey()">שמור מפתח</button>
           </div>
         </div>
       </div>
@@ -10186,233 +10163,345 @@ function toIsoDate(val){
   return null;
 }
 
-// דחיסת תמונה לפני סריקה - מקסימום 1500px, איכות 85%
-async function compressImageForScan(file){
-  if(!file.type.startsWith('image/')) return null; // לא תמונה - לא דוחסים
-  return new Promise(function(resolve){
-    var img=new Image();
-    img.onload=function(){
-      var maxDim=1500;
-      var w=img.width, h=img.height;
-      // אם התמונה כבר קטנה - לא דוחסים
-      if(w<=maxDim && h<=maxDim && file.size<=500000){ resolve(null); return; }
-      if(w>maxDim||h>maxDim){
-        var ratio=Math.min(maxDim/w, maxDim/h);
-        w=Math.round(w*ratio);
-        h=Math.round(h*ratio);
-      }
-      var c=document.createElement('canvas');c.width=w;c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      var dataUrl=c.toDataURL('image/jpeg',0.92);
-      var b64=dataUrl.split(',')[1];
-      console.log('[AI Scan] דחיסה: '+img.width+'x'+img.height+' → '+w+'x'+h+' ('+Math.round(b64.length/1024)+'KB)');
-      resolve({b64:b64, mimeType:'image/jpeg'});
+/* ── LOCAL OCR ENGINE (Tesseract.js) ── */
+let _ocrWorker = null;
+
+async function getOCRWorker() {
+  if (_ocrWorker) return _ocrWorker;
+  _ocrWorker = await Tesseract.createWorker(['heb', 'eng'], 1);
+  return _ocrWorker;
+}
+
+async function fileToCanvasForOCR(file) {
+  if (file.type === 'application/pdf') {
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: ab}).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({scale: 2});
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+    return canvas;
+  }
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      resolve(canvas);
     };
-    img.onerror=function(){ resolve(null); };
-    var reader=new FileReader();
-    reader.onload=function(e){ img.src=e.target.result; };
-    reader.readAsDataURL(file);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
   });
 }
 
-async function callClaudeWithDoc(file,prompt){
-  const apiKey = (JSON.parse(localStorage.getItem('fleetSettings')||'{}').aiApiKey)||'';
-  if(!apiKey){
+function preprocessOCRImage(srcCanvas) {
+  let {width, height} = srcCanvas;
+  if (width > 2000 || height > 2000) {
+    const s = 2000 / Math.max(width, height);
+    width = (width*s)|0; height = (height*s)|0;
+  }
+  if (Math.max(width, height) < 1200) {
+    const s = 1200 / Math.max(width, height);
+    width = (width*s)|0; height = (height*s)|0;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(srcCanvas, 0, 0, width, height);
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const d = imgData.data;
+  let totalB = 0;
+  for (let i = 0; i < d.length; i += 4) totalB += d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114;
+  const avgB = totalB / (d.length/4);
+  const adj = 140 - avgB;
+  for (let i = 0; i < d.length; i += 4) {
+    let g = d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114 + adj*0.5;
+    g = ((g - 128) * 1.4) + 128;
+    g = Math.max(0, Math.min(255, g));
+    d[i] = d[i+1] = d[i+2] = g;
+  }
+  ctx.putImageData(imgData, 0, 0);
+  return canvas;
+}
+
+/* ── EXTRACTION HELPERS ── */
+function ocrExtractDates(text) {
+  const dates = [];
+  const re = /(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{2,4})/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    let d = +m[1], mo = +m[2], y = +m[3];
+    if (y < 100) y += 2000;
+    if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1990 || y > 2099) continue;
+    dates.push({raw: m[0], iso: `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`});
+  }
+  return dates;
+}
+
+function ocrIsValidId(id) {
+  const clean = String(id).replace(/\D/g, '');
+  if (clean.length < 5 || clean.length > 9) return false;
+  const padded = clean.padStart(9, '0');
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    let n = parseInt(padded[i]) * ((i % 2) + 1);
+    if (n > 9) n -= 9;
+    sum += n;
+  }
+  return sum % 10 === 0;
+}
+
+function ocrFormatId(id) {
+  const c = String(id).replace(/\D/g, '');
+  if (c.length === 9) return c.slice(0,8) + '-' + c.slice(8);
+  return c;
+}
+
+function ocrEscapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function ocrIsGarbage(text) {
+  if (!text) return true;
+  const s = String(text);
+  if (/(.)\1{2,}/.test(s)) return true;
+  const chars = s.replace(/\s/g, '');
+  if (chars.length > 0) {
+    const charCount = {};
+    for (const c of chars) charCount[c] = (charCount[c] || 0) + 1;
+    const maxCount = Math.max(...Object.values(charCount));
+    if (maxCount / chars.length > 0.5) return true;
+  }
+  return false;
+}
+
+function ocrIsValidName(text) {
+  if (!text) return false;
+  const s = String(text).trim();
+  const hasHebrew = /[\u0590-\u05FF]/.test(s);
+  const hasEnglish = /[A-Za-z]/.test(s);
+  if (!hasHebrew && !hasEnglish) return false;
+  if (ocrIsGarbage(s)) return false;
+  if (hasHebrew) {
+    const hebWords = s.match(/[\u0590-\u05FF]{2,}/g) || [];
+    if (hebWords.length === 0) return false;
+    for (const word of hebWords) {
+      if (ocrIsGarbage(word)) return false;
+      if (word.length < 2) return false;
+    }
+    if (hebWords.join('').length < 4) return false;
+  }
+  return true;
+}
+
+const OCR_TRANSLIT_MAP = {
+  'YANIV':'יניב','YOSSI':'יוסי','YOSEF':'יוסף','DAVID':'דוד','MOSHE':'משה',
+  'AVI':'אבי','AVRAHAM':'אברהם','ABRAHAM':'אברהם',
+  'ITAY':'איתי','ITAI':'איתי','EYTAN':'איתן','EITAN':'איתן',
+  'OREN':'אורן','ORI':'אורי','URI':'אורי','GAL':'גל','GUY':'גיא','GIL':'גיל',
+  'OMER':'עומר','OFER':'עופר','AMIT':'עמית','TOMER':'תומר',
+  'NIR':'ניר','NOAM':'נועם','IDO':'עידו','IDDO':'עידו',
+  'SHIMON':'שמעון','SHLOMO':'שלמה','SHAY':'שי','SHAI':'שי',
+  'EREZ':'ארז','ELI':'אלי','EYAL':'אייל','EHUD':'אהוד',
+  'YAIR':'יאיר','YAEL':'יעל','YONATAN':'יונתן','JONATHAN':'יונתן',
+  'NADAV':'נדב','NIV':'ניב','RON':'רון','RONEN':'רונן',
+  'DAN':'דן','DANIEL':'דניאל','DOR':'דור','DORON':'דורון',
+  'ASAF':'אסף','AMOS':'עמוס','IDAN':'עידן',
+  'HAIM':'חיים','CHAIM':'חיים','HAGAI':'חגי',
+  'ROY':'רועי','ROEE':'רועי','RAFI':'רפי','REUVEN':'ראובן',
+  'TAL':'טל','TALI':'טלי',
+  'NOA':'נועה','MAYA':'מאיה','MICHAL':'מיכל',
+  'SHIRA':'שירה','SARA':'שרה','SARAH':'שרה',
+  'RACHEL':'רחל','RIVKA':'רבקה','LEAH':'לאה',
+  'DANA':'דנה','KAREN':'קרן','GALIT':'גלית','LIRON':'לירון',
+  'LIRAN':'לירן','RONIT':'רונית','RUTH':'רות','RUT':'רות',
+  'ESTHER':'אסתר','MIRI':'מירי','MIRIAM':'מרים',
+  'YAFA':'יפה','ANAT':'ענת','EFRAT':'אפרת',
+  'EINAT':'עינת','INBAL':'ענבל','ADI':'עדי',
+  'COHEN':'כהן','KOHEN':'כהן','LEVY':'לוי','LEVI':'לוי',
+  'MIZRAHI':'מזרחי','MIZRACHI':'מזרחי',
+  'PERETZ':'פרץ','BITON':'ביטון','HADAD':'חדד',
+  'AZULAY':'אזולאי','AZULAI':'אזולאי','OHAYON':'אוחיון','OHANA':'אוחנה',
+  'KATZ':'כץ','FRIEDMAN':'פרידמן',
+  'SHMIDT':'שמידט','SCHMIDT':'שמידט',
+  'GOLDBERG':'גולדברג','ROSENBERG':'רוזנברג','ROZENFELD':'רוזנפלד','ROSENFELD':'רוזנפלד',
+  'WEISS':'וייס','GREEN':'גרין','GREENBERG':'גרינברג',
+  'KAHANA':'כהנא','YISRAELI':'ישראלי','ISRAELI':'ישראלי',
+  'BARZILAY':'ברזילי','BARZILAI':'ברזילי','BARZILY':'ברזילי'
+};
+
+/* ── VEHICLE FIELD EXTRACTION ── */
+function ocrExtractVehicle(text) {
+  const result = {plate: null, licenseExp: null, make: null, model: null};
+  const norm = text;
+  let m = norm.match(/(?:מספר\s*רכב|מס[׳']?\s*רכב|לוחית\s*רישוי|M1)[\s\S]{0,15}?(\d{7,8})/i);
+  if (m) result.plate = m[1];
+  else {
+    const allNums = [...norm.matchAll(/\b(\d{7,8})\b/g)].map(m => m[1]);
+    if (allNums.length > 0) result.plate = allNums[0];
+  }
+  let exp = null;
+  m = norm.match(/בתוקף\s*עד[\s\S]{0,40}?(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/);
+  if (!m) m = norm.match(/(?:תוקף|valid)[\s\S]{0,30}?(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i);
+  if (m) { const dates = ocrExtractDates(m[1]); if (dates.length > 0) exp = dates[0].iso; }
+  if (!exp) {
+    const dates = ocrExtractDates(norm);
+    const today = new Date();
+    const future = dates.filter(d => { const dt = new Date(d.iso); return dt > today && dt < new Date(today.getFullYear()+10, 0, 1); });
+    if (future.length > 0) { future.sort((a,b) => new Date(a.iso) - new Date(b.iso)); exp = future[0].iso; }
+  }
+  result.licenseExp = exp;
+  const knownMakers = ['יונדאי','טויוטה','מאזדה','הונדה','קיה','ניסאן','סוזוקי','מיצובישי','סובארו','לקסוס','פולקסווגן','אאודי','מרצדס','אופל','סקודה','סיאט','פיאט','רנו','וולוו','פורד','שברולט','טסלה','BMW','MG','איסוזו'];
+  for (const maker of knownMakers) {
+    const re = new RegExp(`(?:^|[\\s,\\.\\|])(${ocrEscapeRegex(maker)})(?:[\\s,\\.\\|]|$)`, 'i');
+    if (re.test(norm)) { result.make = maker; break; }
+  }
+  const blacklist = new Set(['ID','PDF','JPG','PNG','ABS','GPS','USB','LED','ISRAEL','STATE','DRIVING','LICENCE','LICENSE','NO','OF','THE','VIN','CC','HP','KW','SUV','MPV','CAR','VAN','AC','DC']);
+  m = norm.match(/(?:כינוי\s*מסחרי)[\s\S]{0,40}?\b([A-Z][A-Z0-9\-]{2,15})\b/);
+  if (m && !blacklist.has(m[1])) result.model = m[1];
+  if (!result.model) {
+    const matches = [...norm.matchAll(/\b([A-Z]{4,}[A-Z0-9\-]*)\b/g)].map(m => m[1]);
+    for (const cand of matches) { if (cand.length >= 4 && cand.length <= 15 && !blacklist.has(cand)) { result.model = cand; break; } }
+  }
+  return result;
+}
+
+/* ── DRIVER FIELD EXTRACTION ── */
+function ocrExtractDriver(text) {
+  const result = {fullName: null, id: null, licenseExp: null};
+  const norm = text;
+  const lines = norm.split('\n').map(l => l.trim()).filter(l => l);
+  let m = norm.match(/(?:מס[׳']?\s*ת\.?ז\.?|תעודת\s*זהות|ID\s*No|ת\.?ז\.?)[\s\S]{0,15}?(\d{8,9}[\-\s]?\d?)/i);
+  if (m) { const cleanId = m[1].replace(/\D/g, ''); if (ocrIsValidId(cleanId)) result.id = ocrFormatId(cleanId); }
+  if (!result.id) { const allIds = [...norm.matchAll(/\b(\d{8,9})\b/g)].map(m => m[1]); for (const c of allIds) { if (ocrIsValidId(c)) { result.id = ocrFormatId(c); break; } } }
+  if (!result.id) { const dashId = norm.match(/\b(\d{7,8})[-\s](\d)\b/); if (dashId) { const full = dashId[1] + dashId[2]; if (ocrIsValidId(full)) result.id = ocrFormatId(full); } }
+  m = norm.match(/(?:בתוקף\s*עד|תוקף|valid|4\s*b)[\s\S]{0,30}?(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i);
+  if (m) { const dates = ocrExtractDates(m[1]); if (dates.length > 0) result.licenseExp = dates[0].iso; }
+  if (!result.licenseExp) {
+    const dates = ocrExtractDates(norm);
+    const today = new Date();
+    const future = dates.filter(d => { const dt = new Date(d.iso); return dt > today && dt < new Date(today.getFullYear()+15, 0, 1); });
+    if (future.length > 0) { future.sort((a,b) => new Date(a.iso) - new Date(b.iso)); result.licenseExp = future[0].iso; }
+  }
+  result.fullName = ocrExtractDriverName(norm, lines);
+  return result;
+}
+
+function ocrExtractDriverName(fullText, lines) {
+  let surname = null, firstName = null, surnameEng = null, firstNameEng = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const has1 = /(?:^|[^\d])[1١][\.\s]+/.test(line) || /^[1١][\.\s]/.test(line);
+    const has2 = /(?:^|[^\d])[2٢][\.\s]+/.test(line) || /^[2٢][\.\s]/.test(line);
+    if (has1) {
+      const m1full = line.match(/(.*?)[1١][\.\s]+(.+)$/);
+      if (m1full) {
+        const before = m1full[1].trim(), after = m1full[2].trim();
+        const hebBefore = before.match(/[\u0590-\u05FF]+(?:\s+[\u0590-\u05FF]+)*/);
+        const hebAfter = after.match(/[\u0590-\u05FF]+(?:\s+[\u0590-\u05FF]+)*/);
+        const engAfter = after.match(/[A-Z][A-Za-z]+/);
+        if (hebBefore && hebBefore[0].length >= 2 && !surname) surname = hebBefore[0].trim();
+        if (hebAfter && hebAfter[0].length >= 2 && !surname) surname = hebAfter[0].trim();
+        if (engAfter && !surnameEng) surnameEng = engAfter[0].trim().toUpperCase();
+      }
+    }
+    if (has2) {
+      const m2full = line.match(/(.*?)[2٢][\.\s]+(.+)$/);
+      if (m2full) {
+        const before = m2full[1].trim(), after = m2full[2].trim();
+        const hebBefore = before.match(/[\u0590-\u05FF]+(?:\s+[\u0590-\u05FF]+)*/);
+        const hebAfter = after.match(/[\u0590-\u05FF]+(?:\s+[\u0590-\u05FF]+)*/);
+        const engAfter = after.match(/[A-Z][A-Za-z]+/);
+        if (hebBefore && hebBefore[0].length >= 2 && !firstName) firstName = hebBefore[0].trim();
+        if (hebAfter && hebAfter[0].length >= 2 && !firstName) firstName = hebAfter[0].trim();
+        if (engAfter && !firstNameEng) firstNameEng = engAfter[0].trim().toUpperCase();
+      }
+    }
+  }
+  if (!firstName || !surname) {
+    const om = fullText.match(/([\u0590-\u05FF]{2,12})\s+([\u0590-\u05FF]{2,12})\s+(?:מספר\s*זהות|ת\.?ז\.?)/);
+    if (om) { surname = surname || om[1]; firstName = firstName || om[2]; }
+  }
+  if (firstName && surname) return `${firstName} ${surname}`;
+  if (surname && firstNameEng && !firstName) {
+    const t = OCR_TRANSLIT_MAP[firstNameEng.toUpperCase()];
+    return t ? `${t} ${surname}` : `${firstNameEng.charAt(0) + firstNameEng.slice(1).toLowerCase()} ${surname}`;
+  }
+  if (firstName && surnameEng && !surname) {
+    const t = OCR_TRANSLIT_MAP[surnameEng.toUpperCase()];
+    return t ? `${firstName} ${t}` : `${firstName} ${surnameEng.charAt(0) + surnameEng.slice(1).toLowerCase()}`;
+  }
+  if (firstNameEng && surnameEng && !firstName && !surname) {
+    const f = OCR_TRANSLIT_MAP[firstNameEng.toUpperCase()];
+    const l = OCR_TRANSLIT_MAP[surnameEng.toUpperCase()];
+    if (f || l) return [f, l].filter(Boolean).join(' ');
+  }
+  return null;
+}
+
+/* ── INSURANCE FIELD EXTRACTION ── */
+function ocrExtractInsurance(text) {
+  const result = {insuranceExp: null};
+  let m = text.match(/(?:בתוקף\s*עד|תוקף|תפוגה|expiry|valid)[\s\S]{0,30}?(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i);
+  if (m) { const dates = ocrExtractDates(m[1]); if (dates.length > 0) result.insuranceExp = dates[0].iso; }
+  if (!result.insuranceExp) {
+    const dates = ocrExtractDates(text);
+    const today = new Date();
+    const future = dates.filter(d => { const dt = new Date(d.iso); return dt > today && dt < new Date(today.getFullYear()+5, 0, 1); });
+    if (future.length > 0) { future.sort((a,b) => new Date(a.iso) - new Date(b.iso)); result.insuranceExp = future[0].iso; }
+  }
+  return result;
+}
+
+/* ── VALIDATE FIELDS ── */
+function ocrValidateFields(fields) {
+  const validated = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (!value) { validated[key] = null; continue; }
+    const v = String(value).trim();
+    if (key === 'plate') { validated[key] = /^\d{7,8}$/.test(v) ? v : null; }
+    else if (key === 'id') { const clean = v.replace(/\D/g, ''); validated[key] = ocrIsValidId(clean) ? ocrFormatId(clean) : null; }
+    else if (key === 'licenseExp' || key === 'insuranceExp') { validated[key] = (/^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(new Date(v)) && new Date(v).getFullYear() >= 2020) ? v : null; }
+    else if (key === 'make') { validated[key] = (ocrIsValidName(v) && v.length >= 2 && v.length <= 20) ? v : null; }
+    else if (key === 'model') { validated[key] = (/^[A-Z][A-Z0-9\-]{1,14}$/.test(v) && !ocrIsGarbage(v)) ? v : null; }
+    else if (key === 'fullName') { validated[key] = (ocrIsValidName(v) && v.length >= 4 && v.length <= 30) ? v : null; }
+    else { validated[key] = v; }
+  }
+  return validated;
+}
+
+/* ── MAIN OCR FUNCTION (replaces callClaudeWithDoc) ── */
+async function callClaudeWithDoc(file, prompt) {
+  let docType = 'vehicle';
+  if (prompt.includes('נהיגה') || prompt.includes('שם מלא') || prompt.includes('ID')) docType = 'driver';
+  else if (prompt.includes('ביטוח') || prompt.includes('insurance')) docType = 'insurance';
+
+  try {
+    const orig = await fileToCanvasForOCR(file);
+    const proc = preprocessOCRImage(orig);
+    const worker = await getOCRWorker();
+    const {data} = await worker.recognize(proc);
+    const text = data.text || '';
+    console.log('[OCR] טקסט שזוהה (' + docType + '):', text.substring(0, 400));
+
+    let fields;
+    if (docType === 'vehicle') fields = ocrExtractVehicle(text);
+    else if (docType === 'driver') fields = ocrExtractDriver(text);
+    else fields = ocrExtractInsurance(text);
+
+    fields = ocrValidateFields(fields);
+    console.log('[OCR] שדות שחולצו:', fields);
+    const found = Object.values(fields).filter(v => v).length;
+    if (found === 0 || data.confidence < 30) return null;
+    return fields;
+  } catch (e) {
+    console.error('[OCR] שגיאה:', e);
     return null;
   }
-  // נסה לדחוס תמונה לפני שליחה
-  var compressed = await compressImageForScan(file);
-  var b64, mimeType;
-  if(compressed){
-    b64 = compressed.b64;
-    mimeType = compressed.mimeType;
-  } else {
-    b64 = await fileToBase64(file);
-    var isImg = file.type.startsWith('image/');
-    mimeType = isImg ? file.type : 'application/pdf';
-  }
-
-  // Models to try (fast first)
-  const models=['gemini-2.0-flash','gemini-2.5-flash'];
-  var lastError=null;
-
-  for(var mi=0;mi<models.length;mi++){
-    var model=models[mi];
-    // Retry once on 429 errors
-    for(var attempt=0;attempt<2;attempt++){
-      try{
-        const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+apiKey,{
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({
-            contents:[{parts:[
-              {inline_data:{mime_type:mimeType,data:b64}},
-              {text:prompt}
-            ]}],
-            generationConfig:{temperature:0,maxOutputTokens:600}
-          })
-        });
-        if(resp.status===429){
-          // Rate limit - wait and retry
-          lastError=new Error('מגבלת שימוש (429). ממתין ומנסה שוב...');
-          await new Promise(r=>setTimeout(r,(attempt+1)*3000));
-          continue;
-        }
-        if(!resp.ok){
-          var t=await resp.text();
-          if(resp.status===400 && mi<models.length-1){lastError=new Error(t);break;} // try next model
-          throw new Error(resp.status+': '+t.slice(0,200));
-        }
-        const data=await resp.json();
-        const txt=(data.candidates||[])[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
-        const m=txt.match(/\{[\s\S]*?\}/);
-        if(!m)throw new Error('לא התקבל JSON מהסריקה');
-        return JSON.parse(m[0]);
-      }catch(e){
-        lastError=e;
-        if(e.message.indexOf('429')===-1) break; // don't retry non-429 errors
-      }
-    }
-  }
-  throw lastError||new Error('הסריקה נכשלה');
-}
-
-// ============================================================
-// Tesseract.js OCR - סריקה בדפדפן (fallback לGemini)
-// ============================================================
-var _tesseractWorker = null;
-
-async function ocrWithTesseract(file) {
-  console.log('[OCR] מתחיל סריקת Tesseract...');
-  if (typeof Tesseract === 'undefined') throw new Error('Tesseract.js לא נטען');
-
-  // דחוס תמונה קודם
-  var compressed = await compressImageForScan(file);
-  var imageData;
-  if (compressed) {
-    imageData = 'data:' + compressed.mimeType + ';base64,' + compressed.b64;
-  } else {
-    imageData = await new Promise(function(res, rej) {
-      var r = new FileReader(); r.onload = function() { res(r.result); }; r.onerror = rej; r.readAsDataURL(file);
-    });
-  }
-
-  // סריקה באנגלית בלבד - עברית של Tesseract לא אמינה מספיק
-  var result = await Tesseract.recognize(imageData, 'eng', {
-    logger: function(m) { if (m.status === 'recognizing text') console.log('[OCR] ' + Math.round(m.progress * 100) + '%'); }
-  });
-  console.log('[OCR] טקסט שזוהה:', result.data.text);
-  return result.data.text;
-}
-
-function parseIsraeliDriverLicense(text) {
-  var result = { fullName: null, licenseExp: null, id: null };
-  var allText = text.replace(/\r?\n/g, ' ');
-
-  /* === שם מלא ===
-     מבנה רישיון נהיגה ישראלי:
-       שמידט           ← שם משפחה בעברית
-       1. SHMIDT        ← שדה 1: שם משפחה באנגלית
-       יניב             ← שם פרטי בעברית
-       2. YANIV          ← שדה 2: שם פרטי באנגלית
-     התוצאה: "YANIV SHMIDT" (שם פרטי + שם משפחה)
-     OCR סורק באנגלית - מחפש את השמות האנגליים ליד 1. ו-2.
-  */
-  var familyName = null;
-  var firstName = null;
-
-  /* חיפוש בכל הטקסט (לא רק בתחילת שורה - OCR מוסיף זבל לפני השדות)
-     דוגמה מ-OCR אמיתי:
-       "= 1. SHMIDT"      → חיפוש "1. SHMIDT" בכל מקום
-       "Fad | 2. YANIV"   → חיפוש "2. YANIV" בכל מקום
-  */
-  var m1 = allText.match(/1\.\s*([A-Z][A-Za-z]{1,20})/);
-  var m2 = allText.match(/2\.\s*([A-Z][A-Za-z]{1,20})/);
-  if (m1) familyName = m1[1];
-  if (m2) firstName = m2[1];
-  console.log('[OCR] שדה 1 (משפחה):', m1 ? m1[0] : 'לא נמצא', '→', familyName);
-  console.log('[OCR] שדה 2 (פרטי):', m2 ? m2[0] : 'לא נמצא', '→', firstName);
-
-  // בנה שם: שם פרטי (2) + שם משפחה (1)
-  if (firstName && familyName) {
-    result.fullName = firstName + ' ' + familyName;
-  } else if (firstName) {
-    result.fullName = firstName;
-  } else if (familyName) {
-    result.fullName = familyName;
-  }
-  console.log('[OCR] שם:', firstName, familyName, '→', result.fullName);
-
-  /* === תוקף רישיון (שדה 4b) ===
-     דפוסים: "4b.25.09.2031" / "4b 25.09.2031" / "Ab.25.09.2031" / "4b:25.09.2031"
-  */
-  var m4b = allText.match(/4\s*b[\.\s:]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/i);
-  if (!m4b) m4b = allText.match(/[Aa4]\s*[bB8][\.\s:]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/);
-  if (m4b) {
-    var parts = m4b[1].split(/[\.\/\-]/);
-    if (parts.length === 3) {
-      var yr = parts[2].length === 2 ? '20' + parts[2] : parts[2];
-      result.licenseExp = parts[0].padStart(2, '0') + '/' + parts[1].padStart(2, '0') + '/' + yr;
-    }
-  } else {
-    // Fallback: התאריך העתידי ביותר
-    var dates = allText.match(/\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{4}/g) || [];
-    var latestDate = null, latestYear = 0;
-    for (var di = 0; di < dates.length; di++) {
-      var dp = dates[di].split(/[\.\/\-]/);
-      if (dp.length === 3 && parseInt(dp[2]) > latestYear) { latestYear = parseInt(dp[2]); latestDate = dp; }
-    }
-    if (latestDate && latestYear > 2024) {
-      result.licenseExp = latestDate[0].padStart(2, '0') + '/' + latestDate[1].padStart(2, '0') + '/' + latestDate[2];
-    }
-  }
-
-  /* === מספר ת"ז (שדה 4d.ID או שדה 5) ===
-     דפוסים: "4d.ID 301256897" / "4d ID 301256897" / "Ad.ID 301256897"
-             "5. 8721777" / "5 8721777"
-  */
-  /* דפוסים מ-OCR אמיתי: "4d.1D 301256897" (1D במקום ID) */
-  var id4d = allText.match(/4d[\.\s]*[1Il][dD][\.\s:]*(\d{6,9})/);
-  if (!id4d) id4d = allText.match(/[4Aa]d[\.\s]*[1IlL][dDoO][\.\s:]*(\d{6,9})/);
-  var id5 = allText.match(/5[\.\s:]+(\d{7,9})/);
-  if (id4d) { result.id = id4d[1]; }
-  else if (id5) { result.id = id5[1]; }
-  else { var idM = allText.match(/\b(\d{9})\b/); if (idM) result.id = idM[1]; }
-
-  console.log('[OCR] פרטי רישיון נהיגה:', result);
-  return result;
-}
-
-function parseIsraeliVehicleLicense(text) {
-  var result = { plate: null, licenseExp: null, make: null, model: null };
-  var allText = text.replace(/\r?\n/g, ' ');
-
-  // מספר רכב - 7-8 ספרות (הראשון שנמצא)
-  var plateMatch = allText.match(/(\d{7,8})/);
-  if (plateMatch) result.plate = plateMatch[1];
-
-  // תוקף - התאריך העתידי ביותר (DD.MM.YYYY)
-  var dates = allText.match(/\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{4}/g) || [];
-  var latestDate = null, latestYear = 0;
-  for (var i = 0; i < dates.length; i++) {
-    var dp = dates[i].split(/[\.\/\-]/);
-    if (dp.length === 3 && parseInt(dp[2]) > latestYear) {
-      latestYear = parseInt(dp[2]);
-      latestDate = dp;
-    }
-  }
-  if (latestDate && latestYear > 2024) {
-    result.licenseExp = latestDate[0].padStart(2, '0') + '/' + latestDate[1].padStart(2, '0') + '/' + latestDate[2];
-  }
-
-  // דגם - מילה באנגלית של 3+ אותיות גדולות (TUCSON, COROLLA, OCTAVIA)
-  var models = allText.match(/\b([A-Z]{3,15})\b/g) || [];
-  var skipModels = ['DRIVING','LICENCE','STATE','ISRAEL','THE','FOR','AND','NOT'];
-  models = models.filter(function(m) { return skipModels.indexOf(m) === -1; });
-  if (models.length > 0) result.model = models[models.length - 1];
-
-  console.log('[OCR] פרטי רישיון רכב:', result);
-  return result;
 }
 
 // Pending scanned files, to be attached to vehicle after save
@@ -10423,38 +10512,20 @@ async function scanVehicleDoc(input){
   const file=input.files[0];if(!file)return;
   const zone=id('scan-vehicle-zone'),st=id('scan-v-status'),sp=id('scan-v-spinner');
   sp.style.display='block';st.textContent='סורק...';st.style.color='var(--t2)';
-  // נקה שדות קודמים לפני סריקה חדשה
   id('fa-plate').value='';id('fa-make').value='';id('fa-model').value='';id('fa-lic').value='';
   try{
     const reader = new FileReader();
     reader.onload = e => { _pendingScannedVehicleDoc = { name:file.name, type:file.type, data:e.target.result }; };
     reader.readAsDataURL(file);
 
-    var p = null;
-    var usedOcr = false;
-    // נסה Gemini קודם
-    try {
-      p = await callClaudeWithDoc(file,
-'Israeli vehicle license. Extract:\n1. plate: vehicle number (7-8 digits)\n2. licenseExp: expiry date as DD/MM/YYYY\n3. make: manufacturer in Hebrew (e.g. יונדאי)\n4. model: model name (e.g. TUCSON)\nReturn JSON only:\n{"plate":"76328602","licenseExp":"DD/MM/YYYY","make":"יצרן","model":"MODEL"}'
-      );
-    } catch(geminiErr) {
-      console.log('[Scan] Gemini נכשל, עובר ל-Tesseract:', geminiErr.message);
-    }
-    // Fallback ל-Tesseract אם Gemini נכשל או לא מוגדר
-    if (!p && typeof Tesseract !== 'undefined') {
-      st.textContent='סורק עם OCR מקומי...';
-      var ocrText = await ocrWithTesseract(file);
-      p = parseIsraeliVehicleLicense(ocrText);
-      usedOcr = true;
-    }
-    if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה)';st.style.color='var(--t3)';sp.style.display='none';return;}
+    const p = await callClaudeWithDoc(file, 'רישיון רכב מספר רכב בתוקף עד תוצר כינוי מסחרי');
+    if(!p){st.textContent='⚠️ לא הצלחנו לזהות את המסמך - יש להזין ידנית';st.style.color='var(--amber)';sp.style.display='none';return;}
     if(p.plate)id('fa-plate').value=p.plate;
     if(p.make)id('fa-make').value=p.make;
     if(p.model)id('fa-model').value=p.model;
-    const d=toIsoDate(p.licenseExp);
-    if(d)id('fa-lic').value=d;
+    if(p.licenseExp)id('fa-lic').value=p.licenseExp;
     zone.classList.add('scan-filled');
-    st.textContent='✓ פרטים מולאו + המסמך יישמר' + (usedOcr ? ' (OCR)' : '');st.style.color='var(--green)';
+    st.textContent='✓ פרטים מולאו + המסמך יישמר';st.style.color='var(--green)';
   }catch(e){
     st.textContent='שגיאה: '+e.message.slice(0,80);st.style.color='var(--red)';
     console.error('scanVehicle:',e.message);
@@ -10465,37 +10536,19 @@ async function scanDriverDoc(input){
   const file=input.files[0];if(!file)return;
   const zone=id('scan-driver-zone'),st=id('scan-d-status'),sp=id('scan-d-spinner');
   sp.style.display='block';st.textContent='סורק...';st.style.color='var(--t2)';
-  // נקה שדות קודמים לפני סריקה חדשה
   id('fa-dname').value='';id('fa-did').value='';id('fa-dlic').value='';
   try{
     const reader = new FileReader();
     reader.onload = e => { _pendingScannedDriverDoc = { name:file.name, type:file.type, data:e.target.result }; };
     reader.readAsDataURL(file);
 
-    var p = null;
-    var usedOcr = false;
-    // נסה Gemini קודם
-    try {
-      p = await callClaudeWithDoc(file,
-'Israeli driving license. Extract:\n1. fullName: Hebrew first name (field 2) + family name (field 1), e.g. "יניב שמידט"\n2. licenseExp: field 4b date as DD/MM/YYYY\n3. id: field 4d.ID or field 5 (digits only)\nReturn JSON only:\n{"fullName":"שם פרטי שם משפחה","licenseExp":"DD/MM/YYYY","id":"123456789"}'
-      );
-    } catch(geminiErr) {
-      console.log('[Scan] Gemini נכשל, עובר ל-Tesseract:', geminiErr.message);
-    }
-    // Fallback ל-Tesseract אם Gemini נכשל או לא מוגדר
-    if (!p && typeof Tesseract !== 'undefined') {
-      st.textContent='סורק עם OCR מקומי...';
-      var ocrText = await ocrWithTesseract(file);
-      p = parseIsraeliDriverLicense(ocrText);
-      usedOcr = true;
-    }
-    if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה)';st.style.color='var(--t3)';sp.style.display='none';return;}
+    const p = await callClaudeWithDoc(file, 'רישיון נהיגה שם מלא ID תעודת זהות');
+    if(!p){st.textContent='⚠️ לא הצלחנו לזהות את המסמך - יש להזין ידנית';st.style.color='var(--amber)';sp.style.display='none';return;}
     if(p.fullName)id('fa-dname').value=p.fullName;
     if(p.id)id('fa-did').value=p.id;
-    const d=toIsoDate(p.licenseExp);
-    if(d)id('fa-dlic').value=d;
+    if(p.licenseExp)id('fa-dlic').value=p.licenseExp;
     zone.classList.add('scan-filled');
-    st.textContent='✓ פרטים מולאו + המסמך יישמר' + (usedOcr ? ' (OCR)' : '');st.style.color='var(--green)';
+    st.textContent='✓ פרטים מולאו + המסמך יישמר';st.style.color='var(--green)';
   }catch(e){
     st.textContent='שגיאה: '+e.message.slice(0,80);st.style.color='var(--red)';
     console.error('scanDriver:',e.message);
@@ -13052,7 +13105,7 @@ async function scanFamilyDriverDoc(input){
 החזר JSON בלבד:
 {"fullName":"שם מלא","licenseExp":"DD/MM/YYYY","id":"מספר-תז"}`
     );
-    if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה)';st.style.color='#666';sp.style.display='none';return;}
+    if(!p){st.textContent='⚠️ לא הצלחנו לזהות את המסמך - יש להזין ידנית';st.style.color='var(--amber)';sp.style.display='none';return;}
     if(p.fullName) document.getElementById('fm-name').value=p.fullName;
     if(p.id) document.getElementById('fm-id').value=p.id;
     const d=toIsoDate(p.licenseExp);
