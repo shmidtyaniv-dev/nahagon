@@ -10429,6 +10429,8 @@ async function scanVehicleDoc(input){
   const file=input.files[0];if(!file)return;
   const zone=id('scan-vehicle-zone'),st=id('scan-v-status'),sp=id('scan-v-spinner');
   sp.style.display='block';st.textContent='סורק...';st.style.color='var(--t2)';
+  // נקה שדות קודמים לפני סריקה חדשה
+  id('fa-plate').value='';id('fa-make').value='';id('fa-model').value='';id('fa-lic').value='';
   try{
     const reader = new FileReader();
     reader.onload = e => { _pendingScannedVehicleDoc = { name:file.name, type:file.type, data:e.target.result }; };
@@ -10469,6 +10471,8 @@ async function scanDriverDoc(input){
   const file=input.files[0];if(!file)return;
   const zone=id('scan-driver-zone'),st=id('scan-d-status'),sp=id('scan-d-spinner');
   sp.style.display='block';st.textContent='סורק...';st.style.color='var(--t2)';
+  // נקה שדות קודמים לפני סריקה חדשה
+  id('fa-dname').value='';id('fa-did').value='';id('fa-dlic').value='';
   try{
     const reader = new FileReader();
     reader.onload = e => { _pendingScannedDriverDoc = { name:file.name, type:file.type, data:e.target.result }; };
