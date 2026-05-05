@@ -10277,24 +10277,17 @@ async function ocrWithTesseract(file) {
     });
   }
 
-  // סריקה באנגלית (מספרים, תאריכים, שמות) + עברית (שמות בלבד)
-  var resultEng = await Tesseract.recognize(imageData, 'eng', {
-    logger: function(m) { if (m.status === 'recognizing text') console.log('[OCR eng] ' + Math.round(m.progress * 100) + '%'); }
+  // סריקה באנגלית בלבד - עברית של Tesseract לא אמינה מספיק
+  var result = await Tesseract.recognize(imageData, 'eng', {
+    logger: function(m) { if (m.status === 'recognizing text') console.log('[OCR] ' + Math.round(m.progress * 100) + '%'); }
   });
-  var resultHeb = await Tesseract.recognize(imageData, 'heb', {
-    logger: function(m) { if (m.status === 'recognizing text') console.log('[OCR heb] ' + Math.round(m.progress * 100) + '%'); }
-  });
-  console.log('[OCR] אנגלית:', resultEng.data.text.substring(0, 300));
-  console.log('[OCR] עברית:', resultHeb.data.text.substring(0, 300));
-  // מחזיר object עם שני הטקסטים
-  return { eng: resultEng.data.text, heb: resultHeb.data.text };
+  console.log('[OCR] טקסט שזוהה:', result.data.text);
+  return result.data.text;
 }
 
-function parseIsraeliDriverLicense(text, hebText) {
+function parseIsraeliDriverLicense(text) {
   var result = { fullName: null, licenseExp: null, id: null };
-  var lines = text.replace(/\r/g, '').split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
-  var allText = lines.join(' ');
-  var hebAll = (hebText || '').replace(/\r/g, '').replace(/\n/g, ' ');
+  var allText = text.replace(/\r?\n/g, ' ');
 
   /* === שם מלא ===
      מבנה רישיון נהיגה ישראלי:
@@ -10320,27 +10313,15 @@ function parseIsraeliDriverLicense(text, hebText) {
   console.log('[OCR] שדה 1 (משפחה):', m1 ? m1[0] : 'לא נמצא', '→', familyName);
   console.log('[OCR] שדה 2 (פרטי):', m2 ? m2[0] : 'לא נמצא', '→', firstName);
 
-  // נסה למצוא שמות בעברית מסריקת העברית
-  var hebFamily = null, hebFirst = null;
-  if (hebAll) {
-    var hebWords = hebAll.match(/[א-ת]{2,15}/g) || [];
-    var skip = ['רשיון','נהיגה','מדינת','ישראל','רשאי','לנהוג','בדרגה','פתח','תקווה','תקוה','הרב','בתשרי','התשמ'];
-    hebWords = hebWords.filter(function(w) { return skip.indexOf(w) === -1 && w.length >= 2; });
-    console.log('[OCR] מילים עבריות:', hebWords);
-    if (hebWords.length >= 2) { hebFamily = hebWords[0]; hebFirst = hebWords[1]; }
-    else if (hebWords.length === 1) { hebFamily = hebWords[0]; }
+  // בנה שם: שם פרטי (2) + שם משפחה (1)
+  if (firstName && familyName) {
+    result.fullName = firstName + ' ' + familyName;
+  } else if (firstName) {
+    result.fullName = firstName;
+  } else if (familyName) {
+    result.fullName = familyName;
   }
-
-  // בנה שם: עדיפות לעברית, fallback לאנגלית
-  var fn = hebFirst || firstName;
-  var ln = hebFamily || familyName;
-  if (fn && ln) {
-    result.fullName = fn + ' ' + ln;
-  } else if (fn) {
-    result.fullName = fn;
-  } else if (ln) {
-    result.fullName = ln;
-  }
+  console.log('[OCR] שם:', firstName, familyName, '→', result.fullName);
 
   /* === תוקף רישיון (שדה 4b) ===
      דפוסים: "4b.25.09.2031" / "4b 25.09.2031" / "Ab.25.09.2031" / "4b:25.09.2031"
@@ -10384,38 +10365,31 @@ function parseIsraeliDriverLicense(text, hebText) {
 
 function parseIsraeliVehicleLicense(text) {
   var result = { plate: null, licenseExp: null, make: null, model: null };
-  var lines = text.replace(/\r/g, '').split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
-  var allText = lines.join(' ');
+  var allText = text.replace(/\r?\n/g, ' ');
 
-  // מספר רכב - 7-8 ספרות
+  // מספר רכב - 7-8 ספרות (הראשון שנמצא)
   var plateMatch = allText.match(/(\d{7,8})/);
-  // עדיף ליד "מספר רכב"
-  var plateField = allText.match(/מספר\s*רכב[:\s]*(\d{7,8})/);
-  result.plate = plateField ? plateField[1] : (plateMatch ? plateMatch[1] : null);
+  if (plateMatch) result.plate = plateMatch[1];
 
-  // תוקף - תאריך ליד "בתוקף עד"
-  var expMatch = allText.match(/בתוקף\s*עד[:\s]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/);
-  if (!expMatch) {
-    // חיפוש כללי לתאריך
-    var dates = allText.match(/\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4}/g) || [];
-    if (dates.length > 0) expMatch = [null, dates[dates.length - 1]];
-  }
-  if (expMatch) {
-    var parts = expMatch[1].split(/[\.\/\-]/);
-    if (parts.length === 3) {
-      var yr = parts[2].length === 2 ? '20' + parts[2] : parts[2];
-      result.licenseExp = parts[0].padStart(2, '0') + '/' + parts[1].padStart(2, '0') + '/' + yr;
+  // תוקף - התאריך העתידי ביותר (DD.MM.YYYY)
+  var dates = allText.match(/\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{4}/g) || [];
+  var latestDate = null, latestYear = 0;
+  for (var i = 0; i < dates.length; i++) {
+    var dp = dates[i].split(/[\.\/\-]/);
+    if (dp.length === 3 && parseInt(dp[2]) > latestYear) {
+      latestYear = parseInt(dp[2]);
+      latestDate = dp;
     }
   }
+  if (latestDate && latestYear > 2024) {
+    result.licenseExp = latestDate[0].padStart(2, '0') + '/' + latestDate[1].padStart(2, '0') + '/' + latestDate[2];
+  }
 
-  // תוצר (יצרן)
-  var makeMatch = allText.match(/תוצר[:\s]*([א-ת\w]{2,20})/);
-  if (makeMatch) result.make = makeMatch[1].trim();
-
-  // כינוי מסחרי (דגם) - בדרך כלל באנגלית
-  var modelMatch = allText.match(/כינוי\s*מסחרי[:\s]*([A-Za-z\d\s\-]{2,30})/);
-  if (!modelMatch) modelMatch = allText.match(/מסחרי[:\s]*([A-Za-z\d\s\-]{2,30})/);
-  if (modelMatch) result.model = modelMatch[1].trim();
+  // דגם - מילה באנגלית של 3+ אותיות גדולות (TUCSON, COROLLA, OCTAVIA)
+  var models = allText.match(/\b([A-Z]{3,15})\b/g) || [];
+  var skipModels = ['DRIVING','LICENCE','STATE','ISRAEL','THE','FOR','AND','NOT'];
+  models = models.filter(function(m) { return skipModels.indexOf(m) === -1; });
+  if (models.length > 0) result.model = models[models.length - 1];
 
   console.log('[OCR] פרטי רישיון רכב:', result);
   return result;
@@ -10449,8 +10423,8 @@ async function scanVehicleDoc(input){
     // Fallback ל-Tesseract אם Gemini נכשל או לא מוגדר
     if (!p && typeof Tesseract !== 'undefined') {
       st.textContent='סורק עם OCR מקומי...';
-      var ocrResult = await ocrWithTesseract(file);
-      p = parseIsraeliVehicleLicense(typeof ocrResult === 'string' ? ocrResult : ocrResult.eng);
+      var ocrText = await ocrWithTesseract(file);
+      p = parseIsraeliVehicleLicense(ocrText);
       usedOcr = true;
     }
     if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה)';st.style.color='var(--t3)';sp.style.display='none';return;}
@@ -10491,8 +10465,8 @@ async function scanDriverDoc(input){
     // Fallback ל-Tesseract אם Gemini נכשל או לא מוגדר
     if (!p && typeof Tesseract !== 'undefined') {
       st.textContent='סורק עם OCR מקומי...';
-      var ocrResult = await ocrWithTesseract(file);
-      p = parseIsraeliDriverLicense(typeof ocrResult === 'string' ? ocrResult : ocrResult.eng, typeof ocrResult === 'object' ? ocrResult.heb : '');
+      var ocrText = await ocrWithTesseract(file);
+      p = parseIsraeliDriverLicense(ocrText);
       usedOcr = true;
     }
     if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה)';st.style.color='var(--t3)';sp.style.display='none';return;}
