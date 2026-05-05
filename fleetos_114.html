@@ -10303,29 +10303,15 @@ function parseIsraeliDriverLicense(text) {
   var familyName = null;
   var firstName = null;
 
-  // חיפוש ליד שדה 1 ו-2 (כל הוריאציות)
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
-    // שדה 1: "1. SHMIDT" / "1 SHMIDT" / "1.SHMIDT"
-    var m1 = line.match(/^[1l|I][\.\s:]+([A-Za-z]{2,})/);
-    if (m1 && !familyName) familyName = m1[1];
-    // שדה 2: "2. YANIV" / "2 YANIV"
-    var m2 = line.match(/^2[\.\s:]+([A-Za-z]{2,})/);
-    if (m2 && !firstName) firstName = m2[1];
-  }
-
-  // Fallback: חיפוש בכל הטקסט
-  if (!familyName) { var f1 = allText.match(/[1l|I][\.\s:]+([A-Z][A-Za-z]{1,20})/); if (f1) familyName = f1[1]; }
-  if (!firstName) { var f2 = allText.match(/2[\.\s:]+([A-Z][A-Za-z]{1,20})/); if (f2) firstName = f2[1]; }
-
-  // Fallback: מילים עבריות
-  if (!familyName && !firstName) {
-    var heb = allText.match(/[א-ת]{2,15}/g) || [];
-    var skip = ['רשיון','נהיגה','מדינת','ישראל','רשאי','לנהוג','בדרגה','פתח','תקווה','תקוה','הרב','בתשרי'];
-    heb = heb.filter(function(w) { return skip.indexOf(w) === -1; });
-    if (heb.length >= 2) { familyName = heb[0]; firstName = heb[1]; }
-    else if (heb.length === 1) { familyName = heb[0]; }
-  }
+  /* חיפוש בכל הטקסט (לא רק בתחילת שורה - OCR מוסיף זבל לפני השדות)
+     דוגמה מ-OCR אמיתי:
+       "= 1. SHMIDT"      → חיפוש "1. SHMIDT" בכל מקום
+       "Fad | 2. YANIV"   → חיפוש "2. YANIV" בכל מקום
+  */
+  var m1 = allText.match(/1\.\s*([A-Z][A-Za-z]{1,20})/);
+  var m2 = allText.match(/2\.\s*([A-Z][A-Za-z]{1,20})/);
+  if (m1) familyName = m1[1];
+  if (m2) firstName = m2[1];
 
   // בנה שם: שם פרטי (2) + שם משפחה (1)
   if (firstName && familyName) {
@@ -10364,7 +10350,9 @@ function parseIsraeliDriverLicense(text) {
      דפוסים: "4d.ID 301256897" / "4d ID 301256897" / "Ad.ID 301256897"
              "5. 8721777" / "5 8721777"
   */
-  var id4d = allText.match(/[4Aa]\s*d[\.\s]*[Il1][dD][\.\s:]*(\d{6,9})/);
+  /* דפוסים מ-OCR אמיתי: "4d.1D 301256897" (1D במקום ID) */
+  var id4d = allText.match(/4d[\.\s]*[1Il][dD][\.\s:]*(\d{6,9})/);
+  if (!id4d) id4d = allText.match(/[4Aa]d[\.\s]*[1IlL][dDoO][\.\s:]*(\d{6,9})/);
   var id5 = allText.match(/5[\.\s:]+(\d{7,9})/);
   if (id4d) { result.id = id4d[1]; }
   else if (id5) { result.id = id5[1]; }
