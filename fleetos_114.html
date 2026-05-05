@@ -3182,10 +3182,30 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
       </div>
 
-      <!-- AI Scan - הוסר: Tesseract.js מחליף את Gemini, לא צריך API key -->
-      <!-- אם בעתיד הלקוח ירצה Gemini - להחזיר את הקטע מ-fleetos_114.backup.html -->
-      <input type="hidden" id="ai-api-key" value="">
-      <div id="ai-key-status" style="display:none"></div>
+      <!-- AI Scan -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">סריקת AI - רישיון רכב ונהיגה</div>
+            <div class="settings-section-desc">סריקה אוטומטית של מסמכים. עם מפתח API - סריקה מדויקת בעברית. בלי מפתח - סריקה בסיסית באנגלית.</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <div class="settings-form-field">
+            <label>Google Gemini API Key</label>
+            <input id="ai-api-key" type="password" dir="ltr" placeholder="AIzaSy..." style="font-family:monospace">
+            <span class="settings-form-field-hint">המפתח נשמר בדפדפן ונשלח רק ל-Google. <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#185FA5">להשיג מפתח חינמי מ-Google AI Studio →</a></span>
+          </div>
+          <div id="ai-key-status" style="margin-top:12px;min-height:14px;font-size:11px"></div>
+          <div class="settings-btn-row">
+            <button class="settings-btn settings-btn-secondary" onclick="document.getElementById('ai-api-key').value='';saveAiApiKey()">הסר מפתח</button>
+            <button class="settings-btn settings-btn-primary" onclick="saveAiApiKey()">שמור מפתח</button>
+          </div>
+        </div>
+      </div>
 
       <!-- EmailJS -->
       <div class="settings-section">
