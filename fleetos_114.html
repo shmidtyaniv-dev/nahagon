@@ -18138,9 +18138,8 @@ function showBookingSuccess(date){
     </div>
 
     <div class="trt-modal-body">
-      <p class="trt-modal-description">
-        איך לשלוח את התזכורת? אותה הודעת בקשה לבחירת תאריך תישלח שוב בערוץ הנבחר.
-      </p>
+      <p class="trt-modal-description">ניתן לערוך את ההודעה לפני שליחה:</p>
+      <textarea id="reminder-message-text" rows="4" style="width:100%;padding:10px 12px;border:1px solid var(--bdr2);border-radius:var(--rs);font-size:13px;font-family:inherit;resize:vertical;direction:rtl;margin-bottom:14px;background:var(--bg);color:var(--t1)"></textarea>
 
       <div class="trt-channel-grid">
         <div class="trt-channel-card" onclick="sendManualReminder('whatsapp')">
@@ -19070,6 +19069,11 @@ function openReminderModal(treatmentId) {
   el = document.getElementById('reminder-whatsapp'); if (el) el.textContent = maskPhone(t.driverPhone);
   el = document.getElementById('reminder-email'); if (el) el.textContent = maskEmail(t.driverEmail);
 
+  // מלא הודעה ברירת מחדל
+  var link = window.location.origin + '/driver-link.html?id=' + t.id;
+  var defaultMsg = 'שלום ' + (t.driverName || '').split(' ')[0] + ', נא לבחור תאריך ' + (t.kind === 'treatment' ? 'לטיפול' : 'לטסט') + ' ברכב: ' + link;
+  el = document.getElementById('reminder-message-text'); if (el) el.value = defaultMsg;
+
   var modal = document.getElementById('modal-reminder'); if (modal) modal.style.display = 'flex';
 }
 
@@ -19086,18 +19090,18 @@ async function sendManualReminder(channel) {
     });
 
     if (channel === 'whatsapp') {
-      var link = window.location.origin + '/driver-link.html?id=' + t.id;
+      // שימוש בטקסט מה-textarea (ניתן לעריכה)
+      var msgEl = document.getElementById('reminder-message-text');
+      var msgText = msgEl ? msgEl.value : '';
 
-      // הגנה: סביבה מקומית (file://) לא תומכת בפתיחת קישורים
       if (window.location.protocol === 'file:') {
-        console.log('[Treatments] קישור (מקומי):', link);
         closeTreatmentModal('modal-reminder');
-        alert('זוהי גרסה מקומית. הקישור יישלח רק כשהמערכת תעלה לאוויר (Vercel).\n\nקישור הנהג:\n' + link);
+        alert('זוהי גרסה מקומית. הקישור יישלח רק כשהמערכת תעלה לאוויר (Vercel).');
         return;
       }
 
       var phone = (t.driverPhone || '').replace(/\D/g, '');
-      var text = encodeURIComponent('שלום ' + (t.driverName || '').split(' ')[0] + ', נא לבחור תאריך ' + (t.kind === 'treatment' ? 'לטיפול' : 'לטסט') + ' ברכב: ' + link);
+      var text = encodeURIComponent(msgText);
       window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
     } else {
       await sendDriverEmail(t, t.kind, t.id);
