@@ -10203,7 +10203,7 @@ async function compressImageForScan(file){
       }
       var c=document.createElement('canvas');c.width=w;c.height=h;
       c.getContext('2d').drawImage(img,0,0,w,h);
-      var dataUrl=c.toDataURL('image/jpeg',0.85);
+      var dataUrl=c.toDataURL('image/jpeg',0.92);
       var b64=dataUrl.split(',')[1];
       console.log('[AI Scan] דחיסה: '+img.width+'x'+img.height+' → '+w+'x'+h+' ('+Math.round(b64.length/1024)+'KB)');
       resolve({b64:b64, mimeType:'image/jpeg'});
@@ -10232,14 +10232,14 @@ async function callClaudeWithDoc(file,prompt){
     mimeType = isImg ? file.type : 'application/pdf';
   }
 
-  // Models to try in order (fallback chain)
-  const models=['gemini-2.5-flash','gemini-2.0-flash','gemini-2.0-flash-lite'];
+  // Models to try (fast first)
+  const models=['gemini-2.0-flash','gemini-2.5-flash'];
   var lastError=null;
 
   for(var mi=0;mi<models.length;mi++){
     var model=models[mi];
-    // Retry up to 3 times on 429 errors
-    for(var attempt=0;attempt<3;attempt++){
+    // Retry once on 429 errors
+    for(var attempt=0;attempt<2;attempt++){
       try{
         const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+apiKey,{
           method:'POST',
@@ -10435,7 +10435,7 @@ async function scanVehicleDoc(input){
     // נסה Gemini קודם
     try {
       p = await callClaudeWithDoc(file,
-'This is a photo of an Israeli vehicle license (רישיון רכב).\nThe document may be photographed on a table, at an angle, with glare or shadows.\nFocus ONLY on the document - ignore the background.\n\nIsraeli vehicle license layout:\n- "מספר רכב" = Vehicle plate number (7-8 digits, e.g. 76328602)\n- "בתוקף עד" = Expiry date (DD/MM/YYYY)\n- "תוצר" = Manufacturer (e.g. יונדאי, טויוטה, סקודה)\n- "כינוי מסחרי" = Model (e.g. TUCSON, COROLLA)\n\nExtract these 4 fields. If image is blurry, look for the labeled fields.\nReturn ONLY valid JSON, no extra text:\n{"plate":"76328602","licenseExp":"DD/MM/YYYY","make":"יצרן","model":"MODEL"}'
+'Israeli vehicle license. Extract:\n1. plate: vehicle number (7-8 digits)\n2. licenseExp: expiry date as DD/MM/YYYY\n3. make: manufacturer in Hebrew (e.g. יונדאי)\n4. model: model name (e.g. TUCSON)\nReturn JSON only:\n{"plate":"76328602","licenseExp":"DD/MM/YYYY","make":"יצרן","model":"MODEL"}'
       );
     } catch(geminiErr) {
       console.log('[Scan] Gemini נכשל, עובר ל-Tesseract:', geminiErr.message);
@@ -10477,7 +10477,7 @@ async function scanDriverDoc(input){
     // נסה Gemini קודם
     try {
       p = await callClaudeWithDoc(file,
-'This is a photo of an Israeli driving license (רישיון נהיגה).\nThe card may be photographed on a table, at an angle, with glare, shadows, or partial reflections.\nFocus ONLY on the card itself - ignore the background completely.\n\nIsraeli driving license layout:\n- Top: "DRIVING LICENCE רישיון נהיגה" header\n- Field 1: Family name (שם משפחה) in Hebrew AND English\n- Field 2: First name (שם פרטי) in Hebrew AND English\n- Field 3: Date of birth\n- Field 4a: Issue date\n- Field 4b: Expiry date (תוקף) - THIS IS THE LICENSE EXPIRATION\n- Field 5: ID number (מספר ת"ז)\n- Field 8: Address\n\nExtract these 3 fields:\n1. Full name in Hebrew: first name (field 2) + family name (field 1). Example: "יניב שמידט"\n2. License expiry date (field 4b) in DD/MM/YYYY format\n3. ID number (field 5) with check digit, format: XXXXXXXX-X\n\nIMPORTANT: If the image is blurry or at angle, try harder - look for the numbered fields (1., 2., 4b., 5.).\nReturn ONLY valid JSON, no extra text:\n{"fullName":"שם פרטי שם משפחה","licenseExp":"DD/MM/YYYY","id":"XXXXXXXX-X"}'
+'Israeli driving license. Extract:\n1. fullName: Hebrew first name (field 2) + family name (field 1), e.g. "יניב שמידט"\n2. licenseExp: field 4b date as DD/MM/YYYY\n3. id: field 4d.ID or field 5 (digits only)\nReturn JSON only:\n{"fullName":"שם פרטי שם משפחה","licenseExp":"DD/MM/YYYY","id":"123456789"}'
       );
     } catch(geminiErr) {
       console.log('[Scan] Gemini נכשל, עובר ל-Tesseract:', geminiErr.message);
