@@ -10379,7 +10379,6 @@ function parseIsraeliDriverLicense(text) {
     var idMatch = allText.match(/\b(\d{9})\b/);
     if (idMatch) result.id = idMatch[1];
   }
-  }
 
   console.log('[OCR] פרטי רישיון נהיגה:', result);
   return result;
