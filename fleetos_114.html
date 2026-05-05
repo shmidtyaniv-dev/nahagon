@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>מרכז הרכב של מור בית השקעות</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Tesseract.js - OCR בדפדפן (fallback כשאין Gemini API) -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 // Hide dashboard immediately if this is an approval/form link (prevents flicker)
 if(location.search.indexOf('approve=')!==-1 || location.search.indexOf('form=')!==-1){
@@ -10276,6 +10278,133 @@ async function callClaudeWithDoc(file,prompt){
   throw lastError||new Error('הסריקה נכשלה');
 }
 
+// ============================================================
+// Tesseract.js OCR - סריקה בדפדפן (fallback לGemini)
+// ============================================================
+var _tesseractWorker = null;
+
+async function ocrWithTesseract(file) {
+  console.log('[OCR] מתחיל סריקת Tesseract...');
+  if (typeof Tesseract === 'undefined') throw new Error('Tesseract.js לא נטען');
+
+  // דחוס תמונה קודם
+  var compressed = await compressImageForScan(file);
+  var imageData;
+  if (compressed) {
+    imageData = 'data:' + compressed.mimeType + ';base64,' + compressed.b64;
+  } else {
+    imageData = await new Promise(function(res, rej) {
+      var r = new FileReader(); r.onload = function() { res(r.result); }; r.onerror = rej; r.readAsDataURL(file);
+    });
+  }
+
+  var result = await Tesseract.recognize(imageData, 'heb+eng', {
+    logger: function(m) { if (m.status === 'recognizing text') console.log('[OCR] ' + Math.round(m.progress * 100) + '%'); }
+  });
+  console.log('[OCR] סריקה הושלמה. אורך טקסט:', result.data.text.length);
+  return result.data.text;
+}
+
+function parseIsraeliDriverLicense(text) {
+  var result = { fullName: null, licenseExp: null, id: null };
+  var lines = text.replace(/\r/g, '').split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  var allText = lines.join(' ');
+
+  // שם מלא בעברית - חיפוש שם משפחה (שדה 1) ושם פרטי (שדה 2)
+  // מחפש מילים עבריות ליד מספרי השדות
+  var hebrewNames = [];
+  lines.forEach(function(line) {
+    // שורה שמתחילה ב-1. או 2. ואחריה טקסט עברי
+    var m = line.match(/^[12][\.\s]+([א-ת]{2,})/);
+    if (m) hebrewNames.push(m[1]);
+    // או שורה שמכילה רק מילים עבריות (2-15 תווים כל מילה)
+    if (/^[א-ת]{2,15}$/.test(line) && line.length >= 2 && line.length <= 15) {
+      hebrewNames.push(line);
+    }
+  });
+  // מחפש גם דפוס: שם משפחה\nשם פרטי (2 שורות עבריות רצופות)
+  for (var i = 0; i < lines.length - 1; i++) {
+    if (/^[א-ת]{2,15}$/.test(lines[i]) && /^[א-ת]{2,15}$/.test(lines[i + 1])) {
+      result.fullName = lines[i + 1] + ' ' + lines[i]; // שם פרטי + משפחה
+      break;
+    }
+  }
+  if (!result.fullName && hebrewNames.length >= 2) {
+    result.fullName = hebrewNames[1] + ' ' + hebrewNames[0];
+  } else if (!result.fullName && hebrewNames.length === 1) {
+    result.fullName = hebrewNames[0];
+  }
+
+  // תוקף רישיון - חיפוש תאריך ליד 4b או "בתוקף"
+  // דפוסי תאריך: DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY
+  var dates = allText.match(/\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4}/g) || [];
+  if (dates.length > 0) {
+    // התאריך האחרון הוא בדרך כלל התוקף (4b מופיע אחרי 4a)
+    var lastDate = dates[dates.length - 1];
+    // אם יש תאריך ליד 4b - עדיף
+    var m4b = allText.match(/4b[\.\s:]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/);
+    if (m4b) lastDate = m4b[1];
+    // המרה לפורמט DD/MM/YYYY
+    var parts = lastDate.split(/[\.\/\-]/);
+    if (parts.length === 3) {
+      var yr = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+      result.licenseExp = parts[0].padStart(2, '0') + '/' + parts[1].padStart(2, '0') + '/' + yr;
+    }
+  }
+
+  // מספר ת"ז - 8-9 ספרות, אולי עם מקף לפני ספרת ביקורת
+  var idMatch = allText.match(/\b(\d{7,9})[-\s]?(\d)?\b/);
+  // מחפש גם ליד שדה 5
+  var id5 = allText.match(/5[\.\s:]*(\d{7,9})[-\s]?(\d)?/);
+  if (id5) {
+    result.id = id5[1] + (id5[2] ? '-' + id5[2] : '');
+  } else if (idMatch && idMatch[1].length >= 7) {
+    result.id = idMatch[1] + (idMatch[2] ? '-' + idMatch[2] : '');
+  }
+
+  console.log('[OCR] פרטי רישיון נהיגה:', result);
+  return result;
+}
+
+function parseIsraeliVehicleLicense(text) {
+  var result = { plate: null, licenseExp: null, make: null, model: null };
+  var lines = text.replace(/\r/g, '').split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  var allText = lines.join(' ');
+
+  // מספר רכב - 7-8 ספרות
+  var plateMatch = allText.match(/(\d{7,8})/);
+  // עדיף ליד "מספר רכב"
+  var plateField = allText.match(/מספר\s*רכב[:\s]*(\d{7,8})/);
+  result.plate = plateField ? plateField[1] : (plateMatch ? plateMatch[1] : null);
+
+  // תוקף - תאריך ליד "בתוקף עד"
+  var expMatch = allText.match(/בתוקף\s*עד[:\s]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/);
+  if (!expMatch) {
+    // חיפוש כללי לתאריך
+    var dates = allText.match(/\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4}/g) || [];
+    if (dates.length > 0) expMatch = [null, dates[dates.length - 1]];
+  }
+  if (expMatch) {
+    var parts = expMatch[1].split(/[\.\/\-]/);
+    if (parts.length === 3) {
+      var yr = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+      result.licenseExp = parts[0].padStart(2, '0') + '/' + parts[1].padStart(2, '0') + '/' + yr;
+    }
+  }
+
+  // תוצר (יצרן)
+  var makeMatch = allText.match(/תוצר[:\s]*([א-ת\w]{2,20})/);
+  if (makeMatch) result.make = makeMatch[1].trim();
+
+  // כינוי מסחרי (דגם) - בדרך כלל באנגלית
+  var modelMatch = allText.match(/כינוי\s*מסחרי[:\s]*([A-Za-z\d\s\-]{2,30})/);
+  if (!modelMatch) modelMatch = allText.match(/מסחרי[:\s]*([A-Za-z\d\s\-]{2,30})/);
+  if (modelMatch) result.model = modelMatch[1].trim();
+
+  console.log('[OCR] פרטי רישיון רכב:', result);
+  return result;
+}
+
 // Pending scanned files, to be attached to vehicle after save
 var _pendingScannedVehicleDoc = null;
 var _pendingScannedDriverDoc = null;
@@ -10285,36 +10414,35 @@ async function scanVehicleDoc(input){
   const zone=id('scan-vehicle-zone'),st=id('scan-v-status'),sp=id('scan-v-spinner');
   sp.style.display='block';st.textContent='סורק...';st.style.color='var(--t2)';
   try{
-    // Save file as base64 for later attachment to vehicle docs
     const reader = new FileReader();
-    reader.onload = e => {
-      _pendingScannedVehicleDoc = { name:file.name, type:file.type, data:e.target.result };
-    };
+    reader.onload = e => { _pendingScannedVehicleDoc = { name:file.name, type:file.type, data:e.target.result }; };
     reader.readAsDataURL(file);
 
-    const p=await callClaudeWithDoc(file,
-`This is a photo of an Israeli vehicle license (רישיון רכב).
-The document may be photographed on a table, at an angle, with glare or shadows.
-Focus ONLY on the document - ignore the background.
-
-Israeli vehicle license layout:
-- "מספר רכב" = Vehicle plate number (7-8 digits, e.g. 76328602)
-- "בתוקף עד" = Expiry date (DD/MM/YYYY)
-- "תוצר" = Manufacturer (e.g. יונדאי, טויוטה, סקודה)
-- "כינוי מסחרי" = Model (e.g. TUCSON, COROLLA)
-
-Extract these 4 fields. If image is blurry, look for the labeled fields.
-Return ONLY valid JSON, no extra text:
-{"plate":"76328602","licenseExp":"DD/MM/YYYY","make":"יצרן","model":"MODEL"}`
-    );
-    if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה — הגדר מפתח API)';st.style.color='var(--t3)';sp.style.display='none';return;}
+    var p = null;
+    var usedOcr = false;
+    // נסה Gemini קודם
+    try {
+      p = await callClaudeWithDoc(file,
+'This is a photo of an Israeli vehicle license (רישיון רכב).\nThe document may be photographed on a table, at an angle, with glare or shadows.\nFocus ONLY on the document - ignore the background.\n\nIsraeli vehicle license layout:\n- "מספר רכב" = Vehicle plate number (7-8 digits, e.g. 76328602)\n- "בתוקף עד" = Expiry date (DD/MM/YYYY)\n- "תוצר" = Manufacturer (e.g. יונדאי, טויוטה, סקודה)\n- "כינוי מסחרי" = Model (e.g. TUCSON, COROLLA)\n\nExtract these 4 fields. If image is blurry, look for the labeled fields.\nReturn ONLY valid JSON, no extra text:\n{"plate":"76328602","licenseExp":"DD/MM/YYYY","make":"יצרן","model":"MODEL"}'
+      );
+    } catch(geminiErr) {
+      console.log('[Scan] Gemini נכשל, עובר ל-Tesseract:', geminiErr.message);
+    }
+    // Fallback ל-Tesseract אם Gemini נכשל או לא מוגדר
+    if (!p && typeof Tesseract !== 'undefined') {
+      st.textContent='סורק עם OCR מקומי...';
+      var ocrText = await ocrWithTesseract(file);
+      p = parseIsraeliVehicleLicense(ocrText);
+      usedOcr = true;
+    }
+    if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה)';st.style.color='var(--t3)';sp.style.display='none';return;}
     if(p.plate)id('fa-plate').value=p.plate;
     if(p.make)id('fa-make').value=p.make;
     if(p.model)id('fa-model').value=p.model;
     const d=toIsoDate(p.licenseExp);
     if(d)id('fa-lic').value=d;
     zone.classList.add('scan-filled');
-    st.textContent='✓ פרטים מולאו + המסמך יישמר';st.style.color='var(--green)';
+    st.textContent='✓ פרטים מולאו + המסמך יישמר' + (usedOcr ? ' (OCR)' : '');st.style.color='var(--green)';
   }catch(e){
     st.textContent='שגיאה: '+e.message.slice(0,80);st.style.color='var(--red)';
     console.error('scanVehicle:',e.message);
@@ -10326,44 +10454,34 @@ async function scanDriverDoc(input){
   const zone=id('scan-driver-zone'),st=id('scan-d-status'),sp=id('scan-d-spinner');
   sp.style.display='block';st.textContent='סורק...';st.style.color='var(--t2)';
   try{
-    // Save file as base64 for later attachment to driver docs
     const reader = new FileReader();
-    reader.onload = e => {
-      _pendingScannedDriverDoc = { name:file.name, type:file.type, data:e.target.result };
-    };
+    reader.onload = e => { _pendingScannedDriverDoc = { name:file.name, type:file.type, data:e.target.result }; };
     reader.readAsDataURL(file);
 
-    const p=await callClaudeWithDoc(file,
-`This is a photo of an Israeli driving license (רישיון נהיגה).
-The card may be photographed on a table, at an angle, with glare, shadows, or partial reflections.
-Focus ONLY on the card itself - ignore the background completely.
-
-Israeli driving license layout:
-- Top: "DRIVING LICENCE רישיון נהיגה" header
-- Field 1: Family name (שם משפחה) in Hebrew AND English
-- Field 2: First name (שם פרטי) in Hebrew AND English
-- Field 3: Date of birth
-- Field 4a: Issue date
-- Field 4b: Expiry date (תוקף) - THIS IS THE LICENSE EXPIRATION
-- Field 5: ID number (מספר ת"ז)
-- Field 8: Address
-
-Extract these 3 fields:
-1. Full name in Hebrew: first name (field 2) + family name (field 1). Example: "יניב שמידט"
-2. License expiry date (field 4b) in DD/MM/YYYY format
-3. ID number (field 5) with check digit, format: XXXXXXXX-X
-
-IMPORTANT: If the image is blurry or at angle, try harder - look for the numbered fields (1., 2., 4b., 5.).
-Return ONLY valid JSON, no extra text:
-{"fullName":"שם פרטי שם משפחה","licenseExp":"DD/MM/YYYY","id":"XXXXXXXX-X"}`
-    );
-    if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה — הגדר מפתח API)';st.style.color='var(--t3)';sp.style.display='none';return;}
+    var p = null;
+    var usedOcr = false;
+    // נסה Gemini קודם
+    try {
+      p = await callClaudeWithDoc(file,
+'This is a photo of an Israeli driving license (רישיון נהיגה).\nThe card may be photographed on a table, at an angle, with glare, shadows, or partial reflections.\nFocus ONLY on the card itself - ignore the background completely.\n\nIsraeli driving license layout:\n- Top: "DRIVING LICENCE רישיון נהיגה" header\n- Field 1: Family name (שם משפחה) in Hebrew AND English\n- Field 2: First name (שם פרטי) in Hebrew AND English\n- Field 3: Date of birth\n- Field 4a: Issue date\n- Field 4b: Expiry date (תוקף) - THIS IS THE LICENSE EXPIRATION\n- Field 5: ID number (מספר ת"ז)\n- Field 8: Address\n\nExtract these 3 fields:\n1. Full name in Hebrew: first name (field 2) + family name (field 1). Example: "יניב שמידט"\n2. License expiry date (field 4b) in DD/MM/YYYY format\n3. ID number (field 5) with check digit, format: XXXXXXXX-X\n\nIMPORTANT: If the image is blurry or at angle, try harder - look for the numbered fields (1., 2., 4b., 5.).\nReturn ONLY valid JSON, no extra text:\n{"fullName":"שם פרטי שם משפחה","licenseExp":"DD/MM/YYYY","id":"XXXXXXXX-X"}'
+      );
+    } catch(geminiErr) {
+      console.log('[Scan] Gemini נכשל, עובר ל-Tesseract:', geminiErr.message);
+    }
+    // Fallback ל-Tesseract אם Gemini נכשל או לא מוגדר
+    if (!p && typeof Tesseract !== 'undefined') {
+      st.textContent='סורק עם OCR מקומי...';
+      var ocrText = await ocrWithTesseract(file);
+      p = parseIsraeliDriverLicense(ocrText);
+      usedOcr = true;
+    }
+    if(!p){st.textContent='המסמך יישמר (סריקה לא זמינה)';st.style.color='var(--t3)';sp.style.display='none';return;}
     if(p.fullName)id('fa-dname').value=p.fullName;
     if(p.id)id('fa-did').value=p.id;
     const d=toIsoDate(p.licenseExp);
     if(d)id('fa-dlic').value=d;
     zone.classList.add('scan-filled');
-    st.textContent='✓ פרטים מולאו + המסמך יישמר';st.style.color='var(--green)';
+    st.textContent='✓ פרטים מולאו + המסמך יישמר' + (usedOcr ? ' (OCR)' : '');st.style.color='var(--green)';
   }catch(e){
     st.textContent='שגיאה: '+e.message.slice(0,80);st.style.color='var(--red)';
     console.error('scanDriver:',e.message);
