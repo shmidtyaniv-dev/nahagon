@@ -10277,17 +10277,13 @@ async function ocrWithTesseract(file) {
     });
   }
 
-  // סריקה כפולה: פעם בעברית, פעם באנגלית, ומיזוג התוצאות
-  var resultHeb = await Tesseract.recognize(imageData, 'heb', {
-    logger: function(m) { if (m.status === 'recognizing text') console.log('[OCR heb] ' + Math.round(m.progress * 100) + '%'); }
+  // סריקה באנגלית בלבד - יותר מהיר ומדויק לרישיונות ישראליים
+  // (השדות החשובים מופיעים גם באנגלית: SHMIDT, YANIV, 25.09.2031, 301256897)
+  var result = await Tesseract.recognize(imageData, 'eng', {
+    logger: function(m) { if (m.status === 'recognizing text') console.log('[OCR] ' + Math.round(m.progress * 100) + '%'); }
   });
-  var resultEng = await Tesseract.recognize(imageData, 'eng', {
-    logger: function(m) { if (m.status === 'recognizing text') console.log('[OCR eng] ' + Math.round(m.progress * 100) + '%'); }
-  });
-  var combined = resultHeb.data.text + '\n' + resultEng.data.text;
-  console.log('[OCR] טקסט עברית:', resultHeb.data.text.substring(0, 300));
-  console.log('[OCR] טקסט אנגלית:', resultEng.data.text.substring(0, 300));
-  return combined;
+  console.log('[OCR] טקסט שזוהה:', result.data.text.substring(0, 500));
+  return result.data.text;
 }
 
 function parseIsraeliDriverLicense(text) {
@@ -10295,82 +10291,40 @@ function parseIsraeliDriverLicense(text) {
   var lines = text.replace(/\r/g, '').split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
   var allText = lines.join(' ');
 
-  /* === שם מלא בעברית ===
-     מבנה הרישיון:
-       שמידט        ← שם משפחה בעברית
-       1. SHMIDT    ← שדה 1: שם משפחה באנגלית
-       יניב         ← שם פרטי בעברית
-       2. YANIV     ← שדה 2: שם פרטי באנגלית
-     התוצאה הרצויה: "יניב שמידט" (שם פרטי + שם משפחה)
+  /* === שם מלא ===
+     מבנה רישיון נהיגה ישראלי:
+       שמידט           ← שם משפחה בעברית
+       1. SHMIDT        ← שדה 1: שם משפחה באנגלית
+       יניב             ← שם פרטי בעברית
+       2. YANIV          ← שדה 2: שם פרטי באנגלית
+     התוצאה: "YANIV SHMIDT" (שם פרטי + שם משפחה)
+     OCR סורק באנגלית - מחפש את השמות האנגליים ליד 1. ו-2.
   */
-  var familyName = null; // שדה 1 - שם משפחה
-  var firstName = null;  // שדה 2 - שם פרטי
+  var familyName = null;
+  var firstName = null;
 
+  // חיפוש ליד שדה 1 ו-2 (כל הוריאציות)
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
-
-    // מצא שדה 1: שם המשפחה
-    // דפוס: "1. SHMIDT" או "1 SHMIDT" או שורה עם רק "1." ושם עברי לפניה
-    if (/^1[\.\s]/.test(line)) {
-      if (i > 0 && /[א-ת]{2,}/.test(lines[i - 1])) {
-        var fm = lines[i - 1].match(/([א-ת]{2,})/);
-        if (fm) familyName = fm[1];
-      }
-      var fm2 = line.match(/^1[\.\s]+([א-ת]{2,})/);
-      if (fm2) familyName = fm2[1];
-      // חפש שם אנגלי ותרגם ידנית (fallback)
-      if (!familyName) {
-        var engName1 = line.match(/^1[\.\s]+([A-Z][a-zA-Z]+)/);
-        if (engName1) familyName = engName1[1]; // ישמר באנגלית כ-fallback
-      }
-    }
-
-    // מצא שדה 2: שם פרטי
-    if (/^2[\.\s]/.test(line)) {
-      if (i > 0 && /[א-ת]{2,}/.test(lines[i - 1])) {
-        var fnm = lines[i - 1].match(/([א-ת]{2,})/);
-        if (fnm) firstName = fnm[1];
-      }
-      var fnm2 = line.match(/^2[\.\s]+([א-ת]{2,})/);
-      if (fnm2) firstName = fnm2[1];
-      if (!firstName) {
-        var engName2 = line.match(/^2[\.\s]+([A-Z][a-zA-Z]+)/);
-        if (engName2) firstName = engName2[1];
-      }
-    }
-  }
-
-  // Fallback א: חפש SHMIDT/YANIV באנגלית ליד 1./2.
-  if (!familyName || !firstName) {
-    var m1 = allText.match(/1[\.\s]+([A-Z][A-Za-z]+)/);
-    var m2 = allText.match(/2[\.\s]+([A-Z][A-Za-z]+)/);
+    // שדה 1: "1. SHMIDT" / "1 SHMIDT" / "1.SHMIDT"
+    var m1 = line.match(/^[1l|I][\.\s:]+([A-Za-z]{2,})/);
     if (m1 && !familyName) familyName = m1[1];
+    // שדה 2: "2. YANIV" / "2 YANIV"
+    var m2 = line.match(/^2[\.\s:]+([A-Za-z]{2,})/);
     if (m2 && !firstName) firstName = m2[1];
   }
 
-  // Fallback ב: חפש 2 מילים עבריות רצופות
-  if (!familyName || !firstName) {
-    for (var j = 0; j < lines.length - 1; j++) {
-      if (/^[א-ת]{2,15}$/.test(lines[j]) && /^[א-ת]{2,15}$/.test(lines[j + 1])) {
-        if (!familyName) familyName = lines[j];
-        if (!firstName) firstName = lines[j + 1];
-        break;
-      }
-    }
-  }
+  // Fallback: חיפוש בכל הטקסט
+  if (!familyName) { var f1 = allText.match(/[1l|I][\.\s:]+([A-Z][A-Za-z]{1,20})/); if (f1) familyName = f1[1]; }
+  if (!firstName) { var f2 = allText.match(/2[\.\s:]+([A-Z][A-Za-z]{1,20})/); if (f2) firstName = f2[1]; }
 
-  // Fallback ג: כל מילה עברית באורך 2+ תווים (ראשונה = משפחה, שנייה = פרטי)
-  if (!familyName || !firstName) {
-    var hebrewWords = allText.match(/[א-ת]{2,15}/g) || [];
-    // סנן מילים שהן חלק מכותרת הרישיון
-    var skipWords = ['רשיון','נהיגה','מדינת','ישראל','רשאי','לנהוג','בדרגה','פתח','תקווה','תקוה','רחוב','הרב'];
-    hebrewWords = hebrewWords.filter(function(w) { return skipWords.indexOf(w) === -1; });
-    if (hebrewWords.length >= 2) {
-      if (!familyName) familyName = hebrewWords[0];
-      if (!firstName) firstName = hebrewWords[1];
-    } else if (hebrewWords.length === 1) {
-      if (!familyName) familyName = hebrewWords[0];
-    }
+  // Fallback: מילים עבריות
+  if (!familyName && !firstName) {
+    var heb = allText.match(/[א-ת]{2,15}/g) || [];
+    var skip = ['רשיון','נהיגה','מדינת','ישראל','רשאי','לנהוג','בדרגה','פתח','תקווה','תקוה','הרב','בתשרי'];
+    heb = heb.filter(function(w) { return skip.indexOf(w) === -1; });
+    if (heb.length >= 2) { familyName = heb[0]; firstName = heb[1]; }
+    else if (heb.length === 1) { familyName = heb[0]; }
   }
 
   // בנה שם: שם פרטי (2) + שם משפחה (1)
@@ -10382,10 +10336,11 @@ function parseIsraeliDriverLicense(text) {
     result.fullName = familyName;
   }
 
-  /* === תוקף רישיון (שדה 4b) === */
-  // חיפוש ממוקד ליד 4b (עם וריאציות: "4b.", "4b ", "4b:", "4 b", "Ab")
+  /* === תוקף רישיון (שדה 4b) ===
+     דפוסים: "4b.25.09.2031" / "4b 25.09.2031" / "Ab.25.09.2031" / "4b:25.09.2031"
+  */
   var m4b = allText.match(/4\s*b[\.\s:]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/i);
-  if (!m4b) m4b = allText.match(/[Aa4]\s*[bB][\.\s:]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/);
+  if (!m4b) m4b = allText.match(/[Aa4]\s*[bB8][\.\s:]*(\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{2,4})/);
   if (m4b) {
     var parts = m4b[1].split(/[\.\/\-]/);
     if (parts.length === 3) {
@@ -10393,40 +10348,27 @@ function parseIsraeliDriverLicense(text) {
       result.licenseExp = parts[0].padStart(2, '0') + '/' + parts[1].padStart(2, '0') + '/' + yr;
     }
   } else {
-    // Fallback: כל התאריכים - העתידי ביותר הוא כנראה התוקף
+    // Fallback: התאריך העתידי ביותר
     var dates = allText.match(/\d{1,2}[\.\/\-]\d{1,2}[\.\/\-]\d{4}/g) || [];
-    var latestDate = null;
-    var latestYear = 0;
+    var latestDate = null, latestYear = 0;
     for (var di = 0; di < dates.length; di++) {
       var dp = dates[di].split(/[\.\/\-]/);
-      if (dp.length === 3) {
-        var y = parseInt(dp[2]);
-        if (y > latestYear) {
-          latestYear = y;
-          latestDate = dp;
-        }
-      }
+      if (dp.length === 3 && parseInt(dp[2]) > latestYear) { latestYear = parseInt(dp[2]); latestDate = dp; }
     }
     if (latestDate && latestYear > 2024) {
       result.licenseExp = latestDate[0].padStart(2, '0') + '/' + latestDate[1].padStart(2, '0') + '/' + latestDate[2];
     }
   }
 
-  /* === מספר ת"ז (שדה 5 או 4d.ID) - רק מספרים === */
-  // חיפוש ליד 4d.ID (למשל "4d.ID 301256897") - מספרים בלבד
-  var id4d = allText.match(/4d[\.\s]*ID[\.\s:]*(\d{6,9})/i);
-  // חיפוש ליד שדה 5 (למשל "5. 8721777")
+  /* === מספר ת"ז (שדה 4d.ID או שדה 5) ===
+     דפוסים: "4d.ID 301256897" / "4d ID 301256897" / "Ad.ID 301256897"
+             "5. 8721777" / "5 8721777"
+  */
+  var id4d = allText.match(/[4Aa]\s*d[\.\s]*[Il1][dD][\.\s:]*(\d{6,9})/);
   var id5 = allText.match(/5[\.\s:]+(\d{7,9})/);
-  // עדיפות: 4d.ID (מספר ת"ז מלא 9 ספרות) > שדה 5 (7 ספרות)
-  if (id4d) {
-    result.id = id4d[1];
-  } else if (id5) {
-    result.id = id5[1];
-  } else {
-    // Fallback: מספר ארוך (9 ספרות) שלא נמצא ליד שדה אחר
-    var idMatch = allText.match(/\b(\d{9})\b/);
-    if (idMatch) result.id = idMatch[1];
-  }
+  if (id4d) { result.id = id4d[1]; }
+  else if (id5) { result.id = id5[1]; }
+  else { var idM = allText.match(/\b(\d{9})\b/); if (idM) result.id = idM[1]; }
 
   console.log('[OCR] פרטי רישיון נהיגה:', result);
   return result;
