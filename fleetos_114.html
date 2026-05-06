@@ -466,7 +466,13 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .vc-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap!important}
   .vc-tab-btn{white-space:nowrap;font-size:11px!important;padding:8px 10px!important}
   .v-hero{grid-template-columns:auto 1fr!important;gap:10px!important;padding:14px 16px!important}
-  .v-hero .vc-license-plate{grid-column:span 2}
+  .v-hero .vc-license-plate{grid-column:span 2;width:fit-content!important;margin:0 auto!important}
+  /* לוחית רישוי בכרטיס רכב - מוקטנת בנייד */
+  .vc-license-plate{height:38px!important}
+  .vc-license-plate-number{font-size:20px!important;padding:0 14px!important;letter-spacing:2px!important}
+  .vc-license-plate-flag{padding:3px 5px!important}
+  .vc-license-plate-flag-label{font-size:8px!important}
+  .vc-license-plate-flag svg{width:14px!important;height:10px!important}
   .v-hero .v-title-block{grid-column:span 2}
   .v-hero .v-actions{grid-column:span 2;flex-wrap:wrap}
   .vc-tabs-bar{padding:0 8px}
@@ -760,6 +766,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .qf-ok.active{background:#0F6E56!important;color:#fff!important}
 .sort-icon{font-size:10px;opacity:.5}
 .per-page-select{border:1px solid var(--bdr);border-radius:6px;padding:3px 6px;font-size:11px;font-family:inherit;background:#fff;color:var(--t2);cursor:pointer}
+.vehicle-status-badge{display:inline-block;height:20px;line-height:16px;font-size:10.5px;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap}
+.vehicle-status-stack{display:flex;flex-direction:column;gap:3px;align-items:center}
 .local-search{position:relative}
 .local-search input{width:200px;height:32px;padding:0 30px 0 10px;border:0.5px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:inherit;background:#fff;color:var(--t1);outline:none}
 .local-search input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.15)}
@@ -2069,7 +2077,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div class="stat-text">
               <div class="mc-lbl">מסמכים</div>
               <div class="mc-val" style="color:#A32D2D" id="mv-expiring-docs">0</div>
-              <div class="mc-sub" id="mv-expiring-docs-sub">פגים או חסרים</div>
+              <div class="mc-sub" id="mv-expiring-docs-sub">נהגים עם מסמכים חסרים</div>
               <div class="stat-value-empty" id="mv-expiring-docs-empty" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>✓ הכל בסדר</div>
             </div>
             <div class="stat-circle" style="background:#A32D2D">
@@ -7691,31 +7699,55 @@ function altBadge(vid){
 }
 function avatarColor(name){var colors=['#16a34a','#3b82f6','#f59e0b','#ec4899','#06b6d4','#8b5cf6','#ef4444','#14b8a6','#f97316','#6366f1'];var h=0;for(var i=0;i<(name||'').length;i++)h=((h<<5)-h)+(name||'').charCodeAt(i);return colors[Math.abs(h)%colors.length];}
 function driverCell(v){return`<div class="dc"><div class="av" style="background:${avatarColor(v.driver.name)}">${inits(v.driver.name)}</div><div><div style="font-weight:600;font-size:13px;color:var(--t1)">${v.driver.name}</div></div>${altBadge(v.id)}</div>`;}
+/* ── ACCIDENT HELPERS (must be in same script block as renderDash) ── */
+function formatAccDate(iso){if(!iso)return'';var m=iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:iso;}
+function getAccidentStatusLabel(acc){var sl={'waiting_garage':{text:'ממתין למוסך',color:'#BA7517',bg:'#FAEEDA'},'in_garage':{text:'במוסך',color:'#185FA5',bg:'#E6F1FB'},'fixed':{text:'תוקן',color:'#1D9E75',bg:'#E1F5EE'},'waiting_credit':{text:'ממתין לזיכוי',color:'#BA7517',bg:'#FAEEDA'},'credit_received':{text:'זוכה ✓',color:'#1D9E75',bg:'#E1F5EE'},'closed':{text:'תיק נסגר ✓',color:'#5F5E5A',bg:'#F1EFE8'},'closed_no_repair':{text:'נסגר ללא תיקון ✓',color:'#5F5E5A',bg:'#F1EFE8'}};var s=sl[acc.status]||{text:acc.status||'-',color:'#5F5E5A',bg:'#F1EFE8'};return'<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:'+s.color+';background:'+s.bg+'">'+s.text+'</span>';}
+function isAccidentOpen(acc){if(!acc)return false;var cs=['closed','closed_no_repair','credit_received','done'];return cs.indexOf(acc.status)===-1;}
+function showAccidentTimeline(accId){var acc=accidentsList.find(function(a){return a.id===accId;});if(!acc)return;var events=[];if(acc.date)events.push({label:'נפתח האירוע',date:acc.date,icon:'📋',color:'#5F5E5A'});if(acc.garageEntryDate)events.push({label:'נכנס למוסך',date:acc.garageEntryDate,icon:'🔧',color:'#185FA5'});if(acc.garageExitDate)events.push({label:'יצא ממוסך (תוקן)',date:acc.garageExitDate,icon:'✅',color:'#1D9E75'});if(acc.closedDate){var isCredit=acc.fault==='third'&&acc.status==='credit_received';events.push({label:isCredit?'התקבל זיכוי - תיק נסגר':'תיק נסגר',date:acc.closedDate,icon:'🏁',color:'#1D9E75'});}var currentStatus=getAccidentStatusLabel(acc);var html='<div style="margin-bottom:16px;padding:12px;background:#F7F7F4;border-radius:8px"><div style="font-size:11px;color:#5F5E5A;margin-bottom:4px">סטטוס נוכחי</div><div>'+currentStatus+'</div></div>';if(events.length===0){html+='<div style="text-align:center;color:#888;padding:20px">אין מידע זמין</div>';}else{html+='<div style="position:relative;padding-right:20px">';html+='<div style="position:absolute;right:8px;top:8px;bottom:8px;width:2px;background:#E5E7EB"></div>';events.forEach(function(e,i){html+='<div style="position:relative;padding-bottom:'+(i===events.length-1?'0':'20px')+'"><div style="position:absolute;right:-16px;top:0;width:16px;height:16px;border-radius:50%;background:'+e.color+';display:flex;align-items:center;justify-content:center;color:white;font-size:9px">'+(i+1)+'</div><div style="padding-right:8px"><div style="font-size:12px;color:#5F5E5A;margin-bottom:2px">'+e.icon+' '+e.label+'</div><div style="font-size:14px;font-weight:600;color:#1A1A1A">'+formatAccDate(e.date)+'</div></div></div>';});html+='</div>';}if(acc.num)html+='<div style="margin-top:16px;padding-top:14px;border-top:1px solid #E5E7EB;font-size:12px;color:#888">מספר אירוע: <span style="font-family:monospace;color:#1A1A1A">'+acc.num+'</span></div>';document.getElementById('acc-timeline-content').innerHTML=html;openModal('acc-timeline-ov');}
+
+function _vsBadge(text,color,bg){return'<span class="vehicle-status-badge" style="color:'+color+';background:'+bg+'">'+text+'</span>';}
+function _vsStack(badges){return badges.length===1?badges[0]:'<div class="vehicle-status-stack">'+badges.join('')+'</div>';}
 function getVehicleStatus(v){
-  if(!v)return{cls:'success',label:'הכל תקין'};
-  // 1. תאונה פתוחה
-  var hasAccident=(typeof accidentsList!=='undefined'?accidentsList:[]).some(function(a){return a.vehicleId===v.id&&a.status!=='closed';});
-  if(hasAccident)return{cls:'danger',label:'תאונה פתוחה'};
-  // 2. רישיון פג
-  var licDays=dys(v.licenseExp);
-  if(licDays<0)return{cls:'danger',label:'רישיון פג'};
-  // 3. מסמכים חסרים
-  if(hasMissingDocs(v))return{cls:'danger',label:'מסמכים חסרים'};
-  // 4-5. דוחות תנועה פתוחים
+  if(!v)return{cls:'success',label:'הכל תקין',html:_vsBadge('הכל תקין','#1D9E75','#E1F5EE')};
+  // Collect open violations and accidents for this vehicle
   var openViols=(typeof violationsList!=='undefined'?violationsList:[]).filter(function(vl){return vl.vehicleId===v.id&&vl.status!=='done'&&vl.status!=='closed';});
-  if(openViols.length){var viol=openViols[0];if(viol.status==='waiting')return{cls:'warn',label:'דוח - ממתין להסבה'};return{cls:'warn',label:'דוח - נשלח להסבה'};}
-  // 6. רכב חלופי
-  if(typeof getAltVehicleStatus==='function'){var alt=getAltVehicleStatus(v.id);if(alt)return{cls:'info',label:'עם חלופי'};}
-  // 7. טיפול ק"מ עבר
+  var openAccs=(typeof accidentsList!=='undefined'?accidentsList:[]).filter(function(a){return a.vehicleId===v.id&&isAccidentOpen(a);});
+  var vc=openViols.length, ac=openAccs.length;
+  // Build badges
+  var badges=[];
+  // Violations badge(s)
+  if(vc===1){
+    var viol=openViols[0];
+    var vt=viol.status==='waiting'?'ממתין להסבה':'נשלח להסבה';
+    var vcol=viol.status==='waiting'?'#BA7517':'#185FA5';
+    var vbg=viol.status==='waiting'?'#FAEEDA':'#E6F1FB';
+    badges.push(_vsBadge(vt,vcol,vbg));
+  } else if(vc>1){
+    badges.push(_vsBadge(vc+' דוחות פתוחים','#BA7517','#FAEEDA'));
+  }
+  // Accidents badge(s)
+  if(ac===1){
+    badges.push(getAccidentStatusLabel(openAccs[0]));
+  } else if(ac>1){
+    badges.push(_vsBadge(ac+' תאונות פתוחות','#A32D2D','#FCEBEB'));
+  }
+  // If we have violations or accidents
+  if(badges.length>0){
+    var cls=(vc+ac>=2||ac>0)?'danger':'warn';
+    var label=(vc?vc+' דוחות':'')+(vc&&ac?' + ':'')+(ac?ac+' תאונות':'');
+    return{cls:cls,label:label,html:_vsStack(badges)};
+  }
+  // Standard checks (no violations/accidents)
+  var licDays=dys(v.licenseExp);
+  if(licDays<0)return{cls:'danger',label:'רישיון פג',html:_vsBadge('רישיון פג','#A32D2D','#FCEBEB')};
+  if(hasMissingDocs(v))return{cls:'danger',label:'מסמכים חסרים',html:_vsBadge('מסמכים חסרים','#A32D2D','#FCEBEB')};
+  if(typeof getAltVehicleStatus==='function'){var alt=getAltVehicleStatus(v.id);if(alt)return{cls:'info',label:'עם חלופי',html:_vsBadge('עם חלופי','#185FA5','#E6F1FB')};}
   var nxt=calcNextSvc(v);
-  if(nxt.km){var kLeft=nxt.km-(v.currentKm||0);if(kLeft<=0)return{cls:'danger',label:'דחוף'};}
-  // 8. טיפול קרוב
-  if(nxt.date){var svcDays=dys(nxt.date);if(svcDays>=0&&svcDays<30)return{cls:'warn',label:'טיפול קרוב'};}
-  if(nxt.km){var kLeft2=nxt.km-(v.currentKm||0);if(kLeft2>0&&kLeft2<2000)return{cls:'warn',label:'טיפול קרוב'};}
-  // 9. טסט קרוב
-  if(licDays>=0&&licDays<30)return{cls:'warn',label:'טסט קרוב'};
-  // 10. הכל תקין
-  return{cls:'success',label:'הכל תקין'};
+  if(nxt.km){var kLeft=nxt.km-(v.currentKm||0);if(kLeft<=0)return{cls:'danger',label:'דחוף',html:_vsBadge('דחוף','#A32D2D','#FCEBEB')};}
+  if(nxt.date){var svcDays=dys(nxt.date);if(svcDays>=0&&svcDays<30)return{cls:'warn',label:'טיפול קרוב',html:_vsBadge('טיפול קרוב','#BA7517','#FAEEDA')};}
+  if(nxt.km){var kLeft2=nxt.km-(v.currentKm||0);if(kLeft2>0&&kLeft2<2000)return{cls:'warn',label:'טיפול קרוב',html:_vsBadge('טיפול קרוב','#BA7517','#FAEEDA')};}
+  if(licDays>=0&&licDays<30)return{cls:'warn',label:'טסט קרוב',html:_vsBadge('טסט קרוב','#BA7517','#FAEEDA')};
+  return{cls:'success',label:'הכל תקין',html:_vsBadge('הכל תקין','#1D9E75','#E1F5EE')};
 }
 function nextSvcCell(v){
   var nxt=calcNextSvc(v);
@@ -7731,7 +7763,7 @@ function dRow(v){
     +'<div class="driver-cell"><div class="driver-avatar" style="background:'+avatarColor(v.driver.name)+';color:#fff">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div></div>'+altBadge(v.id)+'</div>'
     +'<div>'+renderPlate(v.plate)+'</div>'
     +'<div class="muted">'+v.make+' '+v.model+'</div>'
-    +'<div><span class="status-pill-sm '+st.cls+'">'+st.label+'</span></div>'
+    +'<div>'+st.html+'</div>'
     +'<div>'+nextSvcCell(v)+'</div>'
     +'<div class="docs-cell">'+docsIcon(v.id)+'</div>'
     +'</div>';
@@ -7742,7 +7774,7 @@ function fRow(v){
     +'<div class="driver-cell"><div class="driver-avatar" style="background:'+avatarColor(v.driver.name)+';color:#fff">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div></div>'+altBadge(v.id)+'</div>'
     +'<div>'+renderPlate(v.plate)+'</div>'
     +'<div class="muted">'+v.make+' '+v.model+'</div>'
-    +'<div><span class="status-pill-sm '+st.cls+'">'+st.label+'</span></div>'
+    +'<div>'+st.html+'</div>'
     +'<div>'+nextSvcCell(v)+'</div>'
     +'<div class="docs-cell">'+docsIcon(v.id)+'</div>'
     +'</div>';
@@ -7866,17 +7898,15 @@ function renderDash(){
   // Update violations KPI
   var violCount=(typeof violationsList!=='undefined'?violationsList:[]).filter(function(v){return v.status!=='done'&&v.status!=='closed';}).length;
   updateStatCard('mv-violations','mv-violations-sub','mv-violations-empty',null,violCount);
-  // Update docs KPI (expired + missing)
+  // Update docs KPI - unique drivers with missing/expiring docs
   (function(){
     var docIssues=getDocIssues();
-    var total=docIssues.length;
-    updateStatCard('mv-expiring-docs','mv-expiring-docs-sub','mv-expiring-docs-empty','mc-expiring-docs',total);
+    var uniqueDrivers=new Set();
+    docIssues.forEach(function(d){uniqueDrivers.add(d.vid);});
+    var driverCount=uniqueDrivers.size;
+    updateStatCard('mv-expiring-docs','mv-expiring-docs-sub','mv-expiring-docs-empty','mc-expiring-docs',driverCount);
     var subEl=document.getElementById('mv-expiring-docs-sub');
-    if(subEl && total>0){
-      var exp=docIssues.filter(function(d){return d.reason==='expired'||d.reason==='expiring'}).length;
-      var miss=docIssues.filter(function(d){return d.reason==='missing'}).length;
-      subEl.textContent=(exp?exp+' פגים':'')+(exp&&miss?' · ':'')+(miss?miss+' חסרים':'');
-    }
+    if(subEl) subEl.textContent=driverCount>0?'נהגים עם מסמכים חסרים':'הכל בסדר';
   })();
   // Update greeting header
   updateDashGreeting();
@@ -7928,7 +7958,7 @@ function getDocIssues(){
     // Vehicle license expiring/expired
     if(v.licenseExp){
       if(v.licenseExp<todayStr){
-        issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'רישיון רכב',reason:'expired',date:v.licenseExp,daysLeft:Math.ceil((new Date(v.licenseExp)-now)/86400000)});
+        issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'רישיון רכב',reason:'missing',date:v.licenseExp,daysLeft:Math.ceil((new Date(v.licenseExp)-now)/86400000)});
       } else if(v.licenseExp<=limitStr){
         issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'רישיון רכב',reason:'expiring',date:v.licenseExp,daysLeft:Math.ceil((new Date(v.licenseExp)-now)/86400000)});
       }
@@ -7936,7 +7966,7 @@ function getDocIssues(){
     // Driver license expiring/expired
     if(drv.licenseExp){
       if(drv.licenseExp<todayStr){
-        issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'רישיון נהיגה',reason:'expired',date:drv.licenseExp,daysLeft:Math.ceil((new Date(drv.licenseExp)-now)/86400000)});
+        issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'רישיון נהיגה',reason:'missing',date:drv.licenseExp,daysLeft:Math.ceil((new Date(drv.licenseExp)-now)/86400000)});
       } else if(drv.licenseExp<=limitStr){
         issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'רישיון נהיגה',reason:'expiring',date:drv.licenseExp,daysLeft:Math.ceil((new Date(drv.licenseExp)-now)/86400000)});
       }
@@ -7944,7 +7974,7 @@ function getDocIssues(){
     // Insurance expiring/expired
     if(v.insuranceExp){
       if(v.insuranceExp<todayStr){
-        issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'ביטוח',reason:'expired',date:v.insuranceExp,daysLeft:Math.ceil((new Date(v.insuranceExp)-now)/86400000)});
+        issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'ביטוח',reason:'missing',date:v.insuranceExp,daysLeft:Math.ceil((new Date(v.insuranceExp)-now)/86400000)});
       } else if(v.insuranceExp<=limitStr){
         issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'ביטוח',reason:'expiring',date:v.insuranceExp,daysLeft:Math.ceil((new Date(v.insuranceExp)-now)/86400000)});
       }
@@ -7953,7 +7983,7 @@ function getDocIssues(){
     if(v.family) v.family.forEach(function(f){
       if(f.licenseExp){
         if(f.licenseExp<todayStr){
-          issues.push({vid:v.id,driver:f.name||'בן משפחה',company:company,plate:v.plate,doc:'רישיון נהיגה (משפחה)',reason:'expired',date:f.licenseExp,daysLeft:Math.ceil((new Date(f.licenseExp)-now)/86400000)});
+          issues.push({vid:v.id,driver:f.name||'בן משפחה',company:company,plate:v.plate,doc:'רישיון נהיגה (משפחה)',reason:'missing',date:f.licenseExp,daysLeft:Math.ceil((new Date(f.licenseExp)-now)/86400000)});
         } else if(f.licenseExp<=limitStr){
           issues.push({vid:v.id,driver:f.name||'בן משפחה',company:company,plate:v.plate,doc:'רישיון נהיגה (משפחה)',reason:'expiring',date:f.licenseExp,daysLeft:Math.ceil((new Date(f.licenseExp)-now)/86400000)});
         }
@@ -7990,84 +8020,63 @@ function setDocsModalFilter(f,btn){
 }
 function renderDocsModal(){
   var issues=getDocIssues();
-  var expiredCount=issues.filter(function(d){return d.reason==='expired'}).length;
-  var expiringCount=issues.filter(function(d){return d.reason==='expiring'}).length;
-  var missingCount=issues.filter(function(d){return d.reason==='missing'}).length;
-  // Filter
-  var filtered=issues;
-  if(_docsModalFilter==='expired')filtered=issues.filter(function(d){return d.reason==='expired'});
-  else if(_docsModalFilter==='expiring')filtered=issues.filter(function(d){return d.reason==='expiring'});
-  else if(_docsModalFilter==='missing')filtered=issues.filter(function(d){return d.reason==='missing'});
-  var avatarColors=[{bg:'#FBEAF0',fg:'#72243E'},{bg:'#E6F1FB',fg:'#185FA5'},{bg:'#EAF3DE',fg:'#3B6D11'},{bg:'#EEEDFE',fg:'#3C3489'},{bg:'#FAEEDA',fg:'#854F0B'}];
   // Group by driver (vid)
   var grouped={};
-  filtered.forEach(function(d){
-    if(!grouped[d.vid]) grouped[d.vid]={vid:d.vid,driver:d.driver,company:d.company,plate:d.plate,docs:[]};
+  issues.forEach(function(d){
+    if(!grouped[d.vid]) grouped[d.vid]={vid:d.vid,driver:d.driver,plate:d.plate,docs:[]};
     grouped[d.vid].docs.push(d);
   });
   var groupedArr=Object.values(grouped);
-  // Pagination on grouped
+  // מיון לפי דחיפות: חסרים קודם, אחריהם יפוגו בקרוב. בתוך כל קטגוריה - לפי כמות מסמכים
+  groupedArr.sort(function(a,b){
+    var aMissing=a.docs.filter(function(d){return d.reason==='missing'}).length;
+    var bMissing=b.docs.filter(function(d){return d.reason==='missing'}).length;
+    if(aMissing!==bMissing) return bMissing-aMissing;
+    return b.docs.length-a.docs.length;
+  });
+  // Pagination
   var totalPages=Math.max(1,Math.ceil(groupedArr.length/_docsModalPerPage));
   if(_docsModalPage>totalPages)_docsModalPage=totalPages;
   var start=(_docsModalPage-1)*_docsModalPerPage;
   var pageItems=groupedArr.slice(start,start+_docsModalPerPage);
 
-  var rows='';
+  var cards='';
   if(pageItems.length===0){
-    rows='<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">אין מסמכים בקטגוריה זו</div>';
+    cards='<div style="text-align:center;padding:32px;color:var(--t2);font-size:14px">אין מסמכים חסרים ✓</div>';
   } else {
-    pageItems.forEach(function(g,i){
-      var ac=avatarColors[(start+i)%avatarColors.length];
+    pageItems.forEach(function(g){
       var initials=(g.driver||'').split(' ').map(function(w){return w.charAt(0)}).join('').slice(0,2);
-      // Build docs summary
-      var docTags=g.docs.map(function(d){
-        var color,bg;
-        if(d.reason==='expired'){color='#A32D2D';bg='#FCEBEB';}
-        else if(d.reason==='expiring'){color='#854F0B';bg='#FAEEDA';}
-        else{color='#5F5E5A';bg='#F1EFE8';}
+      var plateHtml=g.plate?renderPlate(g.plate):'';
+      // Build doc chips
+      var chips=g.docs.map(function(d){
+        var chipColor,chipBg;
+        if(d.reason==='expiring'){chipColor='#BA7517';chipBg='#FAEEDA';}
+        else{chipColor='#DC2626';chipBg='#FEE2E2';} // missing
         var extra='';
-        if(d.daysLeft!==null && d.daysLeft>=0) extra=' ('+d.daysLeft+' ימים)';
-        else if(d.daysLeft!==null && d.daysLeft<0) extra=' (פג)';
-        return '<span style="background:'+bg+';color:'+color+';padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500;display:inline-block;margin:2px">'+d.doc+extra+'</span>';
+        if(d.reason==='expiring'&&d.daysLeft!==null&&d.daysLeft>=0) extra=' - עוד '+d.daysLeft+' ימים';
+        return '<span style="background:'+chipBg+';color:'+chipColor+';padding:4px 10px;border-radius:12px;font-size:11px;font-weight:500;display:inline-block">'+d.doc+extra+'</span>';
       }).join('');
-      // Worst status
-      var hasExpired=g.docs.some(function(d){return d.reason==='expired'});
-      var hasExpiring=g.docs.some(function(d){return d.reason==='expiring'});
-      var statusLabel=hasExpired?'פג תוקף':hasExpiring?'יפוג בקרוב':'חסר';
-      var statusBg=hasExpired?'#FCEBEB':hasExpiring?'#FAEEDA':'#F1EFE8';
-      var statusColor=hasExpired?'#A32D2D':hasExpiring?'#854F0B':'#5F5E5A';
-      rows+='<div class="docs-modal-row" onclick="closeDocsModal();openDet('+g.vid+')" style="align-items:flex-start">'
-        +'<div class="docs-modal-avatar"><div class="svc-avatar" style="background:'+ac.bg+';color:'+ac.fg+'">'+initials+'</div></div>'
-        +'<div class="docs-modal-driver">'+g.driver+'</div>'
-        +'<div class="docs-modal-company">'+g.company+'</div>'
-        +'<div class="docs-modal-plate">'+(g.plate||'')+'</div>'
-        +'<div class="docs-modal-doc" style="white-space:normal">'+docTags+'</div>'
-        +'<div class="docs-modal-status"><span style="background:'+statusBg+';color:'+statusColor+';padding:2px 8px;border-radius:999px;font-size:10px;font-weight:500">'+statusLabel+'</span></div>'
-        +'<div class="docs-modal-date" style="font-size:11px">'+g.docs.length+' מסמכים</div>'
+      cards+='<div onclick="closeDocsModal();openDet('+g.vid+')" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;transition:box-shadow .15s" onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.08)\'" onmouseout="this.style.boxShadow=\'none\'">'
+        +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">'
+        +'<div style="width:28px;height:28px;border-radius:50%;background:'+avatarColor(g.driver)+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">'+initials+'</div>'
+        +'<span style="font-size:14px;font-weight:600;color:#1A1A1A">'+g.driver+'</span>'
+        +plateHtml
+        +'</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-right:38px">'+chips+'</div>'
         +'</div>';
     });
   }
   // Pagination controls
   var pagHtml='';
   if(totalPages>1){
-    pagHtml='<div class="docs-modal-pagination"><span style="font-size:11px;color:var(--t2)">'+formatNumber(groupedArr.length)+' נהגים</span><div class="pagination-controls">';
-    pagHtml+='<button class="page-btn" onclick="_docsModalPage=Math.max(1,_docsModalPage-1);renderDocsModal()"'+(_docsModalPage===1?' disabled':'')+'><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>';
-    for(var p=1;p<=Math.min(totalPages,5);p++){pagHtml+='<button class="page-btn'+(p===_docsModalPage?' active':'')+'" onclick="_docsModalPage='+p+';renderDocsModal()">'+p+'</button>';}
-    if(totalPages>5)pagHtml+='<span style="margin:0 4px">…</span><button class="page-btn'+(totalPages===_docsModalPage?' active':'')+'" onclick="_docsModalPage='+totalPages+';renderDocsModal()">'+totalPages+'</button>';
-    pagHtml+='<button class="page-btn" onclick="_docsModalPage=Math.min('+totalPages+',_docsModalPage+1);renderDocsModal()"'+(_docsModalPage===totalPages?' disabled':'')+'><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>';
-    pagHtml+='</div></div>';
+    pagHtml='<div style="display:flex;justify-content:center;align-items:center;gap:8px;padding:12px 0"><span style="font-size:11px;color:var(--t2)">'+groupedArr.length+' נהגים</span>';
+    pagHtml+='<button class="page-btn" onclick="_docsModalPage=Math.max(1,_docsModalPage-1);renderDocsModal()"'+(_docsModalPage===1?' disabled':'')+'>&lt;</button>';
+    pagHtml+='<span style="font-size:12px">'+_docsModalPage+'/'+totalPages+'</span>';
+    pagHtml+='<button class="page-btn" onclick="_docsModalPage=Math.min('+totalPages+',_docsModalPage+1);renderDocsModal()"'+(_docsModalPage===totalPages?' disabled':'')+'>&gt;</button>';
+    pagHtml+='</div>';
   }
   var body=document.getElementById('docs-modal-body');
-  if(body){
-    body.innerHTML='<div class="docs-modal-filters">'
-      +'<button class="docs-modal-filter'+(_docsModalFilter==='all'?' active':'')+'" onclick="setDocsModalFilter(\'all\',this)">הכל · '+formatNumber(issues.length)+'</button>'
-      +'<button class="docs-modal-filter docs-modal-filter-red'+(_docsModalFilter==='expired'?' active':'')+'" onclick="setDocsModalFilter(\'expired\',this)">פג תוקף · '+formatNumber(expiredCount)+'</button>'
-      +'<button class="docs-modal-filter docs-modal-filter-orange'+(_docsModalFilter==='expiring'?' active':'')+'" onclick="setDocsModalFilter(\'expiring\',this)">יפוג בקרוב · '+formatNumber(expiringCount)+'</button>'
-      +'<button class="docs-modal-filter docs-modal-filter-gray'+(_docsModalFilter==='missing'?' active':'')+'" onclick="setDocsModalFilter(\'missing\',this)">חסר · '+formatNumber(missingCount)+'</button>'
-      +'</div>'
-      +'<div class="docs-modal-table-header"><div></div><div>נהג</div><div>חברה</div><div>רישוי</div><div>מסמך חסר</div><div>סטטוס</div><div>תאריך</div></div>'
-      +rows+pagHtml;
-  }
+  if(body) body.innerHTML=cards+pagHtml;
 }
 
 /* ── SERVICE & TEST SCHEDULING ── */
@@ -9386,7 +9395,7 @@ function openDet(vid){
   var violTotal=vViol.reduce(function(s,x){return s+(x.amount||0)},0);
 
   sidebarHtml+='<div class="vc-stats-card">';
-  sidebarHtml+='<div class="vc-stats-title">\u05E0\u05EA\u05D5\u05E0\u05D9 \u05E0\u05D4\u05D2 \u00B7 12 \u05D7\u05D5\u05D3\u05E9\u05D9\u05DD \u05D0\u05D7\u05E8\u05D5\u05E0\u05D9\u05DD</div>';
+  sidebarHtml+='<div class="vc-stats-title">נתוני נהג</div>';
   sidebarHtml+='<div class="vc-stats-list">';
   // Traffic violations
   sidebarHtml+='<div class="vc-stat-row"><div class="vc-stat-row-icon reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>';
@@ -12989,8 +12998,8 @@ if(checkViolApproval()){
     try{
       // Self reminders
       registerSyncCollection('selfReminders',
-        function(){ return selfReminders; },
-        function(arr){ selfReminders.length=0; arr.forEach(function(r){ selfReminders.push(r); }); try{localStorage.setItem('selfReminders',JSON.stringify(selfReminders));}catch(e){} _lastSelfReminderIds = new Set(selfReminders.map(r=>String(r.id))); },
+        function(){ return typeof selfReminders!=='undefined'&&selfReminders?selfReminders:[]; },
+        function(arr){ if(typeof selfReminders==='undefined'||!selfReminders){selfReminders=[];} selfReminders.length=0; arr.forEach(function(r){ selfReminders.push(r); }); try{localStorage.setItem('selfReminders',JSON.stringify(selfReminders));}catch(e){} _lastSelfReminderIds = new Set(selfReminders.map(r=>String(r.id))); },
         function(){ if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}} }
       );
       // Fleet events (user-created events in calendar)
@@ -13572,7 +13581,7 @@ function renderFormTemplates(){
 function renderFormSubmissions(){
   const el=id('forms-submissions-list');
   if(!el)return;
-  const subs=formSubmissionsCache.slice().sort(function(a,b){
+  const subs=(formSubmissionsCache||[]).slice().sort(function(a,b){
     return (b.submittedAt||'').localeCompare(a.submittedAt||'');
   });
   if(!subs.length){
@@ -13612,7 +13621,7 @@ function startFormSubmissionsListener(){
   if(!db||_formSubsListener)return;
   let initial=true;
   _formSubsListener=db.collection('formSubmissions').onSnapshot(function(snap){
-    const prev=formSubmissionsCache.length;
+    const prev=(formSubmissionsCache||[]).length;
     formSubmissionsCache=[];
     snap.forEach(function(doc){formSubmissionsCache.push(doc.data());});
     // Notify on new submissions after initial load
@@ -18025,7 +18034,7 @@ function showBookingSuccess(date){
         <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
-        <h3 style="margin:0;color:#fff;font-size:16px;font-weight:500">מסמכים — פגים וחסרים</h3>
+        <h3 style="margin:0;color:#fff;font-size:16px;font-weight:500">מסמכים</h3>
       </div>
       <button onclick="closeDocsModal()" style="background:rgba(255,255,255,.15);border:none;width:30px;height:30px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
@@ -19587,62 +19596,7 @@ function updateAccStatusOptions() {
   }
 }
 
-function formatAccDate(iso) {
-  if (!iso) return '';
-  var m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? m[3] + '/' + m[2] + '/' + m[1] : iso;
-}
-
-function getAccidentStatusLabel(acc) {
-  var statusLabels = {
-    'waiting_garage': { text: 'ממתין למוסך', color: '#BA7517', bg: '#FAEEDA' },
-    'in_garage': { text: 'במוסך', color: '#185FA5', bg: '#E6F1FB' },
-    'fixed': { text: 'תוקן', color: '#1D9E75', bg: '#E1F5EE' },
-    'waiting_credit': { text: 'ממתין לזיכוי', color: '#BA7517', bg: '#FAEEDA' },
-    'credit_received': { text: 'זוכה ✓', color: '#1D9E75', bg: '#E1F5EE' },
-    'closed': { text: 'תיק נסגר ✓', color: '#5F5E5A', bg: '#F1EFE8' },
-    'closed_no_repair': { text: 'נסגר ללא תיקון ✓', color: '#5F5E5A', bg: '#F1EFE8' }
-  };
-  var s = statusLabels[acc.status] || { text: acc.status || '-', color: '#5F5E5A', bg: '#F1EFE8' };
-  return '<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:' + s.color + ';background:' + s.bg + '">' + s.text + '</span>';
-}
-
-function showAccidentTimeline(accId) {
-  var acc = accidentsList.find(function(a){return a.id===accId;});
-  if (!acc) return;
-  var events = [];
-  if (acc.date) events.push({label:'נפתח האירוע',date:acc.date,icon:'📋',color:'#5F5E5A'});
-  if (acc.garageEntryDate) events.push({label:'נכנס למוסך',date:acc.garageEntryDate,icon:'🔧',color:'#185FA5'});
-  if (acc.garageExitDate) events.push({label:'יצא ממוסך (תוקן)',date:acc.garageExitDate,icon:'✅',color:'#1D9E75'});
-  if (acc.closedDate) {
-    var isCredit = acc.fault==='third' && acc.status==='credit_received';
-    events.push({label:isCredit?'התקבל זיכוי - תיק נסגר':'תיק נסגר',date:acc.closedDate,icon:'🏁',color:'#1D9E75'});
-  }
-  var currentStatus = getAccidentStatusLabel(acc);
-  var html = '<div style="margin-bottom:16px;padding:12px;background:#F7F7F4;border-radius:8px"><div style="font-size:11px;color:#5F5E5A;margin-bottom:4px">סטטוס נוכחי</div><div>'+currentStatus+'</div></div>';
-  if (events.length === 0) {
-    html += '<div style="text-align:center;color:#888;padding:20px">אין מידע זמין</div>';
-  } else {
-    html += '<div style="position:relative;padding-right:20px">';
-    html += '<div style="position:absolute;right:8px;top:8px;bottom:8px;width:2px;background:#E5E7EB"></div>';
-    events.forEach(function(e, i) {
-      html += '<div style="position:relative;padding-bottom:'+(i===events.length-1?'0':'20px')+'">'
-        + '<div style="position:absolute;right:-16px;top:0;width:16px;height:16px;border-radius:50%;background:'+e.color+';display:flex;align-items:center;justify-content:center;color:white;font-size:9px">'+(i+1)+'</div>'
-        + '<div style="padding-right:8px"><div style="font-size:12px;color:#5F5E5A;margin-bottom:2px">'+e.icon+' '+e.label+'</div>'
-        + '<div style="font-size:14px;font-weight:600;color:#1A1A1A">'+formatAccDate(e.date)+'</div></div></div>';
-    });
-    html += '</div>';
-  }
-  if (acc.num) html += '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #E5E7EB;font-size:12px;color:#888">מספר אירוע: <span style="font-family:monospace;color:#1A1A1A">'+acc.num+'</span></div>';
-  document.getElementById('acc-timeline-content').innerHTML = html;
-  openModal('acc-timeline-ov');
-}
-
-function isAccidentOpen(acc) {
-  if (!acc) return false;
-  var closedStatuses = ['closed', 'closed_no_repair', 'credit_received', 'done'];
-  return closedStatuses.indexOf(acc.status) === -1;
-}
+/* formatAccDate, getAccidentStatusLabel, isAccidentOpen, showAccidentTimeline - הועברו ל-script block ראשי (ליד getVehicleStatus) */
 
 function shouldShowAccidentReminder(acc) {
   if (!acc || !acc.reminderEnabled) return false;
