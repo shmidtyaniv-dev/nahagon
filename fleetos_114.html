@@ -2043,7 +2043,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div class="stat-text">
               <div class="mc-lbl">תאונות פתוחות</div>
               <div class="mc-val" style="color:#E24B4A" id="mv-accidents">0</div>
-              <div class="mc-sub" id="mv-accidents-sub">במעקב</div>
+              <div class="mc-sub" id="mv-accidents-sub">מצריכות מעקב</div>
               <div class="stat-value-empty" id="mv-accidents-empty" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>✓ אין פתוחים</div>
             </div>
             <div class="stat-circle" style="background:#E24B4A">
@@ -3949,9 +3949,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">תאריך דיווח</label>
           <input type="date" id="acc-report-date" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A">
         </div>
+        <!-- ציר זמן הועבר למודאל נפרד (showAccidentTimeline) -->
         <div>
-          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">אשם</label>
-          <select id="acc-fault" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer">
+          <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">אשם <span style="color:#E24B4A">*</span></label>
+          <select id="acc-fault" onchange="updateAccStatusOptions()" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer">
             <option value="self">עצמי</option>
             <option value="third">צד ג׳</option>
           </select>
@@ -3959,9 +3960,19 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div>
           <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">סטטוס</label>
           <select id="acc-status" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer">
-            <option value="inprogress">בטיפול</option>
-            <option value="done">אירוע טופל</option>
+            <!-- אופציות יוזרקו דינמית לפי שדה fault -->
           </select>
+        </div>
+        <div style="grid-column:1/-1;padding:14px;background:#FAEEDA;border-radius:10px;border:1px solid #F5DEB3">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;font-weight:500;color:#1A1A1A">
+            <input type="checkbox" id="acc-reminder-enabled" onchange="toggleReminderFields()" style="width:18px;height:18px;cursor:pointer;accent-color:#1D9E75">
+            <span>קבל תזכורת אם התיק לא נסגר</span>
+          </label>
+          <div id="acc-reminder-fields" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(186,117,23,.2)">
+            <label style="display:block;font-size:12px;font-weight:500;margin-bottom:6px;color:#5F5E5A">כל כמה ימים לקבל תזכורת?</label>
+            <input type="number" id="acc-reminder-days" min="1" max="365" value="14" style="width:120px;height:36px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:6px;font-size:14px;background:#fff;color:#1A1A1A" placeholder="ימים">
+            <span style="margin-right:8px;font-size:12px;color:#5F5E5A">ימים מהתאריך שדווח האירוע</span>
+          </div>
         </div>
       </div>
       <!-- Description -->
@@ -3993,6 +4004,22 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <button onclick="saveAccident()" style="padding:8px 20px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;border:none;background:#1D9E75;color:#fff">שמור אירוע</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- מודאל ציר זמן תאונה -->
+<div class="ov" id="acc-timeline-ov" onclick="closeModal('acc-timeline-ov')">
+  <div class="modal" style="max-width:420px;border-radius:12px;overflow:hidden;max-height:none" onclick="event.stopPropagation()">
+    <div style="background:#1D9E75;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3 style="margin:0;color:#fff;font-size:16px;font-weight:500">ציר זמן האירוע</h3>
+      </div>
+      <button onclick="closeModal('acc-timeline-ov')" style="background:rgba(255,255,255,.15);border:none;width:30px;height:30px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div id="acc-timeline-content" style="padding:22px 20px"></div>
   </div>
 </div>
 
@@ -7832,8 +7859,9 @@ function renderDash(){
   if(altSub && alt.total>0){
     altSub.textContent = (alt.loaner?alt.loaner+' חלופי':'')+(alt.loaner&&alt.bridge?' · ':'')+(alt.bridge?alt.bridge+' גישור':'');
   }
-  // Update accidents KPI
-  var accCount=(typeof accidentsList!=='undefined'?accidentsList:[]).filter(function(a){return a.status!=='closed';}).length;
+  // Update accidents KPI - split by fault type
+  var accList=(typeof accidentsList!=='undefined'?accidentsList:[]);
+  var accCount=accList.filter(function(a){return isAccidentOpen(a);}).length;
   updateStatCard('mv-accidents','mv-accidents-sub','mv-accidents-empty',null,accCount);
   // Update violations KPI
   var violCount=(typeof violationsList!=='undefined'?violationsList:[]).filter(function(v){return v.status!=='done'&&v.status!=='closed';}).length;
@@ -12466,6 +12494,18 @@ let accidentsList=[
 let accIdSeq=10;
 var _lastAccidentIds = new Set();
 
+// מיגרציית סטטוסים ישנים לחדשים
+(function migrateOldAccidentStatuses(){
+  var migrated=0;
+  accidentsList.forEach(function(acc){
+    if(!acc.status)return;
+    var map={'inprogress':'waiting_garage','opened':'waiting_garage'};
+    if(acc.status==='done') map.done = acc.fault==='third'?'credit_received':'closed';
+    if(map[acc.status]){ acc.status=map[acc.status]; migrated++; }
+  });
+  if(migrated>0) console.log('[Migration] עודכנו '+migrated+' סטטוסים של תאונות');
+})();
+
 // Persist accidents list to Firestore
 function persistAccidentsList(){
   if(!db) return;
@@ -12496,28 +12536,27 @@ function renderAccidents(){
     html+='<div style="text-align:center;padding:40px 0;color:var(--t3);font-size:15px">אין אירועים</div></div>';
     id('accidents-list').innerHTML=html;return;
   }
-  // Grid header
+  // Grid header - סדר: נהג / רכב / תאריך / מס' אירוע / אשם / סטטוס / פעולות
   html+='<div class="viol-row viol-header acc-row">';
-  html+='<div>שם הנהג</div><div>מס׳ אירוע</div><div>רכב</div><div>אשם</div><div>תאריך</div><div>סטטוס</div><div style="text-align:center">פעולות</div></div>';
+  html+='<div style="text-align:center">שם הנהג</div><div style="text-align:center">רכב</div><div style="text-align:center">תאריך תאונה</div><div style="text-align:center">מס׳ אירוע</div><div style="text-align:center">אשם</div><div style="text-align:center">סטטוס</div><div style="text-align:center">פעולות</div></div>';
   // Rows
   list.forEach(function(a){
     var veh=vehicles.find(function(x){return x.id===a.vehicleId;});
     var driverName=veh?veh.driver.name:'—';
-    var plate=veh?veh.plate:'—';
+    var plate=veh?veh.plate:'';
+    var plateHtml=plate?renderPlate(plate):'<span style="color:#888">—</span>';
     var faultBadge='';
-    if(a.fault==='self') faultBadge='<span class="viol-badge viol-badge-sent">עצמי</span>';
-    else if(a.fault==='third') faultBadge='<span class="viol-badge viol-badge-waiting">צד ג׳</span>';
+    if(a.fault==='self') faultBadge='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#5F5E5A;background:#F1EFE8">עצמי</span>';
+    else if(a.fault==='third') faultBadge='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#185FA5;background:#E6F1FB">צד ג׳</span>';
     else faultBadge='—';
-    var statusBadge='';
-    if(a.status==='done') statusBadge='<span class="viol-badge viol-badge-done">טופל</span>';
-    else statusBadge='<span class="viol-badge viol-badge-sent">בטיפול</span>';
+    var statusHtml='<span onclick="showAccidentTimeline('+a.id+')" style="cursor:pointer" title="לחץ לציר זמן">'+getAccidentStatusLabel(a)+'</span>';
     html+='<div class="viol-row viol-data-row acc-row">';
-    html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(driverName)+'">'+inits(driverName)+'</div><span style="font-weight:500;font-size:14px">'+driverName+'</span></div>';
-    html+='<div class="viol-cell" data-label="מס׳ אירוע"><span class="viol-mono" style="color:var(--gd)">'+(a.num||'—')+'</span></div>';
-    html+='<div class="viol-cell" data-label="רכב"><span class="viol-mono">'+plate+'</span></div>';
-    html+='<div class="viol-cell" data-label="אשם">'+faultBadge+'</div>';
-    html+='<div class="viol-cell" data-label="תאריך"><span class="viol-muted">'+(a.date?fd(a.date):'—')+'</span></div>';
-    html+='<div class="viol-cell">'+statusBadge+'</div>';
+    html+='<div class="viol-driver" style="justify-content:center"><div class="viol-avatar" style="background:'+avatarColor(driverName)+'">'+inits(driverName)+'</div><span style="font-weight:500;font-size:14px">'+driverName+'</span></div>';
+    html+='<div class="viol-cell" data-label="רכב" style="text-align:center">'+plateHtml+'</div>';
+    html+='<div class="viol-cell" data-label="תאריך" style="text-align:center"><span class="viol-muted">'+(a.date?fd(a.date):'—')+'</span></div>';
+    html+='<div class="viol-cell" data-label="מס׳ אירוע" style="text-align:center"><span class="viol-mono" style="color:var(--gd)">'+(a.num||'—')+'</span></div>';
+    html+='<div class="viol-cell" data-label="אשם" style="text-align:center">'+faultBadge+'</div>';
+    html+='<div class="viol-cell" style="text-align:center">'+statusHtml+'</div>';
     html+='<div class="viol-actions" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">';
     html+='<button class="viol-icon-btn v-green" onclick="openAccidentModal('+a.id+')" title="עריכה"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>';
     if(a.fileData) html+='<button class="viol-icon-btn v-blue" onclick="viewAccidentDoc('+a.id+')" title="צפה בקובץ"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>';
@@ -12664,8 +12703,12 @@ function openAccidentModal(editId){
     id('acc-report-date').value=a.reportDate||'';
     id('acc-vehicle').value=a.vehicleId||'';
     id('acc-fault').value=a.fault||'self';
-    id('acc-status').value=a.status||'inprogress';
+    updateAccStatusOptions();
+    id('acc-status').value=a.status||'waiting_garage';
     id('acc-desc').value=a.desc||'';
+    document.getElementById('acc-reminder-enabled').checked=!!a.reminderEnabled;
+    document.getElementById('acc-reminder-days').value=a.reminderDays||14;
+    toggleReminderFields();
     accResetFileUI(a.fileData?(a.fileName||'קובץ מצורף'):'');
   }else{
     id('acc-modal-title').textContent='פתיחת אירוע תאונה';
@@ -12675,10 +12718,14 @@ function openAccidentModal(editId){
     id('acc-report-date').value=new Date().toISOString().split('T')[0];
     id('acc-vehicle').value='';
     id('acc-fault').value='self';
-    id('acc-status').value='inprogress';
+    id('acc-status').value='waiting_garage';
     id('acc-desc').value='';
+    document.getElementById('acc-reminder-enabled').checked=false;
+    document.getElementById('acc-reminder-days').value=14;
+    toggleReminderFields();
     accResetFileUI('');
   }
+  updateAccStatusOptions();
   openModal('acc-ov');
 }
 
@@ -12686,13 +12733,32 @@ function saveAccident(){
   const desc=id('acc-desc').value.trim();
   if(!desc){alert('נא למלא תיאור האירוע');return;}
   const editId=parseInt(id('acc-edit-id').value)||null;
+
+  // תאריכים אוטומטיים לפי שינוי סטטוס
+  var newStatus = id('acc-status').value;
+  var oldAcc = editId ? accidentsList.find(function(a){return a.id===editId;}) : null;
+  var oldStatus = oldAcc ? oldAcc.status : null;
+  var today = new Date().toISOString().slice(0, 10);
+  var garageEntryDate = oldAcc ? oldAcc.garageEntryDate||null : null;
+  var garageExitDate = oldAcc ? oldAcc.garageExitDate||null : null;
+  var closedDate = oldAcc ? oldAcc.closedDate||null : null;
+  if (newStatus === 'in_garage' && oldStatus !== 'in_garage' && !garageEntryDate) garageEntryDate = today;
+  if (newStatus === 'fixed' && oldStatus !== 'fixed' && !garageExitDate) garageExitDate = today;
+  var closedStatuses = ['closed', 'closed_no_repair', 'credit_received'];
+  if (closedStatuses.indexOf(newStatus) >= 0 && closedStatuses.indexOf(oldStatus) < 0 && !closedDate) closedDate = today;
+
   const data={
     num:id('acc-num').value.trim(),
     vehicleId:parseInt(id('acc-vehicle').value)||null,
     date:id('acc-date').value,
     reportDate:id('acc-report-date').value,
     fault:id('acc-fault').value,
-    status:id('acc-status').value,
+    status:newStatus,
+    reminderEnabled:document.getElementById('acc-reminder-enabled').checked,
+    reminderDays:parseInt(document.getElementById('acc-reminder-days').value)||14,
+    garageEntryDate:garageEntryDate,
+    garageExitDate:garageExitDate,
+    closedDate:closedDate,
     desc
   };
 
@@ -19334,9 +19400,29 @@ function getTreatmentNotifications() {
     }
   });
 
-  // מיון: pending_approval ראשון, no_response, forgot, reminders. בתוך כל קטגוריה - חדש קודם
+  // סוג ה: תזכורות תאונה
+  var accListBell = (typeof accidentsList !== 'undefined' ? accidentsList : []);
+  accListBell.forEach(function(acc) {
+    if (shouldShowAccidentReminder(acc)) {
+      var reportDate = acc.reportDate || acc.date;
+      var daysSinceAcc = Math.floor((Date.now() - new Date(reportDate).getTime()) / 86400000);
+      notifications.push({
+        id: 'acc_reminder_' + acc.id,
+        type: 'accident_reminder',
+        dotClass: acc.fault === 'third' ? 'trt-notif-dot-amber' : 'trt-notif-dot-red',
+        title: acc.fault === 'third' ? 'ממתין לזיכוי מצד ג\'' : 'תאונה לא נסגרה',
+        detail: 'אירוע ' + (acc.num || '') + ' · דווח לפני ' + daysSinceAcc + ' ימים',
+        actionText: 'פתח',
+        actionClass: '',
+        actionFn: "go('accidents',document.querySelector('[dp=accidents]'))",
+        time: reportDate
+      });
+    }
+  });
+
+  // מיון: pending_approval ראשון, no_response, forgot, reminders, accidents. בתוך כל קטגוריה - חדש קודם
   notifications.sort(function(a, b) {
-    var priority = { pending_approval: 0, no_response: 1, forgot_to_close: 2, self_reminder: 3 };
+    var priority = { pending_approval: 0, no_response: 1, forgot_to_close: 2, self_reminder: 3, accident_reminder: 4 };
     var pa = priority[a.type] || 9;
     var pb = priority[b.type] || 9;
     if (pa !== pb) return pa - pb;
@@ -19471,6 +19557,105 @@ function initTrtTemplates() {
 }
 // טען תבניות בטעינה
 setTimeout(initTrtTemplates, 500);
+
+/* ── ACCIDENT MODEL ENHANCEMENTS ── */
+function toggleReminderFields() {
+  var enabled = document.getElementById('acc-reminder-enabled').checked;
+  document.getElementById('acc-reminder-fields').style.display = enabled ? 'block' : 'none';
+}
+
+function updateAccStatusOptions() {
+  var fault = document.getElementById('acc-fault').value;
+  var select = document.getElementById('acc-status');
+  var currentValue = select.value;
+  var options = (fault === 'third') ? [
+    { value: 'waiting_garage', label: 'ממתין לכניסה למוסך' },
+    { value: 'in_garage', label: 'נכנס למוסך' },
+    { value: 'fixed', label: 'תוקן (יצא ממוסך)' },
+    { value: 'waiting_credit', label: 'ממתין לזיכוי' },
+    { value: 'credit_received', label: 'זוכה - תיק נסגר' }
+  ] : [
+    { value: 'waiting_garage', label: 'ממתין לכניסה למוסך' },
+    { value: 'in_garage', label: 'נכנס למוסך' },
+    { value: 'fixed', label: 'הרכב תוקן (יצא ממוסך)' },
+    { value: 'closed', label: 'תיק נסגר' },
+    { value: 'closed_no_repair', label: 'תיק נסגר ללא כניסה למוסך' }
+  ];
+  select.innerHTML = options.map(function(o) { return '<option value="' + o.value + '">' + o.label + '</option>'; }).join('');
+  if (options.some(function(o) { return o.value === currentValue; })) {
+    select.value = currentValue;
+  }
+}
+
+function formatAccDate(iso) {
+  if (!iso) return '';
+  var m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : iso;
+}
+
+function getAccidentStatusLabel(acc) {
+  var statusLabels = {
+    'waiting_garage': { text: 'ממתין למוסך', color: '#BA7517', bg: '#FAEEDA' },
+    'in_garage': { text: 'במוסך', color: '#185FA5', bg: '#E6F1FB' },
+    'fixed': { text: 'תוקן', color: '#1D9E75', bg: '#E1F5EE' },
+    'waiting_credit': { text: 'ממתין לזיכוי', color: '#BA7517', bg: '#FAEEDA' },
+    'credit_received': { text: 'זוכה ✓', color: '#1D9E75', bg: '#E1F5EE' },
+    'closed': { text: 'תיק נסגר ✓', color: '#5F5E5A', bg: '#F1EFE8' },
+    'closed_no_repair': { text: 'נסגר ללא תיקון ✓', color: '#5F5E5A', bg: '#F1EFE8' }
+  };
+  var s = statusLabels[acc.status] || { text: acc.status || '-', color: '#5F5E5A', bg: '#F1EFE8' };
+  return '<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:' + s.color + ';background:' + s.bg + '">' + s.text + '</span>';
+}
+
+function showAccidentTimeline(accId) {
+  var acc = accidentsList.find(function(a){return a.id===accId;});
+  if (!acc) return;
+  var events = [];
+  if (acc.date) events.push({label:'נפתח האירוע',date:acc.date,icon:'📋',color:'#5F5E5A'});
+  if (acc.garageEntryDate) events.push({label:'נכנס למוסך',date:acc.garageEntryDate,icon:'🔧',color:'#185FA5'});
+  if (acc.garageExitDate) events.push({label:'יצא ממוסך (תוקן)',date:acc.garageExitDate,icon:'✅',color:'#1D9E75'});
+  if (acc.closedDate) {
+    var isCredit = acc.fault==='third' && acc.status==='credit_received';
+    events.push({label:isCredit?'התקבל זיכוי - תיק נסגר':'תיק נסגר',date:acc.closedDate,icon:'🏁',color:'#1D9E75'});
+  }
+  var currentStatus = getAccidentStatusLabel(acc);
+  var html = '<div style="margin-bottom:16px;padding:12px;background:#F7F7F4;border-radius:8px"><div style="font-size:11px;color:#5F5E5A;margin-bottom:4px">סטטוס נוכחי</div><div>'+currentStatus+'</div></div>';
+  if (events.length === 0) {
+    html += '<div style="text-align:center;color:#888;padding:20px">אין מידע זמין</div>';
+  } else {
+    html += '<div style="position:relative;padding-right:20px">';
+    html += '<div style="position:absolute;right:8px;top:8px;bottom:8px;width:2px;background:#E5E7EB"></div>';
+    events.forEach(function(e, i) {
+      html += '<div style="position:relative;padding-bottom:'+(i===events.length-1?'0':'20px')+'">'
+        + '<div style="position:absolute;right:-16px;top:0;width:16px;height:16px;border-radius:50%;background:'+e.color+';display:flex;align-items:center;justify-content:center;color:white;font-size:9px">'+(i+1)+'</div>'
+        + '<div style="padding-right:8px"><div style="font-size:12px;color:#5F5E5A;margin-bottom:2px">'+e.icon+' '+e.label+'</div>'
+        + '<div style="font-size:14px;font-weight:600;color:#1A1A1A">'+formatAccDate(e.date)+'</div></div></div>';
+    });
+    html += '</div>';
+  }
+  if (acc.num) html += '<div style="margin-top:16px;padding-top:14px;border-top:1px solid #E5E7EB;font-size:12px;color:#888">מספר אירוע: <span style="font-family:monospace;color:#1A1A1A">'+acc.num+'</span></div>';
+  document.getElementById('acc-timeline-content').innerHTML = html;
+  openModal('acc-timeline-ov');
+}
+
+function isAccidentOpen(acc) {
+  if (!acc) return false;
+  var closedStatuses = ['closed', 'closed_no_repair', 'credit_received', 'done'];
+  return closedStatuses.indexOf(acc.status) === -1;
+}
+
+function shouldShowAccidentReminder(acc) {
+  if (!acc || !acc.reminderEnabled) return false;
+  if (!isAccidentOpen(acc)) return false;
+  var days = parseInt(acc.reminderDays) || 14;
+  var reportDate = acc.reportDate || acc.date;
+  if (!reportDate) return false;
+  var daysSinceReport = Math.floor((Date.now() - new Date(reportDate).getTime()) / 86400000);
+  if (daysSinceReport < days) return false;
+  var lastReminded = acc.lastReminderShown ? new Date(acc.lastReminderShown).getTime() : 0;
+  var daysSinceLastReminder = Math.floor((Date.now() - lastReminded) / 86400000);
+  return daysSinceLastReminder >= days;
+}
 
 // 23. אתחול בעת טעינה
 // ============================================================
