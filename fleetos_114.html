@@ -9399,7 +9399,9 @@ function openDet(vid){
   sidebarHtml+='<div class="vc-stats-list">';
   // Traffic violations
   sidebarHtml+='<div class="vc-stat-row"><div class="vc-stat-row-icon reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>';
-  sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">\u05D3\u05D5\u05D7\u05D5\u05EA \u05EA\u05E0\u05D5\u05E2\u05D4</div><div class="vc-stat-row-detail">'+(violTotal?violTotal.toLocaleString("he-IL")+' \u20AA \u05E1\u05D4\u0022\u05DB':'\u05D0\u05D9\u05DF')+'</div></div>';
+  var violOpenCount=vViol.filter(function(x){return x.status!=='done'&&x.status!=='closed'}).length;
+  var violDetail=vViol.length?('<strong>'+violOpenCount+' פתוחים</strong>'+(vViol.length-violOpenCount?' · '+(vViol.length-violOpenCount)+' טופלו':'')):'אין';
+  sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">דוחות תנועה</div><div class="vc-stat-row-detail">'+violDetail+'</div></div>';
   sidebarHtml+='<div class="vc-stat-row-value">'+vViol.length+'</div></div>';
   // Accidents
   sidebarHtml+='<div class="vc-stat-row"><div class="vc-stat-row-icon accidents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>';
