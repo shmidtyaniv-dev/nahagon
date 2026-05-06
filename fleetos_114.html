@@ -9384,9 +9384,9 @@ function openDet(vid){
   sidebarHtml+='</div>';
 
   // Stats card
-  var vViol=violations.filter(function(x){return x.plate===v.plate});
-  var vAcc=(accidents||[]).filter(function(x){return x.vehicleId===vid||x.plate===v.plate});
-  var accOpen=vAcc.filter(function(x){return x.status!=='closed'&&x.status!=='סגור'}).length;
+  var vViol=(typeof violationsList!=='undefined'?violationsList:[]).filter(function(x){return x.vehicleId===vid||x.plate===v.plate});
+  var vAcc=(typeof accidentsList!=='undefined'?accidentsList:[]).filter(function(x){return x.vehicleId===vid||x.plate===v.plate});
+  var accOpen=vAcc.filter(function(x){return isAccidentOpen(x)}).length;
   var accClosed=vAcc.length-accOpen;
   var tireChanges=v.tireChanges||[];
   var tireCount=tireChanges.length;
