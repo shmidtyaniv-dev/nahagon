@@ -392,7 +392,9 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 }
 @media(max-width:700px){
   .vc-info-grid{grid-template-columns:1fr}
-  .vc-docs-grid{grid-template-columns:1fr}
+  .vc-docs-grid{grid-template-columns:1fr!important;gap:8px!important}
+  .vc-docs-grid .vc-info-box{overflow-wrap:break-word;word-wrap:break-word}
+  #vc-summary-cards2{grid-template-columns:1fr!important}
 }
 .vc-sec-hdr{padding:9px 14px;background:var(--bg);border-bottom:1px solid var(--bdr);font-size:16px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
 .sum-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
@@ -457,7 +459,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .cal-item-date{font-size:11px!important}
   .cal-item .il-plate{transform:scale(.85);transform-origin:right center}
   #vc-summary-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  #vc-summary-cards2,#vc-summary-cards3{grid-template-columns:1fr 1fr!important}
+  #vc-summary-cards2,#vc-summary-cards3{grid-template-columns:1fr!important}
   .mg{grid-template-columns:1fr!important}
   .modal{max-width:100vw!important;border-radius:14px 14px 0 0;margin:0;position:fixed;bottom:0;left:0;right:0;max-height:92vh}
   .ov{align-items:flex-end}
@@ -477,6 +479,8 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .v-hero .v-actions{grid-column:span 2;flex-wrap:wrap}
   .vc-tabs-bar{padding:0 8px}
   .vc-info-grid{grid-template-columns:1fr 1fr!important}
+  .vc-info-box{overflow-wrap:break-word!important;word-wrap:break-word!important;min-width:0!important;min-height:0!important;height:auto!important;align-self:start!important;padding:12px!important;justify-content:flex-start!important}
+  .vc-docs-grid>*,.vc-info-grid>*{align-self:start!important;height:auto!important;min-height:0!important}
   .fg{grid-template-columns:1fr!important}
   .ff.full{grid-column:span 1!important}
   .ir,.ir-vc{flex-wrap:wrap}
@@ -490,7 +494,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 @media(max-width:480px){
   .metrics{grid-template-columns:1fr}
   #vc-summary-cards{grid-template-columns:1fr 1fr!important}
-  #vc-summary-cards2,#vc-summary-cards3{grid-template-columns:1fr 1fr!important}
+  #vc-summary-cards2,#vc-summary-cards3{grid-template-columns:1fr!important}
   .cal-grid{grid-template-columns:1fr!important}
   .fg{grid-template-columns:1fr!important}
   .vc-tab-btn{font-size:10px!important;padding:6px 8px!important}
@@ -767,6 +771,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .sort-icon{font-size:10px;opacity:.5}
 .per-page-select{border:1px solid var(--bdr);border-radius:6px;padding:3px 6px;font-size:11px;font-family:inherit;background:#fff;color:var(--t2);cursor:pointer}
 .vehicle-status-badge{display:inline-block;height:20px;line-height:16px;font-size:10.5px;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap}
+.vc-add-btn{display:inline-flex;align-items:center;gap:4px;padding:8px 14px;background:#F1EFE8;color:#5F5E5A;border:1px dashed #D1D5DB;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s}
+.vc-add-btn:hover{background:#E5E7EB;border-color:#9CA3AF;color:#1A1A1A}
 .vehicle-status-stack{display:flex;flex-direction:column;gap:3px;align-items:center}
 .local-search{position:relative}
 .local-search input{width:200px;height:32px;padding:0 30px 0 10px;border:0.5px solid var(--bdr2);border-radius:6px;font-size:12px;font-family:inherit;background:#fff;color:var(--t1);outline:none}
@@ -9142,7 +9148,7 @@ function openDet(vid){
   // insurance expiry from uploaded doc (stored in vd)
   const insuranceExp=vd['insurance_exp']||null;
   const insColor=insuranceExp&&dys(insuranceExp)<60?'#d97706':null;
-  const insTxt=insuranceExp?fd(insuranceExp):'—';
+  const insTxt=insuranceExp?fd(insuranceExp):'<button class="vc-add-btn" onclick="event.stopPropagation();vcTab(\'docs\',document.querySelector(\'.vc-tab-btn[onclick*=docs]\'))">+ העלה ביטוח</button>';
 
   // next service - auto-calculated from lastService + serviceKm (or from delivery for new vehicles)
   const svcType=nxtSvc.type||'—';
@@ -9179,15 +9185,6 @@ function openDet(vid){
   var oldTitle=document.getElementById('vc-row2-title');if(oldTitle)oldTitle.remove();
   id('vc-summary-cards2').insertAdjacentHTML('beforebegin','<div style="font-size:13px;font-weight:500;color:var(--t2);margin-bottom:10px;letter-spacing:.02em" id="vc-row2-title">עסקה וטיפולים</div>');
   id('vc-summary-cards2').innerHTML=
-    // Deal period card
-    `<div class="vc-info-box">
-      <div class="vc-info-label">תקופת עסקה</div>
-      ${v.delivery?`<div style="display:flex;align-items:baseline;gap:10px;justify-content:center;margin-bottom:8px">
-        <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.delivery)}</div><div style="font-size:10px;color:var(--t2)">מסירה</div></div>
-        <span style="color:var(--t3)">←</span>
-        <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.dealEnd)||'—'}</div><div style="font-size:10px;color:var(--t2)">סיום</div></div>
-      </div>${(function(){var start=new Date(v.delivery);var end=v.dealEnd?new Date(v.dealEnd):new Date(start.getTime()+3*365.25*86400000);var total=Math.round((end-start)/2592000000);var elapsed=Math.max(0,Math.round((new Date()-start)/2592000000));var pct=Math.min(100,Math.max(0,Math.round(elapsed/total*100)));var remaining=Math.max(0,total-elapsed);var bar='<div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:6px;width:100%"><div style="height:100%;background:var(--green,#1D9E75);border-radius:2px;width:'+pct+'%"></div></div><div style="font-size:12px;color:var(--t2);text-align:center">חודש <strong style="color:var(--t1)">'+elapsed+'</strong> מתוך <strong style="color:var(--t1)">'+total+'</strong> · נותרו '+remaining+' חודשים</div>';if(remaining<=4){bar+='<div style="margin-top:10px;padding:8px 10px;background:'+(v.newVehicleDate?'#E1F5EE':'#FAEEDA')+';border:1px solid '+(v.newVehicleDate?'#1D9E75':'#D97706')+';border-radius:8px">';if(v.newVehicleDate){bar+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div><div style="font-size:11px;font-weight:600;color:#0F6E56">🚗 רכב חדש בדרך</div><div style="font-size:12px;color:#0F6E56;margin-top:2px">צפוי ב-'+fd(v.newVehicleDate)+'</div></div><button onclick="openNewVehicleDateModal('+vid+')" style="background:#0F6E56;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">עדכן</button></div>';}else{bar+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div style="font-size:11px;font-weight:500;color:#854F0B">⏰ העסקה מסתיימת בקרוב</div><button onclick="openNewVehicleDateModal('+vid+')" style="background:#854F0B;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">עדכן תאריך רכב חדש</button></div>';}bar+='</div>';}return bar;})()}`:'<div style="font-size:14px;color:var(--t3)">—</div>'}
-    </div>`+
     // KM card
     `<div class="vc-info-box">
       <div class="vc-info-label">ק"מ נוכחי</div>
@@ -9199,6 +9196,15 @@ function openDet(vid){
         </button>
       </div>
       <div class="vc-info-sublabel">${kmUpdateAgo||'לא עודכן'}</div>
+    </div>`+
+    // Deal period card
+    `<div class="vc-info-box">
+      <div class="vc-info-label">תקופת עסקה</div>
+      ${v.delivery?`<div style="display:flex;align-items:baseline;gap:10px;justify-content:center;margin-bottom:8px">
+        <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.delivery)}</div><div style="font-size:10px;color:var(--t2)">מסירה</div></div>
+        <span style="color:var(--t3)">←</span>
+        <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.dealEnd)||'—'}</div><div style="font-size:10px;color:var(--t2)">סיום</div></div>
+      </div>${(function(){var start=new Date(v.delivery);var end=v.dealEnd?new Date(v.dealEnd):new Date(start.getTime()+3*365.25*86400000);var total=Math.round((end-start)/2592000000);var elapsed=Math.max(0,Math.round((new Date()-start)/2592000000));var pct=Math.min(100,Math.max(0,Math.round(elapsed/total*100)));var remaining=Math.max(0,total-elapsed);var bar='<div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:6px;width:100%"><div style="height:100%;background:var(--green,#1D9E75);border-radius:2px;width:'+pct+'%"></div></div><div style="font-size:12px;color:var(--t2);text-align:center">חודש <strong style="color:var(--t1)">'+elapsed+'</strong> מתוך <strong style="color:var(--t1)">'+total+'</strong> · נותרו '+remaining+' חודשים</div>';if(remaining<=4){bar+='<div style="margin-top:10px;padding:8px 10px;background:'+(v.newVehicleDate?'#E1F5EE':'#FAEEDA')+';border:1px solid '+(v.newVehicleDate?'#1D9E75':'#D97706')+';border-radius:8px">';if(v.newVehicleDate){bar+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div><div style="font-size:11px;font-weight:600;color:#0F6E56">🚗 רכב חדש בדרך</div><div style="font-size:12px;color:#0F6E56;margin-top:2px">צפוי ב-'+fd(v.newVehicleDate)+'</div></div><button onclick="openNewVehicleDateModal('+vid+')" style="background:#0F6E56;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">עדכן</button></div>';}else{bar+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div style="font-size:11px;font-weight:500;color:#854F0B">⏰ העסקה מסתיימת בקרוב</div><button onclick="openNewVehicleDateModal('+vid+')" style="background:#854F0B;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">עדכן תאריך רכב חדש</button></div>';}bar+='</div>';}return bar;})()}`:'<div style="font-size:14px;color:var(--t3)">—</div>'}
     </div>`+
     // Next service - split view
     `<div class="vc-info-box">
@@ -9224,10 +9230,10 @@ function openDet(vid){
   var drvLicDays=v.driver.licenseExp?Math.ceil((new Date(v.driver.licenseExp)-new Date())/86400000):null;
   id('vc-summary-cards3').innerHTML=
     `<div style="font-size:13px;font-weight:500;color:#5F5E5A;margin-bottom:10px;letter-spacing:.02em">מסמכים ופרטי רכב</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+    <div class="vc-docs-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
       <div class="vc-info-box">
         <div class="vc-info-label">תוקף רישיון רכב</div>
-        <div style="font-size:18px;font-weight:500">${fd(v.licenseExp)||'—'}</div>
+        <div style="font-size:18px;font-weight:500">${fd(v.licenseExp)||'<button class="vc-add-btn" onclick="event.stopPropagation();openEditVehicle('+vid+')">+ הוסף תאריך</button>'}</div>
         ${dLicDays!==null?`<div class="vc-info-sublabel">${dLicDays<0?'<span style="color:#A32D2D">פג תוקף!</span>':'בתוקף · עוד '+dLicDays+' ימים'}</div>`:''}
       </div>
       <div class="vc-info-box">
@@ -9237,7 +9243,7 @@ function openDet(vid){
       </div>
       <div class="vc-info-box">
         <div class="vc-info-label">תוקף רישיון נהיגה</div>
-        <div style="font-size:18px;font-weight:500">${fd(v.driver.licenseExp)||'—'}</div>
+        <div style="font-size:18px;font-weight:500">${fd(v.driver.licenseExp)||'<button class="vc-add-btn" onclick="event.stopPropagation();openEditVehicle('+vid+')">+ הוסף תאריך</button>'}</div>
         ${drvLicDays!==null?`<div class="vc-info-sublabel">${drvLicDays<0?'<span style="color:#A32D2D">פג תוקף!</span>':'בתוקף · עוד '+drvLicDays+' ימים'}</div>`:''}
       </div>
       <div class="vc-info-box">
