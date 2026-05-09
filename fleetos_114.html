@@ -4486,7 +4486,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <!-- ACCORDION: כבישי אגרה -->
       <div style="border-bottom:1px solid rgba(0,0,0,.08)">
         <div onclick="toggleAccSection(this)" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
-          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🛣️</span><span style="font-size:14px;font-weight:600;color:var(--t1)">כבישי אגרה</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🛣️</span><span style="font-size:14px;font-weight:600;color:var(--t1)">מנויים</span></div>
           <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
         </div>
         <div class="acc-body" style="padding:0 20px 16px;display:none">
@@ -4657,7 +4657,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <!-- ACCORDION: כבישי אגרה -->
       <div style="border-bottom:1px solid rgba(0,0,0,.08)">
         <div onclick="toggleAccSection(this)" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none">
-          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🛣️</span><span style="font-size:14px;font-weight:600;color:var(--t1)">כבישי אגרה</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">🛣️</span><span style="font-size:14px;font-weight:600;color:var(--t1)">מנויים</span></div>
           <span class="acc-arrow" style="font-size:12px;color:var(--t3);transition:transform .2s">▼</span>
         </div>
         <div class="acc-body" style="padding:0 20px 16px;display:none">
@@ -9574,7 +9574,7 @@ function openDet(vid){
         ${drvLicDays!==null?`<div class="vc-info-sublabel">${drvLicDays<0?'<span style="color:#A32D2D">פג תוקף!</span>':'בתוקף · עוד '+drvLicDays+' ימים'}</div>`:''}
       </div>
       <div class="vc-info-box">
-        <div class="vc-info-label">כבישי אגרה</div>
+        <div class="vc-info-label">מנויים</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px">${(v.tolls||[]).length?v.tolls.map(function(t){return '<span style="display:inline-block;background:#E8F2EE;color:#1A4A3A;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid #C8E0D2">'+t+'</span>';}).join(''):'<span style="font-size:14px;color:var(--t3)">אין מנויים</span>'}</div>
       </div>
     </div>`;
