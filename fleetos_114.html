@@ -9575,7 +9575,7 @@ function openDet(vid){
       </div>
       <div class="vc-info-box">
         <div class="vc-info-label">כבישי אגרה</div>
-        <div style="font-size:14px;font-weight:500">${(v.tolls||[]).length?v.tolls.join(', '):'אין מנויים'}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:3px">${(v.tolls||[]).length?v.tolls.map(function(t){return '<span style="display:inline-block;background:#E8F2EE;color:#1A4A3A;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid #C8E0D2">'+t+'</span>';}).join(''):'<span style="font-size:14px;color:var(--t3)">אין מנויים</span>'}</div>
       </div>
     </div>`;
 
