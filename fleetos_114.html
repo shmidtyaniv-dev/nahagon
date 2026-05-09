@@ -1897,6 +1897,200 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 <meta name="theme-color" content="#0C2E5A">
 </head>
 <body>
+
+<!-- ════════════════════════════════════════════════════════
+     מסך לוגין - מוצג רק אם המשתמש לא מחובר
+     ════════════════════════════════════════════════════════ -->
+<style>
+  /* הסתרת המערכת עד שמתאמתים */
+  body.auth-loading .app,
+  body.auth-loading #login-screen { visibility: hidden; }
+
+  body.not-logged-in .app { display: none !important; }
+  body.logged-in #login-screen { display: none !important; }
+
+  /* רקע מסך הלוגין */
+  #login-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #F4F2EA 0%, #E8E4D8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    direction: rtl;
+    font-family: 'Heebo', 'Rubik', system-ui, -apple-system, sans-serif;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .login-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.04);
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .login-logo-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1D9E75 0%, #1A4A3A 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(29,158,117,.3);
+  }
+  .login-logo-circle svg { color: #fff; }
+
+  .login-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1A1A1A;
+    text-align: center;
+    margin: 0 0 6px 0;
+  }
+  .login-subtitle {
+    font-size: 13px;
+    color: #5F5E5A;
+    text-align: center;
+    margin: 0 0 28px 0;
+  }
+
+  .login-field {
+    margin-bottom: 14px;
+  }
+  .login-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #1A1A1A;
+    margin-bottom: 6px;
+  }
+  .login-field input {
+    width: 100%;
+    height: 42px;
+    padding: 0 14px;
+    border: 1.5px solid rgba(0,0,0,.12);
+    border-radius: 10px;
+    background: #FAFAF7;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1A1A1A;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color .15s, background .15s;
+  }
+  .login-field input:focus {
+    border-color: #1D9E75;
+    background: #fff;
+  }
+
+  .login-error {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #B91C1C;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .login-error.show { display: block; }
+
+  .login-btn {
+    width: 100%;
+    height: 44px;
+    background: #1D9E75;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, transform .05s;
+    margin-top: 6px;
+  }
+  .login-btn:hover { background: #178A65; }
+  .login-btn:active { transform: translateY(1px); }
+  .login-btn:disabled {
+    background: #B5C9C0;
+    cursor: not-allowed;
+  }
+
+  /* Remember Me checkbox */
+  .login-remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 18px 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .login-remember input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #1D9E75;
+    cursor: pointer;
+    margin: 0;
+  }
+  .login-remember label {
+    font-size: 13px;
+    color: #5F5E5A;
+    cursor: pointer;
+    margin: 0;
+    font-weight: 400;
+  }
+</style>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-circle">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="3" width="15" height="13" rx="2"/>
+          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+          <circle cx="5.5" cy="18.5" r="2.5"/>
+          <circle cx="18.5" cy="18.5" r="2.5"/>
+        </svg>
+      </div>
+    </div>
+    <h1 class="login-title">מרכז הרכב של מור</h1>
+    <p class="login-subtitle">התחבר/י כדי להמשיך</p>
+
+    <div class="login-error" id="login-error"></div>
+
+    <form id="login-form" method="post" action="#" onsubmit="doLogin(event); return false;">
+      <div class="login-field">
+        <label for="login-email">אימייל</label>
+        <input type="email" id="login-email" name="email" autocomplete="username email" required dir="ltr" style="text-align:left">
+      </div>
+      <div class="login-field">
+        <label for="login-password">סיסמה</label>
+        <input type="password" id="login-password" name="password" autocomplete="current-password" required>
+      </div>
+      <div class="login-remember">
+        <input type="checkbox" id="login-remember" checked>
+        <label for="login-remember">זכור אותי</label>
+      </div>
+      <button type="submit" class="login-btn" id="login-btn">התחבר</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // עד שנדע אם המשתמש מחובר - נסתיר הכל
+  document.body.classList.add('auth-loading');
+</script>
+
 <div class="sb-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
 <div class="app">
 
@@ -2294,12 +2488,12 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <h2>טפסים דיגיטליים</h2>
         <span class="cp" id="forms-count">0</span>
         <span class="sp"></span>
-        <div style="display:flex;gap:6px;align-items:center">
-          <div style="display:flex;background:var(--card);border:1px solid var(--bdr2);border-radius:var(--rs);padding:2px;gap:2px">
-            <button id="forms-tab-templates" onclick="setFormsTab('templates')" class="forms-tab-btn active" style="padding:5px 12px;border:none;background:var(--gd);color:#fff;border-radius:5px;font-size:12px;cursor:pointer;font-family:inherit">תבניות</button>
-            <button id="forms-tab-submissions" onclick="setFormsTab('submissions')" class="forms-tab-btn" style="padding:5px 12px;border:none;background:transparent;color:var(--t2);border-radius:5px;font-size:12px;cursor:pointer;font-family:inherit">תגובות שהתקבלו</button>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="display:flex;background:var(--card);border:1px solid var(--bdr2);border-radius:8px;padding:3px;gap:3px">
+            <button id="forms-tab-templates" onclick="setFormsTab('templates')" class="forms-tab-btn active" style="padding:8px 18px;border:none;background:var(--gd);color:#fff;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s">תבניות</button>
+            <button id="forms-tab-submissions" onclick="setFormsTab('submissions')" class="forms-tab-btn" style="padding:8px 18px;border:none;background:transparent;color:var(--t2);border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s">תגובות שהתקבלו</button>
           </div>
-          <button class="btn btn-p btn-sm" onclick="openFormBuilder()">+ טופס חדש</button>
+          <button class="btn btn-p" onclick="openFormBuilder()" style="padding:9px 18px;font-size:13px;font-weight:600">+ טופס חדש</button>
         </div>
       </div>
       <div id="forms-templates-list" style="display:block"></div>
@@ -2308,22 +2502,22 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
     <!-- FORM BUILDER MODAL (full screen) -->
     <div id="form-builder-overlay" style="display:none;position:fixed;inset:0;background:#f2f5f2;z-index:200;overflow-y:auto;direction:rtl">
-      <div style="background:var(--gd);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.15)">
-        <div style="font-size:15px;font-weight:600">טופס דיגיטלי</div>
-        <div style="display:flex;gap:8px">
-          <button onclick="saveFormTemplate()" id="fb-save-btn" style="background:var(--gl);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;display:none">שמור תבנית</button>
-          <button onclick="closeFormBuilder()" style="background:rgba(255,255,255,.15);color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:13px;font-family:inherit;cursor:pointer">ביטול</button>
+      <div style="background:var(--gd);color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 12px rgba(0,0,0,.15)">
+        <div style="font-size:18px;font-weight:600;letter-spacing:.2px">טופס דיגיטלי</div>
+        <div style="display:flex;gap:10px">
+          <button onclick="saveFormTemplate()" id="fb-save-btn" style="background:var(--gl);color:#fff;border:none;padding:11px 24px;border-radius:8px;font-size:14px;font-family:inherit;cursor:pointer;font-weight:600;display:none;transition:filter .15s" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='none'">שמור תבנית</button>
+          <button onclick="closeFormBuilder()" style="background:rgba(255,255,255,.18);color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:14px;font-family:inherit;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.28)'" onmouseout="this.style.background='rgba(255,255,255,.18)'">ביטול</button>
         </div>
       </div>
 
-      <div style="padding:16px;display:grid;grid-template-columns:1fr 260px;gap:14px;max-width:1200px;margin:0 auto">
+      <div style="padding:20px;display:grid;grid-template-columns:1fr 300px;gap:18px;max-width:1280px;margin:0 auto">
         <!-- Left: PDF + field overlay -->
-        <div style="background:#fff;border-radius:10px;padding:14px;border:1px solid var(--bdr)">
+        <div style="background:#fff;border-radius:12px;padding:18px;border:1px solid var(--bdr)">
           <input type="file" id="fb-pdf-input" accept=".pdf" style="display:none" onchange="onFbPdfUpload(this)">
-          <div id="fb-upload-area" style="border:2px dashed var(--bdr2);border-radius:10px;padding:40px 20px;text-align:center;background:var(--bg);cursor:pointer" onclick="document.getElementById('fb-pdf-input').click()">
-            <div style="font-size:36px;margin-bottom:10px">📄</div>
-            <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px">לחץ להעלאת PDF</div>
-            <div style="font-size:12px;color:var(--t3)">עמוד ראשון יוצג כרקע להצבת שדות</div>
+          <div id="fb-upload-area" style="border:2px dashed var(--bdr2);border-radius:12px;padding:50px 20px;text-align:center;background:var(--bg);cursor:pointer;transition:border-color .15s,background .15s" onclick="document.getElementById('fb-pdf-input').click()" onmouseover="this.style.borderColor='var(--gd)';this.style.background='#f7f7f0'" onmouseout="this.style.borderColor='var(--bdr2)';this.style.background='var(--bg)'">
+            <div style="font-size:44px;margin-bottom:14px">📄</div>
+            <div style="font-size:16px;font-weight:600;color:var(--t1);margin-bottom:6px">לחץ להעלאת PDF</div>
+            <div style="font-size:13px;color:var(--t3)">עמוד ראשון יוצג כרקע להצבת שדות</div>
           </div>
           <div id="fb-pdf-wrap" style="display:none;position:relative;overflow:auto">
             <canvas id="fb-pdf-canvas" style="display:block;margin:0 auto;box-shadow:0 1px 8px rgba(0,0,0,.1);cursor:crosshair"></canvas>
@@ -2332,33 +2526,33 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
 
         <!-- Right: Sidebar - field tools and list -->
-        <div style="background:#fff;border-radius:10px;padding:14px;border:1px solid var(--bdr);height:fit-content;position:sticky;top:76px">
-          <div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:10px;text-transform:uppercase">פרטי הטופס</div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:3px">שם הטופס</label>
-            <input id="fb-name" placeholder="שם הטופס" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:6px;font-size:13px;font-family:inherit;background:var(--bg)">
+        <div style="background:#fff;border-radius:12px;padding:18px;border:1px solid var(--bdr);height:fit-content;position:sticky;top:90px">
+          <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:12px;letter-spacing:.3px">פרטי הטופס</div>
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;color:var(--t2);display:block;margin-bottom:5px;font-weight:500">שם הטופס</label>
+            <input id="fb-name" placeholder="שם הטופס" style="width:100%;padding:10px 12px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;transition:border-color .15s;box-sizing:border-box" onfocus="this.style.borderColor='var(--gd)'" onblur="this.style.borderColor='var(--bdr2)'">
           </div>
 
           <div id="fb-tools-section" style="display:none">
-            <div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:8px;text-transform:uppercase;margin-top:14px">סוג שדה לסימון</div>
-            <div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;font-weight:600">שדות למילוי (לנהג)</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:10px;margin-top:18px;letter-spacing:.3px">סוג שדה לסימון</div>
+            <div style="font-size:11px;color:var(--t3);margin-bottom:6px;font-weight:600">שדות למילוי (לנהג)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
               <button type="button" onclick="setFbFieldType('text')" id="fb-tool-text" class="fb-tool active">📝 טקסט</button>
               <button type="button" onclick="setFbFieldType('date')" id="fb-tool-date" class="fb-tool">📅 תאריך</button>
               <button type="button" onclick="setFbFieldType('check')" id="fb-tool-check" class="fb-tool">✅ סימון</button>
               <button type="button" onclick="setFbFieldType('sign')" id="fb-tool-sign" class="fb-tool">✍️ חתימה</button>
             </div>
-            <div style="font-size:10px;color:var(--t3);margin-bottom:4px;text-transform:uppercase;font-weight:600;margin-top:10px">עריכות קבועות על הטופס</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+            <div style="font-size:11px;color:var(--t3);margin-bottom:6px;font-weight:600;margin-top:12px">עריכות קבועות על הטופס</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
               <button type="button" onclick="setFbFieldType('strike')" id="fb-tool-strike" class="fb-tool">➖ קו מחיקה</button>
               <button type="button" onclick="setFbFieldType('label')" id="fb-tool-label" class="fb-tool">✏️ טקסט קבוע</button>
             </div>
-            <div style="background:var(--bg);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--t2);margin-bottom:12px;line-height:1.5">
+            <div style="background:#f7f7f0;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.5;border:1px solid var(--bdr)">
               💡 לחץ על ה-PDF במקום שרוצה לשים שדה
             </div>
 
-            <div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:8px;text-transform:uppercase;margin-top:14px">שדות שהוספתי</div>
-            <div id="fb-fields-list" style="max-height:280px;overflow-y:auto;font-size:12px"></div>
+            <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:10px;margin-top:18px;letter-spacing:.3px">שדות שהוספתי</div>
+            <div id="fb-fields-list" style="max-height:300px;overflow-y:auto;font-size:13px"></div>
           </div>
         </div>
       </div>
@@ -4635,9 +4829,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 @media(max-width:900px){.cal-main-grid{grid-template-columns:1fr!important}.cal-alerts-card{order:2}}
 
 /* Form builder field type buttons */
-.fb-tool{padding:10px 8px;border:1.5px solid var(--bdr2);background:var(--bg);color:var(--t2);border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s;font-weight:500}
-.fb-tool:hover{border-color:var(--gd);color:var(--gd)}
-.fb-tool.active{background:var(--gd);color:#fff;border-color:var(--gd)}
+.fb-tool{padding:12px 10px;border:1.5px solid var(--bdr2);background:var(--bg);color:var(--t2);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s;font-weight:500}
+.fb-tool:hover{border-color:var(--gd);color:var(--gd);background:#f7f7f0}
+.fb-tool.active{background:var(--gd);color:#fff;border-color:var(--gd);box-shadow:0 2px 6px rgba(29,158,117,.25)}
 
 /* ── Violations grid redesign ── */
 .viol-container{background:var(--card);border-radius:14px;border:1px solid var(--bdr);overflow:hidden}
@@ -4708,6 +4902,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <!-- PDF.js for rendering PDFs, pdf-lib for generating filled PDFs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
@@ -4727,12 +4922,143 @@ const firebaseConfig = {
   appId: "1:478918834303:web:59b3b2f3e0a34c5ba1e74a"
 };
 let db=null;
+let auth=null;
 try{
   firebase.initializeApp(firebaseConfig);
   db=firebase.firestore();
+  auth=firebase.auth();
   console.log('✅ Firebase מחובר');
 }catch(e){
   console.error('⚠️ Firebase לא זמין:',e);
+}
+
+// ════════════════════════════════════════════════════════════
+// AUTHENTICATION LOGIC - מערכת אימות
+// ════════════════════════════════════════════════════════════
+(function(){
+  // אם יש טוקן ציבורי ב-URL (אישור הסבה / עדכון ק"מ / העלאת מסמך)
+  // לא דורשים לוגין - המסך הציבורי יטופל בנפרד
+  var params = new URLSearchParams(location.search);
+  var hasPublicToken = params.get('approve') || params.get('km') || params.get('du') || params.get('docupload') || params.get('payment');
+  if(hasPublicToken){
+    document.body.classList.remove('auth-loading');
+    document.body.classList.add('logged-in'); // נסתיר את מסך הלוגין
+    return; // אין צורך בבדיקת לוגין
+  }
+
+  if(!auth){
+    // Firebase לא זמין - אסור להציג את המערכת בלי אימות
+    console.error('Firebase Auth לא זמין - לא ניתן לאמת משתמש');
+    document.body.classList.remove('auth-loading');
+    document.body.classList.add('not-logged-in');
+    return;
+  }
+
+  // האזנה לשינויים במצב ההתחברות
+  auth.onAuthStateChanged(function(user){
+    document.body.classList.remove('auth-loading');
+    if(user){
+      // מחובר ✅
+      document.body.classList.remove('not-logged-in');
+      document.body.classList.add('logged-in');
+      console.log('✅ מחובר כ:', user.email);
+    } else {
+      // לא מחובר ❌
+      document.body.classList.remove('logged-in');
+      document.body.classList.add('not-logged-in');
+      console.log('🔒 לא מחובר - מציג מסך לוגין');
+    }
+  });
+})();
+
+// פונקציית לוגין
+function doLogin(event){
+  if(event) event.preventDefault();
+  var email = document.getElementById('login-email').value.trim();
+  var password = document.getElementById('login-password').value;
+  var errEl = document.getElementById('login-error');
+  var btn = document.getElementById('login-btn');
+
+  errEl.classList.remove('show');
+  errEl.textContent = '';
+
+  if(!email || !password){
+    errEl.textContent = 'יש למלא אימייל וסיסמה';
+    errEl.classList.add('show');
+    return false;
+  }
+
+  if(!auth){
+    errEl.textContent = 'מערכת האימות לא זמינה. נסה לרענן את הדף.';
+    errEl.classList.add('show');
+    return false;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'מתחבר...';
+
+  // קביעת persistence לפי הצ'קבוקס "זכור אותי"
+  // LOCAL = נשאר מחובר גם אחרי סגירת הדפדפן
+  // SESSION = מתנתק כשסוגרים את הטאב/דפדפן
+  var rememberMe = document.getElementById('login-remember');
+  var isRemember = rememberMe ? rememberMe.checked : true;
+  var persistenceType = isRemember
+    ? firebase.auth.Auth.Persistence.LOCAL
+    : firebase.auth.Auth.Persistence.SESSION;
+
+  auth.setPersistence(persistenceType)
+    .then(function(){
+      return auth.signInWithEmailAndPassword(email, password);
+    })
+    .then(function(){
+      // הצלחה - onAuthStateChanged יטפל בהצגת המערכת
+      btn.textContent = '✓ התחברת בהצלחה';
+    })
+    .catch(function(error){
+      btn.disabled = false;
+      btn.textContent = 'התחבר';
+      var msg = 'שגיאה בהתחברות';
+      if(error.code === 'auth/invalid-email') msg = 'כתובת אימייל לא תקינה';
+      else if(error.code === 'auth/user-not-found') msg = 'משתמש לא קיים במערכת';
+      else if(error.code === 'auth/wrong-password') msg = 'סיסמה שגויה';
+      else if(error.code === 'auth/invalid-credential') msg = 'אימייל או סיסמה שגויים';
+      else if(error.code === 'auth/too-many-requests') msg = 'יותר מדי ניסיונות. נסה שוב בעוד מספר דקות.';
+      else if(error.code === 'auth/network-request-failed') msg = 'בעיית חיבור לאינטרנט';
+      else if(error.code === 'auth/user-disabled') msg = 'משתמש מושבת. פנה למנהל המערכת.';
+      else msg = 'שגיאה: ' + (error.message || error.code);
+      errEl.textContent = msg;
+      errEl.classList.add('show');
+      console.error('Login error:', error);
+    });
+  return false;
+}
+
+// פונקציית התנתקות
+function doLogout(){
+  // סגירת תפריט המשתמש אם פתוח
+  var menu = document.getElementById('sb-user-menu');
+  if(menu) menu.remove();
+
+  if(!confirm('להתנתק מהמערכת?')) return;
+
+  if(!auth){
+    location.reload();
+    return;
+  }
+
+  auth.signOut().then(function(){
+    console.log('🔒 התנתקת בהצלחה');
+    // ניקוי שדות הלוגין
+    var emailInp = document.getElementById('login-email');
+    var passInp = document.getElementById('login-password');
+    if(emailInp) emailInp.value = '';
+    if(passInp) passInp.value = '';
+    // רענון הדף כדי לוודא ניקוי מצב
+    setTimeout(function(){ location.reload(); }, 300);
+  }).catch(function(e){
+    console.error('Logout error:', e);
+    alert('שגיאה בהתנתקות: ' + e.message);
+  });
 }
 
 // ── PUBLIC DOC UPLOAD PAGE ──
@@ -5209,7 +5535,7 @@ function toggleSbUserMenu(){
   var m=document.createElement('div');
   m.id='sb-user-menu';
   m.style.cssText='position:fixed;bottom:60px;right:16px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:300;min-width:180px;padding:6px;direction:rtl';
-  m.innerHTML='<div onclick="go(\'settings\',q(\'[dp=settings]\'));document.getElementById(\'sb-user-menu\').remove()" style="padding:9px 14px;font-size:13px;color:#1A1A1A;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s" onmouseover="this.style.background=\'#F1EFE8\'" onmouseout="this.style.background=\'transparent\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09"/></svg>הגדרות</div>';
+  m.innerHTML='<div onclick="doLogout()" style="padding:9px 14px;font-size:13px;color:#dc2626;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s" onmouseover="this.style.background=\'#FEF2F2\'" onmouseout="this.style.background=\'transparent\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>התנתק</div>';
   document.body.appendChild(m);
   setTimeout(function(){document.addEventListener('click',function handler(e){if(!m.contains(e.target)){m.remove();document.removeEventListener('click',handler);}});},10);
 }
@@ -13563,25 +13889,25 @@ function renderFormTemplates(){
   const templates=getFormTemplates();
   id('forms-count').textContent=templates.length;
   if(!templates.length){
-    el.innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--t3)"><div style="font-size:48px;margin-bottom:12px">📄</div><div style="font-size:15px;font-weight:500;margin-bottom:6px">אין טפסים עדיין</div><div style="font-size:13px">לחץ "+ טופס חדש" כדי להעלות PDF ולסמן שדות</div></div>';
+    el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:36px;margin-bottom:8px">📄</div><div style="font-size:14px;font-weight:500;margin-bottom:4px">אין טפסים עדיין</div><div style="font-size:12px">לחץ "+ טופס חדש" כדי להעלות PDF ולסמן שדות</div></div>';
     return;
   }
-  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">'+
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">'+
     templates.map(function(t){
       const fieldsCount=(t.fields||[]).length;
       const createdStr=t.createdAt?fd(t.createdAt.split('T')[0]):'';
-      return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:14px;transition:box-shadow .15s" onmouseover="this.style.boxShadow=\'0 2px 12px rgba(0,0,0,.08)\'" onmouseout="this.style.boxShadow=\'none\'">'+
-        '<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">'+
-          '<div style="font-size:28px;flex-shrink:0">📄</div>'+
+      return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;transition:box-shadow .15s" onmouseover="this.style.boxShadow=\'0 2px 10px rgba(0,0,0,.06)\'" onmouseout="this.style.boxShadow=\'none\'">'+
+        '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">'+
+          '<div style="font-size:22px;flex-shrink:0">📄</div>'+
           '<div style="flex:1;min-width:0">'+
-            '<div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:2px">'+(t.name||'ללא שם')+'</div>'+
+            '<div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:2px">'+(t.name||'ללא שם')+'</div>'+
             '<div style="font-size:11px;color:var(--t3)">'+fieldsCount+' שדות · נוצר '+createdStr+'</div>'+
           '</div>'+
         '</div>'+
-        '<div style="display:flex;gap:5px;flex-wrap:wrap">'+
-          '<button onclick="shareFormTemplate(\''+t.id+'\')" style="flex:1;background:var(--gd);color:#fff;border:none;border-radius:6px;padding:7px 10px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500">🔗 שלח לנהג</button>'+
-          '<button onclick="editFormTemplate(\''+t.id+'\')" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);border-radius:6px;padding:7px 10px;cursor:pointer;font-size:12px;font-family:inherit">ערוך</button>'+
-          '<button onclick="deleteFormTemplate(\''+t.id+'\')" style="background:none;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;padding:7px 9px;cursor:pointer;font-size:13px">🗑</button>'+
+        '<div style="display:flex;gap:4px;flex-wrap:wrap">'+
+          '<button onclick="shareFormTemplate(\''+t.id+'\')" style="flex:1;background:var(--gd);color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500">🔗 שלח לנהג</button>'+
+          '<button onclick="editFormTemplate(\''+t.id+'\')" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:inherit">ערוך</button>'+
+          '<button onclick="deleteFormTemplate(\''+t.id+'\')" style="background:none;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:12px">🗑</button>'+
         '</div>'+
       '</div>';
     }).join('')+'</div>';
@@ -13594,32 +13920,32 @@ function renderFormSubmissions(){
     return (b.submittedAt||'').localeCompare(a.submittedAt||'');
   });
   if(!subs.length){
-    el.innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--t3)"><div style="font-size:40px;margin-bottom:10px">📥</div><div style="font-size:14px">אין תגובות עדיין</div><div style="font-size:12px;margin-top:6px">ברגע שנהג ימלא טופס, הוא יופיע כאן בזמן אמת</div></div>';
+    el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:32px;margin-bottom:8px">📥</div><div style="font-size:14px">אין תגובות עדיין</div><div style="font-size:12px;margin-top:4px">ברגע שנהג ימלא טופס, הוא יופיע כאן בזמן אמת</div></div>';
     return;
   }
-  el.innerHTML='<div style="display:flex;flex-direction:column;gap:8px">'+
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:8px">'+
     subs.map(function(s){
       const d=s.submittedAt?new Date(s.submittedAt):null;
       const dateStr=d?d.toLocaleDateString('he-IL')+' '+d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}):'';
       const isNew=s.status==='new';
       const fieldsFilled=Object.keys(s.responses||{}).length;
       const signsFilled=Object.keys(s.signatures||{}).length;
-      return '<div style="background:var(--card);border:1px solid var(--bdr);border-right:3px solid '+(isNew?'#16a34a':'#c8d6c8')+';border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:box-shadow .15s" onclick="viewSubmission(\''+s.id+'\')" onmouseover="this.style.boxShadow=\'0 2px 10px rgba(0,0,0,.08)\'" onmouseout="this.style.boxShadow=\'none\'">'+
-        '<div style="font-size:28px;flex-shrink:0">📄</div>'+
+      return '<div style="background:var(--card);border:1px solid var(--bdr);border-right:3px solid '+(isNew?'#16a34a':'#c8d6c8')+';border-radius:8px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:box-shadow .15s" onclick="viewSubmission(\''+s.id+'\')" onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.06)\'" onmouseout="this.style.boxShadow=\'none\'">'+
+        '<div style="font-size:22px;flex-shrink:0">📄</div>'+
         '<div style="flex:1;min-width:0">'+
-          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">'+
-            '<span style="font-size:14px;font-weight:600;color:var(--t1)">'+(s.templateName||'ללא שם')+'</span>'+
-            (isNew?'<span style="font-size:10px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:999px;font-weight:600">חדש</span>':'')+
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">'+
+            '<span style="font-size:13px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(s.templateName||'ללא שם')+'</span>'+
+            (isNew?'<span style="font-size:10px;background:#dcfce7;color:#166534;padding:1px 7px;border-radius:999px;font-weight:600;flex-shrink:0">חדש</span>':'')+
           '</div>'+
-          '<div style="font-size:12px;color:var(--t3);display:flex;gap:10px;flex-wrap:wrap">'+
+          '<div style="font-size:11px;color:var(--t3);display:flex;gap:8px;flex-wrap:wrap">'+
             '<span>📅 '+dateStr+'</span>'+
             '<span>📝 '+fieldsFilled+' שדות</span>'+
-            (signsFilled?'<span>✍️ '+signsFilled+' חתימות</span>':'')+
+            (signsFilled?'<span>✍️ '+signsFilled+'</span>':'')+
           '</div>'+
         '</div>'+
-        '<div style="display:flex;gap:5px;flex-shrink:0" onclick="event.stopPropagation()">'+
-          '<button onclick="downloadSubmissionPdf(\''+s.id+'\')" title="הורד PDF" style="background:var(--gd);color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:inherit">📄 הורד</button>'+
-          '<button onclick="deleteSubmission(\''+s.id+'\')" title="מחק" style="background:none;border:1px solid #fca5a5;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:13px;color:#dc2626">🗑</button>'+
+        '<div style="display:flex;gap:4px;flex-shrink:0" onclick="event.stopPropagation()">'+
+          '<button onclick="downloadSubmissionPdf(\''+s.id+'\')" title="הורד PDF" style="background:var(--gd);color:#fff;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:11px;font-family:inherit">📄 הורד</button>'+
+          '<button onclick="deleteSubmission(\''+s.id+'\')" title="מחק" style="background:none;border:1px solid #fca5a5;border-radius:6px;padding:5px 7px;cursor:pointer;font-size:11px;color:#dc2626">🗑</button>'+
         '</div>'+
       '</div>';
     }).join('')+
