@@ -4376,6 +4376,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="upd-toll-6n" style="accent-color:var(--gl);width:14px;height:14px"> כביש 6 צפון</label>
             <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="upd-toll-carmel" style="accent-color:var(--gl);width:14px;height:14px"> מנהרות הכרמל</label>
             <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="upd-toll-fastlane" style="accent-color:var(--gl);width:14px;height:14px"> הנתיב המהיר</label>
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="upd-toll-365" style="accent-color:var(--gl);width:14px;height:14px"> 365</label>
           </div>
         </div>
         <!-- Service section -->
@@ -4495,6 +4496,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-6n" style="accent-color:var(--gl);width:14px;height:14px"> כביש 6 צפון</label>
             <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-carmel" style="accent-color:var(--gl);width:14px;height:14px"> מנהרות הכרמל</label>
             <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-fastlane" style="accent-color:var(--gl);width:14px;height:14px"> הנתיב המהיר</label>
+            <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)"><input type="checkbox" id="ev-toll-365" style="accent-color:var(--gl);width:14px;height:14px"> 365</label>
           </div>
         </div>
       </div>
@@ -4673,6 +4675,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </label>
           <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)">
             <input type="checkbox" id="toll-fastlane" style="accent-color:var(--gl);width:14px;height:14px"> הנתיב המהיר
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:20px;color:var(--t1);padding:5px 8px;border-radius:6px;border:1px solid var(--bdr);background:var(--card)">
+            <input type="checkbox" id="toll-365" style="accent-color:var(--gl);width:14px;height:14px"> 365
           </label>
         </div>
       </div></div>
@@ -7512,8 +7517,8 @@ function openUpdateModal(vid){
   id('upd-plate').value=v.plate||'';id('upd-code').value=v.code||'';
   id('upd-make').value=v.make||'';id('upd-model').value=v.model||'';
   id('upd-delivery').value=v.delivery||'';id('upd-lic').value=v.licenseExp||'';
-  ['upd-toll-6','upd-toll-6n','upd-toll-carmel','upd-toll-fastlane'].forEach((f,i)=>{
-    const el=id(f);if(el)el.checked=(v.tolls||[]).includes(['כביש 6','כביש 6 צפון','מנהרות הכרמל','הנתיב המהיר'][i]);
+  ['upd-toll-6','upd-toll-6n','upd-toll-carmel','upd-toll-fastlane','upd-toll-365'].forEach((f,i)=>{
+    const el=id(f);if(el)el.checked=(v.tolls||[]).includes(['כביש 6','כביש 6 צפון','מנהרות הכרמל','הנתיב המהיר','365'][i]);
   });
   const dn=document.getElementById('upd-driver-name');if(dn)dn.textContent=v.driver.name;
   id('upd-dname').value=v.driver.name||'';id('upd-did').value=v.driver.id||'';
@@ -7572,6 +7577,7 @@ function saveUpdate(){
     if(id('upd-toll-6n')?.checked)tolls.push('כביש 6 צפון');
     if(id('upd-toll-carmel')?.checked)tolls.push('מנהרות הכרמל');
     if(id('upd-toll-fastlane')?.checked)tolls.push('הנתיב המהיר');
+    if(id('upd-toll-365')?.checked)tolls.push('365');
     v.tolls=tolls;
     v.photo=null;
     v.isNew=!!id('upd-isnew')?.checked;
@@ -10392,7 +10398,7 @@ function openAdd(){
   id('fa-svc-type').value='';
   ['scan-v-status','scan-d-status'].forEach(x=>{id(x).textContent=''});
   ['scan-vehicle-zone','scan-driver-zone'].forEach(x=>{id(x).classList.remove('scan-filled')});
-  ['toll-6','toll-6n','toll-carmel','toll-fastlane'].forEach(x=>{id(x).checked=false});
+  ['toll-6','toll-6n','toll-carmel','toll-fastlane','toll-365'].forEach(x=>{id(x).checked=false});
 }
 
 function saveSystemName(){
@@ -10960,6 +10966,7 @@ function addVehicle(){
   if(id('toll-6n').checked)tolls.push('כביש 6 צפון');
   if(id('toll-carmel').checked)tolls.push('מנהרות הכרמל');
   if(id('toll-fastlane').checked)tolls.push('הנתיב המהיר');
+  if(id('toll-365').checked)tolls.push('365');
   const histEntry=[];
   if(delivery)histEntry.push({date:delivery,type:isNew?'מסירת רכב חדש':'מסירת רכב',km:0});
   if(lastService&&!isNew)histEntry.push({date:lastService,type:`טיפול ${serviceKm.toLocaleString('he-IL')} ק"מ`,km:serviceKm});
@@ -11104,6 +11111,7 @@ function openEditVehicle(vid){
   id('ev-toll-6n').checked=(v.tolls||[]).includes('כביש 6 צפון');
   id('ev-toll-carmel').checked=(v.tolls||[]).includes('מנהרות הכרמל');
   id('ev-toll-fastlane').checked=(v.tolls||[]).includes('הנתיב המהיר');
+  id('ev-toll-365').checked=(v.tolls||[]).includes('365');
   id('ev-dname').value=v.driver.name||'';
   id('ev-did').value=v.driver.id||'';
   id('ev-dphone').value=v.driver.phone||'';
@@ -11132,6 +11140,7 @@ function saveEditVehicle(){
   if(id('ev-toll-6n').checked)tolls.push('כביש 6 צפון');
   if(id('ev-toll-carmel').checked)tolls.push('מנהרות הכרמל');
   if(id('ev-toll-fastlane').checked)tolls.push('הנתיב המהיר');
+  if(id('ev-toll-365').checked)tolls.push('365');
   v.tolls=tolls;
   v.driver.name=id('ev-dname').value.trim()||v.driver.name;
   v.driver.id=id('ev-did').value.trim();
