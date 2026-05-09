@@ -1897,6 +1897,200 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 <meta name="theme-color" content="#0C2E5A">
 </head>
 <body>
+
+<!-- ════════════════════════════════════════════════════════
+     מסך לוגין - מוצג רק אם המשתמש לא מחובר
+     ════════════════════════════════════════════════════════ -->
+<style>
+  /* הסתרת המערכת עד שמתאמתים */
+  body.auth-loading .app,
+  body.auth-loading #login-screen { visibility: hidden; }
+
+  body.not-logged-in .app { display: none !important; }
+  body.logged-in #login-screen { display: none !important; }
+
+  /* רקע מסך הלוגין */
+  #login-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #F4F2EA 0%, #E8E4D8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    direction: rtl;
+    font-family: 'Heebo', 'Rubik', system-ui, -apple-system, sans-serif;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .login-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.04);
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .login-logo-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1D9E75 0%, #1A4A3A 100%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(29,158,117,.3);
+  }
+  .login-logo-circle svg { color: #fff; }
+
+  .login-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #1A1A1A;
+    text-align: center;
+    margin: 0 0 6px 0;
+  }
+  .login-subtitle {
+    font-size: 13px;
+    color: #5F5E5A;
+    text-align: center;
+    margin: 0 0 28px 0;
+  }
+
+  .login-field {
+    margin-bottom: 14px;
+  }
+  .login-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: #1A1A1A;
+    margin-bottom: 6px;
+  }
+  .login-field input {
+    width: 100%;
+    height: 42px;
+    padding: 0 14px;
+    border: 1.5px solid rgba(0,0,0,.12);
+    border-radius: 10px;
+    background: #FAFAF7;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1A1A1A;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color .15s, background .15s;
+  }
+  .login-field input:focus {
+    border-color: #1D9E75;
+    background: #fff;
+  }
+
+  .login-error {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #B91C1C;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .login-error.show { display: block; }
+
+  .login-btn {
+    width: 100%;
+    height: 44px;
+    background: #1D9E75;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s, transform .05s;
+    margin-top: 6px;
+  }
+  .login-btn:hover { background: #178A65; }
+  .login-btn:active { transform: translateY(1px); }
+  .login-btn:disabled {
+    background: #B5C9C0;
+    cursor: not-allowed;
+  }
+
+  /* Remember Me checkbox */
+  .login-remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 18px 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .login-remember input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #1D9E75;
+    cursor: pointer;
+    margin: 0;
+  }
+  .login-remember label {
+    font-size: 13px;
+    color: #5F5E5A;
+    cursor: pointer;
+    margin: 0;
+    font-weight: 400;
+  }
+</style>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-circle">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="3" width="15" height="13" rx="2"/>
+          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+          <circle cx="5.5" cy="18.5" r="2.5"/>
+          <circle cx="18.5" cy="18.5" r="2.5"/>
+        </svg>
+      </div>
+    </div>
+    <h1 class="login-title">מרכז הרכב של מור</h1>
+    <p class="login-subtitle">התחבר/י כדי להמשיך</p>
+
+    <div class="login-error" id="login-error"></div>
+
+    <form id="login-form" method="post" action="#" onsubmit="doLogin(event); return false;">
+      <div class="login-field">
+        <label for="login-email">אימייל</label>
+        <input type="email" id="login-email" name="email" autocomplete="username email" required dir="ltr" style="text-align:left">
+      </div>
+      <div class="login-field">
+        <label for="login-password">סיסמה</label>
+        <input type="password" id="login-password" name="password" autocomplete="current-password" required>
+      </div>
+      <div class="login-remember">
+        <input type="checkbox" id="login-remember" checked>
+        <label for="login-remember">זכור אותי</label>
+      </div>
+      <button type="submit" class="login-btn" id="login-btn">התחבר</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // עד שנדע אם המשתמש מחובר - נסתיר הכל
+  document.body.classList.add('auth-loading');
+</script>
+
 <div class="sb-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
 <div class="app">
 
@@ -4708,6 +4902,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <!-- PDF.js for rendering PDFs, pdf-lib for generating filled PDFs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
@@ -4727,12 +4922,143 @@ const firebaseConfig = {
   appId: "1:478918834303:web:59b3b2f3e0a34c5ba1e74a"
 };
 let db=null;
+let auth=null;
 try{
   firebase.initializeApp(firebaseConfig);
   db=firebase.firestore();
+  auth=firebase.auth();
   console.log('✅ Firebase מחובר');
 }catch(e){
   console.error('⚠️ Firebase לא זמין:',e);
+}
+
+// ════════════════════════════════════════════════════════════
+// AUTHENTICATION LOGIC - מערכת אימות
+// ════════════════════════════════════════════════════════════
+(function(){
+  // אם יש טוקן ציבורי ב-URL (אישור הסבה / עדכון ק"מ / העלאת מסמך)
+  // לא דורשים לוגין - המסך הציבורי יטופל בנפרד
+  var params = new URLSearchParams(location.search);
+  var hasPublicToken = params.get('approve') || params.get('km') || params.get('du') || params.get('docupload') || params.get('payment');
+  if(hasPublicToken){
+    document.body.classList.remove('auth-loading');
+    document.body.classList.add('logged-in'); // נסתיר את מסך הלוגין
+    return; // אין צורך בבדיקת לוגין
+  }
+
+  if(!auth){
+    // Firebase לא זמין - אסור להציג את המערכת בלי אימות
+    console.error('Firebase Auth לא זמין - לא ניתן לאמת משתמש');
+    document.body.classList.remove('auth-loading');
+    document.body.classList.add('not-logged-in');
+    return;
+  }
+
+  // האזנה לשינויים במצב ההתחברות
+  auth.onAuthStateChanged(function(user){
+    document.body.classList.remove('auth-loading');
+    if(user){
+      // מחובר ✅
+      document.body.classList.remove('not-logged-in');
+      document.body.classList.add('logged-in');
+      console.log('✅ מחובר כ:', user.email);
+    } else {
+      // לא מחובר ❌
+      document.body.classList.remove('logged-in');
+      document.body.classList.add('not-logged-in');
+      console.log('🔒 לא מחובר - מציג מסך לוגין');
+    }
+  });
+})();
+
+// פונקציית לוגין
+function doLogin(event){
+  if(event) event.preventDefault();
+  var email = document.getElementById('login-email').value.trim();
+  var password = document.getElementById('login-password').value;
+  var errEl = document.getElementById('login-error');
+  var btn = document.getElementById('login-btn');
+
+  errEl.classList.remove('show');
+  errEl.textContent = '';
+
+  if(!email || !password){
+    errEl.textContent = 'יש למלא אימייל וסיסמה';
+    errEl.classList.add('show');
+    return false;
+  }
+
+  if(!auth){
+    errEl.textContent = 'מערכת האימות לא זמינה. נסה לרענן את הדף.';
+    errEl.classList.add('show');
+    return false;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'מתחבר...';
+
+  // קביעת persistence לפי הצ'קבוקס "זכור אותי"
+  // LOCAL = נשאר מחובר גם אחרי סגירת הדפדפן
+  // SESSION = מתנתק כשסוגרים את הטאב/דפדפן
+  var rememberMe = document.getElementById('login-remember');
+  var isRemember = rememberMe ? rememberMe.checked : true;
+  var persistenceType = isRemember
+    ? firebase.auth.Auth.Persistence.LOCAL
+    : firebase.auth.Auth.Persistence.SESSION;
+
+  auth.setPersistence(persistenceType)
+    .then(function(){
+      return auth.signInWithEmailAndPassword(email, password);
+    })
+    .then(function(){
+      // הצלחה - onAuthStateChanged יטפל בהצגת המערכת
+      btn.textContent = '✓ התחברת בהצלחה';
+    })
+    .catch(function(error){
+      btn.disabled = false;
+      btn.textContent = 'התחבר';
+      var msg = 'שגיאה בהתחברות';
+      if(error.code === 'auth/invalid-email') msg = 'כתובת אימייל לא תקינה';
+      else if(error.code === 'auth/user-not-found') msg = 'משתמש לא קיים במערכת';
+      else if(error.code === 'auth/wrong-password') msg = 'סיסמה שגויה';
+      else if(error.code === 'auth/invalid-credential') msg = 'אימייל או סיסמה שגויים';
+      else if(error.code === 'auth/too-many-requests') msg = 'יותר מדי ניסיונות. נסה שוב בעוד מספר דקות.';
+      else if(error.code === 'auth/network-request-failed') msg = 'בעיית חיבור לאינטרנט';
+      else if(error.code === 'auth/user-disabled') msg = 'משתמש מושבת. פנה למנהל המערכת.';
+      else msg = 'שגיאה: ' + (error.message || error.code);
+      errEl.textContent = msg;
+      errEl.classList.add('show');
+      console.error('Login error:', error);
+    });
+  return false;
+}
+
+// פונקציית התנתקות
+function doLogout(){
+  // סגירת תפריט המשתמש אם פתוח
+  var menu = document.getElementById('sb-user-menu');
+  if(menu) menu.remove();
+
+  if(!confirm('להתנתק מהמערכת?')) return;
+
+  if(!auth){
+    location.reload();
+    return;
+  }
+
+  auth.signOut().then(function(){
+    console.log('🔒 התנתקת בהצלחה');
+    // ניקוי שדות הלוגין
+    var emailInp = document.getElementById('login-email');
+    var passInp = document.getElementById('login-password');
+    if(emailInp) emailInp.value = '';
+    if(passInp) passInp.value = '';
+    // רענון הדף כדי לוודא ניקוי מצב
+    setTimeout(function(){ location.reload(); }, 300);
+  }).catch(function(e){
+    console.error('Logout error:', e);
+    alert('שגיאה בהתנתקות: ' + e.message);
+  });
 }
 
 // ── PUBLIC DOC UPLOAD PAGE ──
@@ -5209,7 +5535,7 @@ function toggleSbUserMenu(){
   var m=document.createElement('div');
   m.id='sb-user-menu';
   m.style.cssText='position:fixed;bottom:60px;right:16px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:300;min-width:180px;padding:6px;direction:rtl';
-  m.innerHTML='<div onclick="go(\'settings\',q(\'[dp=settings]\'));document.getElementById(\'sb-user-menu\').remove()" style="padding:9px 14px;font-size:13px;color:#1A1A1A;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s" onmouseover="this.style.background=\'#F1EFE8\'" onmouseout="this.style.background=\'transparent\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09"/></svg>הגדרות</div>';
+  m.innerHTML='<div onclick="doLogout()" style="padding:9px 14px;font-size:13px;color:#dc2626;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s" onmouseover="this.style.background=\'#FEF2F2\'" onmouseout="this.style.background=\'transparent\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>התנתק</div>';
   document.body.appendChild(m);
   setTimeout(function(){document.addEventListener('click',function handler(e){if(!m.contains(e.target)){m.remove();document.removeEventListener('click',handler);}});},10);
 }
