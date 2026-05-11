@@ -3457,7 +3457,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </div>
           <div class="sched-field" style="margin-bottom:16px;margin-top:10px">
             <span class="sched-field-label">שעת בדיקה יומית</span>
-            <input type="time" id="sched-daily-check-time" value="08:00" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:14px;background:var(--bg);color:var(--t1);direction:ltr">
+            <div style="direction:ltr;display:inline-block">
+              <input type="time" id="sched-daily-check-time" value="08:00" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:14px;background:var(--bg);color:var(--t1);unicode-bidi:plaintext;direction:ltr;width:120px">
+            </div>
             <span class="sched-field-unit" style="font-size:11px;color:var(--t3)">מדי יום</span>
           </div>
 
