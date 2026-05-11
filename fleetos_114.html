@@ -3450,10 +3450,15 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <span class="sched-field-unit">ימים</span>
             </div>
           </div>
-          <div class="sched-field" style="margin-bottom:16px">
+          <div class="sched-field">
             <span class="sched-field-label">טווח סריקה קדימה</span>
             <input type="number" id="sched-scan-range" min="1" max="180" value="30">
             <span class="sched-field-unit">ימים</span>
+          </div>
+          <div class="sched-field" style="margin-bottom:16px;margin-top:10px">
+            <span class="sched-field-label">שעת בדיקה יומית</span>
+            <input type="time" id="sched-daily-check-time" value="08:00" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:6px;font-size:14px;background:var(--bg);color:var(--t1);direction:ltr">
+            <span class="sched-field-unit" style="font-size:11px;color:var(--t3)">מדי יום</span>
           </div>
 
           <!-- קבוצה 2: תפעול שוטף -->
@@ -5538,6 +5543,28 @@ function saveSettings(obj){
   const s = getSettings();
   Object.assign(s,obj);
   localStorage.setItem('fleetSettings', JSON.stringify(s));
+}
+
+// ── בדיקה יומית אוטומטית ──
+var _dailyCheckLastRun = '';
+function startDailyCheckScheduler(){
+  function tick(){
+    var s=getSettings();
+    var target=s.schedDailyCheckTime||'08:00';
+    var now=new Date();
+    var hh=String(now.getHours()).padStart(2,'0');
+    var mm=String(now.getMinutes()).padStart(2,'0');
+    var nowStr=hh+':'+mm;
+    var todayKey=now.toISOString().split('T')[0]+'|'+target;
+    if(nowStr===target && _dailyCheckLastRun!==todayKey){
+      _dailyCheckLastRun=todayKey;
+      console.log('[בדיקה יומית] מריץ סריקות אוטומטיות בשעה',nowStr);
+      if(typeof checkPendingReminders==='function') checkPendingReminders();
+      if(typeof checkAutoReminders==='function') checkAutoReminders();
+      showToast('✓ בדיקה יומית הושלמה');
+    }
+  }
+  setInterval(tick, 60000);
 }
 
 function getSubscriptionTypes(){
@@ -10716,6 +10743,7 @@ function applySystemName(){
   if(inp) inp.value=name;
 }
 document.addEventListener('DOMContentLoaded',function(){setTimeout(applySystemName,100);});
+document.addEventListener('DOMContentLoaded',function(){startDailyCheckScheduler();});
 
 function showAttentionDetails(){
   var altCount=(countDriversOnAlt()||{}).total||0;
@@ -18031,6 +18059,8 @@ function saveSchedulingSettings(){
   if(slaEl) s.schedApprovalSla=parseInt(slaEl.value)||3;
   var postEl=document.getElementById('sched-post-reminder');
   if(postEl) s.schedPostReminder=parseInt(postEl.value)||5;
+  var timeEl=document.getElementById('sched-daily-check-time');
+  if(timeEl&&timeEl.value) s.schedDailyCheckTime=timeEl.value;
   localStorage.setItem('fleetSettings',JSON.stringify(s));
   // שמור גם ל-Firestore settings/treatments
   if(typeof db!=='undefined'&&db){
@@ -18071,6 +18101,8 @@ function initSchedulingSettings(){
     el=document.getElementById('sched-driver-reminder');if(el)el.value=ts.reminderIntervalDays||5;
     el=document.getElementById('sched-approval-sla');if(el)el.value=ts.approvalSlaDays||3;
     el=document.getElementById('sched-post-reminder');if(el)el.value=ts.postTreatmentReminderDays||5;
+    var ls2=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+    el=document.getElementById('sched-daily-check-time');if(el)el.value=ls2.schedDailyCheckTime||'08:00';
   }else{
     var ls=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
     var el;
@@ -18079,6 +18111,7 @@ function initSchedulingSettings(){
     el=document.getElementById('sched-driver-reminder');if(el)el.value=ls.schedDriverReminder||5;
     el=document.getElementById('sched-approval-sla');if(el)el.value=ls.schedApprovalSla||3;
     el=document.getElementById('sched-post-reminder');if(el)el.value=ls.schedPostReminder||5;
+    el=document.getElementById('sched-daily-check-time');if(el)el.value=ls.schedDailyCheckTime||'08:00';
   }
 }
 
