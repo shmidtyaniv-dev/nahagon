@@ -3655,7 +3655,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div class="settings-danger-item">
             <div class="settings-danger-item-info">
               <div class="settings-danger-item-title">נקה את כל נתוני הרכבים</div>
-              <div class="settings-danger-item-desc">ימחק את כל הרכבים, הנהגים וההיסטוריה מ-Firestore</div>
+              <div class="settings-danger-item-desc">ימחק את כל הרכבים, טיפולים, טסטים, תאונות, דוחות תנועה ומשימות מ-Firestore</div>
             </div>
             <button class="settings-btn settings-btn-danger-outline" onclick="clearAllVehiclesData()">מחק נתונים</button>
           </div>
@@ -10422,20 +10422,52 @@ function startDocUploadsListener(){
 
 // Reset ALL vehicles data (for fresh start)
 function clearAllVehiclesData(){
-  if(!confirm('⚠️ למחוק את כל הנתונים של הרכבים? פעולה זו לא ניתנת לשחזור!'))return;
-  if(!confirm('בטוח? כל הרכבים, הנהגים, המסמכים וההיסטוריה יימחקו!'))return;
+  if(!confirm('⚠️ למחוק את כל נתוני המערכת?\nרכבים, טיפולים, טסטים, תאונות, דוחות תנועה, משימות — הכל!\nפעולה זו לא ניתנת לשחזור!'))return;
+  if(!confirm('בטוח לגמרי? אין דרך חזרה!'))return;
   if(!db){alert('אין חיבור לשרת');return;}
   showToast('מוחק את כל הנתונים...');
-  db.collection('vehicles').get().then(function(snap){
-    const batch=db.batch();
-    snap.forEach(function(doc){batch.delete(doc.ref);});
-    return batch.commit();
-  }).then(function(){
-    vehicles.length=0;
-    refresh();
-    if(typeof renderV==='function')renderV();
-    showToast('✓ כל הנתונים נמחקו');
-  }).catch(function(e){console.error(e);showToast('שגיאה: '+e.message);});
+
+  // מחיקת כל האוספים הרלוונטיים ב-Firestore
+  const collections = ['vehicles','treatments','accidents','violations','tasks'];
+  const deleteCollection = function(colName){
+    return db.collection(colName).get().then(function(snap){
+      if(snap.empty) return;
+      // Firestore batch מוגבל ל-500 פעולות
+      var batches = [];
+      var batch = db.batch();
+      var count = 0;
+      snap.forEach(function(doc){
+        batch.delete(doc.ref);
+        count++;
+        if(count === 499){
+          batches.push(batch.commit());
+          batch = db.batch();
+          count = 0;
+        }
+      });
+      if(count > 0) batches.push(batch.commit());
+      return Promise.all(batches);
+    });
+  };
+
+  Promise.all(collections.map(deleteCollection))
+    .then(function(){
+      // נקה מערכים מקומיים
+      vehicles.length = 0;
+      violationsList.length = 0;
+      accidentsList.length = 0;
+      tasks.length = 0;
+      if(typeof TREATMENT_STATE !== 'undefined') TREATMENT_STATE.treatments = [];
+      // רענן תצוגה
+      refresh();
+      if(typeof renderV === 'function') renderV();
+      if(typeof renderViolations === 'function') renderViolations();
+      if(typeof renderAccidents === 'function') renderAccidents();
+      if(typeof renderTasks === 'function') renderTasks();
+      if(typeof renderDash === 'function') renderDash();
+      showToast('✓ כל הנתונים נמחקו');
+    })
+    .catch(function(e){ console.error(e); showToast('שגיאה: ' + e.message); });
 }
 
 function addCustomMandatoryDoc(vid){
