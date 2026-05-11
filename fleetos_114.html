@@ -10432,6 +10432,9 @@ function clearAllVehiclesData(){
   accidentsList.length = 0;
   tasks.length = 0;
   if(typeof TREATMENT_STATE !== 'undefined') TREATMENT_STATE.treatments = [];
+  // ארכיון — שמור ב-localStorage
+  archivedVehicles.length = 0;
+  localStorage.removeItem('archivedVehicles');
   // סמן sync-listeners כ-loaded=false כדי שלא יחזירו נתונים ישנים
   if(typeof _syncRegistry !== 'undefined'){
     ['accidents','violations','serviceBookings'].forEach(function(k){
