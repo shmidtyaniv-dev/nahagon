@@ -2117,6 +2117,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
       <button type="submit" class="login-btn" id="login-btn">התחבר</button>
     </form>
+    <div style="text-align:center;margin-top:14px">
+      <button onclick="loginForgotPassword()" style="background:none;border:none;color:rgba(255,255,255,0.6);font-size:13px;cursor:pointer;font-family:inherit;text-decoration:underline;padding:0">שכחתי סיסמה</button>
+    </div>
+    <div id="login-forgot-msg" style="text-align:center;margin-top:8px;font-size:12px;min-height:16px"></div>
   </div>
 </div>
 
@@ -5946,6 +5950,28 @@ function sendPasswordReset(){
     })
     .catch(function(err){
       show('שגיאה בשליחת המייל: ' + err.message, false);
+    });
+}
+
+function loginForgotPassword(){
+  const email = document.getElementById('login-email').value.trim();
+  const msgEl = document.getElementById('login-forgot-msg');
+  if(!email){
+    msgEl.style.color='#ffcccc';
+    msgEl.textContent='יש להזין אימייל בשדה למעלה תחילה';
+    return;
+  }
+  auth.sendPasswordResetEmail(email)
+    .then(function(){
+      msgEl.style.color='#bbf7d0';
+      msgEl.textContent='✓ קישור איפוס נשלח ל: ' + email;
+    })
+    .catch(function(err){
+      msgEl.style.color='#ffcccc';
+      if(err.code==='auth/user-not-found' || err.code==='auth/invalid-email')
+        msgEl.textContent='האימייל לא נמצא במערכת';
+      else
+        msgEl.textContent='שגיאה: ' + err.message;
     });
 }
 
