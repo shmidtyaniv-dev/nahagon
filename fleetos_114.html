@@ -9024,6 +9024,7 @@ function vcTab(name,el){
     const panel=id('vct-'+name);
     if(panel) panel.style.display='block';
   }
+  if(name==='violations') renderVehicleViolations();
   if(el) el.classList.add('active');
 }
 
@@ -9456,7 +9457,7 @@ function openDet(vid){
   statusPill.innerHTML=sl==='danger'?'דורש טיפול':sl==='warn'?'שים לב':'פעיל';
 
   // violations badge
-  const vViolations=violations.filter(x=>x.plate===v.plate);
+  const vViolations=violationsList.filter(x=>x.vehicleId===v.id);
   const vb=id('vc-viol-badge');
   if(vViolations.length){vb.style.display='inline';vb.textContent=vViolations.length}else{vb.style.display='none'}
 
@@ -11717,7 +11718,7 @@ function renderViolations(){
       }
     }
 
-    html+=`<div class="viol-row viol-data-row" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.9fr 1.1fr">
+    html+=`<div class="viol-row viol-data-row" data-vid="${v.id}" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.9fr 1.1fr">
       <div class="viol-driver">
         <div class="viol-avatar" style="background:${ac}">${ini}</div>
         <div><div class="viol-driver-name">${driverName}</div>${v.transferDate?`<div style="font-size:10px;color:#5F5E5A;margin-top:1px">הסבה: ${fd(v.transferDate)}</div>`:''}</div>
@@ -12838,6 +12839,72 @@ function startViolApprovalsListener(){
       if(typeof _currentVid!=='undefined' && _currentVid && typeof renderVcViolations==='function') renderVcViolations(_currentVid);
     }
   },function(err){console.error('שגיאה ב-listener של Firebase:',err);});
+}
+
+/* ── VEHICLE CARD VIOLATIONS ── */
+function renderVehicleViolations(){
+  const v=vehicles.find(x=>x.id===_currentVid);if(!v)return;
+  const list=violationsList.filter(x=>x.vehicleId===v.id);
+  const cont=id('vc-violations-content');if(!cont)return;
+  if(!list.length){
+    cont.innerHTML=`<div style="text-align:center;padding:32px 0;color:var(--t3);font-size:14px">אין דוחות תנועה לרכב זה</div>`;
+    return;
+  }
+
+  // Compute auto-status same as main list
+  function getAutoStatus(viol){
+    const isPayment=viol.processType==='payment';
+    if(viol.paymentReceipt) return {label:'שולם',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
+    if(isPayment){
+      if(viol.noticeApprovedAt) return {label:'נהג אישר ושילם',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
+      if(viol.noticeSentAt) return {label:'נשלח לתשלום',style:'background:#E6F1FB;color:#185FA5',dot:'#378ADD'};
+      return {label:'טרם נשלח',style:'background:#F1EFE8;color:#444441',dot:'#888780'};
+    }
+    if(viol.transferApprovedAt) return {label:'נהג אישר הסבה',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
+    if(viol.transferSentAt) return {label:'נשלחה הסבה לנהג',style:'background:#E6F1FB;color:#185FA5',dot:'#378ADD'};
+    if(viol.noticeApprovedAt) return {label:'נהג אישר קיום הדוח',style:'background:#FAEEDA;color:#854F0B',dot:'#BA7517'};
+    if(viol.noticeSentAt) return {label:'נשלחה הודעה לנהג',style:'background:#FAEEDA;color:#854F0B',dot:'#BA7517'};
+    return {label:'טרם נשלח',style:'background:#F1EFE8;color:#444441',dot:'#888780'};
+  }
+
+  let html=`<div class="tw" style="border-radius:var(--r);overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--bg);border-bottom:1px solid var(--bdr)">
+      <span style="font-size:13px;font-weight:600;color:var(--t1)">דוחות תנועה (${list.length})</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse"><thead><tr>
+      <th style="padding:8px 12px;font-size:11px;color:var(--t3);font-weight:500;text-align:right">מ. דוח</th>
+      <th style="padding:8px 12px;font-size:11px;color:var(--t3);font-weight:500;text-align:right">תאריך עבירה</th>
+      <th style="padding:8px 12px;font-size:11px;color:var(--t3);font-weight:500;text-align:right">סכום</th>
+      <th style="padding:8px 12px;font-size:11px;color:var(--t3);font-weight:500;text-align:right">סטטוס</th>
+      <th style="padding:8px 12px;font-size:11px;color:var(--t3);font-weight:500;text-align:center"></th>
+    </tr></thead><tbody>`;
+
+  list.forEach(function(viol){
+    const st=getAutoStatus(viol);
+    html+=`<tr style="border-top:1px solid var(--bdr)">
+      <td style="padding:9px 12px;font-family:monospace;color:var(--gd);font-weight:600;font-size:13px">${viol.num}</td>
+      <td style="padding:9px 12px;font-size:12px;color:var(--t2)">${fd(viol.date)}</td>
+      <td style="padding:9px 12px;font-size:13px;font-weight:500">${viol.amount||'—'}</td>
+      <td style="padding:9px 12px"><span style="display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:500;${st.style};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${st.dot};flex-shrink:0"></span>${st.label}</span></td>
+      <td style="padding:9px 12px;text-align:center"><button onclick="goToViolation(${viol.id})" style="background:var(--gd);color:#fff;border:none;border-radius:6px;padding:4px 11px;cursor:pointer;font-size:11px;white-space:nowrap;font-family:inherit">עבור לדוח ←</button></td>
+    </tr>`;
+  });
+
+  html+=`</tbody></table></div>`;
+  cont.innerHTML=html;
+}
+
+function goToViolation(violId){
+  go('violations', document.querySelector('[dp=violations]'));
+  setTimeout(function(){
+    const row=document.querySelector('.viol-data-row[data-vid="'+violId+'"]');
+    if(!row)return;
+    row.scrollIntoView({behavior:'smooth',block:'center'});
+    const orig=row.style.background;
+    row.style.transition='background 0.3s';
+    row.style.background='rgba(99,102,241,0.15)';
+    setTimeout(function(){row.style.background=orig||'';row.style.transition='';},1800);
+  },80);
 }
 
 /* ── ACCIDENTS DATA ── */
