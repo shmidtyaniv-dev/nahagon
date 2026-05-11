@@ -10425,14 +10425,32 @@ function clearAllVehiclesData(){
   if(!confirm('⚠️ למחוק את כל נתוני המערכת?\nרכבים, טיפולים, טסטים, תאונות, דוחות תנועה, משימות — הכל!\nפעולה זו לא ניתנת לשחזור!'))return;
   if(!confirm('בטוח לגמרי? אין דרך חזרה!'))return;
   if(!db){alert('אין חיבור לשרת');return;}
+
+  // ── שלב 1: נקה מיידית את כל המערכים המקומיים וחדש תצוגה ──
+  vehicles.length = 0;
+  violationsList.length = 0;
+  accidentsList.length = 0;
+  tasks.length = 0;
+  if(typeof TREATMENT_STATE !== 'undefined') TREATMENT_STATE.treatments = [];
+  // סמן sync-listeners כ-loaded=false כדי שלא יחזירו נתונים ישנים
+  if(typeof _syncRegistry !== 'undefined'){
+    ['accidents','violations','serviceBookings'].forEach(function(k){
+      if(_syncRegistry[k]) _syncRegistry[k].loaded = false;
+    });
+  }
+  refresh();
+  if(typeof renderV === 'function') renderV();
+  if(typeof renderViolations === 'function') renderViolations();
+  if(typeof renderAccidents === 'function') renderAccidents();
+  if(typeof renderTasks === 'function') renderTasks();
+  if(typeof renderDash === 'function') renderDash();
   showToast('מוחק את כל הנתונים...');
 
-  // מחיקת כל האוספים הרלוונטיים ב-Firestore
-  const collections = ['vehicles','treatments','accidents','violations','tasks'];
+  // ── שלב 2: מחק מ-Firestore ברקע ──
+  const collections = ['vehicles','treatments','accidents','violations','tasks','serviceBookings','selfReminders','fleetEvents'];
   const deleteCollection = function(colName){
     return db.collection(colName).get().then(function(snap){
       if(snap.empty) return;
-      // Firestore batch מוגבל ל-500 פעולות
       var batches = [];
       var batch = db.batch();
       var count = 0;
@@ -10451,23 +10469,8 @@ function clearAllVehiclesData(){
   };
 
   Promise.all(collections.map(deleteCollection))
-    .then(function(){
-      // נקה מערכים מקומיים
-      vehicles.length = 0;
-      violationsList.length = 0;
-      accidentsList.length = 0;
-      tasks.length = 0;
-      if(typeof TREATMENT_STATE !== 'undefined') TREATMENT_STATE.treatments = [];
-      // רענן תצוגה
-      refresh();
-      if(typeof renderV === 'function') renderV();
-      if(typeof renderViolations === 'function') renderViolations();
-      if(typeof renderAccidents === 'function') renderAccidents();
-      if(typeof renderTasks === 'function') renderTasks();
-      if(typeof renderDash === 'function') renderDash();
-      showToast('✓ כל הנתונים נמחקו');
-    })
-    .catch(function(e){ console.error(e); showToast('שגיאה: ' + e.message); });
+    .then(function(){ showToast('✓ כל הנתונים נמחקו מהשרת'); })
+    .catch(function(e){ console.error(e); showToast('שגיאה במחיקה מהשרת: ' + e.message); });
 }
 
 function addCustomMandatoryDoc(vid){
