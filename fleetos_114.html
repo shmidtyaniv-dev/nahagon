@@ -3031,6 +3031,42 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
     </div>
 
+    <!-- PASSWORD SECTION -->
+    <div class="settings-section">
+      <div class="settings-section-header">
+        <div class="settings-section-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div class="settings-section-title-wrapper">
+          <div class="settings-section-title">שינוי סיסמה</div>
+          <div class="settings-section-desc">שנה את סיסמת הכניסה למערכת</div>
+        </div>
+      </div>
+      <div class="settings-section-body">
+        <div class="settings-form-row">
+          <div class="settings-form-field full-width">
+            <label>סיסמה נוכחית</label>
+            <input type="password" id="pwd-current" placeholder="הכנס סיסמה נוכחית" autocomplete="current-password">
+          </div>
+        </div>
+        <div class="settings-form-row">
+          <div class="settings-form-field">
+            <label>סיסמה חדשה</label>
+            <input type="password" id="pwd-new" placeholder="לפחות 6 תווים" autocomplete="new-password">
+          </div>
+          <div class="settings-form-field">
+            <label>אימות סיסמה חדשה</label>
+            <input type="password" id="pwd-confirm" placeholder="חזור על הסיסמה החדשה" autocomplete="new-password">
+          </div>
+        </div>
+        <div id="pwd-msg" style="font-size:12px;min-height:18px;margin-bottom:4px"></div>
+        <div class="settings-btn-row" style="justify-content:space-between;align-items:center">
+          <button class="settings-btn settings-btn-secondary" onclick="sendPasswordReset()" style="font-size:12px">שלח קישור איפוס למייל</button>
+          <button class="settings-btn settings-btn-primary" onclick="changePassword()">עדכן סיסמה</button>
+        </div>
+      </div>
+    </div>
+
     <!-- TAB 2: BRANDING -->
     <div class="settings-tab-content" data-settings-tab="branding">
 
@@ -5859,6 +5895,58 @@ function updateRepPreview(){
   document.getElementById('prev-name').textContent = name;
   document.getElementById('prev-role-display').textContent = role;
   document.getElementById('prev-avatar').textContent = initials;
+}
+
+function changePassword(){
+  const current = document.getElementById('pwd-current').value;
+  const newPwd  = document.getElementById('pwd-new').value;
+  const confirm = document.getElementById('pwd-confirm').value;
+  const msgEl   = document.getElementById('pwd-msg');
+  const show = (txt, ok) => { msgEl.textContent = txt; msgEl.style.color = ok ? '#16a34a' : '#dc2626'; };
+
+  if(!current || !newPwd || !confirm){ show('יש למלא את כל השדות', false); return; }
+  if(newPwd.length < 6){ show('הסיסמה החדשה חייבת להכיל לפחות 6 תווים', false); return; }
+  if(newPwd !== confirm){ show('הסיסמאות אינן תואמות', false); return; }
+
+  const user = auth.currentUser;
+  if(!user){ show('משתמש לא מחובר', false); return; }
+
+  // reauthenticate first, then update
+  const cred = firebase.auth.EmailAuthProvider.credential(user.email, current);
+  user.reauthenticateWithCredential(cred)
+    .then(function(){
+      return user.updatePassword(newPwd);
+    })
+    .then(function(){
+      show('✓ הסיסמה עודכנה בהצלחה', true);
+      document.getElementById('pwd-current').value = '';
+      document.getElementById('pwd-new').value = '';
+      document.getElementById('pwd-confirm').value = '';
+      setTimeout(()=>{ msgEl.textContent=''; }, 4000);
+    })
+    .catch(function(err){
+      if(err.code==='auth/wrong-password' || err.code==='auth/invalid-credential')
+        show('הסיסמה הנוכחית שגויה', false);
+      else if(err.code==='auth/weak-password')
+        show('הסיסמה החדשה חלשה מדי', false);
+      else
+        show('שגיאה: ' + err.message, false);
+    });
+}
+
+function sendPasswordReset(){
+  const user = auth.currentUser;
+  const msgEl = document.getElementById('pwd-msg');
+  const show = (txt, ok) => { msgEl.textContent = txt; msgEl.style.color = ok ? '#16a34a' : '#dc2626'; };
+  if(!user){ show('משתמש לא מחובר', false); return; }
+  auth.sendPasswordResetEmail(user.email)
+    .then(function(){
+      show('✓ קישור איפוס נשלח ל: ' + user.email, true);
+      setTimeout(()=>{ msgEl.textContent=''; }, 5000);
+    })
+    .catch(function(err){
+      show('שגיאה בשליחת המייל: ' + err.message, false);
+    });
 }
 
 function saveRepSettings(){
