@@ -2129,14 +2129,20 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <path d="M8 16 L12 8 H28 L34 16" stroke="rgba(255,255,255,0.7)" stroke-width="2" fill="none"/>
     </svg>
   </div>
-  <div class="splash-title">מרכז הרכב של מור</div>
-  <div class="splash-sub">בית השקעות</div>
+  <div class="splash-title" id="splash-title-el">מרכז הרכב של מור</div>
+  <div class="splash-sub" id="splash-sub-el">בית השקעות</div>
   <div class="splash-dots"><span></span><span></span><span></span></div>
 </div>
 
 <script>
   // עד שנדע אם המשתמש מחובר - נסתיר הכל
   document.body.classList.add('auth-loading');
+  // עדכן כיתוב splash מ-localStorage
+  try{
+    var _s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+    if(_s.sysTitle){var _t=document.getElementById('splash-title-el');if(_t)_t.textContent=_s.sysTitle;}
+    if(_s.sysSubtitle){var _u=document.getElementById('splash-sub-el');if(_u)_u.textContent=_s.sysSubtitle;}
+  }catch(e){}
 </script>
 
 <div class="sb-overlay" id="sb-overlay" onclick="toggleSidebar()"></div>
@@ -2986,6 +2992,18 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <label>אימייל לתזכורות</label>
               <input type="email" id="rep-email" placeholder="name@company.co.il" dir="ltr">
               <span class="settings-form-field-hint">לכתובת זו יישלחו תזכורות מערכת ועדכונים</span>
+            </div>
+          </div>
+          <div class="settings-form-row" style="margin-top:14px">
+            <div class="settings-form-field">
+              <label>שם המערכת</label>
+              <input type="text" id="sys-title" placeholder="מרכז הרכב של מור">
+              <span class="settings-form-field-hint">מוצג במסך הפתיחה</span>
+            </div>
+            <div class="settings-form-field">
+              <label>כיתוב משנה</label>
+              <input type="text" id="sys-subtitle" placeholder="בית השקעות">
+              <span class="settings-form-field-hint">שורה קטנה מתחת לשם</span>
             </div>
           </div>
           <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--bdr)">
@@ -5712,6 +5730,8 @@ function initSettingsPage(){
   // Rep
   var repName=document.getElementById('rep-name');if(repName)repName.value=s.repName||'יניב שמידט';
   var repRole=document.getElementById('rep-role');if(repRole)repRole.value=s.repRole||'נציג בית לקוח';
+  var sysTitle=document.getElementById('sys-title');if(sysTitle)sysTitle.value=s.sysTitle||'מרכז הרכב של מור';
+  var sysSubtitle=document.getElementById('sys-subtitle');if(sysSubtitle)sysSubtitle.value=s.sysSubtitle||'בית השקעות';
   if(document.getElementById('rep-email')) document.getElementById('rep-email').value = s.repEmail||'';
   const pendingCb = document.getElementById('rep-show-pending-banner');
   if(pendingCb){
@@ -5846,7 +5866,14 @@ function saveRepSettings(){
   const role = document.getElementById('rep-role').value || 'נציג בית לקוח';
   const email = document.getElementById('rep-email')?.value.trim()||'';
   const showPendingBanner = document.getElementById('rep-show-pending-banner')?.checked !== false;
-  saveSettings({repName:name, repRole:role, repEmail:email, showPendingBanner});
+  const sysTitle = document.getElementById('sys-title')?.value.trim() || 'מרכז הרכב של מור';
+  const sysSubtitle = document.getElementById('sys-subtitle')?.value.trim() || 'בית השקעות';
+  saveSettings({repName:name, repRole:role, repEmail:email, showPendingBanner, sysTitle, sysSubtitle});
+  // עדכן splash לפי הגדרות
+  const st=document.querySelector('#app-splash .splash-title');
+  const ss=document.querySelector('#app-splash .splash-sub');
+  if(st)st.textContent=sysTitle;
+  if(ss)ss.textContent=sysSubtitle;
   initRepSidebar();
   const el = document.getElementById('rep-saved');
   el.textContent = '✓ נשמר';
