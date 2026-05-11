@@ -9025,6 +9025,7 @@ function vcTab(name,el){
     if(panel) panel.style.display='block';
   }
   if(name==='violations') renderVehicleViolations();
+  if(name==='accidents') renderVcAccidents(_currentVid);
   if(el) el.classList.add('active');
 }
 
@@ -12970,7 +12971,7 @@ function renderAccidents(){
     else if(a.fault==='third') faultBadge='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#185FA5;background:#E6F1FB">צד ג׳</span>';
     else faultBadge='—';
     var statusHtml='<span onclick="showAccidentTimeline('+a.id+')" style="cursor:pointer" title="לחץ לציר זמן">'+getAccidentStatusLabel(a)+'</span>';
-    html+='<div class="viol-row viol-data-row acc-row">';
+    html+='<div class="viol-row viol-data-row acc-row" data-aid="'+a.id+'">';
     html+='<div class="viol-driver" style="justify-content:center"><div class="viol-avatar" style="background:'+avatarColor(driverName)+'">'+inits(driverName)+'</div><span style="font-weight:500;font-size:14px">'+driverName+'</span></div>';
     html+='<div class="viol-cell" data-label="רכב" style="text-align:center">'+plateHtml+'</div>';
     html+='<div class="viol-cell" data-label="תאריך" style="text-align:center"><span class="viol-muted">'+(a.date?fd(a.date):'—')+'</span></div>';
@@ -13255,9 +13256,23 @@ function renderVcAccidents(vid){
         '<td><div style="display:flex;gap:4px">'+
           (a.fileData?'<button onclick="viewAccidentDoc('+a.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:13px;font-family:inherit">📄 צפה</button>':'')+
           '<button onclick="openAccidentModal('+a.id+')" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:13px;color:var(--t2);font-family:inherit">עריכה</button>'+
+          '<button onclick="goToAccident('+a.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:12px;font-family:inherit;white-space:nowrap">עבור לאירוע ←</button>'+
         '</div></td>'+
         '</tr>';
     }).join('')+'</tbody></table></div>';
+}
+
+function goToAccident(accId){
+  go('accidents', document.querySelector('[dp=accidents]'));
+  setTimeout(function(){
+    const row=document.querySelector('.acc-row[data-aid="'+accId+'"]');
+    if(!row)return;
+    row.scrollIntoView({behavior:'smooth',block:'center'});
+    const orig=row.style.background;
+    row.style.transition='background 0.3s';
+    row.style.background='rgba(99,102,241,0.15)';
+    setTimeout(function(){row.style.background=orig||'';row.style.transition='';},1800);
+  },80);
 }
 
 /* ── EDIT FAMILY MEMBER ── */
