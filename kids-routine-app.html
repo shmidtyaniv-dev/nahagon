@@ -1440,9 +1440,12 @@
     const eveningStart = toMin(state.times.eveningStart);
     const eveningEnd = toMin(state.times.eveningEnd);
     
-    if (minutes >= morningStart && minutes < morningEnd) return 'morning';
-    if (minutes >= afternoonStart && minutes < afternoonEnd) return 'afternoon';
-    if (minutes >= eveningStart && minutes < eveningEnd) return 'evening';
+    const inRange = (start, end, t) =>
+      start <= end ? (t >= start && t < end) : (t >= start || t < end);
+
+    if (inRange(morningStart, morningEnd, minutes)) return 'morning';
+    if (inRange(afternoonStart, afternoonEnd, minutes)) return 'afternoon';
+    if (inRange(eveningStart, eveningEnd, minutes)) return 'evening';
     return 'night';
   }
 
