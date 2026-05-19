@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>סדר היום שלי</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Varela+Round&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .task-card, .task-row, .focus-button, .top-btn, .reset-btn,
+  .roll-btn, .routine-complete-button, .settings-nav-btn,
+  .child-select-btn, .period-tab, .parent-tab, .add-task-btn,
+  .save-btn, .close-btn, .delete-task, .voice-test-btn {
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
+  :root {
+    --morning-bg: linear-gradient(135deg, #FFE5B4 0%, #FFB84D 100%);
+    --morning-accent: #FF9F1C;
+    --afternoon-bg: linear-gradient(135deg, #C9E9F6 0%, #7EC8E3 100%);
+    --afternoon-accent: #2E86AB;
+    --evening-bg: linear-gradient(135deg, #E8DDF5 0%, #9B7EBD 100%);
+    --evening-accent: #6A4C93;
+    --night-bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    --success: #52C878;
+    --star: #FFD700;
+    --text: #3D2817;
+    --child1-color: #FF6B9D;
+    --child2-color: #4ECDC4;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'Varela Round', 'Fredoka', sans-serif;
+    color: var(--text);
+  }
+
+  body { transition: background 0.8s ease; }
+  body.morning { background: var(--morning-bg); }
+  body.afternoon { background: var(--afternoon-bg); }
+  body.evening { background: var(--evening-bg); }
+  body.night { background: var(--night-bg); }
+
+  #app {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .split-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: row;
+  }
+
+  @media (orientation: portrait) {
+    .split-container { flex-direction: column; }
+  }
+
+  .child-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    padding-top: 56px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s;
+  }
+
+  .child-panel:first-child::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  @media (orientation: portrait) {
+    .child-panel:first-child::after {
+      width: 100%;
+      height: 2px;
+      top: auto;
+      bottom: 0;
+      right: 0;
+    }
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    margin-bottom: 12px;
+    backdrop-filter: blur(10px);
+  }
+
+  .child-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .child1-name { color: var(--child1-color); }
+  .child2-name { color: var(--child2-color); }
+
+  .stars-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 4px 12px;
+    border-radius: 16px;
+  }
+
+  .reset-btn {
+    background: rgba(255, 255, 255, 0.5);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .reset-btn:active {
+    transform: rotate(-180deg) scale(0.9);
+    background: rgba(255, 255, 255, 0.8);
+  }
+
+  .panel-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* ===== Task Grid ===== */
+  .task-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 4px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(120px, 150px));
+    gap: 12px;
+    align-content: start;
+    justify-content: center;
+  }
+
+  .task-grid::-webkit-scrollbar { display: none; }
+
+  .task-card {
+    width: 100%;
+    aspect-ratio: 1;
+    align-self: start;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 20px;
+    border: 2px solid transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 8px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    backdrop-filter: blur(5px);
+    text-align: center;
+  }
+
+  .task-card:active {
+    transform: scale(0.93);
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .task-card.completed {
+    background: rgba(82, 200, 120, 0.35);
+    border-color: #52C878;
+    opacity: 0.65;
+  }
+
+  .task-card.completed .task-card-name {
+    text-decoration: line-through;
+  }
+
+  .task-card-emoji {
+    font-size: 2.8rem;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .task-card-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  .task-card-check {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2.5px solid var(--success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: white;
+    transition: all 0.2s;
+  }
+
+  .task-card.completed .task-card-check {
+    background: var(--success);
+    border-color: var(--success);
+  }
+
+  @media (orientation: portrait) {
+    .task-grid {
+      grid-template-columns: repeat(3, minmax(110px, 140px));
+    }
+  }
+
+  .focus-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
+  }
+
+  .focus-emoji {
+    font-size: 8rem;
+    margin-bottom: 12px;
+    animation: breathe 3s ease-in-out infinite;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+    cursor: pointer;
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  .focus-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text);
+    text-shadow: 0 2px 4px rgba(255, 255, 255, 0.5);
+  }
+
+  .focus-button {
+    width: 180px;
+    height: 80px;
+    background: var(--success);
+    color: white;
+    border: none;
+    border-radius: 40px;
+    font-size: 1.8rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(82, 200, 120, 0.5);
+    transition: all 0.2s;
+    animation: pulse 2s ease-in-out infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .focus-button:active {
+    transform: scale(0.95);
+    animation: none;
+  }
+
+  .focus-progress {
+    margin-top: 16px;
+    font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  /* Completion Animation - Multiple Types */
+  .completion-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .completion-modal.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .sticker-burst {
+    font-size: 10rem;
+    animation: stickerPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3));
+  }
+
+  .praise-text {
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-top: 20px;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    animation: bounceIn 0.6s 0.2s both;
+    text-align: center;
+    padding: 0 20px;
+  }
+
+  @keyframes stickerPop {
+    0% { transform: scale(0) rotate(-180deg); }
+    60% { transform: scale(1.3) rotate(15deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  @keyframes bounceIn {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .routine-complete {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.95), rgba(255, 184, 77, 0.95));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .routine-complete.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .routine-complete h1 {
+    font-size: 3rem;
+    color: white;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    margin-bottom: 16px;
+    animation: bounceIn 0.8s;
+  }
+
+  .routine-complete p {
+    font-size: 1.5rem;
+    color: white;
+    margin-bottom: 32px;
+  }
+
+  .routine-complete-button {
+    padding: 16px 40px;
+    background: white;
+    color: var(--text);
+    border: none;
+    border-radius: 30px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .confetti {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 150;
+    overflow: hidden;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    top: -20px;
+    opacity: 0;
+  }
+
+  .bg-decoration {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .bg-decoration span {
+    position: absolute;
+    opacity: 0.4;
+    animation: floatUp 15s linear infinite;
+    font-size: 1.5rem;
+  }
+
+  @keyframes floatUp {
+    from { transform: translateY(100vh) rotate(0deg); }
+    to { transform: translateY(-100px) rotate(360deg); }
+  }
+
+  /* Top buttons */
+  .top-buttons {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    gap: 8px;
+    z-index: 50;
+  }
+
+  .top-btn {
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.4);
+    border: none;
+    border-radius: 50%;
+    font-size: 1.4rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .top-btn:hover, .top-btn:active { opacity: 1; }
+
+  /* Modals */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .modal-overlay.show { display: flex; }
+
+  .modal-content {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    width: 600px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-content h2 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .settings-nav {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    background: #f0f0f0;
+    padding: 6px;
+    border-radius: 14px;
+    flex-wrap: wrap;
+  }
+
+  .settings-nav-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+  }
+
+  .settings-nav-btn.active {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    color: var(--morning-accent);
+  }
+
+  .settings-section { display: none; }
+  .settings-section.active { display: block; }
+
+  .child-name-card {
+    background: #f8f8f8;
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+  }
+
+  .child-name-card h3 {
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    color: #666;
+  }
+
+  .name-edit-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .name-edit-row .emoji-input {
+    width: 60px;
+    text-align: center;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    padding: 10px;
+    background: white;
+    font-size: 1.5rem;
+    font-family: inherit;
+  }
+
+  .name-edit-row .name-input {
+    flex: 1;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    padding: 10px 14px;
+    background: white;
+    font-size: 1.1rem;
+    font-family: inherit;
+    font-weight: 600;
+  }
+
+  .name-edit-row input:focus {
+    outline: none;
+    border-color: var(--morning-accent);
+  }
+
+  .help-text {
+    font-size: 0.9rem;
+    color: #888;
+    text-align: center;
+    margin: 12px 0;
+    line-height: 1.4;
+  }
+
+  /* Time settings */
+  .time-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px;
+    background: #f5f5f5;
+    border-radius: 14px;
+    margin-bottom: 10px;
+  }
+
+  .time-row-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .time-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .time-inputs input {
+    width: 115px;
+    padding: 8px 10px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: inherit;
+    text-align: center;
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  .time-inputs input::-webkit-calendar-picker-indicator {
+    display: none;
+  }
+
+  /* Tasks editor */
+  .child-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .child-select-btn {
+    flex: 1;
+    padding: 14px 10px;
+    border: 3px solid #ddd;
+    background: white;
+    border-radius: 16px;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .child-select-btn.active {
+    border-color: var(--child1-color);
+    background: #fff0f6;
+    color: var(--child1-color);
+  }
+
+  .child-select-btn:last-child.active {
+    border-color: var(--child2-color);
+    background: #f0fffe;
+    color: var(--child2-color);
+  }
+
+  .period-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .period-tab {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 12px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+
+  .period-tab.active {
+    background: var(--morning-accent);
+    color: white;
+    border-color: var(--morning-accent);
+  }
+
+  .editable-task {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f5f5f5;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: opacity 0.2s, border 0.15s;
+  }
+
+  .editable-task.drag-over {
+    border: 2px dashed var(--morning-accent);
+    background: #fff8f0;
+  }
+
+  .editable-task.dragging {
+    opacity: 0.4;
+  }
+
+  .drag-handle {
+    cursor: grab;
+    font-size: 1.3rem;
+    color: #bbb;
+    flex-shrink: 0;
+    padding: 0 2px;
+    line-height: 1;
+    touch-action: none;
+  }
+
+  .drag-handle:active { cursor: grabbing; }
+
+  .editable-task input[type="text"] {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+  }
+
+  .editable-task .emoji-input {
+    width: 50px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 4px;
+    background: white;
+  }
+
+  .delete-task {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .add-task-btn, .save-btn, .close-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 12px;
+  }
+
+  .add-task-btn {
+    background: var(--afternoon-accent);
+    color: white;
+    width: 100%;
+  }
+
+  .save-btn {
+    background: var(--success);
+    color: white;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .close-btn {
+    background: #999;
+    color: white;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .time-period-display {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.5);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    z-index: 40;
+    backdrop-filter: blur(10px);
+  }
+
+  /* Dice */
+  .dice-container {
+    text-align: center;
+    padding: 20px;
+  }
+
+  .dice-title {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .dice-subtitle {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 20px;
+  }
+
+  .dice {
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(135deg, #FFE5B4, #FFB84D);
+    border-radius: 32px;
+    margin: 30px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+    box-shadow: 0 12px 40px rgba(255, 152, 0, 0.3), inset 0 -4px 8px rgba(0, 0, 0, 0.1);
+    color: white;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dice-emoji {
+    font-size: 4rem;
+  }
+
+  .dice-name {
+    font-size: 1.8rem;
+  }
+
+  .dice.rolling {
+    animation: diceRoll 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes diceRoll {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(360deg) scale(1.1); }
+    50% { transform: rotate(720deg) scale(0.9); }
+    75% { transform: rotate(1080deg) scale(1.1); }
+    100% { transform: rotate(1440deg) scale(1); }
+  }
+
+  .roll-btn {
+    background: linear-gradient(135deg, #FF6B9D, #FF9F1C);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 16px 40px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+    margin: 12px;
+  }
+
+  .roll-btn:active { transform: scale(0.95); }
+
+  .roll-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .result-text {
+    font-size: 1.3rem;
+    margin-top: 16px;
+    color: var(--text);
+    font-weight: 600;
+    min-height: 32px;
+  }
+
+  /* Voice settings */
+  .voice-test-btn {
+    background: var(--afternoon-accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 10px 0;
+  }
+
+  .voice-select-row {
+    background: #f5f5f5;
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+
+  .voice-select-row label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .voice-select-row select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 1rem;
+  }
+
+  .voice-slider-row {
+    background: #f5f5f5;
+    padding: 14px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+  }
+
+  .voice-slider-row label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .voice-slider-row input[type="range"] {
+    width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    .focus-emoji { font-size: 6rem; }
+    .focus-title { font-size: 1.5rem; }
+    .focus-button {
+      width: 140px;
+      height: 64px;
+      font-size: 1.4rem;
+    }
+    .child-name { font-size: 1.2rem; }
+    .task-emoji { font-size: 1.6rem; }
+    .task-name { font-size: 1rem; }
+    .dice { width: 160px; height: 160px; }
+    .dice-emoji { font-size: 3rem; }
+    .dice-name { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body class="morning">
+
+<div class="bg-decoration" id="bgDecoration"></div>
+
+<div class="top-buttons">
+  <button class="top-btn" id="parentBtn" title="הגדרות">⚙️</button>
+  <button class="top-btn" id="diceBtn" title="הגרלת מקלחת">🎲</button>
+</div>
+
+<div class="time-period-display" id="timePeriodDisplay">
+  <span id="timeEmoji">🌅</span> <span id="timeText">בוקר</span>
+</div>
+
+<div id="app">
+  <div class="split-container">
+
+    <div class="child-panel" id="child1Panel">
+      <div class="panel-header">
+        <div class="child-name child1-name">
+          <span id="child1Emoji">👧</span> <span id="child1NameText">מאיה</span>
+        </div>
+        <button class="reset-btn" onclick="resetChild('child1')" title="איפוס משימות">↺</button>
+        <div class="stars-count">
+          <span>⭐</span><span id="child1Stars">0</span>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div id="child1Tasks"></div>
+      </div>
+    </div>
+
+    <div class="child-panel" id="child2Panel">
+      <div class="panel-header">
+        <div class="child-name child2-name">
+          <span id="child2Emoji">👶</span> <span id="child2NameText">נועה</span>
+        </div>
+        <button class="reset-btn" onclick="resetChild('child2')" title="איפוס משימות">↺</button>
+        <div class="stars-count">
+          <span>⭐</span><span id="child2Stars">0</span>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div class="focus-view" id="child2Focus"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="completion-modal" id="completionModal">
+  <div class="sticker-burst" id="stickerBurst">⭐</div>
+  <div class="praise-text" id="praiseText">כל הכבוד!</div>
+</div>
+
+<div class="confetti" id="confetti"></div>
+
+<div class="routine-complete" id="routineComplete">
+  <h1>🎉 כל הכבוד! 🎉</h1>
+  <p id="routineCompleteText">סיימת את כל המשימות!</p>
+  <button class="routine-complete-button" id="routineCompleteBtn">המשך</button>
+</div>
+
+<!-- Dice Modal -->
+<div class="modal-overlay" id="diceModal">
+  <div class="modal-content">
+    <div class="dice-container">
+      <h2>🎲 מי נכנסת ראשונה למקלחת?</h2>
+      <p class="dice-subtitle">לחצו על הקוביה כדי לגלות!</p>
+      
+      <div class="dice" id="dice">
+        <div class="dice-emoji">🎲</div>
+        <div class="dice-name">לחצו לזרוק</div>
+      </div>
+      
+      <button class="roll-btn" id="rollBtn" onclick="rollDice()">זרוק קוביה! 🎲</button>
+      
+      <div class="result-text" id="diceResult"></div>
+      
+      <button class="close-btn" onclick="closeDiceModal()">סגור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-content">
+    <h2>👨‍👧‍👧 הגדרות</h2>
+    
+    <div class="settings-nav">
+      <button class="settings-nav-btn active" onclick="showSettingsSection('names', this)">
+        👧 שמות
+      </button>
+      <button class="settings-nav-btn" onclick="showSettingsSection('tasks', this)">
+        📝 משימות
+      </button>
+      <button class="settings-nav-btn" onclick="showSettingsSection('times', this)">
+        ⏰ שעות
+      </button>
+      <button class="settings-nav-btn" onclick="showSettingsSection('voice', this)">
+        🔊 קול
+      </button>
+    </div>
+
+    <!-- Names Section -->
+    <div class="settings-section active" id="namesSection">
+      <p class="help-text">הקלידו את השמות החופשיים של הילדים והאימוג'י שלהם</p>
+      
+      <div class="child-name-card">
+        <h3>ילד/ה 1 (רואה את כל הרשימה - לגדולים)</h3>
+        <div class="name-edit-row">
+          <input type="text" class="emoji-input" id="child1EmojiInput" maxlength="4">
+          <input type="text" class="name-input" id="child1NameInput" placeholder="הכנס שם">
+        </div>
+      </div>
+
+      <div class="child-name-card">
+        <h3>ילד/ה 2</h3>
+        <div class="name-edit-row">
+          <input type="text" class="emoji-input" id="child2EmojiInput" maxlength="4">
+          <input type="text" class="name-input" id="child2NameInput" placeholder="הכנס שם">
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:10px;font-weight:600;font-size:0.95rem;">
+          <span>תצוגת משימות:</span>
+          <select id="child2ModeSelect" style="flex:1;padding:8px;border:2px solid #ddd;border-radius:10px;font-family:inherit;font-size:0.95rem;">
+            <option value="grid">ריבועים (כמו הגדולה)</option>
+            <option value="focus">משימה אחת בכל פעם</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks Section -->
+    <div class="settings-section" id="tasksSection">
+      <div class="child-selector">
+        <button class="child-select-btn active" id="childSelectBtn1" onclick="selectEditChild('child1', this)">
+          <span id="tabChild1Icon">👧</span><span id="tabChild1Name">מאיה</span>
+        </button>
+        <button class="child-select-btn" id="childSelectBtn2" onclick="selectEditChild('child2', this)">
+          <span id="tabChild2Icon">👶</span><span id="tabChild2Name">נועה</span>
+        </button>
+      </div>
+
+      <div class="period-tabs">
+        <button class="period-tab active" data-period="morning" onclick="selectEditPeriod('morning', this)">🌅 בוקר</button>
+        <button class="period-tab" data-period="afternoon" onclick="selectEditPeriod('afternoon', this)">☀️ צהריים</button>
+        <button class="period-tab" data-period="evening" onclick="selectEditPeriod('evening', this)">🌙 ערב</button>
+      </div>
+
+      <h3 id="currentTabTitle" style="margin: 12px 0 8px;"></h3>
+      <div id="taskEditor"></div>
+      <button class="add-task-btn" onclick="addNewTask()">+ הוסף משימה</button>
+    </div>
+
+    <!-- Times Section -->
+    <div class="settings-section" id="timesSection">
+      <p class="help-text">קבעו את השעות של כל חלק ביום — הגדרות אלו חלות על שתי הבנות יחד</p>
+      
+      <div class="time-row">
+        <div class="time-row-label">
+          <span style="font-size: 1.5rem;">🌅</span>
+          <span>בוקר</span>
+        </div>
+        <div class="time-inputs">
+          <input type="time" id="morningStart" value="06:00" dir="ltr">
+          <span>עד</span>
+          <input type="time" id="morningEnd" value="11:00" dir="ltr">
+        </div>
+      </div>
+
+      <div class="time-row">
+        <div class="time-row-label">
+          <span style="font-size: 1.5rem;">☀️</span>
+          <span>צהריים</span>
+        </div>
+        <div class="time-inputs">
+          <input type="time" id="afternoonStart" value="11:00" dir="ltr">
+          <span>עד</span>
+          <input type="time" id="afternoonEnd" value="16:00" dir="ltr">
+        </div>
+      </div>
+
+      <div class="time-row">
+        <div class="time-row-label">
+          <span style="font-size: 1.5rem;">🌙</span>
+          <span>ערב</span>
+        </div>
+        <div class="time-inputs">
+          <input type="time" id="eveningStart" value="16:00" dir="ltr">
+          <span>עד</span>
+          <input type="time" id="eveningEnd" value="21:00" dir="ltr">
+        </div>
+      </div>
+
+      <p class="help-text">
+        💡 השעות שמחוץ לטווחים אלו נחשבות "לילה" (מסך שקט)
+      </p>
+    </div>
+
+    <!-- Voice Section -->
+    <div class="settings-section" id="voiceSection">
+      <p class="help-text">בחרו קול ועוצמה. נסו אותם לפני שמירה.</p>
+      
+      <div class="voice-select-row">
+        <label>בחירת קול (עברית)</label>
+        <select id="voiceSelect"></select>
+      </div>
+
+      <div class="voice-slider-row">
+        <label>מהירות דיבור <span id="rateValue">0.95</span></label>
+        <input type="range" id="rateSlider" min="0.7" max="1.2" step="0.05" value="0.95">
+      </div>
+
+      <div class="voice-slider-row">
+        <label>גובה קול <span id="pitchValue">1.1</span></label>
+        <input type="range" id="pitchSlider" min="0.8" max="1.5" step="0.05" value="1.1">
+      </div>
+
+      <div class="voice-slider-row">
+        <label>עוצמה <span id="volumeValue">100%</span></label>
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="1">
+      </div>
+
+      <button class="voice-test-btn" onclick="testVoice()">🔊 בדיקת קול</button>
+      <button class="voice-test-btn" onclick="testPraise()" style="margin-right: 8px;">🎉 בדוק שבח</button>
+    </div>
+
+    <button class="save-btn" onclick="saveSettings()">💾 שמור</button>
+    <button class="close-btn" onclick="closeSettingsModal()">סגור</button>
+  </div>
+</div>
+
+<script>
+  // ===== STICKERS - מגוון רחב של דברים חיוביים =====
+  const STICKERS = [
+    '⭐', '🌟', '✨', '💫', '🌠', // כוכבים
+    '🎉', '🎊', '🎈', '🎁', '🏆', // חגיגה
+    '🦄', '🐱', '🐶', '🐼', '🐨', '🦊', '🐰', '🦋', '🐠', '🐢', // חיות
+    '🌈', '🌺', '🌸', '🌷', '🌻', '🌹', '🌼', '🌿', // טבע
+    '🦁', '🐯', '🐸', '🐮', '🐷', '🐵', '🐧', // עוד חיות
+    '🍭', '🍦', '🎂', '🍩', '🧁', '🍰', '🍓', '🍒', // מתוקים
+    '💎', '👑', '🎀', '💝', '💖', '💕', '💗', // יקרים ולבבות
+    '🚀', '🌍', '🪐', '☀️', // חלל ושמש
+    '🎵', '🎶', '🎸', '🎨', '🖍️', // יצירה
+    '🍀', '🌴', '🌳', '🌲', '🌵', // צמחים
+    '🏅', '🥇', '🥈', '🥉' // מדליות
+  ];
+
+  // ===== ברכות שבח - מגוון רחב =====
+  const PRAISES = [
+    'כל הכבוד!',
+    'איזה יופי!',
+    'מדהים!',
+    'וואו, את אלופה!',
+    'גאה בך מאוד!',
+    'איזו אחלה עבודה!',
+    'את ממש אלופה!',
+    'יפה מאוד!',
+    'עבודה מצוינת!',
+    'איזו ילדה גדולה!',
+    'בראבו!',
+    'את עושה את זה נהדר!',
+    'אני מתפעלת ממך!',
+    'אחלה!',
+    'את הכי טובה!',
+    'תותחית!',
+    'איזו מתוקה!',
+    'את גדולה ועצמאית!',
+    'את עושה את זה לבד, ואיזה כיף!',
+    'איזה תענוג!',
+    'יישר כוח!',
+    'איזו אישה גדולה!',
+    'מצוין!',
+    'נהדר!',
+    'בדיוק ככה!',
+    'את משהו מיוחד!',
+    'גאוות המשפחה!',
+    'איזו נסיכה אחראית!'
+  ];
+
+  // ===== טקסטים שמדברים על המשימה =====
+  // מפתחות לפי "סוג" משימה - מזוהה לפי המילה במשימה
+  const TASK_ANNOUNCEMENTS = {
+    'התעוררות': ['בוקר טוב! זמן לקום מהמיטה', 'בוקר טוב יום חדש מתחיל!', 'קמים, בוקר טוב!'],
+    'קמתי': ['בוקר טוב! זמן לקום', 'יום חדש מתחיל'],
+    'בוקר טוב': ['בוקר טוב מתוקה! יום חדש'],
+    'שירותים': ['עכשיו הולכים לשירותים', 'זמן שירותים', 'יוצאים לשירותים'],
+    'סיר': ['עכשיו הולכים לסיר', 'זמן לסיר שלך'],
+    'שיניים': ['עכשיו מצחצחים שיניים', 'זמן צחצוח שיניים', 'הולכים לצחצח שיניים'],
+    'צחצוח': ['עכשיו מצחצחים שיניים', 'זמן לשיניים נקיות', 'מצחצחים יפה את השיניים'],
+    'התלבשות': ['עכשיו מתלבשים', 'זמן ללבוש בגדים', 'בוחרים בגדים יפים'],
+    'בגדים': ['עכשיו לובשים בגדים', 'זמן להתלבש'],
+    'הסתרקות': ['עכשיו מסתרקים', 'זמן לסרק את השיער'],
+    'ארוחת בוקר': ['עכשיו אוכלים ארוחת בוקר', 'זמן לארוחת בוקר טעימה', 'הולכים לארוחת בוקר'],
+    'ארוחת צהריים': ['עכשיו אוכלים ארוחת צהריים', 'זמן לארוחת צהריים', 'הולכים לאכול צהריים'],
+    'ארוחת ערב': ['עכשיו אוכלים ארוחת ערב', 'זמן לארוחת ערב', 'הולכים לאכול ערב'],
+    'אוכל': ['עכשיו אוכלים', 'זמן לאכול'],
+    'תיק': ['עכשיו מכינים את התיק', 'זמן להכין תיק לגן'],
+    'שטיפת ידיים': ['עכשיו שוטפים ידיים', 'זמן לשטוף ידיים יפה'],
+    'מנוחה': ['עכשיו זמן מנוחה', 'הולכים לנוח קצת'],
+    'שיעורי בית': ['עכשיו עושים שיעורי בית', 'זמן לשיעורי בית'],
+    'משחק': ['עכשיו זמן משחק', 'יאללה לשחק'],
+    'יצירה': ['עכשיו עושים יצירה', 'זמן ליצור משהו יפה'],
+    'מקלחת': ['עכשיו הולכים למקלחת', 'זמן למקלחת'],
+    'אמבטיה': ['עכשיו הולכים לאמבטיה', 'זמן לאמבטיה חמימה'],
+    'צעצועים': ['עכשיו מסדרים צעצועים', 'זמן לסדר את הצעצועים'],
+    'פיג': ['עכשיו לובשים בגדי שינה', 'זמן לבגדי שינה'],
+    'סיפור': ['הולכים לשמוע סיפור', 'עכשיו זמן סיפור'],
+    'לישון': ['עכשיו הולכים לישון, לילה טוב', 'זמן לישון מתוקה, לילה טוב'],
+    'נומה': ['עכשיו לילה טוב, נומה נומה', 'זמן לישון, חלומות פז']
+  };
+
+  function getTaskAnnouncement(taskName, childName) {
+    // חפש בתוך שם המשימה מילת מפתח
+    const lower = taskName.toLowerCase();
+    for (const key in TASK_ANNOUNCEMENTS) {
+      if (lower.includes(key) || taskName.includes(key)) {
+        const options = TASK_ANNOUNCEMENTS[key];
+        return options[Math.floor(Math.random() * options.length)];
+      }
+    }
+    // ברירת מחדל
+    return `עכשיו ${taskName}`;
+  }
+
+  const DEFAULT_TASKS = {
+    'child1-morning': [
+      { emoji: '☀️', name: 'התעוררות' },
+      { emoji: '🚽', name: 'שירותים' },
+      { emoji: '🦷', name: 'צחצוח שיניים' },
+      { emoji: '👕', name: 'התלבשות' },
+      { emoji: '🪮', name: 'הסתרקות' },
+      { emoji: '🥣', name: 'ארוחת בוקר' },
+      { emoji: '🎒', name: 'הכנת תיק' }
+    ],
+    'child1-afternoon': [
+      { emoji: '🧼', name: 'שטיפת ידיים' },
+      { emoji: '🍝', name: 'ארוחת צהריים' },
+      { emoji: '😴', name: 'מנוחה' },
+      { emoji: '📚', name: 'שיעורי בית' },
+      { emoji: '🎨', name: 'משחק יצירה' }
+    ],
+    'child1-evening': [
+      { emoji: '🍽️', name: 'ארוחת ערב' },
+      { emoji: '🛁', name: 'מקלחת' },
+      { emoji: '🧸', name: 'סידור צעצועים' },
+      { emoji: '👚', name: "פיג'מה" },
+      { emoji: '🦷', name: 'צחצוח שיניים' },
+      { emoji: '📖', name: 'סיפור' },
+      { emoji: '🌙', name: 'לישון' }
+    ],
+    'child2-morning': [
+      { emoji: '☀️', name: 'בוקר טוב' },
+      { emoji: '🚽', name: 'סיר' },
+      { emoji: '🦷', name: 'צחצוח שיניים' },
+      { emoji: '👗', name: 'בגדים' },
+      { emoji: '🥣', name: 'ארוחת בוקר' }
+    ],
+    'child2-afternoon': [
+      { emoji: '🧼', name: 'שטיפת ידיים' },
+      { emoji: '🍝', name: 'אוכל' },
+      { emoji: '😴', name: 'מנוחה' },
+      { emoji: '🧩', name: 'משחק' }
+    ],
+    'child2-evening': [
+      { emoji: '🍽️', name: 'ארוחת ערב' },
+      { emoji: '🛁', name: 'אמבטיה' },
+      { emoji: '👚', name: "פיג'מה" },
+      { emoji: '🦷', name: 'שיניים' },
+      { emoji: '📖', name: 'סיפור' },
+      { emoji: '🌙', name: 'נומה' }
+    ]
+  };
+
+  const DEFAULT_CHILDREN = {
+    child1: { name: 'מאיה', emoji: '👧' },
+    child2: { name: 'נועה', emoji: '👶' }
+  };
+
+  const DEFAULT_TIMES = {
+    morningStart: '06:00',
+    morningEnd: '11:00',
+    afternoonStart: '11:00',
+    afternoonEnd: '16:00',
+    eveningStart: '16:00',
+    eveningEnd: '21:00'
+  };
+
+  const DEFAULT_VOICE = {
+    voiceName: '', // will be filled with first hebrew voice
+    rate: 0.95,
+    pitch: 1.1,
+    volume: 1.0
+  };
+
+  const DEFAULT_UI_SETTINGS = { child2Mode: 'grid' };
+  let uiSettings = loadFromStorage('uiSettings', DEFAULT_UI_SETTINGS);
+
+  let state = {
+    tasks: loadFromStorage('routineTasks', DEFAULT_TASKS),
+    children: loadFromStorage('children', DEFAULT_CHILDREN),
+    times: loadFromStorage('times', DEFAULT_TIMES),
+    voice: loadFromStorage('voice', DEFAULT_VOICE),
+    diceCount: parseInt(localStorage.getItem('diceCount') || '0'), // לסירוגין דטרמיניסטי
+    completed: { child1: new Set(), child2: new Set() },
+    stars: {
+      child1: parseInt(localStorage.getItem('child1Stars') || '0'),
+      child2: parseInt(localStorage.getItem('child2Stars') || '0')
+    },
+    currentPeriod: 'morning',
+    currentEditingTab: 'child1-morning'
+  };
+
+  function loadFromStorage(key, defaultValue) {
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // ודא שכל המפתחות קיימים
+        if (typeof defaultValue === 'object' && !Array.isArray(defaultValue)) {
+          return { ...defaultValue, ...parsed };
+        }
+        return parsed;
+      } catch(e) {}
+    }
+    return JSON.parse(JSON.stringify(defaultValue));
+  }
+
+  function saveToStorage(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function getCurrentPeriod() {
+    const now = new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    
+    const toMin = (t) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+    
+    const morningStart = toMin(state.times.morningStart);
+    const morningEnd = toMin(state.times.morningEnd);
+    const afternoonStart = toMin(state.times.afternoonStart);
+    const afternoonEnd = toMin(state.times.afternoonEnd);
+    const eveningStart = toMin(state.times.eveningStart);
+    const eveningEnd = toMin(state.times.eveningEnd);
+    
+    if (minutes >= morningStart && minutes < morningEnd) return 'morning';
+    if (minutes >= afternoonStart && minutes < afternoonEnd) return 'afternoon';
+    if (minutes >= eveningStart && minutes < eveningEnd) return 'evening';
+    return 'night';
+  }
+
+  function getPeriodInfo(period) {
+    const info = {
+      morning: { emoji: '🌅', text: 'בוקר', class: 'morning' },
+      afternoon: { emoji: '☀️', text: 'צהריים', class: 'afternoon' },
+      evening: { emoji: '🌙', text: 'ערב', class: 'evening' },
+      night: { emoji: '🌃', text: 'לילה', class: 'night' }
+    };
+    return info[period];
+  }
+
+  function updateTimeDisplay() {
+    const info = getPeriodInfo(state.currentPeriod);
+    document.getElementById('timeEmoji').textContent = info.emoji;
+    document.getElementById('timeText').textContent = info.text;
+    document.body.className = info.class;
+  }
+
+  function renderChildrenNames() {
+    document.getElementById('child1NameText').textContent = state.children.child1.name;
+    document.getElementById('child1Emoji').textContent = state.children.child1.emoji;
+    document.getElementById('child2NameText').textContent = state.children.child2.name;
+    document.getElementById('child2Emoji').textContent = state.children.child2.emoji;
+
+    document.getElementById('tabChild1Icon').textContent = state.children.child1.emoji;
+    document.getElementById('tabChild1Name').textContent = state.children.child1.name;
+    document.getElementById('tabChild2Icon').textContent = state.children.child2.emoji;
+    document.getElementById('tabChild2Name').textContent = state.children.child2.name;
+  }
+
+  function buildGridHTML(child, tasks) {
+    return tasks.map((task, idx) => {
+      const isCompleted = state.completed[child].has(idx);
+      return `
+        <div class="task-card ${isCompleted ? 'completed' : ''}" onclick="handleTaskClick('${child}', ${idx})">
+          <div class="task-card-check">${isCompleted ? '✓' : ''}</div>
+          <div class="task-card-emoji">${task.emoji}</div>
+          <div class="task-card-name">${task.name}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderChild1() {
+    const period = state.currentPeriod === 'night' ? 'evening' : state.currentPeriod;
+    const tasks = state.tasks[`child1-${period}`] || [];
+    const container = document.getElementById('child1Tasks');
+
+    if (state.currentPeriod === 'night') {
+      container.className = '';
+      container.innerHTML = `<div style="text-align:center;padding:40px;font-size:1.3rem;color:#fff;">🌙 לילה טוב ${state.children.child1.name} 🌙</div>`;
+      return;
+    }
+
+    container.className = 'task-grid';
+    container.innerHTML = buildGridHTML('child1', tasks);
+    document.getElementById('child1Stars').textContent = state.stars.child1;
+  }
+
+  function renderChild2() {
+    const period = state.currentPeriod === 'night' ? 'evening' : state.currentPeriod;
+    const tasks = state.tasks[`child2-${period}`] || [];
+    const container = document.getElementById('child2Focus');
+
+    if (state.currentPeriod === 'night') {
+      container.className = 'focus-view';
+      container.innerHTML = `<div style="font-size:6rem;">🌙</div><div style="font-size:1.5rem;margin-top:16px;color:#fff;">לילה טוב ${state.children.child2.name}</div>`;
+      return;
+    }
+
+    if (uiSettings.child2Mode === 'focus') {
+      renderChild2Focus(tasks, container);
+    } else {
+      container.className = 'task-grid';
+      container.innerHTML = buildGridHTML('child2', tasks);
+    }
+
+    document.getElementById('child2Stars').textContent = state.stars.child2;
+  }
+
+  function renderChild2Focus(tasks, container) {
+    container.className = 'focus-view';
+    let currentIdx = -1;
+    for (let i = 0; i < tasks.length; i++) {
+      if (!state.completed.child2.has(i)) { currentIdx = i; break; }
+    }
+    if (currentIdx === -1) {
+      container.innerHTML = `
+        <div style="font-size:7rem;">🎉</div>
+        <div class="focus-title" style="margin-top:16px;">סיימת הכל!</div>
+        <div class="focus-progress">${tasks.length}/${tasks.length} משימות</div>`;
+    } else {
+      const task = tasks[currentIdx];
+      container.innerHTML = `
+        <div class="focus-emoji" onclick="announceTask('child2', ${currentIdx})">${task.emoji}</div>
+        <div class="focus-title" onclick="announceTask('child2', ${currentIdx})">${task.name}</div>
+        <button class="focus-button" onclick="completeTask('child2', ${currentIdx})">
+          <span>✓</span><span>סיימתי!</span>
+        </button>
+        <div class="focus-progress">${currentIdx}/${tasks.length} משימות</div>`;
+    }
+  }
+
+  // ===== Handle Task Click - Smart Behavior =====
+  // לחיצה ראשונה = הכרזה, לחיצה שניה = סימון השלמה
+  let lastClickedTask = { child: null, idx: null, time: 0 };
+
+  function handleTaskClick(child, idx) {
+    if (state.completed[child].has(idx)) return;
+    
+    const now = Date.now();
+    const sameTask = lastClickedTask.child === child && lastClickedTask.idx === idx;
+    const recentClick = now - lastClickedTask.time < 5000;
+    
+    if (sameTask && recentClick) {
+      // Second click = complete
+      completeTask(child, idx);
+      lastClickedTask = { child: null, idx: null, time: 0 };
+    } else {
+      // First click = announce
+      announceTask(child, idx);
+      lastClickedTask = { child, idx, time: now };
+    }
+  }
+
+  function announceTask(child, idx) {
+    const period = state.currentPeriod === 'night' ? 'evening' : state.currentPeriod;
+    const tasks = state.tasks[`${child}-${period}`] || [];
+    const task = tasks[idx];
+    if (!task) return;
+    
+    const childName = state.children[child].name;
+    const announcement = getTaskAnnouncement(task.name, childName);
+    speak(announcement);
+  }
+
+  function completeTask(child, idx) {
+    if (state.completed[child].has(idx)) return;
+    
+    state.completed[child].add(idx);
+    state.stars[child]++;
+    localStorage.setItem(`${child}Stars`, state.stars[child]);
+
+    const sticker = STICKERS[Math.floor(Math.random() * STICKERS.length)];
+    const praise = PRAISES[Math.floor(Math.random() * PRAISES.length)];
+    const childName = state.children[child].name;
+    
+    showCompletionAnimation(sticker, praise);
+    playSuccessSound();
+    
+    // הוסף את שם הילדה לאחת מ-3 הפעמים, כדי שזה לא יהיה מציק
+    const sayName = Math.random() < 0.4;
+    speak(sayName ? `${praise} ${childName}` : praise);
+
+    setTimeout(() => {
+      if (child === 'child1') renderChild1();
+      else renderChild2();
+      checkRoutineComplete(child);
+    }, 800);
+  }
+
+  function showCompletionAnimation(sticker, praise) {
+    const modal = document.getElementById('completionModal');
+    document.getElementById('stickerBurst').textContent = sticker;
+    document.getElementById('praiseText').textContent = praise;
+    modal.classList.add('show');
+    
+    launchConfetti();
+    
+    setTimeout(() => {
+      modal.classList.remove('show');
+    }, 1500);
+  }
+
+  function launchConfetti() {
+    const container = document.getElementById('confetti');
+    const colors = ['#FF6B9D', '#4ECDC4', '#FFD700', '#52C878', '#9B7EBD', '#FFB84D'];
+    
+    for (let i = 0; i < 50; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+      piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+      
+      const duration = 1500 + Math.random() * 1000;
+      const horizontalDrift = (Math.random() - 0.5) * 200;
+      
+      piece.animate([
+        { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+        { transform: `translate(${horizontalDrift}px, 100vh) rotate(${720 + Math.random() * 360}deg)`, opacity: 0.8 }
+      ], {
+        duration,
+        easing: 'cubic-bezier(0.1, 0.6, 0.4, 1)'
+      });
+      
+      container.appendChild(piece);
+      setTimeout(() => piece.remove(), duration);
+    }
+  }
+
+  function resetChild(child) {
+    state.completed[child] = new Set();
+    if (child === 'child1') renderChild1();
+    else renderChild2();
+  }
+
+  function checkRoutineComplete(child) {
+    const period = state.currentPeriod === 'night' ? 'evening' : state.currentPeriod;
+    const tasks = state.tasks[`${child}-${period}`] || [];
+    
+    if (state.completed[child].size === tasks.length && tasks.length > 0) {
+      setTimeout(() => showRoutineComplete(child), 500);
+    }
+  }
+
+  function showRoutineComplete(child) {
+    const childName = state.children[child].name;
+    const periodText = getPeriodInfo(state.currentPeriod).text;
+    document.getElementById('routineCompleteText').textContent = 
+      `${childName}, סיימת את כל משימות ה${periodText}!`;
+    document.getElementById('routineComplete').classList.add('show');
+    speak(`איזה יופי ${childName}! סיימת את כל המשימות!`);
+    
+    launchConfetti();
+    setTimeout(() => launchConfetti(), 300);
+    setTimeout(() => launchConfetti(), 600);
+  }
+
+  document.getElementById('routineCompleteBtn').addEventListener('click', () => {
+    document.getElementById('routineComplete').classList.remove('show');
+  });
+
+  // ===== Audio =====
+  let audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch(e) {}
+    }
+  }
+
+  function playSuccessSound() {
+    initAudio();
+    if (!audioCtx) return;
+    
+    const notes = [523.25, 659.25, 783.99];
+    notes.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      const startTime = audioCtx.currentTime + i * 0.1;
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.2, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+      
+      osc.start(startTime);
+      osc.stop(startTime + 0.3);
+    });
+  }
+
+  // ===== Speech =====
+  let availableVoices = [];
+
+  function loadVoices() {
+    availableVoices = speechSynthesis.getVoices();
+    // Filter Hebrew voices, then add others as fallback
+    const hebrewVoices = availableVoices.filter(v => v.lang.startsWith('he'));
+    populateVoiceSelect(hebrewVoices, availableVoices);
+  }
+
+  function populateVoiceSelect(hebrewVoices, allVoices) {
+    const select = document.getElementById('voiceSelect');
+    if (!select) return;
+    select.innerHTML = '';
+    
+    if (hebrewVoices.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'לא נמצא קול עברי - יש להתקין במערכת';
+      select.appendChild(opt);
+      return;
+    }
+    
+    hebrewVoices.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      opt.textContent = `${v.name} (${v.lang})`;
+      if (v.localService) opt.textContent += ' ⭐';
+      select.appendChild(opt);
+    });
+    
+    // Select saved voice or default
+    if (state.voice.voiceName) {
+      select.value = state.voice.voiceName;
+    } else if (hebrewVoices.length > 0) {
+      // Prefer local "Carmit" or first local hebrew voice
+      const carmit = hebrewVoices.find(v => v.name.toLowerCase().includes('carmit'));
+      const localFirst = hebrewVoices.find(v => v.localService);
+      const preferred = carmit || localFirst || hebrewVoices[0];
+      select.value = preferred.name;
+      state.voice.voiceName = preferred.name;
+    }
+  }
+
+  function preprocessForSpeech(text) {
+    return text
+      .replace(/פיג['׳'`]?מה/g, 'בגדי שינה')
+      .replace(/פיג'מה/g, 'בגדי שינה');
+  }
+
+  function speak(text) {
+    if (!('speechSynthesis' in window)) return;
+    text = preprocessForSpeech(text);
+    
+    speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'he-IL';
+    utterance.rate = state.voice.rate;
+    utterance.pitch = state.voice.pitch;
+    utterance.volume = state.voice.volume;
+    
+    // Try to find selected voice, then any hebrew voice
+    const voices = speechSynthesis.getVoices();
+    let voice = null;
+    
+    if (state.voice.voiceName) {
+      voice = voices.find(v => v.name === state.voice.voiceName);
+    }
+    if (!voice) {
+      voice = voices.find(v => v.lang.startsWith('he') && v.localService) ||
+              voices.find(v => v.lang.startsWith('he'));
+    }
+    
+    if (voice) utterance.voice = voice;
+    
+    speechSynthesis.speak(utterance);
+  }
+
+  // ===== Background =====
+  function createBgDecorations() {
+    const container = document.getElementById('bgDecoration');
+    const emojis = ['⭐', '✨', '☁️', '🌸', '💫'];
+    
+    for (let i = 0; i < 8; i++) {
+      const span = document.createElement('span');
+      span.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      span.style.left = Math.random() * 100 + '%';
+      span.style.animationDelay = Math.random() * 15 + 's';
+      span.style.animationDuration = (12 + Math.random() * 8) + 's';
+      container.appendChild(span);
+    }
+  }
+
+  // ===== Settings Modal =====
+  document.getElementById('parentBtn').addEventListener('click', openSettingsModal);
+
+  document.getElementById('settingsModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('settingsModal')) closeSettingsModal();
+  });
+
+  document.getElementById('diceModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('diceModal')) closeDiceModal();
+  });
+
+  function openSettingsModal() {
+    initAudio(); // קלייק על כפתור מאפשר אודיו
+    document.getElementById('settingsModal').classList.add('show');
+    
+    // Pre-fill all values
+    document.getElementById('child1NameInput').value = state.children.child1.name;
+    document.getElementById('child1EmojiInput').value = state.children.child1.emoji;
+    document.getElementById('child2NameInput').value = state.children.child2.name;
+    document.getElementById('child2EmojiInput').value = state.children.child2.emoji;
+    
+    document.getElementById('morningStart').value = state.times.morningStart;
+    document.getElementById('morningEnd').value = state.times.morningEnd;
+    document.getElementById('afternoonStart').value = state.times.afternoonStart;
+    document.getElementById('afternoonEnd').value = state.times.afternoonEnd;
+    document.getElementById('eveningStart').value = state.times.eveningStart;
+    document.getElementById('eveningEnd').value = state.times.eveningEnd;
+    
+    document.getElementById('rateSlider').value = state.voice.rate;
+    document.getElementById('pitchSlider').value = state.voice.pitch;
+    document.getElementById('volumeSlider').value = state.voice.volume;
+    document.getElementById('rateValue').textContent = state.voice.rate;
+    document.getElementById('pitchValue').textContent = state.voice.pitch;
+    document.getElementById('volumeValue').textContent = Math.round(state.voice.volume * 100) + '%';
+    
+    document.getElementById('child2ModeSelect').value = uiSettings.child2Mode;
+
+    loadVoices();
+
+    showSettingsSection('names', document.querySelector('.settings-nav-btn'));
+  }
+
+  function closeSettingsModal() {
+    document.getElementById('settingsModal').classList.remove('show');
+  }
+
+  let currentEditChild = 'child1';
+  let currentEditPeriod = 'morning';
+
+  function showSettingsSection(section, btn) {
+    document.querySelectorAll('.settings-nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+
+    if (btn) btn.classList.add('active');
+    document.getElementById(section + 'Section').classList.add('active');
+
+    if (section === 'tasks') {
+      currentEditChild = 'child1';
+      currentEditPeriod = 'morning';
+      document.querySelectorAll('.child-select-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('childSelectBtn1').classList.add('active');
+      document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+      document.querySelector('.period-tab[data-period="morning"]').classList.add('active');
+      updateEditTabTitle();
+      state.currentEditingTab = 'child1-morning';
+      renderTaskEditor();
+    }
+  }
+
+  function selectEditChild(child, btn) {
+    currentEditChild = child;
+    document.querySelectorAll('.child-select-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.currentEditingTab = `${currentEditChild}-${currentEditPeriod}`;
+    updateEditTabTitle();
+    renderTaskEditor();
+  }
+
+  function selectEditPeriod(period, btn) {
+    currentEditPeriod = period;
+    document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.currentEditingTab = `${currentEditChild}-${currentEditPeriod}`;
+    updateEditTabTitle();
+    renderTaskEditor();
+  }
+
+  function updateEditTabTitle() {
+    const childName = state.children[currentEditChild].name;
+    const periodNames = { morning: 'בוקר', afternoon: 'צהריים', evening: 'ערב' };
+    document.getElementById('currentTabTitle').textContent =
+      `משימות ${childName} - ${periodNames[currentEditPeriod]}`;
+  }
+
+  let dragSrcIdx = null;
+
+  function renderTaskEditor() {
+    // אם הטאב לא קיים כלל — אתחל מברירת מחדל
+    if (!state.tasks[state.currentEditingTab]) {
+      state.tasks[state.currentEditingTab] = JSON.parse(JSON.stringify(DEFAULT_TASKS[state.currentEditingTab] || []));
+    }
+    const tasks = state.tasks[state.currentEditingTab];
+    const editor = document.getElementById('taskEditor');
+
+    if (tasks.length === 0) {
+      editor.innerHTML = `
+        <div style="text-align:center;padding:24px 0;color:#aaa;font-size:1rem;">
+          אין משימות לתקופה זו
+          <br><br>
+          <button onclick="resetTabToDefaults()" style="background:#eee;border:none;border-radius:10px;padding:10px 20px;font-family:inherit;font-size:0.95rem;cursor:pointer;color:#555;">
+            ↺ שחזר ברירות מחדל
+          </button>
+        </div>`;
+      return;
+    }
+
+    editor.innerHTML = tasks.map((task, idx) => `
+      <div class="editable-task" draggable="true"
+           ondragstart="taskDragStart(event,${idx})"
+           ondragover="taskDragOver(event)"
+           ondragleave="taskDragLeave(event)"
+           ondrop="taskDrop(event,${idx})"
+           ondragend="taskDragEnd()">
+        <span class="drag-handle">⠿</span>
+        <input type="text" class="emoji-input" value="${task.emoji}"
+               oninput="updateTask(${idx}, 'emoji', this.value)" maxlength="4">
+        <input type="text" value="${(task.name || '').replace(/"/g, '&quot;')}"
+               oninput="updateTask(${idx}, 'name', this.value)" placeholder="שם המשימה">
+        <button class="delete-task" onclick="deleteTask(${idx})">×</button>
+      </div>
+    `).join('');
+  }
+
+  function taskDragStart(e, idx) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') {
+      e.preventDefault();
+      return;
+    }
+    dragSrcIdx = idx;
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => e.target.closest('.editable-task').classList.add('dragging'), 0);
+  }
+
+  function taskDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const row = e.target.closest('.editable-task');
+    if (row) row.classList.add('drag-over');
+  }
+
+  function taskDragLeave(e) {
+    const row = e.target.closest('.editable-task');
+    if (row) row.classList.remove('drag-over');
+  }
+
+  function taskDrop(e, targetIdx) {
+    e.stopPropagation();
+    if (dragSrcIdx !== null && dragSrcIdx !== targetIdx) {
+      const tasks = state.tasks[state.currentEditingTab];
+      const [moved] = tasks.splice(dragSrcIdx, 1);
+      tasks.splice(targetIdx, 0, moved);
+      renderTaskEditor();
+    }
+  }
+
+  function taskDragEnd() {
+    document.querySelectorAll('.editable-task').forEach(el => {
+      el.classList.remove('dragging', 'drag-over');
+    });
+    dragSrcIdx = null;
+  }
+
+  function resetTabToDefaults() {
+    const defaults = DEFAULT_TASKS[state.currentEditingTab];
+    if (defaults) {
+      state.tasks[state.currentEditingTab] = JSON.parse(JSON.stringify(defaults));
+      renderTaskEditor();
+    }
+  }
+
+  function updateTask(idx, field, value) {
+    state.tasks[state.currentEditingTab][idx][field] = value;
+  }
+
+  function deleteTask(idx) {
+    state.tasks[state.currentEditingTab].splice(idx, 1);
+    renderTaskEditor();
+  }
+
+  function addNewTask() {
+    state.tasks[state.currentEditingTab].push({ emoji: '✨', name: 'משימה חדשה' });
+    renderTaskEditor();
+  }
+
+  // Voice sliders
+  document.getElementById('rateSlider').addEventListener('input', (e) => {
+    document.getElementById('rateValue').textContent = e.target.value;
+    state.voice.rate = parseFloat(e.target.value);
+  });
+  document.getElementById('pitchSlider').addEventListener('input', (e) => {
+    document.getElementById('pitchValue').textContent = e.target.value;
+    state.voice.pitch = parseFloat(e.target.value);
+  });
+  document.getElementById('volumeSlider').addEventListener('input', (e) => {
+    document.getElementById('volumeValue').textContent = Math.round(e.target.value * 100) + '%';
+    state.voice.volume = parseFloat(e.target.value);
+  });
+  document.getElementById('voiceSelect').addEventListener('change', (e) => {
+    state.voice.voiceName = e.target.value;
+  });
+
+  function testVoice() {
+    speak('שלום, זה הקול שיברך את הילדות שלך');
+  }
+
+  function testPraise() {
+    const praise = PRAISES[Math.floor(Math.random() * PRAISES.length)];
+    const sticker = STICKERS[Math.floor(Math.random() * STICKERS.length)];
+    showCompletionAnimation(sticker, praise);
+    playSuccessSound();
+    speak(praise);
+  }
+
+  function saveSettings() {
+    const newChild1Name = document.getElementById('child1NameInput').value.trim();
+    const newChild1Emoji = document.getElementById('child1EmojiInput').value.trim();
+    const newChild2Name = document.getElementById('child2NameInput').value.trim();
+    const newChild2Emoji = document.getElementById('child2EmojiInput').value.trim();
+    
+    if (newChild1Name) state.children.child1.name = newChild1Name;
+    if (newChild1Emoji) state.children.child1.emoji = newChild1Emoji;
+    if (newChild2Name) state.children.child2.name = newChild2Name;
+    if (newChild2Emoji) state.children.child2.emoji = newChild2Emoji;
+    
+    state.times.morningStart = document.getElementById('morningStart').value;
+    state.times.morningEnd = document.getElementById('morningEnd').value;
+    state.times.afternoonStart = document.getElementById('afternoonStart').value;
+    state.times.afternoonEnd = document.getElementById('afternoonEnd').value;
+    state.times.eveningStart = document.getElementById('eveningStart').value;
+    state.times.eveningEnd = document.getElementById('eveningEnd').value;
+    
+    uiSettings.child2Mode = document.getElementById('child2ModeSelect').value;
+
+    saveToStorage('children', state.children);
+    saveToStorage('routineTasks', state.tasks);
+    saveToStorage('times', state.times);
+    saveToStorage('voice', state.voice);
+    saveToStorage('uiSettings', uiSettings);
+
+    // עדכן את התקופה הנוכחית בהתאם לשעות החדשות ואפס השלמות
+    state.currentPeriod = getCurrentPeriod();
+    state.completed.child1 = new Set();
+    state.completed.child2 = new Set();
+
+    renderChildrenNames();
+    updateTimeDisplay();
+    renderChild1();
+    renderChild2();
+    closeSettingsModal();
+    speak('השינויים נשמרו');
+  }
+
+  // ===== Dice (Shower) =====
+  document.getElementById('diceBtn').addEventListener('click', openDiceModal);
+
+  function openDiceModal() {
+    initAudio();
+    document.getElementById('diceModal').classList.add('show');
+    document.getElementById('diceResult').textContent = '';
+    
+    // הצג מצב התחלתי
+    const dice = document.getElementById('dice');
+    dice.innerHTML = `<div class="dice-emoji">🎲</div><div class="dice-name">לחצו לזרוק</div>`;
+    document.getElementById('rollBtn').disabled = false;
+  }
+
+  function closeDiceModal() {
+    document.getElementById('diceModal').classList.remove('show');
+  }
+
+  function rollDice() {
+    const rollBtn = document.getElementById('rollBtn');
+    const dice = document.getElementById('dice');
+    rollBtn.disabled = true;
+    
+    // התחל אנימציה
+    dice.classList.add('rolling');
+    
+    // הצג מסיחים בזמן הסיבוב
+    const childKeys = ['child1', 'child2'];
+    let flickerCount = 0;
+    const flickerInterval = setInterval(() => {
+      const randKey = childKeys[Math.floor(Math.random() * 2)];
+      const c = state.children[randKey];
+      dice.innerHTML = `<div class="dice-emoji">${c.emoji}</div><div class="dice-name">${c.name}</div>`;
+      flickerCount++;
+    }, 100);
+
+    // לאחר 1.5 שניות - הצג תוצאה דטרמיניסטית
+    setTimeout(() => {
+      clearInterval(flickerInterval);
+      dice.classList.remove('rolling');
+      
+      // לסירוגין: יום זוגי = child1, יום אי-זוגי = child2
+      const winnerKey = state.diceCount % 2 === 0 ? 'child1' : 'child2';
+      const winner = state.children[winnerKey];
+      
+      // עדכן ספירה לזריקה הבאה
+      state.diceCount++;
+      localStorage.setItem('diceCount', state.diceCount);
+      
+      dice.innerHTML = `<div class="dice-emoji">${winner.emoji}</div><div class="dice-name">${winner.name}</div>`;
+      
+      document.getElementById('diceResult').textContent = `${winner.name} נכנסת ראשונה למקלחת! 🚿`;
+      speak(`${winner.name} נכנסת ראשונה למקלחת`);
+      
+      // קונפטי קטן
+      launchConfetti();
+      
+      rollBtn.disabled = false;
+    }, 1500);
+  }
+
+  // ===== Init =====
+  function init() {
+    state.currentPeriod = getCurrentPeriod();
+    updateTimeDisplay();
+    createBgDecorations();
+    renderChildrenNames();
+    renderChild1();
+    renderChild2();
+    
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    
+    setInterval(() => {
+      const newPeriod = getCurrentPeriod();
+      if (newPeriod !== state.currentPeriod) {
+        state.currentPeriod = newPeriod;
+        state.completed.child1 = new Set();
+        state.completed.child2 = new Set();
+        updateTimeDisplay();
+        renderChild1();
+        renderChild2();
+      }
+    }, 60000);
+    
+    document.body.addEventListener('click', initAudio, { once: true });
+    document.body.addEventListener('touchstart', initAudio, { once: true });
+  }
+
+  init();
+</script>
+
+</body>
+</html>
