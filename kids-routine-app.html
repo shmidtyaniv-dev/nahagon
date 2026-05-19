@@ -1762,7 +1762,9 @@
   function preprocessForSpeech(text) {
     return text
       .replace(/פיג['׳'`]?מה/g, 'בגדי שינה')
-      .replace(/פיג'מה/g, 'בגדי שינה');
+      .replace(/פיג'מה/g, 'בגדי שינה')
+      .replace(/ארוחת ערב/g, 'ארוחה בערב')
+      .replace(/ערב/g, 'עֶרֶב');
   }
 
   function speak(text) {
