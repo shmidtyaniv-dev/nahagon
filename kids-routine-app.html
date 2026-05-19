@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>סדר היום שלי</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Varela+Round&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
   * {
     margin: 0;
@@ -1199,6 +1201,30 @@
 </div>
 
 <script>
+  // ===== Firebase Sync =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyDxEkBPVypm2oDck5yrg3ui8afpAZMu934",
+    authDomain: "alma-libi.firebaseapp.com",
+    databaseURL: "https://alma-libi-default-rtdb.firebaseio.com",
+    projectId: "alma-libi",
+    storageBucket: "alma-libi.firebasestorage.app",
+    messagingSenderId: "297462560263",
+    appId: "1:297462560263:web:a8a5e8249dd108c4345ca2"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const cloudDb = firebase.database();
+  const familyRef = cloudDb.ref('family');
+
+  function saveToCloud() {
+    familyRef.set({
+      tasks: state.tasks,
+      children: state.children,
+      times: state.times,
+      voice: state.voice,
+      uiSettings: uiSettings
+    }).catch(e => console.warn('Sync failed:', e));
+  }
+
   // ===== STICKERS - מגוון רחב של דברים חיוביים =====
   const STICKERS = [
     '⭐', '🌟', '✨', '💫', '🌠', // כוכבים
@@ -2028,6 +2054,7 @@
     saveToStorage('times', state.times);
     saveToStorage('voice', state.voice);
     saveToStorage('uiSettings', uiSettings);
+    saveToCloud();
 
     // עדכן את התקופה הנוכחית בהתאם לשעות החדשות ואפס השלמות
     state.currentPeriod = getCurrentPeriod();
@@ -2111,12 +2138,28 @@
     renderChildrenNames();
     renderChild1();
     renderChild2();
-    
+
     if ('speechSynthesis' in window) {
       loadVoices();
       speechSynthesis.onvoiceschanged = loadVoices;
     }
-    
+
+    // סנכרון בזמן אמת מ-Firebase
+    familyRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+      if (data.tasks)      { state.tasks    = { ...DEFAULT_TASKS,       ...data.tasks };      saveToStorage('routineTasks', state.tasks); }
+      if (data.children)   { state.children = { ...DEFAULT_CHILDREN,    ...data.children };   saveToStorage('children',     state.children); }
+      if (data.times)      { state.times    = { ...DEFAULT_TIMES,       ...data.times };      saveToStorage('times',        state.times); }
+      if (data.voice)      { state.voice    = { ...DEFAULT_VOICE,       ...data.voice };      saveToStorage('voice',        state.voice); }
+      if (data.uiSettings) { uiSettings     = { ...DEFAULT_UI_SETTINGS, ...data.uiSettings }; saveToStorage('uiSettings',   uiSettings); }
+      state.currentPeriod = getCurrentPeriod();
+      renderChildrenNames();
+      updateTimeDisplay();
+      renderChild1();
+      renderChild2();
+    });
+
     setInterval(() => {
       const newPeriod = getCurrentPeriod();
       if (newPeriod !== state.currentPeriod) {
@@ -2128,7 +2171,7 @@
         renderChild2();
       }
     }, 60000);
-    
+
     document.body.addEventListener('click', initAudio, { once: true });
     document.body.addEventListener('touchstart', initAudio, { once: true });
   }
