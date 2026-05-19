@@ -730,9 +730,14 @@
     font-size: 1.3rem;
     color: #bbb;
     flex-shrink: 0;
-    padding: 0 2px;
+    padding: 8px 6px;
     line-height: 1;
     touch-action: none;
+    min-width: 36px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .drag-handle:active { cursor: grabbing; }
@@ -1906,6 +1911,10 @@
   }
 
   let dragSrcIdx = null;
+  let touchDragSrcIdx = null;
+  let touchDragGhost = null;
+  let touchDragOffsetY = 0;
+  let touchDragListenersAdded = false;
 
   function renderTaskEditor() {
     // אם הטאב לא קיים כלל — אתחל מברירת מחדל
@@ -1942,6 +1951,7 @@
         <button class="delete-task" onclick="deleteTask(${idx})">×</button>
       </div>
     `).join('');
+    initTouchDrag();
   }
 
   function taskDragStart(e, idx) {
@@ -1981,6 +1991,102 @@
       el.classList.remove('dragging', 'drag-over');
     });
     dragSrcIdx = null;
+  }
+
+  function initTouchDrag() {
+    // Attach touchstart to each drag handle
+    document.querySelectorAll('.editable-task .drag-handle').forEach((handle, idx) => {
+      handle.addEventListener('touchstart', (e) => {
+        touchDragSrcIdx = idx;
+        const row = handle.closest('.editable-task');
+        const rect = row.getBoundingClientRect();
+        const touch = e.touches[0];
+        touchDragOffsetY = touch.clientY - rect.top;
+
+        touchDragGhost = row.cloneNode(true);
+        Object.assign(touchDragGhost.style, {
+          position: 'fixed',
+          left: rect.left + 'px',
+          top: rect.top + 'px',
+          width: rect.width + 'px',
+          margin: '0',
+          opacity: '0.85',
+          background: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 8px 28px rgba(0,0,0,0.28)',
+          zIndex: '99999',
+          pointerEvents: 'none',
+          transition: 'none'
+        });
+        document.body.appendChild(touchDragGhost);
+        row.style.opacity = '0.3';
+        e.preventDefault();
+      }, { passive: false });
+    });
+
+    // One-time global listeners
+    if (!touchDragListenersAdded) {
+      touchDragListenersAdded = true;
+
+      document.addEventListener('touchmove', (e) => {
+        if (!touchDragGhost) return;
+        const touch = e.touches[0];
+        touchDragGhost.style.top = (touch.clientY - touchDragOffsetY) + 'px';
+
+        // Clear previous highlight
+        document.querySelectorAll('.editable-task').forEach(r => r.classList.remove('drag-over'));
+
+        // Find element under finger
+        touchDragGhost.style.visibility = 'hidden';
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        touchDragGhost.style.visibility = '';
+        if (el) {
+          const row = el.closest('.editable-task');
+          if (row) row.classList.add('drag-over');
+        }
+        e.preventDefault();
+      }, { passive: false });
+
+      document.addEventListener('touchend', (e) => {
+        if (!touchDragGhost) return;
+        const touch = e.changedTouches[0];
+
+        touchDragGhost.style.visibility = 'hidden';
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        touchDragGhost.style.visibility = '';
+
+        if (el) {
+          const targetRow = el.closest('.editable-task');
+          if (targetRow) {
+            const rows = [...document.querySelectorAll('.editable-task')];
+            const targetIdx = rows.indexOf(targetRow);
+            if (targetIdx !== -1 && targetIdx !== touchDragSrcIdx) {
+              const tasks = state.tasks[state.currentEditingTab];
+              const [moved] = tasks.splice(touchDragSrcIdx, 1);
+              tasks.splice(targetIdx, 0, moved);
+              touchDragGhost.remove();
+              touchDragGhost = null;
+              touchDragSrcIdx = null;
+              document.querySelectorAll('.editable-task').forEach(r => {
+                r.style.opacity = '';
+                r.classList.remove('drag-over');
+              });
+              renderTaskEditor();
+              return;
+            }
+          }
+        }
+
+        // No valid drop — cleanup only
+        touchDragGhost.remove();
+        touchDragGhost = null;
+        document.querySelectorAll('.editable-task').forEach(r => {
+          r.style.opacity = '';
+          r.classList.remove('drag-over');
+        });
+        touchDragSrcIdx = null;
+      });
+    }
   }
 
   function resetTabToDefaults() {
