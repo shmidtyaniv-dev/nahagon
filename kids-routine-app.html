@@ -1593,24 +1593,9 @@
 
   // ===== Handle Task Click - Smart Behavior =====
   // לחיצה ראשונה = הכרזה, לחיצה שניה = סימון השלמה
-  let lastClickedTask = { child: null, idx: null, time: 0 };
-
   function handleTaskClick(child, idx) {
     if (state.completed[child].has(idx)) return;
-    
-    const now = Date.now();
-    const sameTask = lastClickedTask.child === child && lastClickedTask.idx === idx;
-    const recentClick = now - lastClickedTask.time < 5000;
-    
-    if (sameTask && recentClick) {
-      // Second click = complete
-      completeTask(child, idx);
-      lastClickedTask = { child: null, idx: null, time: 0 };
-    } else {
-      // First click = announce
-      announceTask(child, idx);
-      lastClickedTask = { child, idx, time: now };
-    }
+    completeTask(child, idx);
   }
 
   function announceTask(child, idx) {
