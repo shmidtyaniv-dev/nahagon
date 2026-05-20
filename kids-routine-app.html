@@ -226,25 +226,18 @@
 
   .task-card-check {
     position: absolute;
-    top: 8px;
+    top: 6px;
     left: 8px;
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
-    border: 3px solid var(--success);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: white;
-    transition: all 0.2s;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--success);
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.2s;
   }
 
   .task-card.completed .task-card-check {
-    background: var(--success);
-    border-color: var(--success);
+    opacity: 1;
   }
 
   /* אנימציית חד-קרן לעלמה */
@@ -1530,7 +1523,7 @@
       const isCompleted = state.completed[child].has(idx);
       return `
         <div class="task-card ${isCompleted ? 'completed' : ''}" onclick="handleTaskClick('${child}', ${idx})">
-          <div class="task-card-check">${isCompleted ? '✓' : ''}</div>
+          <div class="task-card-check">✓</div>
           <div class="task-card-emoji">${task.emoji}</div>
           <div class="task-card-name">${task.name}</div>
         </div>
