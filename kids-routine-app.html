@@ -228,15 +228,15 @@
     position: absolute;
     top: 8px;
     left: 8px;
-    width: 26px;
-    height: 26px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.9);
-    border: 2.5px solid var(--success);
+    border: 3px solid var(--success);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: white;
     transition: all 0.2s;
@@ -245,6 +245,48 @@
   .task-card.completed .task-card-check {
     background: var(--success);
     border-color: var(--success);
+  }
+
+  /* אנימציית חד-קרן לעלמה */
+  .unicorn-fly {
+    position: fixed;
+    font-size: 2.8rem;
+    z-index: 99998;
+    pointer-events: none;
+    animation: unicornFly linear forwards;
+  }
+
+  @keyframes unicornFly {
+    0%   { transform: translateX(0) translateY(0) scale(0.6) rotate(-10deg); opacity: 0; }
+    10%  { opacity: 1; }
+    50%  { transform: translateX(var(--dx)) translateY(var(--dy)) scale(1.2) rotate(var(--rot)); opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateX(var(--dx2)) translateY(var(--dy2)) scale(0.7) rotate(var(--rot2)); opacity: 0; }
+  }
+
+  .rainbow-arc {
+    position: fixed;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%) scaleY(0);
+    width: 90vw;
+    height: 45vw;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    border: 12px solid transparent;
+    border-top: 14px solid transparent;
+    background:
+      linear-gradient(white, white) padding-box,
+      linear-gradient(to right, red, orange, yellow, green, #4ECDC4, blue, violet) border-box;
+    z-index: 99997;
+    pointer-events: none;
+    animation: rainbowAppear 1.6s ease forwards;
+  }
+
+  @keyframes rainbowAppear {
+    0%   { transform: translateX(-50%) scaleY(0); opacity: 0; }
+    30%  { transform: translateX(-50%) scaleY(1); opacity: 0.85; }
+    70%  { transform: translateX(-50%) scaleY(1); opacity: 0.85; }
+    100% { transform: translateX(-50%) scaleY(0.3); opacity: 0; }
   }
 
   @media (orientation: portrait) {
@@ -1600,9 +1642,9 @@
     const praise = PRAISES[Math.floor(Math.random() * PRAISES.length)];
     const childName = state.children[child].name;
     
-    showCompletionAnimation(sticker, praise);
+    showCompletionAnimation(sticker, praise, child);
     playSuccessSound();
-    
+
     // הוסף את שם הילדה לאחת מ-3 הפעמים, כדי שזה לא יהיה מציק
     const sayName = Math.random() < 0.4;
     speak(sayName ? `${praise} ${childName}` : praise);
@@ -1614,17 +1656,56 @@
     }, 800);
   }
 
-  function showCompletionAnimation(sticker, praise) {
+  function showCompletionAnimation(sticker, praise, child) {
     const modal = document.getElementById('completionModal');
     document.getElementById('stickerBurst').textContent = sticker;
     document.getElementById('praiseText').textContent = praise;
     modal.classList.add('show');
-    
+
     launchConfetti();
-    
+    if (child === 'child1') launchUnicornRainbow();
+
     setTimeout(() => {
       modal.classList.remove('show');
     }, 1500);
+  }
+
+  function launchUnicornRainbow() {
+    // קשת
+    const arc = document.createElement('div');
+    arc.className = 'rainbow-arc';
+    document.body.appendChild(arc);
+    setTimeout(() => arc.remove(), 1800);
+
+    // חד-קרנות
+    const emojis = ['🦄', '🌈', '🦄', '⭐', '🦄'];
+    emojis.forEach((emoji, i) => {
+      setTimeout(() => {
+        const el = document.createElement('div');
+        el.className = 'unicorn-fly';
+        el.textContent = emoji;
+
+        const fromLeft = Math.random() > 0.5;
+        const startX = fromLeft ? -60 : window.innerWidth + 20;
+        const startY = 80 + Math.random() * (window.innerHeight * 0.6);
+        const dx = (fromLeft ? 1 : -1) * (window.innerWidth * 0.4 + Math.random() * window.innerWidth * 0.3);
+        const dy = (Math.random() - 0.5) * 200;
+        const rot = (Math.random() - 0.5) * 40;
+
+        el.style.left = startX + 'px';
+        el.style.top = startY + 'px';
+        el.style.setProperty('--dx', dx + 'px');
+        el.style.setProperty('--dy', dy + 'px');
+        el.style.setProperty('--dy2', (dy * 1.8) + 'px');
+        el.style.setProperty('--dx2', (dx * 1.6) + 'px');
+        el.style.setProperty('--rot', rot + 'deg');
+        el.style.setProperty('--rot2', (rot * 2) + 'deg');
+        el.style.animationDuration = (900 + Math.random() * 600) + 'ms';
+
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1600);
+      }, i * 120);
+    });
   }
 
   function launchConfetti() {
