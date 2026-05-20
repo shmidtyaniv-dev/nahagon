@@ -257,30 +257,6 @@
     100% { transform: translateX(var(--dx2)) translateY(var(--dy2)) scale(0.7) rotate(var(--rot2)); opacity: 0; }
   }
 
-  .rainbow-arc {
-    position: fixed;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%) scaleY(0);
-    width: 90vw;
-    height: 45vw;
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    border: 12px solid transparent;
-    border-top: 14px solid transparent;
-    background:
-      linear-gradient(transparent, transparent) padding-box,
-      linear-gradient(to right, red, orange, yellow, green, #4ECDC4, blue, violet) border-box;
-    z-index: 99997;
-    pointer-events: none;
-    animation: rainbowAppear 1.6s ease forwards;
-  }
-
-  @keyframes rainbowAppear {
-    0%   { transform: translateX(-50%) scaleY(0); opacity: 0; }
-    30%  { transform: translateX(-50%) scaleY(1); opacity: 0.85; }
-    70%  { transform: translateX(-50%) scaleY(1); opacity: 0.85; }
-    100% { transform: translateX(-50%) scaleY(0.3); opacity: 0; }
-  }
 
   @media (orientation: portrait) {
     .task-grid {
@@ -1649,12 +1625,6 @@
   }
 
   function launchUnicornRainbow() {
-    // קשת
-    const arc = document.createElement('div');
-    arc.className = 'rainbow-arc';
-    document.body.appendChild(arc);
-    setTimeout(() => arc.remove(), 1800);
-
     // חד-קרנות
     const emojis = ['🦄', '🌈', '🦄', '⭐', '🦄'];
     emojis.forEach((emoji, i) => {
