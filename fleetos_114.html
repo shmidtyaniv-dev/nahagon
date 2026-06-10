@@ -20812,132 +20812,163 @@ function exportEndOfBusinessPDF(saveToDoc){
     try { sigDataUrl = sigCanvas.toDataURL('image/png'); } catch(e){}
   }
 
-  var rowsHTML = '';
+  // ── בניית שורות ─ שורות 1-25 לעמוד 1, שורות 26-34 לעמוד 2 ──
+  var rowsHTML1 = '';
+  var rowsHTML2 = '';
   EOB_ITEMS.forEach(function(item, idx){
     var i = idx + 1;
     var sabir   = !!(document.getElementById('eob-sabir-'   + i)?.checked);
     var nosabir = !!(document.getElementById('eob-nosabir-' + i)?.checked);
     var note    = (document.getElementById('eob-rownote-' + i)?.value || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     var rowBg   = (idx % 2 === 0) ? '#fff' : '#f9f9f7';
-    rowsHTML += '<tr style="background:' + rowBg + ';border-bottom:1px solid #e4e4e0">';
-    rowsHTML += '<td style="padding:3px 4px;text-align:center;color:#999;font-size:9px;border-left:1px solid #e4e4e0">' + i + '</td>';
-    rowsHTML += '<td style="padding:3px 8px;text-align:right;font-size:11px;border-left:1px solid #e4e4e0">' + item + '</td>';
-    rowsHTML += '<td style="padding:3px 4px;text-align:center;font-size:13px;color:#1D9E75;border-left:1px solid #e4e4e0">' + (sabir ? '&#10003;' : '') + '</td>';
-    rowsHTML += '<td style="padding:3px 4px;text-align:center;font-size:13px;color:#E24B4A;border-left:1px solid #e4e4e0">' + (nosabir ? '&#10003;' : '') + '</td>';
-    rowsHTML += '<td style="padding:3px 8px;text-align:right;font-size:10px;color:#444">' + note + '</td>';
-    rowsHTML += '</tr>';
+    var rowHtml = '<tr style="background:' + rowBg + ';border-bottom:1px solid #e4e4e0">';
+    rowHtml += '<td style="padding:5px 4px;text-align:center;color:#999;font-size:11px;border-left:1px solid #e4e4e0">' + i + '</td>';
+    rowHtml += '<td style="padding:5px 8px;text-align:right;font-size:13px;border-left:1px solid #e4e4e0">' + item + '</td>';
+    rowHtml += '<td style="padding:5px 4px;text-align:center;font-size:15px;color:#1D9E75;border-left:1px solid #e4e4e0">' + (sabir ? '&#10003;' : '') + '</td>';
+    rowHtml += '<td style="padding:5px 4px;text-align:center;font-size:15px;color:#E24B4A;border-left:1px solid #e4e4e0">' + (nosabir ? '&#10003;' : '') + '</td>';
+    rowHtml += '<td style="padding:5px 8px;text-align:right;font-size:11px;color:#444">' + note + '</td>';
+    rowHtml += '</tr>';
+    if(idx < 25){ rowsHTML1 += rowHtml; } else { rowsHTML2 += rowHtml; }
   });
 
   var logoHTML = (colLogo && colLogo.length > 50)
     ? '<img src="' + colLogo + '" style="height:30px;object-fit:contain;max-width:120px">'
     : '<div style="color:#7DC242;font-size:20px;font-weight:bold;letter-spacing:-0.5px">כלמוביל</div>';
 
-  var html = '<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">';
-  html += '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#222;direction:rtl}table{border-collapse:collapse;width:100%}</style>';
-  html += '</head><body>';
-  html += '<div style="width:794px;min-height:1123px;background:#fff">';
+  // ── כותרת טבלה (משותפת לשני העמודים) ──
+  var theadHTML = '<thead><tr style="background:#1A4A3A;color:#fff;font-size:11px">';
+  theadHTML += '<th style="padding:6px 4px;text-align:center;width:30px;border-left:1px solid #2d6a52">מוקד</th>';
+  theadHTML += '<th style="padding:6px 8px;text-align:right;border-left:1px solid #2d6a52">שם החלק הניזוק</th>';
+  theadHTML += '<th style="padding:6px 4px;text-align:center;width:50px;border-left:1px solid #2d6a52">סביר</th>';
+  theadHTML += '<th style="padding:6px 4px;text-align:center;width:60px;border-left:1px solid #2d6a52">לא סביר</th>';
+  theadHTML += '<th style="padding:6px 8px;text-align:right">הערות</th>';
+  theadHTML += '</tr></thead>';
 
-  // Header bar – logo right, title center, date+time left
-  html += '<div style="background:#1A4A3A;padding:8px 16px;display:flex;align-items:center;justify-content:space-between">';
-  html += '<div style="flex-shrink:0">' + logoHTML + '</div>';
-  html += '<div style="text-align:center;flex:1;padding:0 10px">';
-  html += '<div style="color:#fff;font-size:15px;font-weight:bold">הערכת נזקים לרכב</div>';
-  html += '<div style="color:rgba(255,255,255,.6);font-size:9px;margin-top:2px">מרכז הרכב של מור בית השקעות</div>';
-  html += '</div>';
-  html += '<div style="text-align:left;flex-shrink:0">';
-  html += '<div style="color:#fff;font-size:12px;font-weight:600">' + dateDisplay + '</div>';
-  if(timeVal) html += '<div style="color:rgba(255,255,255,.75);font-size:10px;margin-top:2px">' + timeVal + '</div>';
-  html += '</div>';
-  html += '</div>';
+  // ── עמוד 1: כותרת + פס מידע + שורות 1-25 ──
+  var baseStyle = '<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#222;direction:rtl}table{border-collapse:collapse;width:100%}</style></head><body>';
 
-  // Info strip
-  html += '<div style="background:#f0faf5;padding:6px 16px;border-bottom:1px solid #c7e8d8;display:flex;gap:14px;flex-wrap:wrap;align-items:center">';
-  html += '<div><span style="color:#888;font-size:10px">שם הנהג: </span><span style="font-weight:700;font-size:12px">' + driverName + '</span></div>';
-  html += '<div><span style="color:#888;font-size:10px">שם הלקוח: </span><span style="font-weight:700;font-size:12px">' + clientName + '</span></div>';
-  html += '<div><span style="color:#888;font-size:10px">מס׳ רישוי: </span><span style="font-weight:700;font-size:12px">' + plate + '</span></div>';
-  html += '<div><span style="color:#888;font-size:10px">סוג: </span><span style="font-size:12px">' + model + '</span></div>';
-  html += '<div><span style="color:#888;font-size:10px">שנה: </span><span style="font-size:12px">' + year + '</span></div>';
-  html += '<div><span style="color:#888;font-size:10px">מד אוץ: </span><span style="font-size:12px">' + km + '</span></div>';
-  html += '</div>';
+  var html1 = baseStyle;
+  html1 += '<div style="width:794px;min-height:1123px;background:#fff">';
+  html1 += '<div style="background:#1A4A3A;padding:8px 16px;display:flex;align-items:center;justify-content:space-between">';
+  html1 += '<div style="flex-shrink:0">' + logoHTML + '</div>';
+  html1 += '<div style="text-align:center;flex:1;padding:0 10px"><div style="color:#fff;font-size:15px;font-weight:bold">הערכת נזקים לרכב</div>';
+  html1 += '<div style="color:rgba(255,255,255,.6);font-size:9px;margin-top:2px">מרכז הרכב של מור בית השקעות</div></div>';
+  html1 += '<div style="text-align:left;flex-shrink:0"><div style="color:#fff;font-size:12px;font-weight:600">' + dateDisplay + '</div>';
+  if(timeVal) html1 += '<div style="color:rgba(255,255,255,.75);font-size:10px;margin-top:2px">' + timeVal + '</div>';
+  html1 += '</div></div>';
+  html1 += '<div style="background:#f0faf5;padding:6px 16px;border-bottom:1px solid #c7e8d8;display:flex;gap:14px;flex-wrap:wrap;align-items:center">';
+  html1 += '<div><span style="color:#888;font-size:10px">שם הנהג: </span><span style="font-weight:700;font-size:12px">' + driverName + '</span></div>';
+  html1 += '<div><span style="color:#888;font-size:10px">שם הלקוח: </span><span style="font-weight:700;font-size:12px">' + clientName + '</span></div>';
+  html1 += '<div><span style="color:#888;font-size:10px">מס׳ רישוי: </span><span style="font-weight:700;font-size:12px">' + plate + '</span></div>';
+  html1 += '<div><span style="color:#888;font-size:10px">סוג: </span><span style="font-size:12px">' + model + '</span></div>';
+  html1 += '<div><span style="color:#888;font-size:10px">שנה: </span><span style="font-size:12px">' + year + '</span></div>';
+  html1 += '<div><span style="color:#888;font-size:10px">מד אוץ: </span><span style="font-size:12px">' + km + '</span></div>';
+  html1 += '</div>';
+  html1 += '<div style="padding:8px 14px">';
+  html1 += '<table style="border:1px solid #d4d4d0">' + theadHTML + '<tbody>' + rowsHTML1 + '</tbody></table>';
+  html1 += '<div style="border-top:1px solid #eee;padding-top:6px;text-align:center;color:#bbb;font-size:9px;margin-top:10px">מרכז הרכב של מור בית השקעות · המשך בעמוד הבא</div>';
+  html1 += '</div></div></body></html>';
 
-  // Table
-  html += '<div style="padding:8px 14px">';
-  html += '<table style="border:1px solid #d4d4d0">';
-  html += '<thead><tr style="background:#1A4A3A;color:#fff;font-size:10px">';
-  html += '<th style="padding:5px 4px;text-align:center;width:28px;border-left:1px solid #2d6a52">מוקד</th>';
-  html += '<th style="padding:5px 8px;text-align:right;border-left:1px solid #2d6a52">שם החלק הניזוק</th>';
-  html += '<th style="padding:5px 4px;text-align:center;width:46px;border-left:1px solid #2d6a52">סביר</th>';
-  html += '<th style="padding:5px 4px;text-align:center;width:56px;border-left:1px solid #2d6a52">לא סביר</th>';
-  html += '<th style="padding:5px 8px;text-align:right">הערות</th>';
-  html += '</tr></thead>';
-  html += '<tbody>' + rowsHTML + '</tbody>';
-  html += '</table>';
-  html += '<div style="border-top:1px solid #eee;padding-top:6px;text-align:center;color:#bbb;font-size:9px;margin-top:10px">מרכז הרכב של מור בית השקעות</div>';
-  html += '</div></div></body></html>';
+  // ── עמוד 2: שורות 26-34 + חתימת נציג ──
+  var html2 = baseStyle;
+  html2 += '<div style="width:794px;background:#fff">';
+  // כותרת המשך
+  html2 += '<div style="background:#1A4A3A;padding:6px 16px;display:flex;align-items:center;justify-content:space-between">';
+  html2 += '<div style="flex-shrink:0">' + logoHTML + '</div>';
+  html2 += '<div style="text-align:center;flex:1;padding:0 10px"><div style="color:#fff;font-size:14px;font-weight:bold">הערכת נזקים לרכב – המשך</div>';
+  html2 += '<div style="color:rgba(255,255,255,.6);font-size:9px;margin-top:1px">מס׳ רישוי: ' + plate + ' · ' + driverName + '</div></div>';
+  html2 += '<div style="text-align:left;flex-shrink:0"><div style="color:#fff;font-size:11px;font-weight:600">' + dateDisplay + '</div></div></div>';
+  // המשך הטבלה: שורות 26-34
+  html2 += '<div style="padding:10px 14px">';
+  html2 += '<table style="border:1px solid #d4d4d0">' + theadHTML + '<tbody>' + rowsHTML2 + '</tbody></table>';
+  html2 += '</div>';
+  // חתימת נציג החברה
+  html2 += '<div style="margin:0 14px 10px;border:1px solid #d4d4d0;border-radius:6px;padding:12px 14px">';
+  html2 += '<div style="font-size:11px;font-weight:700;color:#1A4A3A;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #eee">חתימת נציג החברה</div>';
+  html2 += '<div style="display:flex;align-items:flex-end;gap:28px">';
+  html2 += '<div style="flex:1"><div style="font-size:10px;color:#888;margin-bottom:5px">חתימה:</div>';
+  html2 += '<div style="height:90px;border:1.5px dashed #ccc;border-radius:6px;background:#fafaf7;display:flex;align-items:center;justify-content:center;overflow:hidden">';
+  if(sigDataUrl){
+    html2 += '<img src="' + sigDataUrl + '" style="max-width:100%;max-height:86px;object-fit:contain;display:block">';
+  } else {
+    html2 += '<span style="font-size:11px;color:#bbb">לא נחתם</span>';
+  }
+  html2 += '</div></div>';
+  html2 += '<div style="flex-shrink:0;width:210px;text-align:center;padding-bottom:2px">';
+  html2 += '<div style="font-size:15px;font-weight:700;color:#1a1a1a;min-height:24px;margin-bottom:8px">' + (sigName || '') + '</div>';
+  html2 += '<div style="border-top:1.5px solid #333;padding-top:5px"><div style="font-size:11px;font-weight:600;color:#444">שם החותם</div></div>';
+  html2 += '</div></div></div>';
+  // פוטר
+  html2 += '<div style="border-top:1px solid #eee;padding:6px 14px;text-align:center;color:#bbb;font-size:9px">מרכז הרכב של מור בית השקעות</div>';
+  html2 += '</div></body></html>';
 
-  // Build via iframe then html2canvas + jsPDF
+  // ── יצירת PDF: טעינת ספריות → עמוד 1 → עמוד 2 → תמונות ──
   var loadLib = function(src, cb){
     if(document.querySelector('script[src="' + src + '"]')){ cb(); return; }
     var s = document.createElement('script'); s.src = src; s.onload = cb;
     document.head.appendChild(s);
   };
 
-  var frame = document.createElement('iframe');
-  frame.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1200px;border:none;overflow:hidden';
-  document.body.appendChild(frame);
-  frame.contentDocument.open();
-  frame.contentDocument.write(html);
-  frame.contentDocument.close();
-
   var ds = new Date().toLocaleDateString('he-IL').replace(/\//g,'-');
   var plateSafe = (v.plate||'').replace(/[^a-zA-Z0-9\u05D0-\u05EA]/g,'-');
   var fileName = 'הערכת-נזקים-' + plateSafe + '-' + ds + '.pdf';
 
+  // יצירת iframe עמוד 1
+  var frame1 = document.createElement('iframe');
+  frame1.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1200px;border:none;overflow:hidden';
+  document.body.appendChild(frame1);
+  frame1.contentDocument.open(); frame1.contentDocument.write(html1); frame1.contentDocument.close();
+
   setTimeout(function(){
     loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function(){
       loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', function(){
-        var target = frame.contentDocument.body.firstChild || frame.contentDocument.body;
-        html2canvas(target, {
-          scale: 2, useCORS: true, backgroundColor: '#fff',
-          logging: false, allowTaint: true,
-          width: 794, windowWidth: 794
-        }).then(function(canvas){
+
+        // ── רנדור עמוד 1 ──
+        var tgt1 = frame1.contentDocument.body.firstChild || frame1.contentDocument.body;
+        html2canvas(tgt1, { scale:2, useCORS:true, backgroundColor:'#fff', logging:false, allowTaint:true, width:794, windowWidth:794 }).then(function(c1){
           var jsPDF = window.jspdf.jsPDF;
-          var pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-          var imgW = 210;
-          var imgH = (canvas.height * imgW) / canvas.width;
-          var pageH = 297;
-          var pxPP = Math.floor((pageH / imgW) * canvas.width);
-          var totP = Math.floor(canvas.height / pxPP);
-          if(canvas.height - totP * pxPP > 40) totP++; // הוסף עמוד רק אם נשאר >40px תוכן
+          var pdf   = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+          var imgW  = 210, pageH = 297;
+          var pxPP  = Math.floor((pageH / imgW) * c1.width);
+          var totP  = Math.floor(c1.height / pxPP);
+          if(c1.height - totP * pxPP > 40) totP++;
           if(totP === 0) totP = 1;
           for(var p = 0; p < totP; p++){
             if(p > 0) pdf.addPage();
-            var sliceStart = p * pxPP;
-            var sliceH = Math.min(pxPP, canvas.height - sliceStart);
-            var pc = document.createElement('canvas');
-            pc.width = canvas.width; pc.height = sliceH;
-            var ctx2 = pc.getContext('2d');
-            ctx2.fillStyle = '#ffffff';
-            ctx2.fillRect(0, 0, pc.width, pc.height);
-            ctx2.drawImage(canvas, 0, sliceStart, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-            var sliceHmm = (sliceH * imgW) / canvas.width;
-            pdf.addImage(pc.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, imgW, sliceHmm);
+            var sS = p * pxPP, sH = Math.min(pxPP, c1.height - sS);
+            var pc = document.createElement('canvas'); pc.width = c1.width; pc.height = sH;
+            var cx = pc.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,pc.width,pc.height);
+            cx.drawImage(c1, 0, sS, c1.width, sH, 0, 0, c1.width, sH);
+            pdf.addImage(pc.toDataURL('image/jpeg',0.95),'JPEG',0,0,imgW,(sH*imgW)/c1.width);
           }
-          frame.remove();
+          frame1.remove();
 
-          // עמוד חתימה – תמיד נוסף (ערוב נפרד, לא יכול להיחתך)
-          eobAddSignaturePage(pdf, sigDataUrl, sigName, logoHTML, dateDisplay, driverName, clientName, plate, loadLib, function(){
-            // עמודי קבצים מצורפים (אם קיימים)
-            if(_eobAttachments.length > 0){
-              eobAddAttachmentsPage(pdf, loadLib).then(function(){
+          // ── רנדור עמוד 2 (שורות 26-34 + חתימה) ──
+          var frame2 = document.createElement('iframe');
+          frame2.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:900px;border:none;overflow:hidden';
+          document.body.appendChild(frame2);
+          frame2.contentDocument.open(); frame2.contentDocument.write(html2); frame2.contentDocument.close();
+
+          setTimeout(function(){
+            var tgt2 = frame2.contentDocument.body.firstChild || frame2.contentDocument.body;
+            html2canvas(tgt2, { scale:2, useCORS:true, backgroundColor:'#fff', logging:false, allowTaint:true, width:794, windowWidth:794 }).then(function(c2){
+              frame2.remove();
+              pdf.addPage();
+              var h2mm = (c2.height * imgW) / c2.width;
+              pdf.addImage(c2.toDataURL('image/jpeg',0.95), 'JPEG', 0, 0, imgW, h2mm);
+
+              // ── תמונות מצורפות ──
+              if(_eobAttachments.length > 0){
+                eobAddAttachmentsPage(pdf, loadLib).then(function(){
+                  _eobFinalizePdf(pdf, fileName, saveToDoc, v);
+                }).catch(function(){ _eobFinalizePdf(pdf, fileName, saveToDoc, v); });
+              } else {
                 _eobFinalizePdf(pdf, fileName, saveToDoc, v);
-              }).catch(function(){ _eobFinalizePdf(pdf, fileName, saveToDoc, v); });
-            } else {
-              _eobFinalizePdf(pdf, fileName, saveToDoc, v);
-            }
-          });
-        }).catch(function(){ frame.remove(); showToast('שגיאה ביצירת PDF'); });
+              }
+            }).catch(function(){ frame2.remove(); _eobFinalizePdf(pdf, fileName, saveToDoc, v); });
+          }, 400);
+
+        }).catch(function(){ frame1.remove(); showToast('שגיאה ביצירת PDF'); });
       });
     });
   }, 600);
