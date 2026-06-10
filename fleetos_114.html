@@ -491,7 +491,11 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   /* ─ EOB tab – mobile ─ */
   #eob-info-grid{grid-template-columns:1fr 1fr!important} /* שומר 2 עמודות בנייד */
   #eob-info-grid input[type="date"],
-  #eob-info-grid input[type="time"]{font-size:13px!important;padding:5px 6px!important;min-height:0!important}
+  #eob-info-grid input[type="time"]{
+    font-size:13px!important;padding:4px 6px!important;
+    height:36px!important;line-height:1.2!important;
+    -webkit-appearance:none!important;appearance:none!important;
+  }
   .eob-table-wrap{overflow-x:visible!important;-webkit-overflow-scrolling:auto!important}
   #eob-damage-table{min-width:0!important;table-layout:fixed;width:100%!important}
   #eob-damage-table th:nth-child(1),#eob-damage-table td:nth-child(1){width:22px!important;padding:7px 2px!important;font-size:9px!important}
