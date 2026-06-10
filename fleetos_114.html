@@ -3964,6 +3964,19 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             </table>
           </div>
         </div>
+        <!-- חתימת נציג החברה -->
+        <div style="background:#fff;border-radius:10px;border:1px solid var(--bdr);padding:14px 16px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">חתימת נציג החברה</div>
+          <div style="border:1.5px dashed var(--bdr2);border-radius:8px;overflow:hidden;background:#fafaf7;margin-bottom:8px">
+            <canvas id="eob-sig-canvas" height="120" style="display:block;width:100%;touch-action:none;cursor:crosshair"></canvas>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <button type="button" onclick="eobClearSig()" style="background:none;border:1px solid var(--bdr2);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--t2);cursor:pointer;font-family:inherit">× נקה חתימה</button>
+            <span style="font-size:11px;color:var(--t3)">חתום באצבע או עם עכבר</span>
+          </div>
+          <input type="text" id="eob-sig-name-rep" placeholder="שם נציג החברה" style="width:100%;border:1px solid var(--bdr2);border-radius:6px;padding:8px 10px;font-size:13px;font-family:inherit;direction:rtl;background:#fff">
+        </div>
+
         <div style="background:#fff;border-radius:10px;border:1px solid var(--bdr);padding:14px 16px;margin-bottom:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div style="font-size:11px;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:.05em">קבצים מצורפים <span id="eob-attach-count" style="font-weight:400;color:var(--t3)"></span></div>
@@ -20570,6 +20583,45 @@ var EOB_ITEMS = [
 ];
 
 var _eobVid = null;
+var _eobSigCtx = null;
+var _eobSigEmpty = true;
+var _eobSigDrawing = false;
+
+function eobInitSig(){
+  var canvas = document.getElementById('eob-sig-canvas');
+  if(!canvas) return;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width  = canvas.offsetWidth  * dpr;
+  canvas.height = 120 * dpr;
+  _eobSigCtx = canvas.getContext('2d');
+  _eobSigCtx.scale(dpr, dpr);
+  _eobSigCtx.strokeStyle = '#1A4A3A';
+  _eobSigCtx.lineWidth   = 2.2;
+  _eobSigCtx.lineCap     = 'round';
+  _eobSigCtx.lineJoin    = 'round';
+  _eobSigEmpty   = true;
+  _eobSigDrawing = false;
+
+  function getPos(e){
+    var r = canvas.getBoundingClientRect();
+    var src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+  canvas.onmousedown  = function(e){ _eobSigDrawing=true; _eobSigEmpty=false; var p=getPos(e); _eobSigCtx.beginPath(); _eobSigCtx.moveTo(p.x,p.y); };
+  canvas.onmousemove  = function(e){ if(!_eobSigDrawing)return; var p=getPos(e); _eobSigCtx.lineTo(p.x,p.y); _eobSigCtx.stroke(); };
+  canvas.onmouseup    = function(){ _eobSigDrawing=false; };
+  canvas.onmouseleave = function(){ _eobSigDrawing=false; };
+  canvas.ontouchstart = function(e){ e.preventDefault(); _eobSigDrawing=true; _eobSigEmpty=false; var p=getPos(e); _eobSigCtx.beginPath(); _eobSigCtx.moveTo(p.x,p.y); };
+  canvas.ontouchmove  = function(e){ e.preventDefault(); if(!_eobSigDrawing)return; var p=getPos(e); _eobSigCtx.lineTo(p.x,p.y); _eobSigCtx.stroke(); };
+  canvas.ontouchend   = function(){ _eobSigDrawing=false; };
+}
+
+function eobClearSig(){
+  var canvas = document.getElementById('eob-sig-canvas');
+  if(!canvas || !_eobSigCtx) return;
+  _eobSigCtx.clearRect(0, 0, canvas.offsetWidth, 120);
+  _eobSigEmpty = true;
+}
 
 function initEndOfBusinessTab(vid){
   _eobVid = vid;
@@ -20588,6 +20640,7 @@ function initEndOfBusinessTab(vid){
   el = document.getElementById('eob-year');        if(el) el.textContent = year;
   renderEobTable();
   loadEobData(vid);
+  setTimeout(eobInitSig, 80);
 }
 
 function renderEobTable(){
@@ -20678,6 +20731,9 @@ function clearEobForm(){
   try { localStorage.removeItem('eob_' + _eobVid); } catch(e){}
   _eobAttachments = [];
   renderEobAttachments();
+  var sigNameEl = document.getElementById('eob-sig-name-rep');
+  if(sigNameEl) sigNameEl.value = '';
+  eobClearSig();
   initEndOfBusinessTab(_eobVid);
   showToast('הטופס נוקה');
 }
@@ -20747,6 +20803,14 @@ function exportEndOfBusinessPDF(saveToDoc){
   var colLogo = '';
   try { colLogo = localStorage.getItem('logo_client') || ''; } catch(e){}
 
+  // קרא חתימת נציג לפני בניית ה-HTML
+  var sigDataUrl = '';
+  var sigName = ((document.getElementById('eob-sig-name-rep')?.value) || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  var sigCanvas = document.getElementById('eob-sig-canvas');
+  if(sigCanvas && !_eobSigEmpty){
+    try { sigDataUrl = sigCanvas.toDataURL('image/png'); } catch(e){}
+  }
+
   var rowsHTML = '';
   EOB_ITEMS.forEach(function(item, idx){
     var i = idx + 1;
@@ -20807,7 +20871,24 @@ function exportEndOfBusinessPDF(saveToDoc){
   html += '</tr></thead>';
   html += '<tbody>' + rowsHTML + '</tbody>';
   html += '</table>';
-  html += '<div style="border-top:1px solid #eee;padding-top:6px;text-align:center;color:#bbb;font-size:9px;margin-top:8px">מרכז הרכב של מור בית השקעות</div>';
+
+  // חתימת נציג החברה
+  html += '<div style="margin-top:14px;border:1px solid #d4d4d0;border-radius:6px;padding:10px 14px">';
+  html += '<div style="font-size:10px;font-weight:700;color:#1A4A3A;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #eee">חתימת נציג החברה</div>';
+  html += '<div style="display:flex;align-items:flex-end;gap:20px">';
+  html += '<div style="flex:1;min-height:60px;border:1px solid #ddd;border-radius:4px;background:#fafaf7;overflow:hidden;display:flex;align-items:center;justify-content:center">';
+  if(sigDataUrl){
+    html += '<img src="' + sigDataUrl + '" style="max-width:100%;max-height:70px;object-fit:contain;display:block">';
+  } else {
+    html += '<span style="font-size:9px;color:#bbb">לא נחתם</span>';
+  }
+  html += '</div>';
+  html += '<div style="flex-shrink:0;width:140px;text-align:center">';
+  html += '<div style="border-top:1px solid #555;padding-top:4px">';
+  html += '<div style="font-size:10px;color:#444">' + (sigName || 'שם הנציג') + '</div>';
+  html += '</div></div></div></div>';
+
+  html += '<div style="border-top:1px solid #eee;padding-top:6px;text-align:center;color:#bbb;font-size:9px;margin-top:10px">מרכז הרכב של מור בית השקעות</div>';
   html += '</div></div></body></html>';
 
   // Build via iframe then html2canvas + jsPDF
@@ -20918,27 +20999,26 @@ function eobRemoveAttachment(idx){
 }
 
 function eobAddAttachmentsPage(pdf, loadLib){
-  // Split into chunks of 4 – one PDF page per chunk
+  // Split into chunks of 6 – one PDF page per chunk
   var chunks = [];
-  for(var ci = 0; ci < _eobAttachments.length; ci += 4){
-    chunks.push(_eobAttachments.slice(ci, ci + 4));
+  for(var ci = 0; ci < _eobAttachments.length; ci += 6){
+    chunks.push(_eobAttachments.slice(ci, ci + 6));
   }
 
   // Render one chunk at a time (sequential promise chain)
   return chunks.reduce(function(chain, chunk, chunkIdx){
     return chain.then(function(){
       return new Promise(function(resolve, reject){
-        var isFirst = chunkIdx === 0;
         var html = '<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">';
         html += '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;direction:rtl;background:#fff}</style>';
         html += '</head><body>';
         html += '<div style="width:794px;background:#fff">';
-        // Header (only on first attachment page)
+        // Header
         html += '<div style="background:#1A4A3A;padding:10px 20px">';
         html += '<div style="color:#fff;font-size:15px;font-weight:bold;text-align:center">קבצים מצורפים' + (chunks.length > 1 ? ' (' + (chunkIdx+1) + '/' + chunks.length + ')' : '') + '</div>';
         html += '</div>';
-        // 2×2 grid – each cell fixed height so all 4 images are equal
-        html += '<div style="padding:14px 18px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10px;height:700px">';
+        // 3×2 grid – עד 6 תמונות לעמוד
+        html += '<div style="padding:14px 18px;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:10px;height:700px">';
         chunk.forEach(function(att){
           html += '<div style="border-radius:6px;overflow:hidden;border:1px solid #e0e0dc;background:#f9f9f7;display:flex;align-items:center;justify-content:center;min-height:0">';
           html += '<img src="' + att.data + '" style="max-width:100%;max-height:100%;object-fit:contain;display:block">';
