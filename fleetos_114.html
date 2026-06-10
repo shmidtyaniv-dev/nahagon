@@ -20843,7 +20843,9 @@ function exportEndOfBusinessPDF(saveToDoc){
           var imgH = (canvas.height * imgW) / canvas.width;
           var pageH = 297;
           var pxPP = Math.floor((pageH / imgW) * canvas.width);
-          var totP = Math.ceil(canvas.height / pxPP);
+          var totP = Math.floor(canvas.height / pxPP);
+          if(canvas.height - totP * pxPP > 40) totP++; // הוסף עמוד רק אם נשאר >40px תוכן
+          if(totP === 0) totP = 1;
           for(var p = 0; p < totP; p++){
             if(p > 0) pdf.addPage();
             var sliceStart = p * pxPP;
@@ -20948,23 +20950,24 @@ function eobAddAttachmentsPage(pdf, loadLib){
         width: 794, windowWidth: 794
       }).then(function(canvas2){
         fr2.remove();
-        var imgW = 210;
-        var pageH = 297;
-        var imgH = (canvas2.height * imgW) / canvas2.width;
-        pdf.addPage();
-        if(imgH <= pageH + 15){
-          pdf.addImage(canvas2.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, imgW, Math.min(imgH, pageH));
-        } else {
+        var imgW2 = 210;
+        var pageH2 = 297;
+        var pxPP2 = Math.floor((pageH2 / imgW2) * canvas2.width);
+        var totP2 = Math.floor(canvas2.height / pxPP2);
+        if(canvas2.height - totP2 * pxPP2 > 40) totP2++;
+        if(totP2 === 0) totP2 = 1;
+        for(var p2 = 0; p2 < totP2; p2++){
+          pdf.addPage();
+          var sliceStart2 = p2 * pxPP2;
+          var sliceH2 = Math.min(pxPP2, canvas2.height - sliceStart2);
           var pc2 = document.createElement('canvas');
-          var pxPP2 = Math.floor((pageH / imgW) * canvas2.width);
-          var totP2 = Math.floor(canvas2.height / pxPP2);
-          if((canvas2.height - totP2 * pxPP2) > pxPP2 * 0.1) totP2++;
-          for(var p2 = 0; p2 < totP2; p2++){
-            if(p2 > 0) pdf.addPage();
-            pc2.width = canvas2.width; pc2.height = pxPP2;
-            pc2.getContext('2d').drawImage(canvas2, 0, -p2 * pxPP2);
-            pdf.addImage(pc2.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, imgW, pageH);
-          }
+          pc2.width = canvas2.width; pc2.height = sliceH2;
+          var ctx3 = pc2.getContext('2d');
+          ctx3.fillStyle = '#ffffff';
+          ctx3.fillRect(0, 0, pc2.width, pc2.height);
+          ctx3.drawImage(canvas2, 0, sliceStart2, canvas2.width, sliceH2, 0, 0, canvas2.width, sliceH2);
+          var sliceHmm2 = (sliceH2 * imgW2) / canvas2.width;
+          pdf.addImage(pc2.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, imgW2, sliceHmm2);
         }
         resolve();
       }).catch(function(e){ fr2.remove(); reject(e); });
