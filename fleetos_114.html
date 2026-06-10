@@ -6289,7 +6289,7 @@ function openKmUpdate(vid){
       <div style="font-size:12px;color:#888;margin-bottom:14px">${v.make} ${v.model} · ${v.plate}</div>
       <div style="margin-bottom:14px">
         <div style="font-size:12px;color:#666;margin-bottom:4px">ק"מ נוכחי</div>
-        <input id="km-upd-val" type="text" dir="ltr" inputmode="numeric" value="${(v.currentKm||v.curKm||'')}" placeholder="לדוגמה: 45000" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:15px;font-family:inherit;text-align:left">
+        <input id="km-upd-val" type="text" dir="ltr" inputmode="numeric" value="${(v.currentKm||v.curKm)?Number(v.currentKm||v.curKm).toLocaleString('he-IL'):''}" placeholder="לדוגמה: 45,000" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:15px;font-family:inherit;text-align:left">
       </div>
       <div id="km-upd-next" style="font-size:12px;color:#1A4A3A;background:#f0fdf4;border-radius:6px;padding:8px 10px;margin-bottom:14px;display:none"></div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -6301,7 +6301,24 @@ function openKmUpdate(vid){
   const inp=document.getElementById('km-upd-val');
   inp.focus();inp.select();
   inp.addEventListener('input',()=>{
+    // פרמוט עם פסיקים תוך שמירת מיקום cursor
+    const sel = inp.selectionStart;
+    const before = inp.value.slice(0, sel).replace(/[^0-9]/g,'').length; // ספרות לפני cursor
     const raw=parseInt(inp.value.replace(/[^0-9]/g,''))||0;
+    if(raw>0){
+      const formatted = raw.toLocaleString('he-IL');
+      inp.value = formatted;
+      // חשב מיקום cursor החדש: מנה ספרות עד before
+      let digits=0, newPos=0;
+      for(let i=0;i<formatted.length;i++){
+        if(/[0-9]/.test(formatted[i])) digits++;
+        if(digits===before){ newPos=i+1; break; }
+        newPos=i+1;
+      }
+      try{ inp.setSelectionRange(newPos,newPos); }catch(e){}
+    } else {
+      inp.value='';
+    }
     const nextSvc=v.serviceKm?v.serviceKm+15000:null;
     const el=document.getElementById('km-upd-next');
     if(nextSvc&&raw>0){
