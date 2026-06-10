@@ -3985,6 +3985,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             ייצוא PDF
           </button>
+          <button class="btn btn-p" onclick="saveAndExportEobPDF()" style="background:var(--green-dark)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            שמור במסמכים
+          </button>
         </div>
       </div>
 
@@ -20677,10 +20681,38 @@ function clearEobForm(){
   showToast('הטופס נוקה');
 }
 
-function exportEndOfBusinessPDF(){
+function _eobFinalizePdf(pdf, fileName, saveToDoc, v){
+  pdf.save(fileName); // תמיד מוריד
+  if(saveToDoc){
+    var b64 = pdf.output('datauristring');
+    var vid = v.id;
+    var plate = v.plate || '';
+    var ds = new Date().toLocaleDateString('he-IL').replace(/\//g,'-');
+    if(!extraDocs[vid]) extraDocs[vid] = [];
+    extraDocs[vid].push({
+      name: 'טופס סיום עסקה' + (plate?' — '+plate:'') + ' — ' + ds,
+      date: new Date().toISOString().slice(0,10),
+      data: b64,
+      fileType: 'application/pdf',
+      cat: 'סיום עסקה'
+    });
+    if(typeof renderExtraDocs === 'function') renderExtraDocs(vid);
+    showToast('הטופס נשמר במסמכים ✅');
+  } else {
+    showToast('PDF הורד בהצלחה ✅');
+  }
+}
+
+function saveAndExportEobPDF(){
+  exportEndOfBusinessPDF(true);
+}
+
+function exportEndOfBusinessPDF(saveToDoc){
+  saveToDoc = !!saveToDoc;
   if(!_eobVid){ showToast('שגיאה: לא נבחר רכב'); return; }
   var v = vehicles.find(function(x){ return x.id === _eobVid; });
   if(!v){ showToast('שגיאה: רכב לא נמצא'); return; }
+  saveEobData();
   showToast('מכין PDF...');
 
   var driverName  = (v.driver && v.driver.name) ? v.driver.name : '—';
@@ -20811,12 +20843,10 @@ function exportEndOfBusinessPDF(){
           // Page 2 – attachments (added directly for max quality)
           if(_eobAttachments.length > 0){
             eobAddAttachmentsPage(pdf, loadLib).then(function(){
-              pdf.save(fileName);
-              showToast('PDF הורד בהצלחה ✅');
-            }).catch(function(){ pdf.save(fileName); showToast('PDF הורד (ללא קבצים מצורפים)'); });
+              _eobFinalizePdf(pdf, fileName, saveToDoc, v);
+            }).catch(function(){ _eobFinalizePdf(pdf, fileName, saveToDoc, v); });
           } else {
-            pdf.save(fileName);
-            showToast('PDF הורד בהצלחה ✅');
+            _eobFinalizePdf(pdf, fileName, saveToDoc, v);
           }
         }).catch(function(){ frame.remove(); showToast('שגיאה ביצירת PDF'); });
       });
