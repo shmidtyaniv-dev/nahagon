@@ -20918,61 +20918,60 @@ function eobRemoveAttachment(idx){
 }
 
 function eobAddAttachmentsPage(pdf, loadLib){
-  return new Promise(function(resolve, reject){
-    // Build HTML page for attachments (html2canvas handles Hebrew + image quality)
-    var attHtml = '<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">';
-    attHtml += '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:13px;direction:rtl;background:#fff}</style>';
-    attHtml += '</head><body>';
-    attHtml += '<div style="width:794px;background:#fff">';
-    attHtml += '<div style="background:#1A4A3A;padding:12px 20px">';
-    attHtml += '<div style="color:#fff;font-size:15px;font-weight:bold;text-align:center">קבצים מצורפים</div>';
-    attHtml += '</div>';
-    attHtml += '<div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px">';
-    _eobAttachments.forEach(function(att){
-      attHtml += '<div style="border-radius:6px;overflow:hidden;border:1px solid #e0e0dc;background:#f9f9f7;display:flex;align-items:center;justify-content:center">';
-      attHtml += '<img src="' + att.data + '" style="width:100%;height:auto;display:block;object-fit:contain">';
-      attHtml += '</div>';
+  // Split into chunks of 4 – one PDF page per chunk
+  var chunks = [];
+  for(var ci = 0; ci < _eobAttachments.length; ci += 4){
+    chunks.push(_eobAttachments.slice(ci, ci + 4));
+  }
+
+  // Render one chunk at a time (sequential promise chain)
+  return chunks.reduce(function(chain, chunk, chunkIdx){
+    return chain.then(function(){
+      return new Promise(function(resolve, reject){
+        var isFirst = chunkIdx === 0;
+        var html = '<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">';
+        html += '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;direction:rtl;background:#fff}</style>';
+        html += '</head><body>';
+        html += '<div style="width:794px;background:#fff">';
+        // Header (only on first attachment page)
+        html += '<div style="background:#1A4A3A;padding:10px 20px">';
+        html += '<div style="color:#fff;font-size:15px;font-weight:bold;text-align:center">קבצים מצורפים' + (chunks.length > 1 ? ' (' + (chunkIdx+1) + '/' + chunks.length + ')' : '') + '</div>';
+        html += '</div>';
+        // 2×2 grid – each cell fixed height so all 4 images are equal
+        html += '<div style="padding:14px 18px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10px;height:700px">';
+        chunk.forEach(function(att){
+          html += '<div style="border-radius:6px;overflow:hidden;border:1px solid #e0e0dc;background:#f9f9f7;display:flex;align-items:center;justify-content:center;min-height:0">';
+          html += '<img src="' + att.data + '" style="max-width:100%;max-height:100%;object-fit:contain;display:block">';
+          html += '</div>';
+        });
+        html += '</div></div></body></html>';
+
+        var fr = document.createElement('iframe');
+        fr.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1123px;border:none;overflow:hidden';
+        document.body.appendChild(fr);
+        fr.contentDocument.open();
+        fr.contentDocument.write(html);
+        fr.contentDocument.close();
+
+        setTimeout(function(){
+          var tgt = fr.contentDocument.body.firstChild || fr.contentDocument.body;
+          html2canvas(tgt, {
+            scale: 2, useCORS: true, backgroundColor: '#fff',
+            logging: false, allowTaint: true,
+            width: 794, windowWidth: 794, height: 1123
+          }).then(function(canvas){
+            fr.remove();
+            pdf.addPage();
+            var imgW = 210;
+            var imgH = (canvas.height * imgW) / canvas.width;
+            var pageH = 297;
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, imgW, Math.min(imgH, pageH));
+            resolve();
+          }).catch(function(e){ fr.remove(); reject(e); });
+        }, 400);
+      });
     });
-    attHtml += '</div></div></body></html>';
-
-    var fr2 = document.createElement('iframe');
-    fr2.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;height:1400px;border:none;overflow:hidden';
-    document.body.appendChild(fr2);
-    fr2.contentDocument.open();
-    fr2.contentDocument.write(attHtml);
-    fr2.contentDocument.close();
-
-    setTimeout(function(){
-      var tgt = fr2.contentDocument.body.firstChild || fr2.contentDocument.body;
-      html2canvas(tgt, {
-        scale: 3, useCORS: true, backgroundColor: '#fff',
-        logging: false, allowTaint: true,
-        width: 794, windowWidth: 794
-      }).then(function(canvas2){
-        fr2.remove();
-        var imgW2 = 210;
-        var pageH2 = 297;
-        var pxPP2 = Math.floor((pageH2 / imgW2) * canvas2.width);
-        var totP2 = Math.floor(canvas2.height / pxPP2);
-        if(canvas2.height - totP2 * pxPP2 > 40) totP2++;
-        if(totP2 === 0) totP2 = 1;
-        for(var p2 = 0; p2 < totP2; p2++){
-          pdf.addPage();
-          var sliceStart2 = p2 * pxPP2;
-          var sliceH2 = Math.min(pxPP2, canvas2.height - sliceStart2);
-          var pc2 = document.createElement('canvas');
-          pc2.width = canvas2.width; pc2.height = sliceH2;
-          var ctx3 = pc2.getContext('2d');
-          ctx3.fillStyle = '#ffffff';
-          ctx3.fillRect(0, 0, pc2.width, pc2.height);
-          ctx3.drawImage(canvas2, 0, sliceStart2, canvas2.width, sliceH2, 0, 0, canvas2.width, sliceH2);
-          var sliceHmm2 = (sliceH2 * imgW2) / canvas2.width;
-          pdf.addImage(pc2.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, imgW2, sliceHmm2);
-        }
-        resolve();
-      }).catch(function(e){ fr2.remove(); reject(e); });
-    }, 500);
-  });
+  }, Promise.resolve());
 }
 </script>
 
