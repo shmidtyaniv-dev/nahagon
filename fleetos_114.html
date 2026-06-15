@@ -2279,7 +2279,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <span style="flex:1"></span>
     <div style="position:relative;width:350px;flex-shrink:0">
       <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="חיפוש: רכב, נהג, יצרן, דוח..." id="srch-inp" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
+      <input type="text" placeholder="חיפוש: רכב, נהג, יצרן, טיפול 15, טיפול 30..." id="srch-inp" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
       <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
     </div>
     <span style="flex:1"></span>
@@ -2308,7 +2308,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   <!-- שורת חיפוש מובייל - מוצגת רק מתחת ל-768px -->
   <div class="mobile-search-bar" id="mobile-search-bar">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="mobile-srch-inp" placeholder="חיפוש: רכב, נהג, יצרן, דוח..." oninput="document.getElementById('srch-inp').value=this.value;globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off">
+    <input type="text" id="mobile-srch-inp" placeholder="חיפוש: רכב, נהג, יצרן, טיפול 15, טיפול 30..." oninput="document.getElementById('srch-inp').value=this.value;globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off">
   </div>
 
   <div class="content">
@@ -8681,7 +8681,35 @@ function fRow(v){
     +'<div class="docs-cell">'+docsIcon(v.id)+'</div>'
     +'</div>';
 }
-function fil(){let r=vehicles.slice();if(vSearch)r=r.filter(v=>v.plate.toLowerCase().includes(vSearch)||v.driver.name.toLowerCase().includes(vSearch)||v.make.toLowerCase().includes(vSearch));var statusOrder={danger:0,warn:1,success:2};r.sort(function(a,b){var aS=getVehicleStatus(a).cls;var bS=getVehicleStatus(b).cls;return(statusOrder[aS]||2)-(statusOrder[bS]||2);});return r}
+/* ── עזר: התאמת חיפוש לפי סוג טיפול ── */
+function _svcKmFromStr(s){var m=(s||'').replace(/,/g,'').match(/\d+/);return m?parseInt(m[0]):0;}
+function _matchSvcQuery(v,q){
+  var nst=v.nextServiceType||'';
+  if(!nst)return false;
+  var ql=q.replace(/,/g,'').replace(/\s+/g,'').replace('אלף','000').toLowerCase();
+  if(!ql||ql==='טיפול'||ql==='service'||ql==='km'||ql==='ק"מ')return!!nst;
+  // מוציאים את המספרים מהחיפוש
+  var nums=ql.match(/\d+/g);
+  if(!nums)return(ql.includes('טיפול')&&!!nst);
+  var qnum=parseInt(nums.join(''));
+  if(qnum<1000)qnum*=1000; // "15" → 15000
+  return _svcKmFromStr(nst)===qnum;
+}
+function fil(){
+  let r=vehicles.slice();
+  if(vSearch) r=r.filter(function(v){
+    var q=vSearch;
+    return v.plate.toLowerCase().includes(q)||
+           (v.driver&&v.driver.name?v.driver.name.toLowerCase().includes(q):false)||
+           v.make.toLowerCase().includes(q)||
+           (v.model||'').toLowerCase().includes(q)||
+           (v.code||'').toLowerCase().includes(q)||
+           _matchSvcQuery(v,q);
+  });
+  var statusOrder={danger:0,warn:1,success:2};
+  r.sort(function(a,b){var aS=getVehicleStatus(a).cls;var bS=getVehicleStatus(b).cls;return(statusOrder[aS]||2)-(statusOrder[bS]||2);});
+  return r;
+}
 function hasMissingDocs(v){if(!v)return false;var vd=vehicleDocs[v.id]||{};var missing=MANDATORY_DOCS.filter(function(d){return!vd[d.key];});return missing.length>0;}
 var _dashFilter='all';
 var _dashPage=1;
@@ -9470,7 +9498,45 @@ function globalSearch(query){
            (veh?.driver?.name||'').toLowerCase().includes(q);
   });
 
+  // ── Service type search ──
+  const svcGroups = {}; // { "15,000 ק\"מ": [v, ...], ... }
+  (vehicles||[]).forEach(function(v){
+    if(!v.nextServiceType) return;
+    if(_matchSvcQuery(v, q)){
+      const key = v.nextServiceType;
+      if(!svcGroups[key]) svcGroups[key] = [];
+      svcGroups[key].push(v);
+    }
+  });
+  const svcKeys = Object.keys(svcGroups).sort(function(a,b){ return _svcKmFromStr(a)-_svcKmFromStr(b); });
+
   let html='';
+
+  // ── קטגוריית טיפולים ──
+  if(svcKeys.length){
+    html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:#d97706;border-bottom:1px solid var(--bdr);background:var(--bg)">🔧 טיפולים — לפי ק"מ הבא</div>';
+    svcKeys.forEach(function(type){
+      const svcs = svcGroups[type];
+      html += '<div style="padding:0"><div onclick="filterV(\''+type.replace(/\'/g,"\\'").replace(/"/g,'&quot;')+'\');go(\'vehicles\',q(\'[dp=vehicles]\'));closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:#fffbf0">'+
+        '<div style="font-size:18px">🔧</div>'+
+        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#92400e">טיפול '+type+'</div><div style="font-size:11px;color:var(--t3)">לחץ לסנן את כל הרכבים האלה</div></div>'+
+        '<span style="font-size:13px;font-weight:700;color:#d97706;background:#fef3c7;padding:3px 10px;border-radius:999px">'+svcs.length+' רכבים</span>'+
+      '</div>';
+      // הצג את הרכבים הספציפיים
+      svcs.slice(0,5).forEach(function(v){
+        html += '<div onclick="openDet('+v.id+');closeGlobalSearch()" style="padding:8px 14px 8px 36px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px">'+
+          '<div style="font-size:14px">🚗</div>'+
+          '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t1)">'+v.plate+' · '+v.make+' '+v.model+'</div><div style="font-size:11px;color:var(--t3)">'+(v.driver?.name||'')+'</div></div>'+
+          '<div style="font-size:10px;color:#92400e;white-space:nowrap">'+type+'</div>'+
+        '</div>';
+      });
+      if(svcs.length>5){
+        html += '<div style="padding:6px 14px 8px 36px;font-size:11px;color:var(--t3)">ועוד '+(svcs.length-5)+' רכבים נוספים...</div>';
+      }
+      html += '</div>';
+    });
+  }
+
   // Manufacturer counts
   const mfrKeys = Object.keys(mfrGroups);
   if(mfrKeys.length){
@@ -9548,7 +9614,7 @@ function globalSearch(query){
     });
   }
 
-  const totalCount = mfrKeys.length + vehicleMatches.length + driverMatches.length + violMatches.length + accMatches.length + reminderMatches.length + eventMatches.length;
+  const totalCount = svcKeys.length + mfrKeys.length + vehicleMatches.length + driverMatches.length + violMatches.length + accMatches.length + reminderMatches.length + eventMatches.length;
   if(!totalCount){
     html = '<div style="padding:28px 16px;text-align:center;color:var(--t3);font-size:13px"><div style="font-size:32px;margin-bottom:6px">🔍</div>לא נמצאו תוצאות עבור "'+query+'"</div>';
   }
