@@ -7145,7 +7145,8 @@ function hoInitCarClick(){
     const py = ((e.clientY - r.top) / r.height) * 100;
     if(px < 0 || px > 100 || py < 0 || py > 100) return;
     if(!hoDamages[hoCurrentView]) hoDamages[hoCurrentView] = [];
-    hoDamages[hoCurrentView].push({px, py, desc:''});
+    hoDamages[hoCurrentView].push({px, py, types:[], desc:''});
+    hoEditDamage(hoCurrentView, hoDamages[hoCurrentView].length - 1);
     hoRenderDots();
     hoRenderDmgList();
   };
@@ -7167,7 +7168,7 @@ function hoRenderDots(){
         el.style.left = d.px + '%';
         el.style.top = d.py + '%';
         el.textContent = gNum;
-        el.title = d.desc || 'לחץ לעריכה/הסרה';
+        el.title = (d.types&&d.types.length ? d.types.join(' + ') : d.desc) || 'לחץ לעריכה/הסרה';
         const _view = view;
         const _i = i;
         el.onclick = function(ev){
@@ -7186,47 +7187,86 @@ function hoRenderDmgList(){
   if(!el) return;
   const all=[];
   ['front','right','back','left'].forEach(v=>{
-    (hoDamages[v]||[]).forEach((d,i)=>all.push({num:all.length+1,label:HO_LABELS[v],desc:d.desc||'',view:v,idx:i}));
+    (hoDamages[v]||[]).forEach((d,i)=>all.push({num:all.length+1,label:HO_LABELS[v],types:d.types||[],view:v,idx:i}));
   });
-  el.innerHTML = all.map(d=>`
+  el.innerHTML = all.map(d=>{
+    const typesHTML = d.types.length
+      ? d.types.map(t=>`<span style="font-size:10px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:4px;padding:1px 6px">${t}</span>`).join(' ')
+      : `<span style="font-size:10px;color:#bbb">לחץ לבחור סוג נזק</span>`;
+    return `
     <div style="display:flex;align-items:center;gap:8px;background:#fff5f5;border:1px solid #fecaca;border-radius:7px;padding:6px 10px;cursor:pointer" onclick="hoEditDamage('${d.view}',${d.idx})">
       <div style="width:20px;height:20px;border-radius:50%;background:#dc2626;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${d.num}</div>
       <div style="flex:1">
         <div style="font-size:12px;color:#dc2626;font-weight:600">נזק ${d.num} — ${d.label}</div>
-        ${d.desc?`<div style="font-size:11px;color:#888;margin-top:1px">${d.desc}</div>`:'<div style="font-size:11px;color:#bbb;margin-top:1px">לחץ לתיאור הנזק</div>'}
+        <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">${typesHTML}</div>
       </div>
       <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function hoEditDamage(view, idx){
   const dmg = (hoDamages[view]||[])[idx];
   if(!dmg) return;
-  // Create inline modal
+  if(!dmg.types) dmg.types = [];
   const existing = document.getElementById('ho-dmg-modal');
   if(existing) existing.remove();
+
+  const isMaka = dmg.types.includes('מכה');
+  const isShaf = dmg.types.includes('שפשופים');
 
   const modal = document.createElement('div');
   modal.id = 'ho-dmg-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:flex;align-items:flex-end;justify-content:center';
   modal.innerHTML = `
-    <div style="background:var(--card);border-radius:14px;padding:20px 18px;width:100%;max-width:380px;direction:rtl">
-      <div style="font-size:15px;font-weight:600;color:var(--gd);margin-bottom:4px">עריכת נזק — ${HO_LABELS[view]}</div>
-      <div style="font-size:12px;color:var(--t3);margin-bottom:12px">תאר את הנזק או הסר אותו</div>
-      <textarea id="ho-dmg-desc-input" rows="3" placeholder="לדוגמה: שריטה בדלת ימינית, שקע בפגוש קדמי..." style="width:100%;padding:10px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);resize:none;direction:rtl;margin-bottom:12px">${dmg.desc||''}</textarea>
+    <div style="background:var(--card);border-radius:14px 14px 0 0;padding:20px 18px;width:100%;max-width:420px;direction:rtl">
+      <div style="font-size:15px;font-weight:600;color:var(--gd);margin-bottom:4px">סוג נזק — ${HO_LABELS[view]}</div>
+      <div style="font-size:12px;color:var(--t3);margin-bottom:16px">ניתן לבחור גם וגם</div>
+      <div style="display:flex;gap:10px;margin-bottom:18px">
+        <button id="ho-type-maka" onclick="hoToggleDmgType('מכה')" style="flex:1;padding:14px 10px;border:2px solid ${isMaka?'var(--gd)':'var(--bdr2)'};border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;background:${isMaka?'var(--gd)':'var(--card)'};color:${isMaka?'#fff':'var(--t2)'};transition:all .15s">
+          💥 מכה
+        </button>
+        <button id="ho-type-shaf" onclick="hoToggleDmgType('שפשופים')" style="flex:1;padding:14px 10px;border:2px solid ${isShaf?'var(--gd)':'var(--bdr2)'};border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;background:${isShaf?'var(--gd)':'var(--card)'};color:${isShaf?'#fff':'var(--t2)'};transition:all .15s">
+          〰️ שפשופים
+        </button>
+      </div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <button onclick="hoSaveDmgDesc('${view}',${idx})" style="padding:12px;background:var(--gd);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">שמור תיאור</button>
+        <button onclick="hoSaveDmgTypes('${view}',${idx})" style="padding:12px;background:var(--gd);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">שמור</button>
         <button onclick="hoRemoveDamage('${view}',${idx})" style="padding:11px;background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;border-radius:9px;font-size:13px;cursor:pointer;font-family:inherit">הסר נזק זה</button>
         <button onclick="document.getElementById('ho-dmg-modal').remove()" style="padding:9px;background:none;color:var(--t3);border:none;font-size:12px;cursor:pointer;font-family:inherit">ביטול</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
-  setTimeout(()=>document.getElementById('ho-dmg-desc-input')?.focus(),100);
 }
 
-function hoSaveDmgDesc(view, idx){
-  const desc = document.getElementById('ho-dmg-desc-input')?.value.trim()||'';
-  if(hoDamages[view]&&hoDamages[view][idx]) hoDamages[view][idx].desc = desc;
+function hoToggleDmgType(type){
+  const modal = document.getElementById('ho-dmg-modal');
+  if(!modal) return;
+  const saveBtn = modal.querySelector('button[onclick^="hoSaveDmgTypes"]');
+  if(!saveBtn) return;
+  const match = saveBtn.getAttribute('onclick').match(/hoSaveDmgTypes\('(\w+)',(\d+)\)/);
+  if(!match) return;
+  const view = match[1], idx = parseInt(match[2]);
+  const dmg = (hoDamages[view]||[])[idx];
+  if(!dmg) return;
+  if(!dmg.types) dmg.types = [];
+  const i = dmg.types.indexOf(type);
+  if(i > -1) dmg.types.splice(i, 1);
+  else dmg.types.push(type);
+  const isMaka = dmg.types.includes('מכה');
+  const isShaf = dmg.types.includes('שפשופים');
+  const btnMaka = document.getElementById('ho-type-maka');
+  const btnShaf = document.getElementById('ho-type-shaf');
+  if(btnMaka){ btnMaka.style.background=isMaka?'var(--gd)':'var(--card)'; btnMaka.style.color=isMaka?'#fff':'var(--t2)'; btnMaka.style.borderColor=isMaka?'var(--gd)':'var(--bdr2)'; }
+  if(btnShaf){ btnShaf.style.background=isShaf?'var(--gd)':'var(--card)'; btnShaf.style.color=isShaf?'#fff':'var(--t2)'; btnShaf.style.borderColor=isShaf?'var(--gd)':'var(--bdr2)'; }
+}
+
+function hoSaveDmgTypes(view, idx){
+  const dmg = hoDamages[view]&&hoDamages[view][idx];
+  if(dmg){
+    if(!dmg.types) dmg.types = [];
+    dmg.desc = dmg.types.join(' + ');
+  }
   document.getElementById('ho-dmg-modal')?.remove();
   hoRenderDots();
   hoRenderDmgList();
