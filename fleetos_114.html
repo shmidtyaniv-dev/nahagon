@@ -6873,26 +6873,26 @@ function hoSelectTake(takeId, type){
   hoOpenFormDirect(type, 'return');
 }
 
-function hoOpenFormDirect(type, mode){
+async function hoOpenFormDirect(type, mode){
   hoFormType = type; hoFormMode = mode;
   hoPhotos = []; hoFuel = ''; hoNoDmg = false; hoCurrentView = 'front';
   hoDamages = {};
-  // Load damages, photos from linked take form
+
+  // טען נזקים ותמונות מטופס הלקיחה — תמיד, לכל סוגי הטפסים
   if(hoLinkedTakeId){
     const takeFrm = hoForms2.find(x=>x.id===hoLinkedTakeId);
     if(takeFrm){
+      // נזקים — סנכרוני
       hoDamages = JSON.parse(JSON.stringify(takeFrm.damages||{}));
       if(takeFrm.noDamage) hoNoDmg = true;
-      // טען תמונות מ-IndexedDB (לא נשמרות ב-localStorage)
-      if(takeFrm.photos && takeFrm.photos.length){
-        hoPhotos = takeFrm.photos.slice();
-      } else {
-        hoPhotoStore.load(hoLinkedTakeId).then(function(pics){
-          if(pics && pics.length){ hoPhotos = pics; hoRenderPhotosGrid(); }
-        });
-      }
+      // תמונות — טען מ-IndexedDB (await — מחכים שיגיעו לפני שמצייר)
+      const savedPhotos = (takeFrm.photos && takeFrm.photos.length)
+        ? takeFrm.photos
+        : await hoPhotoStore.load(hoLinkedTakeId);
+      if(savedPhotos && savedPhotos.length) hoPhotos = savedPhotos;
     }
   }
+
   const v = vehicles.find(x=>x.id===hoCurrentVid);
   const label = HO_TYPE_LABELS[type+'_'+mode];
   document.getElementById('ho-form-title').textContent = label;
@@ -6943,7 +6943,7 @@ function hoOpenFormDirect(type, mode){
   hoRenderDmgList();
   var _noDmgCb = document.getElementById('ho-no-damage');
   if(_noDmgCb) _noDmgCb.checked = hoNoDmg;
-  hoRenderPhotosGrid();
+  hoRenderPhotosGrid(); // כעת מצייר עם התמונות שכבר נטענו
   setTimeout(hoInitSig, 100);
   document.getElementById('ho-list-screen').style.display='none';
   document.getElementById('ho-form-screen').style.display='block';
@@ -7031,7 +7031,7 @@ function hoRenderList(vid){
   }).join('');
 }
 
-function hoOpenForm(type, mode){
+async function hoOpenForm(type, mode){
   // If return — show picker modal for open take forms
   if(mode==='return'){
     const vForms = hoForms2.filter(f=>f.vehicleId===hoCurrentVid);
@@ -7055,24 +7055,18 @@ function hoOpenForm(type, mode){
   // Clear signature canvas
   if(hoSigCtx){ var _hsc = document.getElementById('ho-sig-canvas'); if(_hsc) hoSigCtx.clearRect(0,0,_hsc.width,_hsc.height); hoSigEmpty=true; }
 
-  // If return — pre-load damages, photos, and fuel from the linked take form
+  // טען נזקים ותמונות מטופס הלקיחה — תמיד, לכל סוגי הטפסים
   if(mode==='return' && hoLinkedTakeId){
     const takeForm = hoForms2.find(function(x){ return x.id===hoLinkedTakeId; });
     if(takeForm){
-      if(takeForm.damages){
-        hoDamages = JSON.parse(JSON.stringify(takeForm.damages));
-      }
-      if(takeForm.noDamage){
-        hoNoDmg = true;
-      }
-      // טען תמונות מ-IndexedDB (לא נשמרות ב-localStorage)
-      if(takeForm.photos && takeForm.photos.length){
-        hoPhotos = takeForm.photos.slice();
-      } else {
-        hoPhotoStore.load(hoLinkedTakeId).then(function(pics){
-          if(pics && pics.length){ hoPhotos = pics; hoRenderPhotosGrid(); }
-        });
-      }
+      // נזקים — סנכרוני
+      if(takeForm.damages) hoDamages = JSON.parse(JSON.stringify(takeForm.damages));
+      if(takeForm.noDamage) hoNoDmg = true;
+      // תמונות — טען מ-IndexedDB (await — מחכים שיגיעו לפני שמצייר)
+      const savedPhotos = (takeForm.photos && takeForm.photos.length)
+        ? takeForm.photos
+        : await hoPhotoStore.load(hoLinkedTakeId);
+      if(savedPhotos && savedPhotos.length) hoPhotos = savedPhotos;
     }
   }
 
