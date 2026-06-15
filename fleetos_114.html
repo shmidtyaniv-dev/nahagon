@@ -6721,6 +6721,50 @@ let hoForms2=JSON.parse(localStorage.getItem('hoForms2')||'[]');
 let hoCurrentVid=null,hoFormType=null,hoFormMode=null,hoLinkedTakeId=null;
 let hoDamages={},hoPhotos=[],hoFuel='',hoNoDmg=false,hoAltPlate='';
 
+/* ── IndexedDB photo store (תמונות גדולות ב-IndexedDB במקום localStorage) ── */
+const hoPhotoStore=(function(){
+  var _db=null;
+  function _open(){
+    return new Promise(function(resolve,reject){
+      if(_db) return resolve(_db);
+      var req=indexedDB.open('hoPhotoStore_v1',1);
+      req.onupgradeneeded=function(e){e.target.result.createObjectStore('photos');};
+      req.onsuccess=function(e){_db=e.target.result;resolve(_db);};
+      req.onerror=function(e){reject(e.target.error);};
+    });
+  }
+  return {
+    save:function(formId,photos){
+      return _open().then(function(db){
+        return new Promise(function(resolve,reject){
+          var tx=db.transaction('photos','readwrite');
+          tx.objectStore('photos').put(photos,String(formId));
+          tx.oncomplete=function(){resolve();};
+          tx.onerror=function(e){reject(e.target.error);};
+        });
+      }).catch(function(e){console.warn('hoPhotoStore.save:',e);});
+    },
+    load:function(formId){
+      return _open().then(function(db){
+        return new Promise(function(resolve){
+          var req=db.transaction('photos').objectStore('photos').get(String(formId));
+          req.onsuccess=function(e){resolve(e.target.result||[]);};
+          req.onerror=function(){resolve([]);};
+        });
+      }).catch(function(){return[];});
+    },
+    remove:function(formId){
+      return _open().then(function(db){
+        return new Promise(function(resolve){
+          var tx=db.transaction('photos','readwrite');
+          tx.objectStore('photos').delete(String(formId));
+          tx.oncomplete=resolve; tx.onerror=resolve;
+        });
+      }).catch(function(){});
+    }
+  };
+})();
+
 // Returns the active alt vehicle status for a given primary vehicle id (by driver usage).
 // Returns {type:'loaner'|'bridge', plate:'...'} or null.
 function getAltVehicleStatus(vid){
@@ -6783,8 +6827,11 @@ function hoDeletePair(ids){
   if(!confirm('למחוק משימה זו לצמיתות?')) return;
   const removedIds = ids;
   hoForms2 = hoForms2.filter(f=>!ids.includes(f.id));
-  localStorage.setItem('hoForms2', JSON.stringify(hoForms2));
-  removedIds.forEach(function(rid){ try{ syncRemoveItem('hoForms2', rid); }catch(e){} });
+  try{ localStorage.setItem('hoForms2', JSON.stringify(hoForms2)); }catch(e){}
+  removedIds.forEach(function(rid){
+    try{ syncRemoveItem('hoForms2', rid); }catch(e){}
+    hoPhotoStore.remove(rid); // מחק תמונות מ-IndexedDB
+  });
   hoRenderList(hoCurrentVid);
   hoUpdateReturnBtns(hoCurrentVid);
   showToast('המשימה נמחקה');
@@ -6836,7 +6883,14 @@ function hoOpenFormDirect(type, mode){
     if(takeFrm){
       hoDamages = JSON.parse(JSON.stringify(takeFrm.damages||{}));
       if(takeFrm.noDamage) hoNoDmg = true;
-      if(takeFrm.photos && takeFrm.photos.length) hoPhotos = takeFrm.photos.slice();
+      // טען תמונות מ-IndexedDB (לא נשמרות ב-localStorage)
+      if(takeFrm.photos && takeFrm.photos.length){
+        hoPhotos = takeFrm.photos.slice();
+      } else {
+        hoPhotoStore.load(hoLinkedTakeId).then(function(pics){
+          if(pics && pics.length){ hoPhotos = pics; hoRenderPhotosGrid(); }
+        });
+      }
     }
   }
   const v = vehicles.find(x=>x.id===hoCurrentVid);
@@ -7011,8 +7065,13 @@ function hoOpenForm(type, mode){
       if(takeForm.noDamage){
         hoNoDmg = true;
       }
+      // טען תמונות מ-IndexedDB (לא נשמרות ב-localStorage)
       if(takeForm.photos && takeForm.photos.length){
         hoPhotos = takeForm.photos.slice();
+      } else {
+        hoPhotoStore.load(hoLinkedTakeId).then(function(pics){
+          if(pics && pics.length){ hoPhotos = pics; hoRenderPhotosGrid(); }
+        });
       }
     }
   }
@@ -7416,9 +7475,23 @@ function hoSaveForm(){
     }
   }
 
-  hoForms2.unshift(formData);
-  localStorage.setItem('hoForms2', JSON.stringify(hoForms2));
-  try{ syncPersistItem('hoForms2', formData); }catch(e){}
+  // שמור תמונות ב-IndexedDB (אין מגבלת גודל)
+  hoPhotoStore.save(formData.id, hoPhotos.slice());
+
+  // שמור טופס ב-localStorage ללא תמונות (מונע QuotaExceededError)
+  const lsForm = Object.assign({}, formData, {photos:[]});
+  hoForms2.unshift(lsForm);
+  try{
+    localStorage.setItem('hoForms2', JSON.stringify(hoForms2));
+  }catch(e){
+    console.warn('localStorage save error (quota?):', e);
+    // נמשיך בכל מקרה — התמונות שמורות ב-IndexedDB
+  }
+
+  // Firestore sync ללא תמונות (מגבלת 1MB למסמך)
+  try{ syncPersistItem('hoForms2', lsForm); }catch(e){}
+
+  // hoLastForm שומר תמונות בזיכרון לשימוש מיידי (PDF עכשיו)
   hoLastForm = formData;
 
   // Refresh dashboard & vehicles tables if they exist (sync alt vehicle badges/KPI)
@@ -7465,6 +7538,10 @@ async function hoBuildCombinedPDF(takeForm, retForm){
 
   const allViews = ['front','right','back','left'];
 
+  // טען תמונות מ-IndexedDB לשני הטפסים
+  const takePhotos = (takeForm.photos&&takeForm.photos.length) ? takeForm.photos : await hoPhotoStore.load(takeForm.id);
+  const retPhotos  = (retForm.photos&&retForm.photos.length)  ? retForm.photos  : await hoPhotoStore.load(retForm.id);
+
   // Pre-process car images to white background
   const carPngs = {};
   for(const v of allViews){
@@ -7489,10 +7566,10 @@ async function hoBuildCombinedPDF(takeForm, retForm){
       });
     });
 
-    // Photos
-    const photos = (f.photos||[]).slice(0,6);
+    // Photos (memoized from IndexedDB load above)
+    const fPhotos = (isReturn ? retPhotos : takePhotos).slice(0,6);
     let photosHTML = '';
-    photos.forEach(function(p){
+    fPhotos.forEach(function(p){
       photosHTML += '<img src="' + p + '" style="max-width:120px;max-height:100px;width:auto;height:auto;object-fit:contain;border-radius:4px;border:1px solid #ddd;display:block">';
     });
 
@@ -7758,8 +7835,9 @@ async function hoDownloadPDF(){
     });
   });
 
-  // Photos
-  const photos = (f.photos||[]).slice(0,6);
+  // Photos — טען מ-IndexedDB אם אין בטופס (backward compat)
+  let photos = (f.photos&&f.photos.length) ? f.photos : await hoPhotoStore.load(f.id);
+  photos = photos.slice(0,6);
   let photosHTML = '';
   photos.forEach(function(p){
     photosHTML += '<img src="' + p + '" style="max-width:120px;max-height:100px;width:auto;height:auto;object-fit:contain;border-radius:4px;border:1px solid #ddd;display:block">';
