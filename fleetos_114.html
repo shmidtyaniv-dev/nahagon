@@ -7295,14 +7295,14 @@ function hoHandlePhotos(input){
     createImageBitmap(file).then(bmp=>{
       const canvas=document.createElement('canvas');
       let w=bmp.width,h=bmp.height;
-      const max=1200;
+      const max=2560;
       if(w>max||h>max){
         const ratio=Math.min(max/w,max/h);
         w=Math.round(w*ratio);h=Math.round(h*ratio);
       }
       canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(bmp,0,0,w,h);
-      hoPhotos.push(canvas.toDataURL('image/jpeg',.82));
+      hoPhotos.push(canvas.toDataURL('image/jpeg',.94));
       hoRenderPhotosGrid();
     }).catch(()=>{
       const reader=new FileReader();
@@ -7311,11 +7311,11 @@ function hoHandlePhotos(input){
         img.onload=()=>{
           const canvas=document.createElement('canvas');
           let w=img.width,h=img.height;
-          const max=1200;
+          const max=2560;
           if(w>max||h>max){const ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
           canvas.width=w;canvas.height=h;
           canvas.getContext('2d').drawImage(img,0,0,w,h);
-          hoPhotos.push(canvas.toDataURL('image/jpeg',.82));
+          hoPhotos.push(canvas.toDataURL('image/jpeg',.94));
           hoRenderPhotosGrid();
         };
         img.src=e.target.result;
@@ -7493,7 +7493,7 @@ async function hoBuildCombinedPDF(takeForm, retForm){
     const photos = (f.photos||[]).slice(0,6);
     let photosHTML = '';
     photos.forEach(function(p){
-      photosHTML += '<img src="' + p + '" style="width:90px;height:68px;object-fit:cover;border-radius:4px;border:1px solid #ddd">';
+      photosHTML += '<img src="' + p + '" style="max-width:120px;max-height:100px;width:auto;height:auto;object-fit:contain;border-radius:4px;border:1px solid #ddd;display:block">';
     });
 
     // Signature
@@ -7762,7 +7762,7 @@ async function hoDownloadPDF(){
   const photos = (f.photos||[]).slice(0,6);
   let photosHTML = '';
   photos.forEach(function(p){
-    photosHTML += '<img src="' + p + '" style="width:90px;height:68px;object-fit:cover;border-radius:4px;border:1px solid #ddd">';
+    photosHTML += '<img src="' + p + '" style="max-width:120px;max-height:100px;width:auto;height:auto;object-fit:contain;border-radius:4px;border:1px solid #ddd;display:block">';
   });
 
   // Signature
