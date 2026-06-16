@@ -7279,13 +7279,16 @@ function hoEditDamage(view, idx){
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:flex;align-items:flex-end;justify-content:center';
 
   if(view === 'interior'){
-    // Interior: only "כתם" type
-    if(!dmg.types.includes('כתם')) dmg.types = ['כתם'];
+    // Interior: only "כתם" type - starts unselected, click to select
+    const isKetam = dmg.types.includes('כתם');
     modal.innerHTML = `
       <div style="background:var(--card);border-radius:14px 14px 0 0;padding:20px 18px;width:100%;max-width:420px;direction:rtl">
-        <div style="font-size:15px;font-weight:600;color:var(--gd);margin-bottom:12px">כתם — פנים הרכב</div>
+        <div style="font-size:15px;font-weight:600;color:var(--gd);margin-bottom:4px">סוג נזק — פנים הרכב</div>
+        <div style="font-size:12px;color:var(--t3);margin-bottom:16px">לחץ לבחירה</div>
         <div style="display:flex;gap:10px;margin-bottom:18px">
-          <div style="flex:1;padding:14px 10px;border:2px solid var(--gd);border-radius:10px;font-size:15px;font-weight:700;text-align:center;background:var(--gd);color:#fff">🟤 כתם</div>
+          <button id="ho-type-ketam" onclick="hoToggleDmgType('כתם')" style="flex:1;padding:14px 10px;border:2px solid ${isKetam?'var(--gd)':'var(--bdr2)'};border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;background:${isKetam?'var(--gd)':'var(--card)'};color:${isKetam?'#fff':'var(--t2)'};transition:all .15s">
+            🟤 כתם
+          </button>
         </div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button onclick="hoSaveDmgTypes('${view}',${idx})" style="padding:12px;background:var(--gd);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">שמור</button>
@@ -7334,10 +7337,13 @@ function hoToggleDmgType(type){
   else dmg.types.push(type);
   const isMaka = dmg.types.includes('מכה');
   const isShaf = dmg.types.includes('שפשופים');
+  const isKetam = dmg.types.includes('כתם');
   const btnMaka = document.getElementById('ho-type-maka');
   const btnShaf = document.getElementById('ho-type-shaf');
+  const btnKetam = document.getElementById('ho-type-ketam');
   if(btnMaka){ btnMaka.style.background=isMaka?'var(--gd)':'var(--card)'; btnMaka.style.color=isMaka?'#fff':'var(--t2)'; btnMaka.style.borderColor=isMaka?'var(--gd)':'var(--bdr2)'; }
   if(btnShaf){ btnShaf.style.background=isShaf?'var(--gd)':'var(--card)'; btnShaf.style.color=isShaf?'#fff':'var(--t2)'; btnShaf.style.borderColor=isShaf?'var(--gd)':'var(--bdr2)'; }
+  if(btnKetam){ btnKetam.style.background=isKetam?'var(--gd)':'var(--card)'; btnKetam.style.color=isKetam?'#fff':'var(--t2)'; btnKetam.style.borderColor=isKetam?'var(--gd)':'var(--bdr2)'; }
 }
 
 function hoSaveDmgTypes(view, idx){
