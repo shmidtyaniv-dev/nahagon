@@ -21781,44 +21781,6 @@ function ordersSaveNew(){
 }
 
 
-function ordersSaveNew(){
-  var name  = (document.getElementById('ord-name')?.value||'').trim();
-  var date  = document.getElementById('ord-date')?.value||'';
-  var model = (document.getElementById('ord-model')?.value||'').trim();
-  var color = (document.getElementById('ord-color')?.value||'').trim();
-  var fileInput = document.getElementById('ord-file');
-
-  if(!name){ showToast('נא להזין שם עובד'); return; }
-  if(!model){ showToast('נא להזין דגם רכב'); return; }
-
-  function doSave(fileData, fileType){
-    ordersLoad();
-    _orders.push({
-      id: Date.now(),
-      employeeName: name,
-      orderDate: date,
-      carModel: model,
-      color: color,
-      fileData: fileData||null,
-      fileType: fileType||null,
-      status: 'open',
-      createdAt: new Date().toISOString()
-    });
-    ordersSave();
-    document.getElementById('orders-new-modal')?.remove();
-    renderOrders();
-    showToast('ההזמנה נוספה');
-  }
-
-  if(fileInput && fileInput.files && fileInput.files[0]){
-    var reader = new FileReader();
-    var fType = fileInput.files[0].type;
-    reader.onload = function(e){ doSave(e.target.result, fType); };
-    reader.readAsDataURL(fileInput.files[0]);
-  } else {
-    doSave(null, null);
-  }
-}
 
 </script>
 
