@@ -21713,9 +21713,9 @@ function ordersOpenNew(){
   if(ex) ex.remove();
   var modal = document.createElement('div');
   modal.id = 'orders-new-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML = `
-    <div style="background:var(--card);border-radius:16px 16px 0 0;padding:24px 18px 32px;width:100%;max-width:480px;direction:rtl;max-height:90vh;overflow-y:auto">
+    <div style="background:var(--card);border-radius:16px;padding:24px 18px 28px;width:100%;max-width:480px;direction:rtl;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
         <div style="font-size:17px;font-weight:700;color:var(--gd)">הזמנה חדשה</div>
         <button onclick="document.getElementById('orders-new-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3);line-height:1">×</button>
