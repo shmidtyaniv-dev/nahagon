@@ -684,8 +684,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .ho-dot{position:absolute;width:22px;height:22px;border-radius:50%;background:#dc2626;border:2px solid #fff;box-shadow:0 0 0 1px #dc2626,0 1px 6px rgba(220,38,38,.5);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;transform:translate(-50%,-50%);cursor:pointer;z-index:10;pointer-events:auto;line-height:1}
 
 .ho-fuel-btn.active{background:var(--gd)!important;color:#fff!important;border-color:var(--gd)!important;font-weight:700!important}
-.ho-view-btn{padding:8px 14px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;background:var(--card);color:var(--t2);white-space:nowrap;transition:all .15s}
-.ho-view-btn.active{background:var(--gd)!important;color:#fff!important;border-color:var(--gd)!important}
+.ho-view-btn,.eob-view-btn{padding:8px 14px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;background:var(--card);color:var(--t2);white-space:nowrap;transition:all .15s}
+.ho-view-btn.active,.eob-view-btn.active{background:var(--gd)!important;color:#fff!important;border-color:var(--gd)!important}
 
 /* ===== NEW DASHBOARD DESIGN (reference) ===== */
 
@@ -3965,6 +3965,31 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             </table>
           </div>
         </div>
+
+        <!-- סימון נזקים -->
+        <div style="background:#fff;border-radius:10px;border:1px solid var(--bdr);padding:14px 16px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">סימון נזקים</div>
+          <button id="eob-no-dmg-btn" onclick="eobToggleNoDmg()" style="display:flex;align-items:center;gap:8px;width:100%;background:var(--bg);border:1.5px solid var(--bdr2);border-radius:8px;padding:9px 12px;cursor:pointer;font-family:inherit;font-size:13px;color:var(--t2);margin-bottom:10px">
+            <svg id="eob-no-dmg-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+            אין נזקים ברכב
+          </button>
+          <div id="eob-dmg-area">
+            <div style="display:flex;gap:5px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px">
+              <button class="eob-view-btn active" onclick="eobSetView('front',this)">קדמי</button>
+              <button class="eob-view-btn" onclick="eobSetView('right',this)">צד ימין</button>
+              <button class="eob-view-btn" onclick="eobSetView('back',this)">אחורי</button>
+              <button class="eob-view-btn" onclick="eobSetView('left',this)">צד שמאל</button>
+              <button class="eob-view-btn" onclick="eobSetView('interior',this)">פנים</button>
+            </div>
+            <div id="eob-car-wrap" style="border-radius:10px;border:1.5px solid var(--bdr2);overflow:hidden;position:relative;width:100%;height:340px;cursor:crosshair;background:#fff">
+              <img id="eob-car-img" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;background:#fff">
+              <div id="eob-dots-layer" style="position:absolute;inset:0;pointer-events:none;z-index:3"></div>
+            </div>
+            <div style="font-size:10px;color:var(--t3);text-align:center;margin-top:5px">לחץ על הרכב לסימון • לחץ על נקודה להסרה</div>
+            <div id="eob-dmg-list" style="margin-top:8px;display:flex;flex-direction:column;gap:5px"></div>
+          </div>
+        </div>
+
         <!-- חתימת נציג החברה -->
         <div style="background:#fff;border-radius:10px;border:1px solid var(--bdr);padding:14px 16px;margin-bottom:12px">
           <div style="font-size:11px;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">חתימת נציג החברה</div>
@@ -20866,6 +20891,7 @@ function eobClearSig(){
 }
 
 function initEndOfBusinessTab(vid){
+  eobInitDiagram();
   _eobVid = vid;
   var v = vehicles.find(function(x){ return x.id === vid; });
   if(!v) return;
@@ -20923,6 +20949,178 @@ function eobToggle(i, which){
   if(which === 'nosabir' && nosabir.checked) sabir.checked  = false;
 }
 
+
+// ═══ EOB DAMAGE DIAGRAM ═══
+var eobDamages = {};
+var eobCurrentView = 'front';
+var eobNoDmg = false;
+
+function eobToggleNoDmg(){
+  eobNoDmg = !eobNoDmg;
+  var btn = document.getElementById('eob-no-dmg-btn');
+  var icon = document.getElementById('eob-no-dmg-icon');
+  var area = document.getElementById('eob-dmg-area');
+  if(btn){ btn.style.background=eobNoDmg?'#f0fdf4':'var(--bg)'; btn.style.borderColor=eobNoDmg?'var(--gl)':'var(--bdr2)'; btn.style.color=eobNoDmg?'var(--gd)':'var(--t2)'; }
+  if(icon){ icon.setAttribute('stroke', eobNoDmg?'var(--gl)':'var(--t3)'); }
+  if(area) area.style.display = eobNoDmg?'none':'block';
+  if(eobNoDmg){ eobDamages={}; eobRenderDots(); eobRenderDmgList(); }
+}
+
+function eobSetView(v, btn){
+  eobCurrentView = v;
+  document.querySelectorAll('.eob-view-btn').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  var img = document.getElementById('eob-car-img');
+  if(img) img.src = HO_IMGS[v];
+  eobRenderDots();
+}
+
+function eobInitCarClick(){
+  var wrap = document.getElementById('eob-car-wrap');
+  if(!wrap) return;
+  if(wrap._eobClickFn) wrap.removeEventListener('click', wrap._eobClickFn);
+  wrap._eobClickFn = function(e){
+    if(eobNoDmg) return;
+    if(e.target.classList.contains('eob-dot')) return;
+    var r = wrap.getBoundingClientRect();
+    var px = ((e.clientX - r.left) / r.width) * 100;
+    var py = ((e.clientY - r.top) / r.height) * 100;
+    if(px<0||px>100||py<0||py>100) return;
+    if(!eobDamages[eobCurrentView]) eobDamages[eobCurrentView] = [];
+    eobDamages[eobCurrentView].push({px:px, py:py, types:[], desc:''});
+    eobEditDamage(eobCurrentView, eobDamages[eobCurrentView].length - 1);
+    eobRenderDots();
+    eobRenderDmgList();
+  };
+  wrap.addEventListener('click', wrap._eobClickFn);
+}
+
+function eobRenderDots(){
+  var layer = document.getElementById('eob-dots-layer');
+  if(!layer) return;
+  layer.innerHTML = '';
+  var gNum = 0;
+  ['front','right','back','left','interior'].forEach(function(view){
+    (eobDamages[view]||[]).forEach(function(d, i){
+      gNum++;
+      if(view === eobCurrentView){
+        var el = document.createElement('div');
+        el.className = 'eob-dot';
+        el.style.cssText = 'position:absolute;width:22px;height:22px;border-radius:50%;background:#dc2626;border:2px solid #fff;box-shadow:0 0 0 1px #dc2626,0 1px 6px rgba(220,38,38,.5);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;transform:translate(-50%,-50%);cursor:pointer;z-index:10;pointer-events:auto;line-height:1';
+        el.style.left = d.px + '%';
+        el.style.top = d.py + '%';
+        el.textContent = gNum;
+        (function(_v,_i){ el.onclick = function(ev){ ev.stopPropagation(); eobEditDamage(_v,_i); }; })(view, i);
+        layer.appendChild(el);
+      }
+    });
+  });
+  eobInitCarClick();
+}
+
+function eobRenderDmgList(){
+  var el = document.getElementById('eob-dmg-list');
+  if(!el) return;
+  var all = [];
+  ['front','right','back','left','interior'].forEach(function(v){
+    (eobDamages[v]||[]).forEach(function(d,i){ all.push({num:all.length+1, label:HO_LABELS[v], types:d.types||[], view:v, idx:i}); });
+  });
+  el.innerHTML = all.map(function(d){
+    var typesHTML = d.types.length
+      ? d.types.map(function(t){ return '<span style="font-size:10px;background:#fee2e2;color:#dc2626;border:1px solid #fecaca;border-radius:4px;padding:1px 6px">'+t+'</span>'; }).join(' ')
+      : '<span style="font-size:10px;color:#bbb">לחץ לבחור סוג נזק</span>';
+    return '<div style="display:flex;align-items:center;gap:8px;background:#fff5f5;border:1px solid #fecaca;border-radius:7px;padding:6px 10px;cursor:pointer" onclick="eobEditDamage(\'' + d.view + '\',' + d.idx + ')">'
+      + '<div style="width:20px;height:20px;border-radius:50%;background:#dc2626;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + d.num + '</div>'
+      + '<div style="flex:1"><div style="font-size:12px;color:#dc2626;font-weight:600">נזק ' + d.num + ' — ' + d.label + '</div>'
+      + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px">' + typesHTML + '</div></div></div>';
+  }).join('');
+}
+
+function eobEditDamage(view, idx){
+  var dmg = (eobDamages[view]||[])[idx];
+  if(!dmg) return;
+  if(!dmg.types) dmg.types = [];
+  var existing = document.getElementById('eob-dmg-modal');
+  if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'eob-dmg-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:flex;align-items:flex-end;justify-content:center';
+  if(view === 'interior'){
+    var isKetam = dmg.types.includes('כתם');
+    modal.innerHTML = '<div style="background:var(--card);border-radius:14px 14px 0 0;padding:20px 18px;width:100%;max-width:420px;direction:rtl">'
+      + '<div style="font-size:15px;font-weight:600;color:var(--gd);margin-bottom:4px">סוג נזק — פנים הרכב</div>'
+      + '<div style="font-size:12px;color:var(--t3);margin-bottom:16px">לחץ לבחירה</div>'
+      + '<div style="display:flex;gap:10px;margin-bottom:18px">'
+      + '<button id="eob-type-ketam" onclick="eobToggleDmgType(\'' + view + '\',' + idx + ',\'כתם\')" style="flex:1;padding:14px 10px;border:2px solid ' + (isKetam?'var(--gd)':'var(--bdr2)') + ';border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;background:' + (isKetam?'var(--gd)':'var(--card)') + ';color:' + (isKetam?'#fff':'var(--t2)') + ';transition:all .15s">🟤 כתם</button>'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:8px">'
+      + '<button onclick="eobSaveDmgTypes(\'' + view + '\',' + idx + ')" style="padding:12px;background:var(--gd);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">שמור</button>'
+      + '<button onclick="eobRemoveDamage(\'' + view + '\',' + idx + ')" style="padding:11px;background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;border-radius:9px;font-size:13px;cursor:pointer;font-family:inherit">הסר כתם</button>'
+      + '<button onclick="document.getElementById(\'eob-dmg-modal\').remove()" style="padding:9px;background:none;color:var(--t3);border:none;font-size:12px;cursor:pointer;font-family:inherit">ביטול</button>'
+      + '</div></div>';
+  } else {
+    var isMaka = dmg.types.includes('מכה');
+    var isShaf = dmg.types.includes('שפשופים');
+    modal.innerHTML = '<div style="background:var(--card);border-radius:14px 14px 0 0;padding:20px 18px;width:100%;max-width:420px;direction:rtl">'
+      + '<div style="font-size:15px;font-weight:600;color:var(--gd);margin-bottom:4px">סוג נזק — ' + HO_LABELS[view] + '</div>'
+      + '<div style="font-size:12px;color:var(--t3);margin-bottom:16px">ניתן לבחור גם וגם</div>'
+      + '<div style="display:flex;gap:10px;margin-bottom:18px">'
+      + '<button id="eob-type-maka" onclick="eobToggleDmgType(\'' + view + '\',' + idx + ',\'מכה\')" style="flex:1;padding:14px 10px;border:2px solid ' + (isMaka?'var(--gd)':'var(--bdr2)') + ';border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;background:' + (isMaka?'var(--gd)':'var(--card)') + ';color:' + (isMaka?'#fff':'var(--t2)') + ';transition:all .15s">💥 מכה</button>'
+      + '<button id="eob-type-shaf" onclick="eobToggleDmgType(\'' + view + '\',' + idx + ',\'שפשופים\')" style="flex:1;padding:14px 10px;border:2px solid ' + (isShaf?'var(--gd)':'var(--bdr2)') + ';border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;background:' + (isShaf?'var(--gd)':'var(--card)') + ';color:' + (isShaf?'#fff':'var(--t2)') + ';transition:all .15s">〰️ שפשופים</button>'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:8px">'
+      + '<button onclick="eobSaveDmgTypes(\'' + view + '\',' + idx + ')" style="padding:12px;background:var(--gd);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">שמור</button>'
+      + '<button onclick="eobRemoveDamage(\'' + view + '\',' + idx + ')" style="padding:11px;background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;border-radius:9px;font-size:13px;cursor:pointer;font-family:inherit">הסר נזק זה</button>'
+      + '<button onclick="document.getElementById(\'eob-dmg-modal\').remove()" style="padding:9px;background:none;color:var(--t3);border:none;font-size:12px;cursor:pointer;font-family:inherit">ביטול</button>'
+      + '</div></div>';
+  }
+  document.body.appendChild(modal);
+}
+
+function eobToggleDmgType(view, idx, type){
+  var dmg = (eobDamages[view]||[])[idx];
+  if(!dmg) return;
+  if(!dmg.types) dmg.types = [];
+  var i = dmg.types.indexOf(type);
+  if(i > -1) dmg.types.splice(i, 1); else dmg.types.push(type);
+  var isMaka  = dmg.types.includes('מכה');
+  var isShaf  = dmg.types.includes('שפשופים');
+  var isKetam = dmg.types.includes('כתם');
+  var btnMaka  = document.getElementById('eob-type-maka');
+  var btnShaf  = document.getElementById('eob-type-shaf');
+  var btnKetam = document.getElementById('eob-type-ketam');
+  if(btnMaka){  btnMaka.style.background=isMaka?'var(--gd)':'var(--card)';   btnMaka.style.color=isMaka?'#fff':'var(--t2)';   btnMaka.style.borderColor=isMaka?'var(--gd)':'var(--bdr2)'; }
+  if(btnShaf){  btnShaf.style.background=isShaf?'var(--gd)':'var(--card)';   btnShaf.style.color=isShaf?'#fff':'var(--t2)';   btnShaf.style.borderColor=isShaf?'var(--gd)':'var(--bdr2)'; }
+  if(btnKetam){ btnKetam.style.background=isKetam?'var(--gd)':'var(--card)'; btnKetam.style.color=isKetam?'#fff':'var(--t2)'; btnKetam.style.borderColor=isKetam?'var(--gd)':'var(--bdr2)'; }
+}
+
+function eobSaveDmgTypes(view, idx){
+  var dmg = eobDamages[view]&&eobDamages[view][idx];
+  if(dmg){ if(!dmg.types) dmg.types=[]; dmg.desc=dmg.types.join(' + '); }
+  document.getElementById('eob-dmg-modal')?.remove();
+  eobRenderDots();
+  eobRenderDmgList();
+}
+
+function eobRemoveDamage(view, idx){
+  if(eobDamages[view]) eobDamages[view].splice(idx,1);
+  document.getElementById('eob-dmg-modal')?.remove();
+  eobRenderDots();
+  eobRenderDmgList();
+}
+
+function eobInitDiagram(){
+  eobDamages = {};
+  eobCurrentView = 'front';
+  eobNoDmg = false;
+  var img = document.getElementById('eob-car-img');
+  if(img) img.src = HO_IMGS['front'];
+  var firstBtn = document.querySelector('.eob-view-btn');
+  if(firstBtn){ document.querySelectorAll('.eob-view-btn').forEach(function(b){ b.classList.remove('active'); }); firstBtn.classList.add('active'); }
+  eobRenderDots();
+  eobRenderDmgList();
+}
+
 function saveEobData(){
   if(!_eobVid) return;
   var data = {
@@ -20939,6 +21137,8 @@ function saveEobData(){
       note:    (document.getElementById('eob-rownote-' + i)?.value) || ''
     });
   });
+  data.damages = JSON.parse(JSON.stringify(eobDamages));
+  data.noDamage = eobNoDmg;
   try { localStorage.setItem('eob_' + _eobVid, JSON.stringify(data)); } catch(e){}
 }
 
@@ -20965,6 +21165,8 @@ function loadEobData(vid){
         el = document.getElementById('eob-rownote-' + i); if(el && row.note) el.value = row.note;
       });
     }
+    if(data.damages){ eobDamages = data.damages; eobRenderDots(); eobRenderDmgList(); }
+    if(data.noDamage){ eobNoDmg=false; eobToggleNoDmg(); }
   } catch(e){}
 }
 
@@ -20976,6 +21178,7 @@ function clearEobForm(){
   var sigNameEl = document.getElementById('eob-sig-name-rep');
   if(sigNameEl) sigNameEl.value = '';
   eobClearSig();
+  eobDamages={}; eobNoDmg=false;
   initEndOfBusinessTab(_eobVid);
   showToast('הטופס נוקה');
 }
