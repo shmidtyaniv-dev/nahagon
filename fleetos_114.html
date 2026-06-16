@@ -21651,17 +21651,21 @@ function renderOrders(){
     var statusLabel = isOpen ? 'פתוח' : 'סופק';
     var dateDisplay = o.orderDate ? new Date(o.orderDate).toLocaleDateString('he-IL') : '—';
     var closeBtn = isOpen
-      ? '<button onclick="ordersClose('+idx+')" style="padding:5px 11px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:11px;font-weight:600;color:#166534;cursor:pointer;font-family:inherit;white-space:nowrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11" style="vertical-align:-1px;margin-left:3px"><polyline points="20 6 9 17 4 12"/></svg>הרכב הגיע</button>'
+      ? '<button onclick="ordersClose('+idx+')" style="padding:5px 11px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;font-size:11px;font-weight:600;color:#166534;cursor:pointer;font-family:inherit;white-space:nowrap">הרכב הגיע</button>'
       : '<button onclick="ordersReopen('+idx+')" style="padding:5px 11px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:11px;font-weight:600;color:#92400e;cursor:pointer;font-family:inherit">החזר לפתוח</button>';
     var fileBtn = o.fileData
       ? '<button onclick="ordersViewFile('+idx+')" title="צפה בקובץ" style="padding:5px 8px;background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;color:var(--t2);font-family:inherit;display:inline-flex;align-items:center;gap:3px;font-size:11px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>קובץ</button>'
       : '';
+    var editBtn = '<button onclick="ordersEdit('+idx+')" title="ערוך" style="padding:5px 7px;background:none;border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;color:var(--t2);font-family:inherit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>';
     var delBtn = '<button onclick="ordersDelete('+idx+')" title="מחק" style="padding:5px 7px;background:none;border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;color:var(--t3);font-family:inherit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg></button>';
+    var statusBadge = isOpen
+      ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+statusBg+';color:'+statusColor+';border:1px solid '+statusBorder+'">פתוח</span>'
+      : '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+statusBg+';color:'+statusColor+';border:1px solid '+statusBorder+'">✓ סופק</span>';
     return '<div style="background:var(--card);border-radius:7px;border:1px solid var(--bdr);padding:7px 12px;display:flex;align-items:center;gap:10px">'
       + '<div style="flex:1;min-width:0">'
       + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:1px">'
       + '<span style="font-size:13px;font-weight:600;color:var(--t1)">' + (o.employeeName||'—') + '</span>'
-      + '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+statusBg+';color:'+statusColor+';border:1px solid '+statusBorder+'">' + statusLabel + '</span>'
+      + statusBadge
       + '</div>'
       + '<div style="display:flex;gap:10px;font-size:11px;color:var(--t3)">'
       + '<span>🚗 ' + (o.carModel||'—') + '</span>'
@@ -21669,13 +21673,87 @@ function renderOrders(){
       + '<span>📅 ' + dateDisplay + '</span>'
       + '</div>'
       + '</div>'
-      + '<div style="display:flex;gap:5px;align-items:center;flex-shrink:0">' + closeBtn + fileBtn + delBtn + '</div>'
+      + '<div style="display:flex;gap:5px;align-items:center;flex-shrink:0">' + closeBtn + fileBtn + editBtn + delBtn + '</div>'
       + '</div>';
   }).join('');
 }
 
 function ordersClose(idx){ ordersSetStatus(idx,'closed'); }
 function ordersReopen(idx){ ordersSetStatus(idx,'open'); }
+
+function ordersEdit(idx){
+  ordersLoad();
+  var o = _orders[idx];
+  if(!o) return;
+  var ex = document.getElementById('orders-new-modal');
+  if(ex) ex.remove();
+  var modal = document.createElement('div');
+  modal.id = 'orders-new-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:var(--card);border-radius:16px;padding:24px 18px 28px;width:100%;max-width:480px;direction:rtl;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="font-size:17px;font-weight:700;color:var(--gd)">עריכת הזמנה</div>
+        <button onclick="document.getElementById('orders-new-modal').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3);line-height:1">×</button>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:5px">שם מלא (עובד)</label>
+        <input id="ord-name" type="text" value="${o.employeeName||''}" style="width:100%;padding:10px 12px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:5px">תאריך הזמנה</label>
+        <input id="ord-date" type="date" value="${o.orderDate||''}" style="width:100%;padding:10px 12px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--t1);box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:5px">דגם הרכב</label>
+        <input id="ord-model" type="text" value="${o.carModel||''}" style="width:100%;padding:10px 12px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:5px">צבע</label>
+        <input id="ord-color" type="text" value="${o.color||''}" style="width:100%;padding:10px 12px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:5px">קובץ הזמנה</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px dashed var(--bdr2);border-radius:8px;cursor:pointer;background:var(--bg);color:var(--t2);font-size:13px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          <span id="ord-file-label">${o.fileData ? 'קובץ קיים — לחץ להחלפה' : 'הוסף קובץ / תמונה'}</span>
+          <input type="file" id="ord-file" accept="image/*,application/pdf" style="display:none" onchange="ordersFileSelected(this)">
+        </label>
+      </div>
+      <button onclick="ordersUpdateExisting(${idx})" style="width:100%;padding:13px;background:var(--gd);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">שמור שינויים</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function ordersUpdateExisting(idx){
+  var name  = (document.getElementById('ord-name')?.value||'').trim();
+  var date  = document.getElementById('ord-date')?.value||'';
+  var model = (document.getElementById('ord-model')?.value||'').trim();
+  var color = (document.getElementById('ord-color')?.value||'').trim();
+  var fileInput = document.getElementById('ord-file');
+  if(!name){ showToast('נא להזין שם עובד'); return; }
+  if(!model){ showToast('נא להזין דגם רכב'); return; }
+  ordersLoad();
+  function doUpdate(fileData, fileType){
+    _orders[idx].employeeName = name;
+    _orders[idx].orderDate = date;
+    _orders[idx].carModel = model;
+    _orders[idx].color = color;
+    if(fileData){ _orders[idx].fileData = fileData; _orders[idx].fileType = fileType; }
+    ordersSave();
+    document.getElementById('orders-new-modal')?.remove();
+    renderOrders();
+    showToast('ההזמנה עודכנה');
+  }
+  if(fileInput && fileInput.files && fileInput.files[0]){
+    var reader = new FileReader();
+    var fType = fileInput.files[0].type;
+    reader.onload = function(e){ doUpdate(e.target.result, fType); };
+    reader.readAsDataURL(fileInput.files[0]);
+  } else {
+    doUpdate(null, null);
+  }
+}
 function ordersSetStatus(idx, status){
   ordersLoad();
   if(!_orders[idx]) return;
