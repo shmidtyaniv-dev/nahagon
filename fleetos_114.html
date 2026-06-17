@@ -3839,11 +3839,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </button>
         <button class="vc-tab-btn" onclick="vcTab('handover',this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
-          מסירה וקבלה
-        </button>
-        <button class="vc-tab-btn" onclick="vcTab('history',this)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          היסטוריה
+          טפסים
         </button>
         <button class="vc-tab-btn" onclick="vcTab('endofbusiness',this)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -3907,22 +3903,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div id="vc-accidents-content"></div>
       </div>
 
-      <!-- TREATMENTS TAB -->
-      <div id="vct-history" class="vc-tab-panel" style="display:none">
-        <div class="sh" style="margin-bottom:10px">
-          <h2>היסטוריה</h2>
-          <span class="sp"></span>
-          <button class="btn btn-p btn-sm" onclick="openAddHistoryModal(_currentVid)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            הוסף תיעוד
-          </button>
-        </div>
-        <div style="font-size:11px;color:var(--t3);margin-bottom:10px;background:#fffbf0;border:1px solid #fde68a;border-radius:8px;padding:8px 12px">
-          ℹ️ רשימת הטיפולים והטסטים שבוצעו ברכב. סוגי טיפול וטסט נוספים אוטומטית כשמשימה מסומנת כבוצעה.
-        </div>
-        <div id="vc-history-list"></div>
-        <div id="vc-handover-history" style="margin-top:18px"></div>
-      </div>
 
 
       <!-- END OF BUSINESS TAB -->
@@ -9826,9 +9806,18 @@ function renderVehicleTimeline(vid){
   // 3. Handover forms
   var hoForms=JSON.parse(localStorage.getItem('hoForms2')||'[]');
   hoForms.filter(function(f){return f.vehicleId===vid;}).forEach(function(f){
-    var typeN={mission:'משימה',loaner:'רכב חלופי',bridge:'רכב גישור'}[f.type]||f.type;
-    var modeN=f.mode==='take'?'מסירה':'החזרה';
-    events.push({date:f.createdAt||f.date||'',icon:f.mode==='take'?'🚗':'🏁',bg:f.mode==='take'?'#dbeafe':'#dcfce7',clr:f.mode==='take'?'#1e40af':'#166534',title:typeN+' — '+modeN,desc:(f.altPlate?'לוחית: '+f.altPlate:''),source:'auto'});
+    var title, desc='';
+    if(f.type==='mission'){
+      title=f.mode==='take'?('לקיחת רכב'+(f.purpose?' ל'+f.purpose:'')):'החזרת רכב';
+    } else if(f.type==='loaner'){
+      title=f.mode==='take'?'מסירה לנהג רכב חלופי':'החזרה מנהג רכב חלופי';
+    } else if(f.type==='bridge'){
+      title=f.mode==='take'?'מסירה לנהג רכב גישור':'החזרה מנהג רכב גישור';
+    } else {
+      title=f.mode==='take'?'לקיחה':'החזרה';
+    }
+    if(f.altPlate) desc='לוחית: '+f.altPlate;
+    events.push({date:f.createdAt||f.date||'',icon:f.mode==='take'?'🚗':'🏁',bg:f.mode==='take'?'#dbeafe':'#dcfce7',clr:f.mode==='take'?'#1e40af':'#166534',title:title,desc:desc,source:'auto'});
   });
 
   // 4. Delivery
