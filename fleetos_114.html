@@ -6986,7 +6986,7 @@ async function hoOpenFormDirect(type, mode){
 
 
 function hoRenderList(vid){
-  const vForms = hoForms2.filter(f=>f.vehicleId===vid).slice().reverse();
+  const vForms = hoForms2.filter(f=>f.vehicleId===vid).slice();
   const el = document.getElementById('ho-forms-list');
   if(!el) return;
   if(!vForms.length){
