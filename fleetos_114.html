@@ -235,7 +235,8 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 .vc-tab-badge.danger{background:var(--red-light);color:var(--red-dark)}
 
 /* ===== Vehicle Hero Card ===== */
-.v-hero{background:white;border-radius:12px;border:0.5px solid var(--bdr);padding:22px 24px;margin-bottom:16px;display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:20px}
+.v-hero{background:white;border-radius:12px;border:0.5px solid var(--bdr);padding:22px 24px;margin-bottom:16px;display:grid;grid-template-columns:auto auto 1fr auto auto;align-items:center;gap:20px}
+.v-driver-mini{border-right:1px solid var(--bdr);padding-right:20px;min-width:150px}
 .v-logo-box{width:76px;height:76px;border-radius:14px;background:white;border:1px dashed var(--bdr2);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;overflow:hidden;position:relative;transition:all .15s}
 .v-logo-box:hover{border-style:solid;border-color:var(--green);background:var(--green-bg)}
 .v-logo-box img{width:100%;height:100%;object-fit:contain}
@@ -384,6 +385,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .v-hero{grid-template-columns:auto 1fr;gap:14px}
   .v-hero .vc-license-plate{grid-column:span 2}
   .v-hero .v-title-block{grid-column:span 2}
+  .v-hero .v-driver-mini{grid-column:span 2;border-right:none;border-top:1px solid var(--bdr);padding-right:0;padding-top:14px}
   .v-hero .v-status-badge{grid-column:span 2;justify-self:start}
   .v-hero .v-actions{grid-column:span 2;flex-wrap:wrap}
 }
@@ -474,6 +476,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .vc-license-plate-flag-label{font-size:8px!important}
   .vc-license-plate-flag svg{width:14px!important;height:10px!important}
   .v-hero .v-title-block{grid-column:span 2}
+  .v-hero .v-driver-mini{grid-column:span 2!important;border-right:none!important;border-top:1px solid var(--bdr);padding-right:0!important;padding-top:12px}
   .v-hero .v-actions{grid-column:span 2;flex-wrap:wrap}
   .vc-tabs-bar{padding:0 8px}
   .vc-info-grid{grid-template-columns:1fr 1fr!important}
@@ -3806,6 +3809,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             </span>
           </div>
         </div>
+
+        <!-- Driver mini -->
+        <div class="v-driver-mini" id="vc-hero-driver-mini"></div>
 
         <!-- Actions -->
         <div class="v-actions">
@@ -10180,6 +10186,24 @@ function openDet(vid){
   const statusPill=id('vc-status-pill');
   statusPill.className='v-status-badge '+(sl==='danger'?'warn':sl==='warn'?'caution':'ok');
   statusPill.innerHTML=sl==='danger'?'דורש טיפול':sl==='warn'?'שים לב':'פעיל';
+
+  // Driver mini in hero
+  const driverMiniEl = id('vc-hero-driver-mini');
+  if(driverMiniEl){
+    if(v.driver && v.driver.name){
+      driverMiniEl.innerHTML=`
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:42px;height:42px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0">${inits(v.driver.name)}</div>
+          <div style="min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.driver.name}</div>
+            ${v.driver.phone?`<div style="font-size:12px;color:var(--t3);margin-top:2px" dir="ltr">${v.driver.phone}</div>`:''}
+            ${v.driver.email?`<div style="font-size:12px;color:var(--t3)" dir="ltr">${v.driver.email}</div>`:''}
+          </div>
+        </div>`;
+    } else {
+      driverMiniEl.innerHTML='<div style="font-size:12px;color:var(--t3)">ללא נהג</div>';
+    }
+  }
 
   // violations badge
   const vViolations=violationsList.filter(x=>x.vehicleId===v.id);
