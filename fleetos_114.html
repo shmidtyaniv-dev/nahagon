@@ -235,7 +235,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 .vc-tab-badge.danger{background:var(--red-light);color:var(--red-dark)}
 
 /* ===== Vehicle Hero Card ===== */
-.v-hero{background:#fff;border-radius:12px;border:1px solid #ececec;padding:18px 20px;margin-bottom:16px;display:flex;align-items:stretch;gap:18px;flex-wrap:wrap}
+.v-hero{background:#fff;border-radius:12px;border:1px solid #ececec;padding:18px 20px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .v-hero-left{flex:1;min-width:220px;display:flex;flex-direction:column;justify-content:center}
 .v-plate-row{display:flex;align-items:center;gap:12px}
 .v-name-row{margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -3798,20 +3798,28 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
       <div class="v-hero" id="v-hero-drag-container">
 
-        <!-- בלוק: פרטי רכב + נהג -->
-        <div class="v-hero-left v-hero-block" data-hero-block="vehicle" draggable="true">
+        <!-- בלוק: לוגו -->
+        <div class="v-hero-block" data-hero-block="logo" draggable="true" style="display:flex;align-items:center;justify-content:center">
           <div class="v-hero-drag-handle" title="גרור">⠿</div>
-          <div class="v-plate-row">
-            <div class="v-logo-box" id="vc-brand-icon" onclick="uploadVehiclePhoto()" title="לחץ להעלאת תמונה">
-              <svg width="46" height="46" viewBox="0 0 100 100" fill="none">
-                <ellipse cx="50" cy="50" rx="40" ry="30" stroke="#5F5E5A" stroke-width="3" fill="none"/>
-                <path d="M35 40 L35 60 M35 50 L65 50 M65 40 L65 60" stroke="#5F5E5A" stroke-width="4" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <span id="vc-plate-big"></span>
+          <div class="v-logo-box" id="vc-brand-icon" onclick="uploadVehiclePhoto()" title="לחץ להעלאת תמונה">
+            <svg width="46" height="46" viewBox="0 0 100 100" fill="none">
+              <ellipse cx="50" cy="50" rx="40" ry="30" stroke="#5F5E5A" stroke-width="3" fill="none"/>
+              <path d="M35 40 L35 60 M35 50 L65 50 M65 40 L65 60" stroke="#5F5E5A" stroke-width="4" stroke-linecap="round"/>
+            </svg>
           </div>
-          <div class="v-name-row">
-            <h1 class="v-vehicle-model-title" id="vc-hero-vehicle-title"></h1>
+        </div>
+
+        <!-- בלוק: לוחית רישוי -->
+        <div class="v-hero-block" data-hero-block="plate" draggable="true" style="display:flex;align-items:center;justify-content:center">
+          <div class="v-hero-drag-handle" title="גרור">⠿</div>
+          <span id="vc-plate-big"></span>
+        </div>
+
+        <!-- בלוק: שם הרכב + קוד -->
+        <div class="v-hero-block" data-hero-block="vehicle-name" draggable="true" style="flex:1;min-width:160px;display:flex;flex-direction:column;justify-content:center">
+          <div class="v-hero-drag-handle" title="גרור">⠿</div>
+          <h1 class="v-vehicle-model-title" id="vc-hero-vehicle-title"></h1>
+          <div class="v-vehicle-info">
             <span class="v-meta-chip" id="vc-hero-year" style="display:none"></span>
             <span class="v-meta-chip" id="vc-hero-fuel" style="display:none"></span>
             <span class="v-code-chip" id="vc-hero-code" style="display:none">
@@ -3819,20 +3827,19 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <span class="v-code-chip-value" id="vc-code-line"></span>
             </span>
           </div>
-          <div id="vc-hero-driver-mini" style="margin-top:14px;padding-top:12px;border-top:1px solid #ececec"></div>
         </div>
 
-        <!-- מפריד (auto) -->
-        <div class="v-hero-divider v-hero-sep"></div>
+        <!-- בלוק: פרטי נהג -->
+        <div class="v-hero-block" data-hero-block="driver" draggable="true" style="flex:1;min-width:200px;display:flex;flex-direction:column;justify-content:center">
+          <div class="v-hero-drag-handle" title="גרור">⠿</div>
+          <div id="vc-hero-driver-mini"></div>
+        </div>
 
         <!-- בלוק: כפתורי תקשורת -->
         <div class="v-hero-block" data-hero-block="contact" draggable="true" style="display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:130px">
           <div class="v-hero-drag-handle" title="גרור">⠿</div>
           <div id="vc-hero-contact" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
-
-        <!-- מפריד (auto) -->
-        <div class="v-hero-divider v-hero-sep"></div>
 
         <!-- בלוק: כפתורי פעולה -->
         <div class="v-hero-block v-actions" data-hero-block="actions" draggable="true" style="flex-direction:column;align-items:stretch;justify-content:center;gap:8px;min-width:140px">
