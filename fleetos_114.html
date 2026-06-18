@@ -528,6 +528,11 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .vc-info-grid{grid-template-columns:1fr!important}
   .topbar{gap:4px}
   .btn{padding:5px 8px;font-size:12px}
+  /* נתוני נהג + כפתורי פעולה זה לצד זה במובייל */
+  .v-hero-stats-row{display:flex!important;flex-direction:row!important;gap:10px!important;width:100%!important;align-items:stretch}
+  #vc-hero-driver-stats{flex:1!important;min-width:0!important}
+  .v-hero .v-actions{flex-direction:column!important;gap:6px!important;flex:0 0 auto!important;justify-content:center!important;min-width:unset!important}
+  .v-hero .v-actions .btn-v{font-size:11px!important;padding:7px 10px!important;min-width:80px}
   .btn-sm{padding:3px 7px;font-size:11px}
   .sum-card-lbl{font-size:10px}
   .il-plate-big{font-size:16px!important}
@@ -3820,27 +3825,32 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <!-- מפריד -->
         <div class="v-hero-divider"></div>
 
-        <!-- 3. כרטיס נתוני נהג -->
-        <div id="vc-hero-driver-stats" style="display:flex;flex-direction:column;justify-content:center;gap:0;flex:0 0 auto;min-width:200px;border:1px solid #ececec;border-radius:10px;padding:10px 14px;background:#fafafa"></div>
+        <!-- 3+4. נתוני נהג + כפתורי פעולה (במובייל זה לצד זה) -->
+        <div class="v-hero-stats-row" style="display:contents">
 
-        <!-- מפריד -->
-        <div class="v-hero-divider"></div>
+          <!-- 3. כרטיס נתוני נהג -->
+          <div id="vc-hero-driver-stats" class="vc-stats-card" style="flex:0 0 auto;min-width:200px;justify-content:center"></div>
 
-        <!-- 4. כפתורי פעולה -->
-        <div class="v-actions" style="flex-direction:column;align-items:stretch;justify-content:center;gap:8px;flex:0 0 auto;min-width:130px">
-          <span id="vc-status-pill" class="v-status-badge" style="display:none;margin-bottom:4px"></span>
-          <button class="btn-v secondary" onclick="openEditVehicle(_currentVid)" style="justify-content:center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            עריכה
-          </button>
-          <button class="btn-v secondary" onclick="openUpdateModal(_currentVid)" style="justify-content:center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-            עדכון רכב
-          </button>
-          <button class="btn-v danger" onclick="openArchiveModal(_currentVid)" style="justify-content:center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-            הסרת רכב
-          </button>
+          <!-- מפריד -->
+          <div class="v-hero-divider"></div>
+
+          <!-- 4. כפתורי פעולה -->
+          <div class="v-actions" style="flex-direction:column;align-items:stretch;justify-content:center;gap:8px;flex:0 0 auto;min-width:130px">
+            <span id="vc-status-pill" class="v-status-badge" style="display:none;margin-bottom:4px"></span>
+            <button class="btn-v secondary" onclick="openEditVehicle(_currentVid)" style="justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              עריכה
+            </button>
+            <button class="btn-v secondary" onclick="openUpdateModal(_currentVid)" style="justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              עדכון רכב
+            </button>
+            <button class="btn-v danger" onclick="openArchiveModal(_currentVid)" style="justify-content:center">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              הסרת רכב
+            </button>
+          </div>
+
         </div>
       </div>
 
