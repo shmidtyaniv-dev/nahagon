@@ -241,6 +241,12 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 .v-name-row{margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .v-hero-divider{width:1px;background:#ececec;align-self:stretch;flex-shrink:0}
 .v-driver-mini{flex:1;min-width:200px;display:flex;flex-direction:column;justify-content:center}
+/* Drag & Drop */
+.v-hero-block{position:relative;transition:opacity .15s,outline .1s}
+.v-hero-block:hover .v-hero-drag-handle{opacity:1}
+.v-hero-drag-handle{position:absolute;top:4px;right:4px;font-size:16px;color:#bbb;cursor:grab;opacity:0;transition:opacity .15s;user-select:none;line-height:1;padding:2px}
+.v-hero-block.dragging{opacity:.35;outline:2px dashed #d97706}
+.v-hero-block.drop-over{outline:2px dashed var(--gd);background:#f0fdf4;border-radius:8px}
 .v-logo-box{width:76px;height:76px;border-radius:14px;background:white;border:1px dashed var(--bdr2);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;overflow:hidden;position:relative;transition:all .15s}
 .v-logo-box:hover{border-style:solid;border-color:var(--green);background:var(--green-bg)}
 .v-logo-box img{width:100%;height:100%;object-fit:contain}
@@ -3784,10 +3790,17 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
 
       <!-- vehicle identity header (Hero Card) -->
-      <div class="v-hero">
+      <!-- פס מצב עיצוב -->
+      <div id="hero-design-bar" style="display:flex;align-items:center;justify-content:space-between;background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:7px 14px;margin-bottom:8px;font-size:12px;color:#854d0e;direction:rtl">
+        <span>🎨 <strong>מצב עיצוב</strong> — גרור את החלקים לסידור מחדש</span>
+        <button onclick="document.getElementById('hero-design-bar').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:18px;color:#854d0e;line-height:1;padding:0 4px">×</button>
+      </div>
 
-        <!-- עמודה ימין: לוגו + לוחית + שם + קוד + פרטי נהג -->
-        <div class="v-hero-left">
+      <div class="v-hero" id="v-hero-drag-container">
+
+        <!-- בלוק: פרטי רכב + נהג -->
+        <div class="v-hero-left v-hero-block" data-hero-block="vehicle" draggable="true">
+          <div class="v-hero-drag-handle" title="גרור">⠿</div>
           <div class="v-plate-row">
             <div class="v-logo-box" id="vc-brand-icon" onclick="uploadVehiclePhoto()" title="לחץ להעלאת תמונה">
               <svg width="46" height="46" viewBox="0 0 100 100" fill="none">
@@ -3806,18 +3819,24 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <span class="v-code-chip-value" id="vc-code-line"></span>
             </span>
           </div>
-          <!-- פרטי נהג — צמוד ללוחית -->
           <div id="vc-hero-driver-mini" style="margin-top:14px;padding-top:12px;border-top:1px solid #ececec"></div>
         </div>
 
-        <!-- מפריד -->
-        <div class="v-hero-divider"></div>
+        <!-- מפריד (auto) -->
+        <div class="v-hero-divider v-hero-sep"></div>
 
-        <!-- כפתורי תקשורת -->
-        <div id="vc-hero-contact" style="display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:130px"></div>
+        <!-- בלוק: כפתורי תקשורת -->
+        <div class="v-hero-block" data-hero-block="contact" draggable="true" style="display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:130px">
+          <div class="v-hero-drag-handle" title="גרור">⠿</div>
+          <div id="vc-hero-contact" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
 
-        <!-- כפתורי פעולה -->
-        <div class="v-actions" style="flex-direction:column;align-items:stretch;justify-content:center;gap:8px;min-width:140px">
+        <!-- מפריד (auto) -->
+        <div class="v-hero-divider v-hero-sep"></div>
+
+        <!-- בלוק: כפתורי פעולה -->
+        <div class="v-hero-block v-actions" data-hero-block="actions" draggable="true" style="flex-direction:column;align-items:stretch;justify-content:center;gap:8px;min-width:140px">
+          <div class="v-hero-drag-handle" title="גרור">⠿</div>
           <span id="vc-status-pill" class="v-status-badge" style="display:none;margin-bottom:4px"></span>
           <button class="btn-v secondary" onclick="openEditVehicle(_currentVid)" style="justify-content:center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -10515,6 +10534,8 @@ function openDet(vid){
   renderVcMissions(vid);
   renderVcViolations(vid);
   renderVcAccidents(vid);
+  // init hero drag after render
+  setTimeout(initHeroDrag, 0);
   if(typeof renderVehicleTimeline==='function') renderVehicleTimeline(vid);
   id('vc-mandatory-docs').innerHTML=`<div class="tw" style="border-radius:var(--r)">`+
     MANDATORY_DOCS.map((doc,i)=>{
@@ -10998,6 +11019,64 @@ function clearAllVehiclesData(){
   Promise.all(collections.map(deleteCollection))
     .then(function(){ _clearingAllData = false; showToast('✓ כל הנתונים נמחקו מהשרת'); })
     .catch(function(e){ _clearingAllData = false; console.error(e); showToast('שגיאה במחיקה מהשרת: ' + e.message); });
+}
+
+// ── Hero Drag & Drop ──
+function initHeroDrag(){
+  const container = document.getElementById('v-hero-drag-container');
+  if(!container) return;
+  let dragSrc = null;
+
+  function getBlocks(){ return Array.from(container.querySelectorAll('[data-hero-block]')); }
+  function getSeps()  { return Array.from(container.querySelectorAll('.v-hero-sep')); }
+
+  // Rebuild separators between blocks
+  function rebuildSeps(){
+    getSeps().forEach(s=>s.remove());
+    const blocks = getBlocks();
+    blocks.forEach((b,i)=>{
+      if(i < blocks.length-1){
+        const sep = document.createElement('div');
+        sep.className = 'v-hero-divider v-hero-sep';
+        b.after(sep);
+      }
+    });
+  }
+
+  getBlocks().forEach(block=>{
+    block.addEventListener('dragstart',function(e){
+      dragSrc=this;
+      setTimeout(()=>this.classList.add('dragging'),0);
+      e.dataTransfer.effectAllowed='move';
+    });
+    block.addEventListener('dragend',function(){
+      this.classList.remove('dragging');
+      getBlocks().forEach(b=>b.classList.remove('drop-over'));
+      rebuildSeps();
+    });
+    block.addEventListener('dragover',function(e){
+      e.preventDefault();
+      if(this!==dragSrc){
+        getBlocks().forEach(b=>b.classList.remove('drop-over'));
+        this.classList.add('drop-over');
+      }
+    });
+    block.addEventListener('dragleave',function(){
+      this.classList.remove('drop-over');
+    });
+    block.addEventListener('drop',function(e){
+      e.stopPropagation();
+      if(dragSrc && dragSrc!==this){
+        const allBlocks = getBlocks();
+        const srcIdx = allBlocks.indexOf(dragSrc);
+        const tgtIdx = allBlocks.indexOf(this);
+        if(srcIdx < tgtIdx) this.after(dragSrc);
+        else this.before(dragSrc);
+      }
+      this.classList.remove('drop-over');
+    });
+  });
+  rebuildSeps();
 }
 
 function clearHandoverForms(){
