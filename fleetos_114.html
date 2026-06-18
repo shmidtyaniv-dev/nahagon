@@ -3786,7 +3786,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <!-- vehicle identity header (Hero Card) -->
       <div class="v-hero">
 
-        <!-- עמודה ימין: לוגו + לוחית + שם + קוד + פרטי נהג -->
+        <!-- עמודה ימין: לוגו + לוחית + שם + קוד -->
         <div class="v-hero-left">
           <div class="v-plate-row">
             <div class="v-logo-box" id="vc-brand-icon" onclick="uploadVehiclePhoto()" title="לחץ להעלאת תמונה">
@@ -3806,9 +3806,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <span class="v-code-chip-value" id="vc-code-line"></span>
             </span>
           </div>
-          <!-- פרטי נהג — צמוד ללוחית -->
-          <div id="vc-hero-driver-mini" style="margin-top:14px;padding-top:12px;border-top:1px solid #ececec"></div>
         </div>
+
+        <!-- מפריד -->
+        <div class="v-hero-divider"></div>
+
+        <!-- עמודת פרטי נהג (עמודה עצמאית באמצע) -->
+        <div id="vc-hero-driver-mini" style="display:flex;align-items:center;justify-content:center;flex:1;min-width:200px"></div>
 
         <!-- מפריד -->
         <div class="v-hero-divider"></div>
@@ -10194,31 +10198,31 @@ function openDet(vid){
   statusPill.className='v-status-badge '+(sl==='danger'?'warn':sl==='warn'?'caution':'ok');
   statusPill.innerHTML=sl==='danger'?'דורש טיפול':sl==='warn'?'שים לב':'פעיל';
 
-  // Driver section (inside v-hero-left, below car name)
+  // Driver section (עמודה עצמאית באמצע ה-hero)
   const driverMiniEl = id('vc-hero-driver-mini');
   if(driverMiniEl){
     if(v.driver && v.driver.name){
       driverMiniEl.innerHTML=`
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="width:38px;height:38px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">${inits(v.driver.name)}</div>
-            <div style="font-size:17px;font-weight:700;color:var(--t1)">${v.driver.name}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:5px;font-size:12px">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--t3);flex-shrink:0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              <span style="color:var(--t3)">טלפון</span>
-              <span style="color:var(--t1);font-weight:600" dir="ltr">${v.driver.phone||'—'}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:5px;font-size:12px">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--t3);flex-shrink:0"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              <span style="color:var(--t3)">אימייל</span>
-              <span style="color:var(--t1);font-weight:600" dir="ltr">${v.driver.email||'—'}</span>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <!-- avatar -->
+          <div style="width:44px;height:44px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${inits(v.driver.name)}</div>
+          <!-- שם + פרטים -->
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="font-size:17px;font-weight:700;color:var(--t1);white-space:nowrap">${v.driver.name}</div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t2)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--t3);flex-shrink:0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <span dir="ltr" style="font-weight:600;color:var(--t1)">${v.driver.phone||'—'}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t2)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--t3);flex-shrink:0"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <span dir="ltr" style="font-weight:600;color:var(--t1)">${v.driver.email||'—'}</span>
+              </div>
             </div>
           </div>
         </div>`;
     } else {
-      driverMiniEl.innerHTML='<span style="font-size:12px;color:var(--t3)">ללא נהג</span>';
+      driverMiniEl.innerHTML='<span style="font-size:12px;color:var(--t3)">ללא נהג מוקצה</span>';
     }
   }
 
