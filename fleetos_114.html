@@ -10284,7 +10284,7 @@ function openDet(vid){
       ${statRow(
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>',
         'החלפת צמינים', tireCount,
-        `<button onclick="openTireUpdateModal('${vid}')" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--bdr2);background:#fff;cursor:pointer;color:var(--t2);white-space:nowrap">+ עדכון</button>`
+        `<button onclick="openTireUpdateModal(_currentVid)" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--bdr2);background:#fff;cursor:pointer;color:var(--t2);white-space:nowrap">+ עדכון</button>`
       )}`;
     const rows = driverStatsEl.querySelectorAll('[style*="border-bottom"]');
     if(rows.length) rows[rows.length-1].style.borderBottom='none';
@@ -10524,7 +10524,7 @@ function openDet(vid){
   var totalTires=tireChanges.reduce(function(s,c){return s+(c.qty||0)},0);
   sidebarHtml+='<div class="vc-stat-row"><div class="vc-stat-row-icon tires"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg></div>';
   sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">החלפת צמיגים</div><div class="vc-stat-row-detail">'+(tireCount>0?'בשנה האחרונה':'טרם עודכן')+'</div></div>';
-  sidebarHtml+='<div style="display:flex;align-items:center;gap:6px"><button onclick="event.stopPropagation();openTireUpdateModal('+vid+')" style="background:#E6F1FB;color:#185FA5;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ עדכן</button><div class="vc-stat-row-value">'+totalTires+'</div></div></div>';
+  sidebarHtml+='<div style="display:flex;align-items:center;gap:6px"><button onclick="event.stopPropagation();openTireUpdateModal(_currentVid)" style="background:#E6F1FB;color:#185FA5;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ עדכן</button><div class="vc-stat-row-value">'+totalTires+'</div></div></div>';
   sidebarHtml+='</div></div>';
 
   var sidebarEl=document.getElementById('vc-sidebar-col');
@@ -11962,7 +11962,7 @@ function openTireUpdateModal(vid){
     +'</div>'
     +'<div style="margin-bottom:16px"><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">הערות (אופציונלי)</label><input type="text" id="tire-notes" placeholder="סוג צמיגים, מוסך..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
     +'<div style="display:flex;gap:8px"><button onclick="document.getElementById(\'tire-update-modal\').remove()" style="flex:1;padding:10px;background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">ביטול</button>'
-    +'<button onclick="saveTireUpdate('+vid+')" style="flex:2;padding:10px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">שמור</button></div>'
+    +'<button onclick="saveTireUpdate(\''+vid+'\')" style="flex:2;padding:10px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">שמור</button></div>'
     +'</div></div>';
   document.body.appendChild(modal);
 }
