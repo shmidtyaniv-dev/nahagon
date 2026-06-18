@@ -236,7 +236,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 
 /* ===== Vehicle Hero Card ===== */
 .v-hero{background:white;border-radius:12px;border:0.5px solid var(--bdr);padding:22px 24px;margin-bottom:16px;display:grid;grid-template-columns:auto auto 1fr auto auto;align-items:center;gap:20px}
-.v-driver-mini{border-right:1px solid var(--bdr);padding-right:16px;padding-left:4px;display:flex;align-items:center;justify-content:center}
+.v-driver-mini{border-right:1px solid var(--bdr);padding-right:20px;padding-left:4px}
 .v-logo-box{width:76px;height:76px;border-radius:14px;background:white;border:1px dashed var(--bdr2);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;overflow:hidden;position:relative;transition:all .15s}
 .v-logo-box:hover{border-style:solid;border-color:var(--green);background:var(--green-bg)}
 .v-logo-box img{width:100%;height:100%;object-fit:contain}
@@ -10187,17 +10187,32 @@ function openDet(vid){
   statusPill.className='v-status-badge '+(sl==='danger'?'warn':sl==='warn'?'caution':'ok');
   statusPill.innerHTML=sl==='danger'?'דורש טיפול':sl==='warn'?'שים לב':'פעיל';
 
-  // Driver mini in hero
+  // Driver card in hero
   const driverMiniEl = id('vc-hero-driver-mini');
   if(driverMiniEl){
     if(v.driver && v.driver.name){
-      const meta=[v.driver.phone,v.driver.email].filter(Boolean).join(' · ');
       driverMiniEl.innerHTML=`
-        <div style="display:flex;align-items:center;gap:8px;justify-content:center">
-          <div style="width:36px;height:36px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">${inits(v.driver.name)}</div>
-          <div style="min-width:0">
-            <div style="font-size:14px;font-weight:600;color:var(--t1);white-space:nowrap">${v.driver.name}</div>
-            ${meta?`<div style="font-size:11px;color:var(--t3);margin-top:1px;white-space:nowrap" dir="ltr">${meta}</div>`:''}
+        <div style="min-width:180px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid rgba(0,0,0,.08)">
+            <span style="font-size:11px;color:var(--t3);font-weight:500;letter-spacing:.02em">פרטי נהג</span>
+            <button onclick="openEditVehicle(${vid})" style="background:none;border:none;font-size:11px;color:var(--green-dark);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:3px;font-weight:500;padding:2px 6px;border-radius:6px;transition:background .15s" onmouseover="this.style.background='var(--green-light)'" onmouseout="this.style.background='none'">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              עריכה
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">${inits(v.driver.name)}</div>
+            <div style="font-size:15px;font-weight:700;color:var(--t1)">${v.driver.name}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t3);margin-bottom:4px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span style="font-weight:500;color:var(--t3)">טלפון</span>
+            <span style="color:var(--t1);font-weight:500" dir="ltr">${v.driver.phone||'—'}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t3)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span style="font-weight:500;color:var(--t3)">אימייל</span>
+            <span style="color:var(--t1);font-weight:500" dir="ltr">${v.driver.email||'—'}</span>
           </div>
         </div>`;
     } else {
@@ -10412,42 +10427,7 @@ function openDet(vid){
   var waPhone=dPhone.replace(/[^0-9]/g,'');
   if(waPhone.startsWith('0'))waPhone='972'+waPhone.substring(1);
 
-  // Driver Details Card (NEW - moved from hero & overview)
-  sidebarHtml+='<div class="driver-details-card">';
-  sidebarHtml+='<div class="driver-details-header">';
-  sidebarHtml+='<span class="driver-details-title">\u05E4\u05E8\u05D8\u05D9 \u05E0\u05D4\u05D2</span>';
-  sidebarHtml+='<button class="driver-details-edit" title="\u05E2\u05E8\u05D5\u05DA \u05E4\u05E8\u05D8\u05D9\u05DD" onclick="openEditVehicle('+vid+')">';
-  sidebarHtml+='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
-  sidebarHtml+='\u05E2\u05E8\u05D9\u05DB\u05D4</button>';
-  sidebarHtml+='</div>';
-  sidebarHtml+='<div class="driver-name-header">'+(dName||'\u2014')+'</div>';
-  sidebarHtml+='<div class="driver-details-list">';
-  // Company
-  if(v.driver.company||v.driver.dept){
-    sidebarHtml+='<div class="driver-detail-row">';
-    sidebarHtml+='<svg class="driver-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 7v14M21 7v14M6 21V11M10 21V11M14 21V11M18 21V11"/><path d="M3 7l9-4 9 4"/></svg>';
-    sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05D7\u05D1\u05E8\u05D4</div><div class="driver-detail-value">'+(v.driver.company||v.driver.dept)+'</div></div>';
-    sidebarHtml+='</div>';
-  }
-  // Phone
-  sidebarHtml+='<div class="driver-detail-row">';
-  sidebarHtml+='<svg class="driver-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
-  sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05D8\u05DC\u05E4\u05D5\u05DF</div><div class="driver-detail-value" dir="ltr">'+(dPhone||'\u2014')+'</div></div>';
-  sidebarHtml+='</div>';
-  // Email
-  sidebarHtml+='<div class="driver-detail-row">';
-  sidebarHtml+='<svg class="driver-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
-  sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05D0\u05D9\u05DE\u05D9\u05D9\u05DC</div><div class="driver-detail-value" dir="ltr">'+(dEmail||'\u2014')+'</div></div>';
-  sidebarHtml+='</div>';
-  // Address
-  if(v.driver.address){
-    sidebarHtml+='<div class="driver-detail-row">';
-    sidebarHtml+='<svg class="driver-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
-    sidebarHtml+='<div class="driver-detail-content"><div class="driver-detail-label">\u05DB\u05EA\u05D5\u05D1\u05EA</div><div class="driver-detail-value">'+v.driver.address+' <a href="https://www.google.com/maps/search/'+encodeURIComponent(v.driver.address)+'" target="_blank" style="font-size:10px;color:var(--green);margin-right:4px">\u05D4\u05E6\u05D2 \u05D1\u05DE\u05E4\u05D4</a></div></div>';
-    sidebarHtml+='</div>';
-  }
-  // License expiry removed - now shown in "מסמכים ופרטי רכב" section
-  sidebarHtml+='</div></div>';
+  // Driver Details Card — moved to hero, removed from sidebar
 
   // Contact card
   sidebarHtml+='<div class="vc-contact-card">';
