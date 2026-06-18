@@ -10263,7 +10263,7 @@ function openDet(vid){
   const driverStatsEl = id('vc-hero-driver-stats');
   if(driverStatsEl){
     const vAccidents = (typeof accidentsList!=='undefined'?accidentsList:[]).filter(a=>a.vehicleId===v.id);
-    const tireCount = v.tireChanges||0;
+    const tireCount = (v.tireChanges||[]).reduce((s,c)=>s+(c.qty||0),0);
     const statRow = (icon,label,val,extra='')=>`
       <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0">
         <div style="width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f4f4f2">${icon}</div>
@@ -10284,7 +10284,7 @@ function openDet(vid){
       ${statRow(
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>',
         'החלפת צמינים', tireCount,
-        `<button onclick="openUpdateModal('${vid}')" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--bdr2);background:#fff;cursor:pointer;color:var(--t2);white-space:nowrap">+ עדכון</button>`
+        `<button onclick="openTireUpdateModal('${vid}')" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--bdr2);background:#fff;cursor:pointer;color:var(--t2);white-space:nowrap">+ עדכון</button>`
       )}`;
     const rows = driverStatsEl.querySelectorAll('[style*="border-bottom"]');
     if(rows.length) rows[rows.length-1].style.borderBottom='none';
