@@ -10380,8 +10380,8 @@ function openDet(vid){
     `<div class="vc-info-box">
       <div class="vc-service-next-grid">
         <div class="vc-service-next-col${kmN!==null&&kmN<5000?' upcoming':''}">
-          <div class="vc-service-next-tag">${nxtSvc.type||'טיפול הבא'}</div>
-          <div class="vc-service-next-value">${nxtSvc.km?nxtSvc.km.toLocaleString('he-IL')+' ק"מ':'—'}</div>
+          <div class="vc-service-next-tag">סוג הטיפול הבא</div>
+          <div class="vc-service-next-value" style="font-size:16px">${nxtSvc.type||'—'}</div>
           ${kmN!==null?`<div class="vc-service-next-subtext">בעוד ~${kmN.toLocaleString('he-IL')} ק"מ</div>`:''}
         </div>
         <div class="vc-service-next-divider"></div>
