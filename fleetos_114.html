@@ -236,7 +236,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 
 /* ===== Vehicle Hero Card ===== */
 .v-hero{background:white;border-radius:12px;border:0.5px solid var(--bdr);padding:22px 24px;margin-bottom:16px;display:grid;grid-template-columns:auto auto 1fr auto auto;align-items:center;gap:20px}
-.v-driver-mini{border-right:1px solid var(--bdr);padding-right:20px;min-width:150px}
+.v-driver-mini{border-right:1px solid var(--bdr);padding-right:16px;padding-left:4px;display:flex;align-items:center;justify-content:center}
 .v-logo-box{width:76px;height:76px;border-radius:14px;background:white;border:1px dashed var(--bdr2);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;overflow:hidden;position:relative;transition:all .15s}
 .v-logo-box:hover{border-style:solid;border-color:var(--green);background:var(--green-bg)}
 .v-logo-box img{width:100%;height:100%;object-fit:contain}
@@ -10191,17 +10191,17 @@ function openDet(vid){
   const driverMiniEl = id('vc-hero-driver-mini');
   if(driverMiniEl){
     if(v.driver && v.driver.name){
+      const meta=[v.driver.phone,v.driver.email].filter(Boolean).join(' · ');
       driverMiniEl.innerHTML=`
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:42px;height:42px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0">${inits(v.driver.name)}</div>
+        <div style="display:flex;align-items:center;gap:8px;justify-content:center">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--gd);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">${inits(v.driver.name)}</div>
           <div style="min-width:0">
-            <div style="font-size:14px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.driver.name}</div>
-            ${v.driver.phone?`<div style="font-size:12px;color:var(--t3);margin-top:2px" dir="ltr">${v.driver.phone}</div>`:''}
-            ${v.driver.email?`<div style="font-size:12px;color:var(--t3)" dir="ltr">${v.driver.email}</div>`:''}
+            <div style="font-size:14px;font-weight:600;color:var(--t1);white-space:nowrap">${v.driver.name}</div>
+            ${meta?`<div style="font-size:11px;color:var(--t3);margin-top:1px;white-space:nowrap" dir="ltr">${meta}</div>`:''}
           </div>
         </div>`;
     } else {
-      driverMiniEl.innerHTML='<div style="font-size:12px;color:var(--t3)">ללא נהג</div>';
+      driverMiniEl.innerHTML='<div style="font-size:12px;color:var(--t3);text-align:center">ללא נהג</div>';
     }
   }
 
