@@ -10507,25 +10507,6 @@ function openDet(vid){
   var tireDaysAgo=lastTire?Math.floor((new Date()-new Date(lastTire))/86400000):null;
   var violTotal=vViol.reduce(function(s,x){return s+(x.amount||0)},0);
 
-  sidebarHtml+='<div class="vc-stats-card">';
-  sidebarHtml+='<div class="vc-stats-title">נתוני נהג</div>';
-  sidebarHtml+='<div class="vc-stats-list">';
-  // Traffic violations
-  sidebarHtml+='<div class="vc-stat-row"><div class="vc-stat-row-icon reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>';
-  var violOpenCount=vViol.filter(function(x){return x.status!=='done'&&x.status!=='closed'}).length;
-  var violDetail=vViol.length?('<strong>'+violOpenCount+' פתוחים</strong>'+(vViol.length-violOpenCount?' · '+(vViol.length-violOpenCount)+' טופלו':'')):'אין';
-  sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">דוחות תנועה</div><div class="vc-stat-row-detail">'+violDetail+'</div></div>';
-  sidebarHtml+='<div class="vc-stat-row-value">'+vViol.length+'</div></div>';
-  // Accidents
-  sidebarHtml+='<div class="vc-stat-row"><div class="vc-stat-row-icon accidents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>';
-  sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">\u05D3\u05D9\u05D5\u05D5\u05D7\u05D9 \u05EA\u05D0\u05D5\u05E0\u05D4</div><div class="vc-stat-row-detail">'+(vAcc.length?('<strong>'+accOpen+' \u05E4\u05EA\u05D5\u05D7\u05D5\u05EA</strong> \u00B7 '+accClosed+' \u05E1\u05D2\u05D5\u05E8\u05D5\u05EA'):'\u05D0\u05D9\u05DF')+'</div></div>';
-  sidebarHtml+='<div class="vc-stat-row-value">'+vAcc.length+'</div></div>';
-  // Tires
-  var totalTires=tireChanges.reduce(function(s,c){return s+(c.qty||0)},0);
-  sidebarHtml+='<div class="vc-stat-row"><div class="vc-stat-row-icon tires"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg></div>';
-  sidebarHtml+='<div class="vc-stat-row-content"><div class="vc-stat-row-label">החלפת צמיגים</div><div class="vc-stat-row-detail">'+(tireCount>0?'בשנה האחרונה':'טרם עודכן')+'</div></div>';
-  sidebarHtml+='<div style="display:flex;align-items:center;gap:6px"><button onclick="event.stopPropagation();openTireUpdateModal(_currentVid)" style="background:#E6F1FB;color:#185FA5;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ עדכן</button><div class="vc-stat-row-value">'+totalTires+'</div></div></div>';
-  sidebarHtml+='</div></div>';
 
   var sidebarEl=document.getElementById('vc-sidebar-col');
   if(sidebarEl) sidebarEl.innerHTML=sidebarHtml;
