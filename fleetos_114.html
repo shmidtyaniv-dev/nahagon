@@ -3821,7 +3821,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div class="v-hero-divider"></div>
 
         <!-- 3. כרטיס נתוני נהג -->
-        <div id="vc-hero-driver-stats" class="vc-stats-card" style="flex:0 0 auto;min-width:200px;justify-content:center"></div>
+        <div id="vc-hero-driver-stats" style="display:flex;flex-direction:column;justify-content:center;gap:0;flex:0 0 auto;min-width:200px;border:1px solid #ececec;border-radius:10px;padding:10px 14px;background:#fafafa"></div>
 
         <!-- מפריד -->
         <div class="v-hero-divider"></div>
@@ -10259,33 +10259,35 @@ function openDet(vid){
   const vb=id('vc-viol-badge');
   if(vViolations.length){vb.style.display='inline';vb.textContent=vViolations.length}else{vb.style.display='none'}
 
-  // כרטיס נתוני נהג — זהה לסידבר
+  // כרטיס נתוני נהג
   const driverStatsEl = id('vc-hero-driver-stats');
   if(driverStatsEl){
-    var _vViol=(typeof violationsList!=='undefined'?violationsList:[]).filter(function(x){return x.vehicleId===vid||x.plate===v.plate});
-    var _vAcc=(typeof accidentsList!=='undefined'?accidentsList:[]).filter(function(x){return x.vehicleId===vid||x.plate===v.plate});
-    var _accOpen=_vAcc.filter(function(x){return isAccidentOpen(x)}).length;
-    var _accClosed=_vAcc.length-_accOpen;
-    var _tireChanges=v.tireChanges||[];
-    var _tireCount=_tireChanges.length;
-    var _totalTires=_tireChanges.reduce(function(s,c){return s+(c.qty||0)},0);
-    var _violOpenCount=_vViol.filter(function(x){return x.status!=='done'&&x.status!=='closed'}).length;
-    var _violDetail=_vViol.length?('<strong>'+_violOpenCount+' פתוחים</strong>'+(_vViol.length-_violOpenCount?' · '+(_vViol.length-_violOpenCount)+' טופלו':'')):'אין';
-    var _accDetail=_vAcc.length?('<strong>'+_accOpen+' פתוחות</strong> · '+_accClosed+' סגורות'):'אין';
-    var _tireDetail=_tireCount>0?'בשנה האחרונה':'טרם עודכן';
-    driverStatsEl.innerHTML=
-      '<div class="vc-stats-title">נתוני נהג</div>'
-      +'<div class="vc-stats-list">'
-      +'<div class="vc-stat-row"><div class="vc-stat-row-icon reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>'
-      +'<div class="vc-stat-row-content"><div class="vc-stat-row-label">דוחות תנועה</div><div class="vc-stat-row-detail">'+_violDetail+'</div></div>'
-      +'<div class="vc-stat-row-value">'+_vViol.length+'</div></div>'
-      +'<div class="vc-stat-row"><div class="vc-stat-row-icon accidents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>'
-      +'<div class="vc-stat-row-content"><div class="vc-stat-row-label">דיווחי תאונה</div><div class="vc-stat-row-detail">'+_accDetail+'</div></div>'
-      +'<div class="vc-stat-row-value">'+_vAcc.length+'</div></div>'
-      +'<div class="vc-stat-row"><div class="vc-stat-row-icon tires"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg></div>'
-      +'<div class="vc-stat-row-content"><div class="vc-stat-row-label">החלפת צמיגים</div><div class="vc-stat-row-detail">'+_tireDetail+'</div></div>'
-      +'<div style="display:flex;align-items:center;gap:6px"><button onclick="event.stopPropagation();openTireUpdateModal(\''+vid+'\')" style="background:#E6F1FB;color:#185FA5;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">+ עדכן</button><div class="vc-stat-row-value">'+_totalTires+'</div></div></div>'
-      +'</div>';
+    const vAccidents = (typeof accidentsList!=='undefined'?accidentsList:[]).filter(a=>a.vehicleId===v.id);
+    const tireCount = (v.tireChanges||[]).reduce((s,c)=>s+(c.qty||0),0);
+    const statRow = (icon,label,val,extra='')=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0">
+        <div style="width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f4f4f2">${icon}</div>
+        <span style="font-size:12px;color:var(--t2);flex:1;text-align:right">${label}</span>
+        <span style="font-size:15px;font-weight:700;color:var(--t1);min-width:24px;text-align:center">${val}</span>
+        ${extra}
+      </div>`;
+    driverStatsEl.innerHTML=`
+      <div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px;text-align:right">נתוני נהג</div>
+      ${statRow(
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>',
+        'דוחות תנועה', vViolations.length
+      )}
+      ${statRow(
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E89B2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        'דיווחי תאונה', vAccidents.length
+      )}
+      ${statRow(
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>',
+        'החלפת צמינים', tireCount,
+        `<button onclick="openTireUpdateModal('${vid}')" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--bdr2);background:#fff;cursor:pointer;color:var(--t2);white-space:nowrap">+ עדכון</button>`
+      )}`;
+    const rows = driverStatsEl.querySelectorAll('[style*="border-bottom"]');
+    if(rows.length) rows[rows.length-1].style.borderBottom='none';
   }
 
   // ── OVERVIEW: summary cards ──
