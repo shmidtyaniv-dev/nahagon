@@ -8086,7 +8086,7 @@ function renderCal(){
 
 function openMonthDetail(){}
 
-function closeModal(mid){id(mid).classList.remove('open')}
+function closeModal(mid){var el=id(mid);if(!el)return;el.classList.remove('open');el.style.display='none';}
 
 function showDocsModal(){
   const ms=vehicles.filter(v=>!v.docs);
@@ -11242,12 +11242,12 @@ function showDocsModal(){
 }
 
 /* ── MODAL MANAGEMENT ── */
-function closeModal(mid){id(mid).classList.remove('open')}
-function openModal(mid){id(mid).classList.add('open')}
+function closeModal(mid){var el=id(mid);if(!el)return;el.classList.remove('open');el.style.display='none';}
+function openModal(mid){var el=id(mid);if(!el)return;el.classList.add('open');el.style.display='';}
 // click-outside to close
 document.addEventListener('click',e=>{
   document.querySelectorAll('.ov.open').forEach(ov=>{
-    if(e.target===ov)ov.classList.remove('open');
+    if(e.target===ov){ov.classList.remove('open');ov.style.display='none';}
   });
 });
 
