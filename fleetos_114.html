@@ -3762,6 +3762,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </div>
           <div class="settings-danger-item">
             <div class="settings-danger-item-info">
+              <div class="settings-danger-item-title">אפס לקיחות פתוחות</div>
+              <div class="settings-danger-item-desc">מסמן את כל הלקיחות הפתוחות כסגורות — כפתורי ההחזרה יחזרו לאפור</div>
+            </div>
+            <button class="settings-btn settings-btn-danger-outline" onclick="hoResetAllOpenTakes()">אפס לקיחות</button>
+          </div>
+          <div class="settings-danger-item">
+            <div class="settings-danger-item-info">
               <div class="settings-danger-item-title">נקה טפסי חלופי / גישור</div>
               <div class="settings-danger-item-desc">ימחק את כל טפסי רכב חלופי וגישור בלבד — ללא מחיקת רכבים או נתונים אחרים</div>
             </div>
@@ -6911,6 +6918,22 @@ function initHandoverTab(vid){
   hoRenderList(vid);
   document.getElementById('ho-list-screen').style.display='block';
   document.getElementById('ho-form-screen').style.display='none';
+}
+
+function hoResetAllOpenTakes(){
+  if(!confirm('לאפס את כל הלקיחות הפתוחות בכל הרכבים?\n(הטפסים ישארו ברשימה אבל יסומנו כסגורים)')) return;
+  hoForms2 = JSON.parse(localStorage.getItem('hoForms2')||'[]');
+  var count = 0;
+  hoForms2.forEach(function(f){
+    if(f.mode==='take' && !f.closed){
+      f.closed = true; count++;
+      try{ syncPersistItem('hoForms2', Object.assign({},f,{photos:[]})); }catch(e){}
+    }
+  });
+  if(!count){ showToast('אין לקיחות פתוחות'); return; }
+  try{ localStorage.setItem('hoForms2', JSON.stringify(hoForms2)); }catch(e){}
+  if(hoCurrentVid){ hoUpdateReturnBtns(hoCurrentVid); hoRenderList(hoCurrentVid); }
+  showToast('✓ אופסו '+count+' לקיחות');
 }
 
 function hoResetOpenForms(){
