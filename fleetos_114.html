@@ -4166,9 +4166,19 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                   <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">מטרת נסיעה</label>
                   <input id="ho-purpose" type="text" placeholder="לדוגמה: טיפול שנתי, בדיקה..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
                 </div>
-                <div style="margin-bottom:10px">
+                <div id="ho-destination-row" style="margin-bottom:10px">
                   <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">יעד</label>
                   <input id="ho-destination" type="text" placeholder="לדוגמה: תל אביב, מוסך רמת גן..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
+                </div>
+                <!-- toll subscriptions - loaner only -->
+                <div id="ho-loaner-tolls-row" style="display:none;margin-bottom:10px">
+                  <label id="ho-loaner-tolls-label" style="font-size:11px;color:var(--t3);display:block;margin-bottom:8px">מנויי כבישי אגרה</label>
+                  <div style="display:flex;flex-direction:column;gap:6px">
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="ho-toll-road6" style="width:16px;height:16px;accent-color:var(--gl)"> כביש 6</label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="ho-toll-carmel" style="width:16px;height:16px;accent-color:var(--gl)"> מנהרות הכרמל</label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="ho-toll-road6n" style="width:16px;height:16px;accent-color:var(--gl)"> כביש 6 צפון</label>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="ho-toll-express" style="width:16px;height:16px;accent-color:var(--gl)"> הנתיב המהיר</label>
+                  </div>
                 </div>
                 <div id="ho-altplate-row" style="margin-bottom:10px;display:none">
                   <label id="ho-altplate-label" style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">מספר רישוי הרכב החלופי</label>
@@ -7067,6 +7077,30 @@ async function hoOpenFormDirect(type, mode){
   if(kmEl && v?.currentKm) kmEl.value = Number(v.currentKm).toLocaleString('he-IL');
   const purposeRow = document.getElementById('ho-purpose-row');
   if(purposeRow) purposeRow.style.display = (type==='loaner'||type==='bridge'||mode==='return')?'none':'block';
+  // Show/hide destination field (hidden for loaner/bridge)
+  const destRow = document.getElementById('ho-destination-row');
+  if(destRow) destRow.style.display = (type==='loaner'||type==='bridge')?'none':'block';
+  // Show toll subscriptions section for loaner only
+  const tollsRow = document.getElementById('ho-loaner-tolls-row');
+  const tollsLbl = document.getElementById('ho-loaner-tolls-label');
+  if(tollsRow){
+    tollsRow.style.display = (type==='loaner')?'block':'none';
+    if(tollsLbl) tollsLbl.textContent = mode==='return' ? 'מנויי אגרה שהוסרו מהרכב החלופי' : 'מנויי אגרה שהתווספו לרכב החלופי';
+  }
+  // Reset toll checkboxes
+  ['ho-toll-road6','ho-toll-carmel','ho-toll-road6n','ho-toll-express'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.checked=false;
+  });
+  // If return — pre-fill tolls from take form
+  if(mode==='return' && hoLinkedTakeId && type==='loaner'){
+    var tk=hoForms2.find(function(x){return x.id===hoLinkedTakeId;});
+    if(tk && tk.loanerTolls){
+      tk.loanerTolls.forEach(function(t){
+        var map={'כביש 6':'ho-toll-road6','מנהרות הכרמל':'ho-toll-carmel','כביש 6 צפון':'ho-toll-road6n','הנתיב המהיר':'ho-toll-express'};
+        var el=document.getElementById(map[t]); if(el) el.checked=true;
+      });
+    }
+  }
   // Show alt plate field for loaner/bridge
   const altRow = document.getElementById('ho-altplate-row');
   const altLbl = document.getElementById('ho-altplate-label');
@@ -7271,6 +7305,28 @@ async function hoOpenForm(type, mode){
   // Show/hide purpose for loaner/bridge
   const purposeRow = document.getElementById('ho-purpose-row');
   if(purposeRow) purposeRow.style.display = (type==='loaner'||type==='bridge')?'none':'block';
+  // Show/hide destination for loaner/bridge
+  const destRow2 = document.getElementById('ho-destination-row');
+  if(destRow2) destRow2.style.display = (type==='loaner'||type==='bridge')?'none':'block';
+  // Show toll subscriptions for loaner only
+  const tollsRow2 = document.getElementById('ho-loaner-tolls-row');
+  const tollsLbl2 = document.getElementById('ho-loaner-tolls-label');
+  if(tollsRow2){
+    tollsRow2.style.display = (type==='loaner')?'block':'none';
+    if(tollsLbl2) tollsLbl2.textContent = mode==='return' ? 'מנויי אגרה שהוסרו מהרכב החלופי' : 'מנויי אגרה שהתווספו לרכב החלופי';
+  }
+  // Reset toll checkboxes
+  ['ho-toll-road6','ho-toll-carmel','ho-toll-road6n','ho-toll-express'].forEach(function(tid){
+    var el=document.getElementById(tid); if(el) el.checked=false;
+  });
+  // Pre-fill tolls from take form on return
+  if(mode==='return' && hoLinkedTakeId && type==='loaner'){
+    var tk2=hoForms2.find(function(x){return x.id===hoLinkedTakeId;});
+    if(tk2 && tk2.loanerTolls){
+      var tollMap={'כביש 6':'ho-toll-road6','מנהרות הכרמל':'ho-toll-carmel','כביש 6 צפון':'ho-toll-road6n','הנתיב המהיר':'ho-toll-express'};
+      tk2.loanerTolls.forEach(function(t){ var el=document.getElementById(tollMap[t]); if(el) el.checked=true; });
+    }
+  }
   // Show alt plate field for loaner/bridge (both take and return)
   const altRow = document.getElementById('ho-altplate-row');
   const altLbl = document.getElementById('ho-altplate-label');
@@ -7632,7 +7688,8 @@ function hoSaveForm(){
     driverPhone: v.driver?.phone||'',
     vehicle: { plate:v.plate, make:v.make, model:v.model, code:v.code },
     purpose: document.getElementById('ho-purpose')?.value.trim()||'',
-    destination: document.getElementById('ho-destination')?.value.trim()||'',
+    destination: (hoFormType==='loaner'||hoFormType==='bridge')?'':(document.getElementById('ho-destination')?.value.trim()||''),
+    loanerTolls: hoFormType==='loaner'?['כביש 6','מנהרות הכרמל','כביש 6 צפון','הנתיב המהיר'].filter(function(t){var m={'כביש 6':'ho-toll-road6','מנהרות הכרמל':'ho-toll-carmel','כביש 6 צפון':'ho-toll-road6n','הנתיב המהיר':'ho-toll-express'};var el=document.getElementById(m[t]);return el&&el.checked;}):undefined,
     altPlate: document.getElementById('ho-altplate')?.value.trim()||'',
     fuel: hoFuel,
     date: document.getElementById('ho-date')?.value||'',
@@ -7825,6 +7882,7 @@ async function hoBuildCombinedPDF(takeForm, retForm){
     tripHTML += '<table style="width:100%;border-collapse:collapse">';
     if(!isReturn && f.purpose) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">מטרת נסיעה</td><td style="font-weight:bold">' + f.purpose + '</td></tr>';
     if(f.destination) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">יעד</td><td style="font-weight:bold">' + f.destination + '</td></tr>';
+    if(f.loanerTolls&&f.loanerTolls.length) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">'+(isReturn?'מנויי אגרה שהוסרו':'מנויי אגרה שהתווספו')+'</td><td style="font-weight:bold">'+f.loanerTolls.join(', ')+'</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">כמות דלק</td><td style="font-weight:bold">' + (f.fuel||'&#x2014;') + '</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">תאריך ושעה</td><td style="font-weight:bold">' + (f.date||'') + ' ' + (f.time||'') + '</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">קילומטרים</td><td style="font-weight:bold">' + (f.km||'&#x2014;') + '</td></tr>';
@@ -8096,6 +8154,7 @@ async function hoDownloadPDF(){
   html += '<table style="width:100%;border-collapse:collapse">';
   if(f.purpose) html += '<tr><td style="color:#888;padding:3px 0;width:40%">מטרת נסיעה</td><td style="font-weight:bold">' + f.purpose + '</td></tr>';
   if(f.destination) html += '<tr><td style="color:#888;padding:3px 0;width:40%">יעד</td><td style="font-weight:bold">' + f.destination + '</td></tr>';
+  if(f.loanerTolls&&f.loanerTolls.length) html += '<tr><td style="color:#888;padding:3px 0;width:40%">'+(f.mode==='return'?'מנויי אגרה שהוסרו':'מנויי אגרה שהתווספו')+'</td><td style="font-weight:bold">'+f.loanerTolls.join(', ')+'</td></tr>';
   [['כמות דלק',f.fuel],['תאריך ושעה',(f.date||'')+' '+(f.time||'')],['קילומטרים',f.km],['הערות',f.notes]].forEach(function(r){
     if(r[1]) html += '<tr><td style="color:#888;padding:3px 0;width:40%">' + r[0] + '</td><td style="font-weight:bold">' + r[1] + '</td></tr>';
   });
