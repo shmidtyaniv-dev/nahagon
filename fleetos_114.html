@@ -6917,9 +6917,9 @@ function hoUpdateReturnBtns(vid){
   const mr = document.getElementById('ho-btn-mreturn');
   const lr = document.getElementById('ho-btn-lreturn');
   const br = document.getElementById('ho-btn-breturn');
-  if(mr) mr.style.opacity = hasOpenMission?'1':'0.4';
-  if(lr) lr.style.opacity = hasOpenLoaner?'1':'0.4';
-  if(br) br.style.opacity = hasOpenBridge?'1':'0.4';
+  if(mr){ mr.style.opacity=hasOpenMission?'1':'0.4'; mr.style.pointerEvents=hasOpenMission?'auto':'none'; mr.style.cursor=hasOpenMission?'pointer':'default'; }
+  if(lr){ lr.style.opacity=hasOpenLoaner?'1':'0.4';  lr.style.pointerEvents=hasOpenLoaner?'auto':'none';  lr.style.cursor=hasOpenLoaner?'pointer':'default'; }
+  if(br){ br.style.opacity=hasOpenBridge?'1':'0.4';  br.style.pointerEvents=hasOpenBridge?'auto':'none';  br.style.cursor=hasOpenBridge?'pointer':'default'; }
 }
 
 function hoDeletePair(ids){
@@ -7274,6 +7274,7 @@ async function hoOpenForm(type, mode){
 function hoBackToList(){
   document.getElementById('ho-form-screen').style.display='none';
   document.getElementById('ho-list-screen').style.display='block';
+  if(hoCurrentVid) hoUpdateReturnBtns(hoCurrentVid);
 }
 
 function hoSetFuel(btn, val){
@@ -7601,13 +7602,16 @@ function hoSaveForm(){
   if(hoFormMode==='return'){
     formData.linkedTakeId = hoLinkedTakeId;
     formData.closed = true;
+    let closedTakeForm = null;
     if(hoLinkedTakeId){
       const idx = hoForms2.findIndex(f=>f.id===hoLinkedTakeId);
-      if(idx>=0) hoForms2[idx].closed = true;
+      if(idx>=0){ hoForms2[idx].closed = true; closedTakeForm = hoForms2[idx]; }
     } else {
       const idx = hoForms2.findIndex(f=>f.vehicleId===vid&&f.type===hoFormType&&f.mode==='take'&&!f.closed);
-      if(idx>=0){ hoForms2[idx].closed=true; formData.linkedTakeId=hoForms2[idx].id; }
+      if(idx>=0){ hoForms2[idx].closed=true; formData.linkedTakeId=hoForms2[idx].id; closedTakeForm=hoForms2[idx]; }
     }
+    // Sync the closed take form to Firestore so other devices see it as closed
+    if(closedTakeForm){ try{ syncPersistItem('hoForms2', Object.assign({},closedTakeForm,{photos:[]})); }catch(e){} }
   }
 
   // שמור תמונות ב-IndexedDB (אין מגבלת גודל)
