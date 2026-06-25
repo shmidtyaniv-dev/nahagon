@@ -11310,14 +11310,22 @@ document.addEventListener('click',e=>{
 
 /* ── ADD + AI SCAN ── */
 function openAdd(){
-  openModal('add-ov');
+  // איפוס מלא של כל שדות הטופס לפני פתיחה
+  document.querySelectorAll('#add-ov input[type="text"],#add-ov input[type="number"],#add-ov input[type="date"],#add-ov input[type="email"],#add-ov input[type="tel"],#add-ov textarea').forEach(function(e){e.value='';});
+  document.querySelectorAll('#add-ov select').forEach(function(e){e.selectedIndex=0;});
+  document.querySelectorAll('#add-ov .acc-body').forEach(function(b,i){b.style.display=i===0?'':'none';});
+  document.querySelectorAll('#add-ov .acc-arrow').forEach(function(a){a.style.transform='';});
   id('fa-isnew').checked=false;
   toggleNewVehicle();
   id('svc-calc-result').style.display='none';
   id('fa-svc-type').value='';
-  ['scan-v-status','scan-d-status'].forEach(x=>{id(x).textContent=''});
-  ['scan-vehicle-zone','scan-driver-zone'].forEach(x=>{id(x).classList.remove('scan-filled')});
+  ['scan-v-status','scan-d-status'].forEach(function(x){id(x).textContent='';});
+  ['scan-vehicle-zone','scan-driver-zone'].forEach(function(x){id(x).classList.remove('scan-filled');});
+  _pendingVehiclePhoto=null;
+  _pendingScannedVehicleDoc=null;
+  _pendingScannedDriverDoc=null;
   renderTollCheckboxes('add-tolls-container','add',[]);
+  openModal('add-ov');
 }
 
 function saveSystemName(){
