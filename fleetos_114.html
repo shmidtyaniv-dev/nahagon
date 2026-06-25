@@ -186,8 +186,8 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 .tab.active{background:var(--card);color:var(--t1);border-color:var(--bdr2);box-shadow:0 1px 3px rgba(26,74,58,.06)}
 
 /* ─ MODAL ─ */
-.ov{display:none;position:fixed;inset:0;background:rgba(26,74,58,.38);z-index:100;align-items:center;justify-content:center;cursor:pointer}
-.ov.open{display:flex}
+.ov{display:none;visibility:hidden;position:fixed;inset:0;background:rgba(26,74,58,.38);z-index:100;align-items:center;justify-content:center;cursor:pointer}
+.ov.open{display:flex;visibility:visible}
 .modal{background:var(--card);border:1px solid var(--bdr2);border-radius:14px;width:700px;max-width:96vw;max-height:90vh;overflow-y:auto;direction:rtl;box-shadow:0 16px 48px rgba(26,74,58,.2);cursor:default}
 .mh{padding:13px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:var(--gd);border-radius:14px 14px 0 0}
 .mh h3{font-size:14px;font-weight:600;color:#fff}
@@ -11871,7 +11871,7 @@ function addVehicle(){
     isNew,lastService,serviceKm,currentKm,
     nextServiceType,nextSvcDate,tolls,
     dealEnd:delivery?addY(delivery,3):'',
-    driver:{name:dname,id:id('fa-did').value.trim(),phone:id('fa-dphone').value.trim(),email:id('fa-demail').value.trim(),licenseExp:id('fa-dlic').value,address:id('fa-daddress').value.trim()},
+    driver:{name:dname,id:id('fa-did').value.trim(),phone:id('fa-dphone').value.trim(),email:id('fa-demail').value.trim(),licenseExp:id('fa-dlic').value,address:id('fa-daddress').value.trim(),company:id('fa-dcompany').value},
     family:[],history:histEntry,historyLog:hLog,docs:false,
     photo:_pendingVehiclePhoto||null
   });
@@ -11890,6 +11890,9 @@ function addVehicle(){
   }
   closeModal('add-ov');
   document.querySelectorAll('#add-ov input[type="text"],#add-ov input[type="number"],#add-ov input[type="date"],#add-ov input[type="email"]').forEach(e=>e.value='');
+  document.querySelectorAll('#add-ov select').forEach(e=>e.selectedIndex=0);
+  document.querySelectorAll('#add-ov .acc-body').forEach((b,i)=>{b.style.display=i===0?'':'none';});
+  document.querySelectorAll('#add-ov .acc-arrow').forEach(a=>a.style.transform='');
   id('fa-isnew').checked=false;toggleNewVehicle();
   id('svc-calc-result').style.display='none';
   refresh();go('vehicles',q('[dp=vehicles]'));
