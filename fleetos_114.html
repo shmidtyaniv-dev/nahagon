@@ -516,8 +516,9 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   #add-modal-inner{width:100vw!important;max-width:100vw!important;box-sizing:border-box!important;border-radius:14px 14px 0 0!important}
   #add-modal-inner .add-modal-body{overflow-x:hidden!important}
   #add-modal-inner .fg{grid-template-columns:1fr!important;grid-auto-columns:1fr!important}
-  #add-modal-inner input,#add-modal-inner select,#add-modal-inner textarea{max-width:100%!important;box-sizing:border-box!important;width:100%!important;font-size:16px!important}
+  #add-modal-inner input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),#add-modal-inner select,#add-modal-inner textarea{max-width:100%!important;box-sizing:border-box!important;width:100%!important;font-size:16px!important}
   #add-modal-inner input[type="date"]{direction:ltr!important;-webkit-appearance:none!important;appearance:none!important;height:40px!important;text-align:right!important}
+  #add-modal-inner #add-tolls-container{grid-template-columns:1fr!important}
   #add-modal-inner .ff label{font-size:13px!important}
   #add-modal-inner .ff[style*="grid-column"]{grid-column:span 1!important}
   #add-modal-inner .ff.full{grid-column:span 1!important}
