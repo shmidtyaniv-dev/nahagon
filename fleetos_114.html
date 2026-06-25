@@ -14655,8 +14655,13 @@ function renderArchivePage(){
 }
 function deleteFromArchive(idx){
   if(!confirm('למחוק את הרשומה מהארכיון לצמיתות?'))return;
+  var rec = archivedVehicles[idx];
   archivedVehicles.splice(idx,1);
   localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
+  // Sync deletion to Firestore
+  if(rec && rec.id){
+    try{ syncRemoveItem('archivedVehicles', rec.id); }catch(e){}
+  }
   renderArchivePage();
   showToast('נמחק מהארכיון');
 }
