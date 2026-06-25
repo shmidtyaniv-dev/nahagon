@@ -512,6 +512,14 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   #eob-btn-row{justify-content:stretch!important}
   #eob-btn-row .btn{flex:1;justify-content:center;min-width:0;text-align:center}
   #eob-damage-table input[type="checkbox"]{width:24px!important;height:24px!important}
+  /* ─ Add-vehicle modal – mobile overflow fix ─ */
+  #add-modal-inner{width:100vw!important;max-width:100vw!important;box-sizing:border-box!important;border-radius:14px 14px 0 0!important}
+  #add-modal-inner .add-modal-body{overflow-x:hidden!important}
+  #add-modal-inner .fg{grid-template-columns:1fr!important}
+  #add-modal-inner input,#add-modal-inner select,#add-modal-inner textarea{max-width:100%!important;box-sizing:border-box!important;width:100%!important}
+  .scan-zone{max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}
+  #add-modal-inner .acc-body{overflow-x:hidden!important;box-sizing:border-box!important}
+  #add-ov.ov{align-items:flex-end!important}
 }
 @media(max-width:480px){
   .metrics{grid-template-columns:1fr}
