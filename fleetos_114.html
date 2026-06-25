@@ -6683,30 +6683,29 @@ function openArchiveModal(vid){
       <div style="font-size:15px;font-weight:600;color:#dc2626;margin-bottom:6px">הסרת רכב</div>
       <div style="font-size:13px;color:#555;margin-bottom:16px">${v.make} ${v.model} · ${v.plate} · נהג: ${v.driver.name}</div>
       <div style="margin-bottom:14px">
-        <div style="font-size:12px;color:#666;margin-bottom:8px;font-weight:500">סיבת הסרה:</div>
-        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="archive-reason" value="driver_left" style="accent-color:#dc2626">
-          <div style="font-size:13px;font-weight:500">נהג עזב את החברה</div>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="archive-reason" value="driver_quit" style="accent-color:#dc2626">
-          <div style="font-size:13px;font-weight:500">נהג החזיר את הרכב לליסינג</div>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="archive-reason" value="driver_transferred" style="accent-color:#dc2626">
-          <div style="font-size:13px;font-weight:500">נהג עזב את החברה, הרכב עבר לעובד אחר</div>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="archive-reason" value="deal_ended" style="accent-color:#dc2626">
-          <div style="font-size:13px;font-weight:500">סיום עסקה</div>
-        </label>
+        <div style="font-size:12px;color:#666;margin-bottom:4px;font-weight:500">סיבת הסרה</div>
+        <input id="archive-reason-text" type="text" placeholder="לדוגמה: נהג עזב את החברה, סיום ליסינג..." style="width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box">
       </div>
       <div style="margin-bottom:14px">
-        <div style="font-size:12px;color:#666;margin-bottom:4px">הערה (אופציונלי)</div>
-        <input id="archive-note" type="text" placeholder="סיבה, הערות..." style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+        <div style="font-size:12px;color:#666;margin-bottom:4px;font-weight:500">הערה (אופציונלי)</div>
+        <input id="archive-note" type="text" placeholder="הערות נוספות..." style="width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;box-sizing:border-box">
       </div>
-      <div style="background:#fef3c7;border-radius:6px;padding:8px 10px;font-size:11px;color:#92400e;margin-bottom:14px">
-        ⚠️ הפעולה תישמר בארכיון לצורך מעקב עתידי (דוחות, תאונות וכד׳)
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;color:#666;margin-bottom:8px;font-weight:500">מה לעשות עם פרטי הנהג?</div>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:8px" id="archive-opt-keep-label">
+          <input type="radio" name="archive-action" value="keep_driver" style="accent-color:#1A4A3A;margin-top:2px;flex-shrink:0" checked>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#1A4A3A">השאר פרטי הנהג במערכת</div>
+            <div style="font-size:11px;color:#666;margin-top:2px">פרטי הרכב יוסרו מהנהג. הנהג יופיע עם לוחית "ממתין לעדכון רכב חדש"</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1.5px solid #ddd;border-radius:8px;cursor:pointer" id="archive-opt-all-label">
+          <input type="radio" name="archive-action" value="archive_all" style="accent-color:#dc2626;margin-top:2px;flex-shrink:0">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#dc2626">העבר הכל לארכיון</div>
+            <div style="font-size:11px;color:#666;margin-top:2px">פרטי הרכב והנהג יועברו יחד לארכיון ויוסרו מהמערכת</div>
+          </div>
+        </label>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button onclick="document.getElementById('archive-modal').remove()" style="padding:7px 16px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>
@@ -6717,18 +6716,20 @@ function openArchiveModal(vid){
 }
 
 function confirmArchive(vid){
-  const reason=document.querySelector('input[name="archive-reason"]:checked')?.value;
-  if(!reason){alert('יש לבחור סיבת הסרה');return;}
+  const reasonText=(document.getElementById('archive-reason-text')?.value||'').trim();
+  if(!reasonText){alert('יש לרשום סיבת הסרה');return;}
+  const action=document.querySelector('input[name="archive-action"]:checked')?.value||'archive_all';
   const note=document.getElementById('archive-note').value.trim();
   const v=vehicles.find(x=>x.id===vid);
   if(!v)return;
 
   // Build archive record
   const record={
-    id:'arc_'+v.id+'_'+Date.now(), // ID for Firestore cross-device sync
+    id:'arc_'+v.id+'_'+Date.now(),
     archivedAt:new Date().toISOString().slice(0,10),
-    reason,
+    reason:reasonText,
     note,
+    action,
     vehicleId:v.id,
     plate:v.plate,
     code:v.code,
@@ -6737,49 +6738,38 @@ function confirmArchive(vid){
     dealEnd:v.dealEnd,
     delivery:v.delivery,
     driver:{
-      name:v.driver.name,
-      id:v.driver.id,
-      phone:v.driver.phone,
-      email:v.driver.email,
-      licenseExp:v.driver.licenseExp,
+      name:v.driver?.name||'',
+      id:v.driver?.id||'',
+      phone:v.driver?.phone||'',
+      email:v.driver?.email||'',
+      licenseExp:v.driver?.licenseExp||'',
     },
     periodFrom:v.delivery||'',
     periodTo:new Date().toISOString().slice(0,10),
   };
   archivedVehicles.push(record);
   localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
-  // Sync to Firestore for cross-device visibility
   if(typeof syncPersistItem==='function') syncPersistItem('archivedVehicles', record);
 
-  if(reason==='driver_left' || reason==='driver_quit'){
-    // Driver left or quit - vehicle returned to leasing, remove both
-    const i=vehicles.indexOf(v);
-    if(i>-1)vehicles.splice(i,1);
-    record.action=reason;
-  } else if(reason==='deal_ended'){
-    // Deal ended - vehicle returned, driver stays waiting for new car
-    v.plate='ממתין לרכב';
-    v.make='';v.model='';v.code='';
-    v.licenseExp='';v.currentKm=0;v.serviceKm=0;
-    v.status='waiting_vehicle';
-    v.photo=null;
+  if(action==='keep_driver'){
+    // Keep driver in system — clear vehicle details, set plate to waiting
+    const oldPlate=v.plate;
+    v.plate='ממתין לעדכון רכב חדש';
+    v.make=''; v.model=''; v.code='';
+    v.licenseExp=''; v.currentKm=0; v.serviceKm=0;
+    v.status='waiting_vehicle'; v.photo=null;
+    v.delivery=''; v.dealEnd=''; v.tolls=[];
     if(!v.historyLog) v.historyLog=[];
-    v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'סיום עסקה — רכב '+record.plate+' הוחזר לליסינג. הנהג ממתין לרכב חדש',createdAt:new Date().toISOString(),source:'auto'});
-    record.action='deal_ended';
-    record.driverWaiting=true;
+    v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'רכב '+oldPlate+' הוסר — '+reasonText+'. הנהג ממתין לרכב חדש.',createdAt:new Date().toISOString(),source:'auto'});
+    persistVehicle(v);
   } else {
-    // Fallback - remove entirely
+    // archive_all — remove vehicle + driver entirely
     const i=vehicles.indexOf(v);
-    if(i>-1)vehicles.splice(i,1);
-    record.action='contract_ended';
+    if(i>-1) vehicles.splice(i,1);
+    if(db) db.collection('vehicles').doc(String(v.id)).delete().catch(function(e){console.error(e);});
   }
 
-  // Delete from Firestore
-  if(db && reason!=='deal_ended'){
-    db.collection('vehicles').doc(String(v.id)).delete().catch(function(e){console.error('delete vehicle from firestore:',e);});
-  } else if(db && reason==='deal_ended'){
-    persistVehicle(v);
-  }
+  persistVehiclesDebounced();
   document.getElementById('archive-modal').remove();
   go('vehicles',document.querySelector('.ni[dp="vehicles"]'));
   refresh();
@@ -14629,16 +14619,15 @@ setTimeout(function(){
 function renderArchivePage(){
   const el=id('archive-list');if(!el)return;
   if(!archivedVehicles.length){el.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--t3);font-size:14px">הארכיון ריק</div>';return;}
-  var reasonLabels={driver_left:'נהג עזב את החברה',driver_quit:'נהג החזיר את הרכב לליסינג',driver_transferred:'נהג עזב, רכב לעובד אחר',deal_ended:'סיום עסקה',vehicle_returned:'רכב הוחזר',vehicle_replaced:'החלפת רכב',driver_replaced:'החלפת נהג'};
-  var reasonColors={driver_left:'#d97706',driver_quit:'#d97706',deal_ended:'#3b82f6',vehicle_returned:'#dc2626',vehicle_replaced:'#8b5cf6',driver_replaced:'#06b6d4'};
+  var reasonColors={'keep_driver':'#1A4A3A','archive_all':'#dc2626'};
   var html='<div class="viol-container">';
   html+='<div style="display:flex;align-items:center;justify-content:center;padding:18px 22px;border-bottom:1px solid var(--bdr);gap:8px"><h2 style="margin:0;font-size:17px;font-weight:700;color:var(--t1)">ארכיון</h2><span class="viol-count">'+archivedVehicles.length+'</span></div>';
   // Header
   html+='<div class="viol-row viol-header" style="grid-template-columns:1fr 0.7fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr"><div>נהג</div><div>מס׳ רכב</div><div>סיבה</div><div>רכב</div><div>טלפון</div><div>תחילת עסקה</div><div>הוסר</div><div style="text-align:center">פעולות</div></div>';
   archivedVehicles.slice().reverse().forEach(function(r,idx){
     var revIdx=archivedVehicles.length-1-idx;
-    var reasonLabel=reasonLabels[r.reason]||'הוסר';
-    var reasonColor=reasonColors[r.reason]||'#dc2626';
+    var reasonLabel=r.reason||'הוסר';
+    var reasonColor=reasonColors[r.action]||(r.action==='keep_driver'?'#1A4A3A':'#dc2626');
     html+='<div class="viol-row viol-data-row" style="grid-template-columns:1fr 0.7fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr">';
     html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(r.driver.name)+'">'+inits(r.driver.name)+'</div><span class="viol-driver-name">'+r.driver.name+'</span></div>';
     html+='<div class="viol-cell" data-label="מס׳ רכב"><span class="viol-mono">'+r.plate+'</span></div>';
