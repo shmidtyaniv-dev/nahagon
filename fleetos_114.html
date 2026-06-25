@@ -6684,21 +6684,21 @@ function openArchiveModal(vid){
       <div style="font-size:13px;color:#555;margin-bottom:16px">${v.make} ${v.model} · ${v.plate} · נהג: ${v.driver.name}</div>
       <div style="margin-bottom:14px">
         <div style="font-size:12px;color:#666;margin-bottom:8px;font-weight:500">סיבת הסרה:</div>
-        <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="archive-reason" value="driver_left" style="margin-top:2px;accent-color:#dc2626">
-          <div><div style="font-size:13px;font-weight:500">נהג עזב את החברה</div><div style="font-size:11px;color:#888">הרכב חזר למגרש הליסינג</div></div>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
+          <input type="radio" name="archive-reason" value="driver_left" style="accent-color:#dc2626">
+          <div style="font-size:13px;font-weight:500">נהג עזב את החברה</div>
         </label>
-        <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="archive-reason" value="driver_quit" style="margin-top:2px;accent-color:#dc2626">
-          <div><div style="font-size:13px;font-weight:500">נהג החזיר את הרכב לליסינג</div><div style="font-size:11px;color:#888">הרכב חזר למגרש הליסינג</div></div>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
+          <input type="radio" name="archive-reason" value="driver_quit" style="accent-color:#dc2626">
+          <div style="font-size:13px;font-weight:500">נהג החזיר את הרכב לליסינג</div>
         </label>
-        <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="archive-reason" value="driver_transferred" style="margin-top:2px;accent-color:#dc2626">
-          <div><div style="font-size:13px;font-weight:500">נהג עזב את החברה, הרכב עבר לעובד אחר</div><div style="font-size:11px;color:#888">הרכב נשאר בחברה ועבר לנהג חדש</div></div>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
+          <input type="radio" name="archive-reason" value="driver_transferred" style="accent-color:#dc2626">
+          <div style="font-size:13px;font-weight:500">נהג עזב את החברה, הרכב עבר לעובד אחר</div>
         </label>
-        <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
-          <input type="radio" name="archive-reason" value="deal_ended" style="margin-top:2px;accent-color:#dc2626">
-          <div><div style="font-size:13px;font-weight:500">סיום עסקה</div><div style="font-size:11px;color:#888">הרכב חזר לחברת הליסינג, הנהג נשאר וממתין לרכב חדש</div></div>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin-bottom:6px">
+          <input type="radio" name="archive-reason" value="deal_ended" style="accent-color:#dc2626">
+          <div style="font-size:13px;font-weight:500">סיום עסקה</div>
         </label>
       </div>
       <div style="margin-bottom:14px">
@@ -14629,7 +14629,7 @@ setTimeout(function(){
 function renderArchivePage(){
   const el=id('archive-list');if(!el)return;
   if(!archivedVehicles.length){el.innerHTML='<div style="text-align:center;padding:60px 0;color:var(--t3);font-size:14px">הארכיון ריק</div>';return;}
-  var reasonLabels={driver_left:'נהג עזב',driver_quit:'נהג ויתר',deal_ended:'סיום עסקה',vehicle_returned:'רכב הוחזר',vehicle_replaced:'החלפת רכב',driver_replaced:'החלפת נהג'};
+  var reasonLabels={driver_left:'נהג עזב את החברה',driver_quit:'נהג החזיר את הרכב לליסינג',driver_transferred:'נהג עזב, רכב לעובד אחר',deal_ended:'סיום עסקה',vehicle_returned:'רכב הוחזר',vehicle_replaced:'החלפת רכב',driver_replaced:'החלפת נהג'};
   var reasonColors={driver_left:'#d97706',driver_quit:'#d97706',deal_ended:'#3b82f6',vehicle_returned:'#dc2626',vehicle_replaced:'#8b5cf6',driver_replaced:'#06b6d4'};
   var html='<div class="viol-container">';
   html+='<div style="display:flex;align-items:center;justify-content:center;padding:18px 22px;border-bottom:1px solid var(--bdr);gap:8px"><h2 style="margin:0;font-size:17px;font-weight:700;color:var(--t1)">ארכיון</h2><span class="viol-count">'+archivedVehicles.length+'</span></div>';
