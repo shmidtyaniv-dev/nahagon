@@ -10603,6 +10603,33 @@ function persistVehiclesDebounced(){
   },600);
 }
 
+// Cleanup garbled driver fields (happens when screen rotates during form submit on iOS)
+function cleanGarbledDriverData(){
+  var hebrewRe=/[\u0590-\u05FF]/;
+  var fixed=0;
+  vehicles.forEach(function(v){
+    if(!v.driver)return;
+    var changed=false;
+    // Phone: valid is short (≤20 chars) and no Hebrew
+    if(v.driver.phone&&(v.driver.phone.length>20||hebrewRe.test(v.driver.phone))){
+      console.warn('[cleanup] garbled phone on vehicle',v.id,'→ clearing');
+      v.driver.phone='';changed=true;
+    }
+    // Email: no Hebrew
+    if(v.driver.email&&hebrewRe.test(v.driver.email)){
+      console.warn('[cleanup] garbled email on vehicle',v.id,'→ clearing');
+      v.driver.email='';changed=true;
+    }
+    // Address: if it contains form-label-like text (contains ▼ or 🔧 or שדה חובה)
+    if(v.driver.address&&(v.driver.address.indexOf('▼')>=0||v.driver.address.indexOf('שדה חובה')>=0)){
+      console.warn('[cleanup] garbled address on vehicle',v.id,'→ clearing');
+      v.driver.address='';changed=true;
+    }
+    if(changed){persistVehicle(v);fixed++;}
+  });
+  if(fixed>0){console.log('[cleanup] fixed '+fixed+' vehicle(s)');if(typeof renderV==='function')renderV();}
+}
+
 // Load vehicles from Firestore on startup
 function loadVehiclesFromFirestore(){
   if(!db)return Promise.resolve(false);
@@ -10631,6 +10658,8 @@ function startVehiclesListener(){
         arr.forEach(function(v){vehicles.push(v);});
       }
       _vehiclesLoaded=true;
+      // Run once after initial load to fix any garbled data from iOS rotation bug
+      setTimeout(cleanGarbledDriverData,500);
     }else{
       // Subsequent updates - merge carefully (only apply changes from other devices)
       snap.docChanges().forEach(function(change){
