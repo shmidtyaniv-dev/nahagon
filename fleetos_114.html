@@ -14629,9 +14629,9 @@ function renderArchivePage(){
     var reasonLabel=r.reason||'הוסר';
     var reasonColor=reasonColors[r.action]||(r.action==='keep_driver'?'#1A4A3A':'#dc2626');
     html+='<div class="viol-row viol-data-row" style="grid-template-columns:1fr 0.7fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 1fr">';
-    html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(r.driver.name)+'">'+inits(r.driver.name)+'</div><span class="viol-driver-name">'+r.driver.name+'</span></div>';
+    html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(r.driver.name)+'">'+inits(r.driver.name)+'</div><div><span class="viol-driver-name">'+r.driver.name+'</span>'+(r.action==='keep_driver'?'<div style="font-size:10px;color:#1A4A3A;font-weight:500;margin-top:1px">נהג פעיל במערכת</div>':'')+'</div></div>';
     html+='<div class="viol-cell" data-label="מס׳ רכב"><span class="viol-mono">'+r.plate+'</span></div>';
-    html+='<div class="viol-cell" data-label="סיבה"><span style="font-size:11px;color:#fff;background:'+reasonColor+';padding:3px 10px;border-radius:999px;font-weight:500;white-space:nowrap">'+reasonLabel+'</span></div>';
+    html+='<div class="viol-cell" data-label="סיבה"><span style="font-size:11px;color:#fff;background:'+reasonColor+';padding:3px 10px;border-radius:999px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;display:inline-block" title="'+reasonLabel+'">'+reasonLabel+'</span></div>';
     html+='<div class="viol-cell" data-label="רכב"><span class="viol-mono">'+r.make+' '+r.model+'</span></div>';
     html+='<div class="viol-cell" data-label="טלפון"><span class="viol-muted">'+(r.driver.phone||'—')+'</span></div>';
     html+='<div class="viol-cell" data-label="תחילת עסקה"><span class="viol-muted">'+(fd(r.periodFrom)||'—')+'</span></div>';
