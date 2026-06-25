@@ -5756,6 +5756,12 @@ function saveSettings(obj){
   const s = getSettings();
   Object.assign(s,obj);
   localStorage.setItem('fleetSettings', JSON.stringify(s));
+  // Sync to Firestore (exclude binary logo data — those have their own sync)
+  if(typeof db!=='undefined'&&db){
+    var toSync=Object.assign({},s);
+    delete toSync.moreB64; delete toSync.colB64;
+    db.collection('settings').doc('fleetSettings').set(toSync).catch(function(e){console.error('saveSettings Firestore:',e);});
+  }
 }
 
 // ── בדיקה יומית אוטומטית ──
@@ -6656,6 +6662,7 @@ function confirmArchive(vid){
 
   // Build archive record
   const record={
+    id:'arc_'+v.id+'_'+Date.now(), // ID for Firestore cross-device sync
     archivedAt:new Date().toISOString().slice(0,10),
     reason,
     note,
@@ -6678,6 +6685,8 @@ function confirmArchive(vid){
   };
   archivedVehicles.push(record);
   localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
+  // Sync to Firestore for cross-device visibility
+  if(typeof syncPersistItem==='function') syncPersistItem('archivedVehicles', record);
 
   if(reason==='driver_left' || reason==='driver_quit'){
     // Driver left or quit - vehicle returned to leasing, remove both
@@ -14382,8 +14391,37 @@ if(checkViolApproval()){
         function(arr){ hoForms2 = arr||[]; try{localStorage.setItem('hoForms2',JSON.stringify(hoForms2));}catch(e){} },
         function(){ if(_currentVid && typeof hoRenderList==='function'){try{hoRenderList(_currentVid);}catch(e){}} }
       );
+      // Archived vehicles (ארכיון) — was localStorage-only, now synced cross-device
+      registerSyncCollection('archivedVehicles',
+        function(){ return archivedVehicles; },
+        function(arr){
+          archivedVehicles.length=0;
+          (arr||[]).forEach(function(r){
+            // Ensure old local records without id get one (migration)
+            if(!r.id) r.id='arc_'+(r.vehicleId||'x')+'_'+Date.now();
+            archivedVehicles.push(r);
+          });
+          try{localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));}catch(e){}
+        },
+        function(){ if(typeof renderArchivePage==='function'){try{renderArchivePage();}catch(e){}} }
+      );
       // Start listeners on all registered collections
       if(typeof startAllSyncListeners==='function'){ startAllSyncListeners(); }
+      // fleetSettings listener — sync settings across devices
+      if(typeof db!=='undefined'&&db){
+        db.collection('settings').doc('fleetSettings').onSnapshot(function(doc){
+          if(!doc||!doc.exists)return;
+          var remote=doc.data();
+          var local=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+          // Merge: remote wins, but preserve local binary logos
+          var merged=Object.assign({},local,remote);
+          if(local.moreB64)merged.moreB64=local.moreB64;
+          if(local.colB64)merged.colB64=local.colB64;
+          localStorage.setItem('fleetSettings',JSON.stringify(merged));
+          // Refresh system name in header if changed
+          if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
+        },function(e){console.error('fleetSettings listener:',e);});
+      }
     }catch(e){ console.error('sync setup error:', e); }
   }
 }
