@@ -4184,14 +4184,35 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                   <label id="ho-altplate-label" style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">מספר רישוי הרכב החלופי</label>
                   <input id="ho-altplate" type="text" placeholder="לדוגמה: 12-345-67" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
                 </div>
-                <div style="margin-bottom:10px">
-                  <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:6px">כמות דלק</label>
-                  <div style="display:flex;gap:5px">
-                    <button class="ho-fuel-btn" onclick="hoSetFuel(this,'ריק')" style="padding:10px 4px;font-size:14px;font-weight:500">ריק</button>
-                    <button class="ho-fuel-btn" onclick="hoSetFuel(this,'¼')" style="padding:10px 4px;font-size:14px;font-weight:500">1/4</button>
-                    <button class="ho-fuel-btn" onclick="hoSetFuel(this,'½')" style="padding:10px 4px;font-size:14px;font-weight:500">1/2</button>
-                    <button class="ho-fuel-btn" onclick="hoSetFuel(this,'¾')" style="padding:10px 4px;font-size:14px;font-weight:500">3/4</button>
-                    <button class="ho-fuel-btn" onclick="hoSetFuel(this,'מלא')" style="padding:10px 4px;font-size:14px;font-weight:500">מלא</button>
+                <!-- fuel / electric toggle -->
+                <div style="margin-bottom:8px">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                    <label style="font-size:11px;color:var(--t3)">סוג אנרגיה:</label>
+                    <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+                      <input type="radio" name="ho-energy-type" id="ho-energy-fuel" value="fuel" onchange="hoToggleEnergyType()" checked style="accent-color:var(--gl)"> דלק
+                    </label>
+                    <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+                      <input type="radio" name="ho-energy-type" id="ho-energy-electric" value="electric" onchange="hoToggleEnergyType()" style="accent-color:var(--gl)"> ⚡ חשמלי
+                    </label>
+                  </div>
+                  <!-- fuel buttons -->
+                  <div id="ho-fuel-section" style="margin-bottom:4px">
+                    <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:6px">כמות דלק</label>
+                    <div style="display:flex;gap:5px">
+                      <button class="ho-fuel-btn" onclick="hoSetFuel(this,'ריק')" style="padding:10px 4px;font-size:14px;font-weight:500">ריק</button>
+                      <button class="ho-fuel-btn" onclick="hoSetFuel(this,'¼')" style="padding:10px 4px;font-size:14px;font-weight:500">1/4</button>
+                      <button class="ho-fuel-btn" onclick="hoSetFuel(this,'½')" style="padding:10px 4px;font-size:14px;font-weight:500">1/2</button>
+                      <button class="ho-fuel-btn" onclick="hoSetFuel(this,'¾')" style="padding:10px 4px;font-size:14px;font-weight:500">3/4</button>
+                      <button class="ho-fuel-btn" onclick="hoSetFuel(this,'מלא')" style="padding:10px 4px;font-size:14px;font-weight:500">מלא</button>
+                    </div>
+                  </div>
+                  <!-- electric battery -->
+                  <div id="ho-battery-section" style="display:none">
+                    <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:6px">אחוז סוללה</label>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <input type="range" id="ho-battery-range" min="0" max="100" step="5" value="100" oninput="document.getElementById('ho-battery-pct').textContent=this.value+'%'" style="flex:1;accent-color:var(--gl)">
+                      <span id="ho-battery-pct" style="font-size:15px;font-weight:700;color:var(--gd);min-width:40px;text-align:center">100%</span>
+                    </div>
                   </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
@@ -7251,6 +7272,11 @@ async function hoOpenForm(type, mode){
   var _hp = document.getElementById('ho-purpose'); if(_hp) _hp.value='';
   var _hd = document.getElementById('ho-destination'); if(_hd) _hd.value='';
   var _hsn = document.getElementById('ho-sig-name'); if(_hsn) _hsn.value='';
+  // Reset energy type to fuel
+  var _efuel = document.getElementById('ho-energy-fuel'); if(_efuel) _efuel.checked=true;
+  var _br = document.getElementById('ho-battery-range'); if(_br) _br.value=100;
+  var _bp = document.getElementById('ho-battery-pct'); if(_bp) _bp.textContent='100%';
+  hoToggleEnergyType();
   // Clear signature canvas
   if(hoSigCtx){ var _hsc = document.getElementById('ho-sig-canvas'); if(_hsc) hoSigCtx.clearRect(0,0,_hsc.width,_hsc.height); hoSigEmpty=true; }
 
@@ -7380,6 +7406,15 @@ function hoBackToList(){
   document.getElementById('ho-form-screen').style.display='none';
   document.getElementById('ho-list-screen').style.display='block';
   if(hoCurrentVid) hoUpdateReturnBtns(hoCurrentVid);
+}
+
+function hoToggleEnergyType(){
+  var isElec = document.getElementById('ho-energy-electric')?.checked;
+  var fuelSec = document.getElementById('ho-fuel-section');
+  var batSec = document.getElementById('ho-battery-section');
+  if(fuelSec) fuelSec.style.display = isElec ? 'none' : 'block';
+  if(batSec) batSec.style.display = isElec ? 'block' : 'none';
+  if(isElec){ hoFuel = ''; document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active')); }
 }
 
 function hoSetFuel(btn, val){
@@ -7691,6 +7726,8 @@ function hoSaveForm(){
     destination: (hoFormType==='loaner'||hoFormType==='bridge')?'':(document.getElementById('ho-destination')?.value.trim()||''),
     loanerTolls: hoFormType==='loaner'?['כביש 6','מנהרות הכרמל','כביש 6 צפון','הנתיב המהיר'].filter(function(t){var m={'כביש 6':'ho-toll-road6','מנהרות הכרמל':'ho-toll-carmel','כביש 6 צפון':'ho-toll-road6n','הנתיב המהיר':'ho-toll-express'};var el=document.getElementById(m[t]);return el&&el.checked;}):undefined,
     altPlate: document.getElementById('ho-altplate')?.value.trim()||'',
+    isElectric: document.getElementById('ho-energy-electric')?.checked||false,
+    batteryPct: document.getElementById('ho-energy-electric')?.checked ? (document.getElementById('ho-battery-range')?.value||'100')+'%' : null,
     fuel: hoFuel,
     date: document.getElementById('ho-date')?.value||'',
     time: document.getElementById('ho-time')?.value||'',
@@ -7883,7 +7920,7 @@ async function hoBuildCombinedPDF(takeForm, retForm){
     if(!isReturn && f.purpose) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">מטרת נסיעה</td><td style="font-weight:bold">' + f.purpose + '</td></tr>';
     if(f.destination) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">יעד</td><td style="font-weight:bold">' + f.destination + '</td></tr>';
     if(f.loanerTolls&&f.loanerTolls.length) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">'+(isReturn?'מנויי אגרה שהוסרו':'מנויי אגרה שהתווספו')+'</td><td style="font-weight:bold">'+f.loanerTolls.join(', ')+'</td></tr>';
-    tripHTML += '<tr><td style="color:#888;padding:3px 0">כמות דלק</td><td style="font-weight:bold">' + (f.fuel||'&#x2014;') + '</td></tr>';
+    tripHTML += '<tr><td style="color:#888;padding:3px 0">'+(f.isElectric?'⚡ סוללה':'כמות דלק')+'</td><td style="font-weight:bold">'+(f.isElectric?(f.batteryPct||'—'):(f.fuel||'&#x2014;'))+'</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">תאריך ושעה</td><td style="font-weight:bold">' + (f.date||'') + ' ' + (f.time||'') + '</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">קילומטרים</td><td style="font-weight:bold">' + (f.km||'&#x2014;') + '</td></tr>';
     tripHTML += '</table></div>';
@@ -8155,7 +8192,7 @@ async function hoDownloadPDF(){
   if(f.purpose) html += '<tr><td style="color:#888;padding:3px 0;width:40%">מטרת נסיעה</td><td style="font-weight:bold">' + f.purpose + '</td></tr>';
   if(f.destination) html += '<tr><td style="color:#888;padding:3px 0;width:40%">יעד</td><td style="font-weight:bold">' + f.destination + '</td></tr>';
   if(f.loanerTolls&&f.loanerTolls.length) html += '<tr><td style="color:#888;padding:3px 0;width:40%">'+(f.mode==='return'?'מנויי אגרה שהוסרו':'מנויי אגרה שהתווספו')+'</td><td style="font-weight:bold">'+f.loanerTolls.join(', ')+'</td></tr>';
-  [['כמות דלק',f.fuel],['תאריך ושעה',(f.date||'')+' '+(f.time||'')],['קילומטרים',f.km],['הערות',f.notes]].forEach(function(r){
+  [[(f.isElectric?'⚡ סוללה':'כמות דלק'),(f.isElectric?(f.batteryPct||'—'):f.fuel)],['תאריך ושעה',(f.date||'')+' '+(f.time||'')],['קילומטרים',f.km],['הערות',f.notes]].forEach(function(r){
     if(r[1]) html += '<tr><td style="color:#888;padding:3px 0;width:40%">' + r[0] + '</td><td style="font-weight:bold">' + r[1] + '</td></tr>';
   });
   html += '</table></div>';
