@@ -4930,10 +4930,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
 
       <div class="fg">
-        <div class="ff"><label>מספר רכב *</label><input id="fa-plate" placeholder="12-345-67" dir="ltr"></div>
-        <div class="ff"><label>קודן</label><input id="fa-code" placeholder="COL-2025-013"></div>
-        <div class="ff"><label>יצרן</label><input id="fa-make" placeholder="יונדאי / קיה / ..."></div>
-        <div class="ff"><label>דגם</label><input id="fa-model" placeholder="Tucson / i35 ..."></div>
+        <div class="ff"><label>מספר רכב *</label><input id="fa-plate" placeholder="12-345-67" dir="ltr" autocomplete="off"></div>
+        <div class="ff"><label>קודן</label><input id="fa-code" placeholder="COL-2025-013" autocomplete="off"></div>
+        <div class="ff"><label>יצרן</label><input id="fa-make" placeholder="יונדאי / קיה / ..." autocomplete="off"></div>
+        <div class="ff"><label>דגם</label><input id="fa-model" placeholder="Tucson / i35 ..." autocomplete="off"></div>
         <div class="ff"><label>תאריך מסירה לנהג</label><input type="date" id="fa-delivery"></div>
         <div class="ff"><label>תוקף רישיון רכב</label><input type="date" id="fa-lic"></div>
       </div>
@@ -4971,12 +4971,12 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
 
       <div class="fg">
-        <div class="ff"><label>שם מלא *</label><input id="fa-dname" placeholder="ישראל ישראלי"></div>
-        <div class="ff"><label>תעודת זהות</label><input id="fa-did" placeholder="012345678" dir="ltr"></div>
-        <div class="ff"><label>טלפון</label><input id="fa-dphone" placeholder="050-0000000" dir="ltr"></div>
-        <div class="ff"><label>מייל</label><input id="fa-demail" placeholder="name@co.il" dir="ltr"></div>
-        <div class="ff"><label>תוקף רישיון נהיגה</label><input type="date" id="fa-dlic"></div>
-        <div class="ff"><label>כתובת</label><input id="fa-daddress" placeholder="רחוב, עיר"></div>
+        <div class="ff"><label>שם מלא *</label><input id="fa-dname" placeholder="ישראל ישראלי" autocomplete="off"></div>
+        <div class="ff"><label>תעודת זהות</label><input id="fa-did" placeholder="012345678" dir="ltr" autocomplete="off"></div>
+        <div class="ff"><label>טלפון</label><input id="fa-dphone" placeholder="050-0000000" dir="ltr" autocomplete="off"></div>
+        <div class="ff"><label>מייל</label><input id="fa-demail" placeholder="name@co.il" dir="ltr" autocomplete="off"></div>
+        <div class="ff"><label>תוקף רישיון נהיגה</label><input type="date" id="fa-dlic" autocomplete="off"></div>
+        <div class="ff"><label>כתובת</label><input id="fa-daddress" placeholder="רחוב, עיר" autocomplete="off"></div>
         <div class="ff" style="grid-column:span 2"><label>חברה</label>
           <select id="fa-dcompany" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:var(--rs);font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)">
             <option value="">— לא מוגדר —</option>
@@ -11309,23 +11309,32 @@ document.addEventListener('click',e=>{
 });
 
 /* ── ADD + AI SCAN ── */
-function openAdd(){
-  // איפוס מלא של כל שדות הטופס לפני פתיחה
-  document.querySelectorAll('#add-ov input[type="text"],#add-ov input[type="number"],#add-ov input[type="date"],#add-ov input[type="email"],#add-ov input[type="tel"],#add-ov textarea').forEach(function(e){e.value='';});
+function _resetAddForm(){
+  // איפוס כל שדות טופס הוספת רכב
+  document.querySelectorAll('#add-ov input').forEach(function(e){
+    if(e.type==='checkbox'||e.type==='radio'||e.type==='file')return;
+    e.value='';
+  });
   document.querySelectorAll('#add-ov select').forEach(function(e){e.selectedIndex=0;});
+  document.querySelectorAll('#add-ov textarea').forEach(function(e){e.value='';});
   document.querySelectorAll('#add-ov .acc-body').forEach(function(b,i){b.style.display=i===0?'':'none';});
   document.querySelectorAll('#add-ov .acc-arrow').forEach(function(a){a.style.transform='';});
-  id('fa-isnew').checked=false;
-  toggleNewVehicle();
-  id('svc-calc-result').style.display='none';
-  id('fa-svc-type').value='';
-  ['scan-v-status','scan-d-status'].forEach(function(x){id(x).textContent='';});
-  ['scan-vehicle-zone','scan-driver-zone'].forEach(function(x){id(x).classList.remove('scan-filled');});
+  var isnew=id('fa-isnew');if(isnew)isnew.checked=false;
+  if(typeof toggleNewVehicle==='function')toggleNewVehicle();
+  var calcRes=id('svc-calc-result');if(calcRes)calcRes.style.display='none';
+  var svcType=id('fa-svc-type');if(svcType)svcType.value='';
+  ['scan-v-status','scan-d-status'].forEach(function(x){var el=id(x);if(el)el.textContent='';});
+  ['scan-vehicle-zone','scan-driver-zone'].forEach(function(x){var el=id(x);if(el)el.classList.remove('scan-filled');});
   _pendingVehiclePhoto=null;
   _pendingScannedVehicleDoc=null;
   _pendingScannedDriverDoc=null;
-  renderTollCheckboxes('add-tolls-container','add',[]);
+  if(typeof renderTollCheckboxes==='function')renderTollCheckboxes('add-tolls-container','add',[]);
+}
+function openAdd(){
+  _resetAddForm();   // ניקוי ראשון לפני פתיחה
   openModal('add-ov');
+  // ניקוי שני אחרי 150ms — מנצח iOS Safari Autofill שמחזיר ערכים ישן
+  setTimeout(_resetAddForm, 150);
 }
 
 function saveSystemName(){
