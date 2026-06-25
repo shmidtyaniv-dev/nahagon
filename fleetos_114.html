@@ -4127,6 +4127,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             </div>
             <!-- forms list -->
             <div id="ho-forms-list"></div>
+            <!-- reset open take forms -->
+            <div id="ho-reset-row" style="display:none;margin-top:4px;text-align:center">
+              <button onclick="hoResetOpenForms()" style="background:none;border:none;font-size:11px;color:var(--t3);cursor:pointer;font-family:inherit;text-decoration:underline;padding:4px 8px">אפס מצב לקיחות פתוחות</button>
+            </div>
           </div>
         </div>
 
@@ -6909,6 +6913,25 @@ function initHandoverTab(vid){
   document.getElementById('ho-form-screen').style.display='none';
 }
 
+function hoResetOpenForms(){
+  if(!hoCurrentVid) return;
+  if(!confirm('לאפס את כל הלקיחות הפתוחות לרכב זה?\n(הטפסים ישארו ברשימה אבל יסומנו כסגורים)')) return;
+  hoForms2 = JSON.parse(localStorage.getItem('hoForms2')||'[]');
+  var changed = false;
+  hoForms2.forEach(function(f){
+    if(f.vehicleId===hoCurrentVid && f.mode==='take' && !f.closed){
+      f.closed = true;
+      changed = true;
+      try{ syncPersistItem('hoForms2', Object.assign({},f,{photos:[]})); }catch(e){}
+    }
+  });
+  if(!changed){ showToast('אין לקיחות פתוחות לאיפוס'); return; }
+  try{ localStorage.setItem('hoForms2', JSON.stringify(hoForms2)); }catch(e){}
+  hoUpdateReturnBtns(hoCurrentVid);
+  hoRenderList(hoCurrentVid);
+  showToast('✓ המצב אופס');
+}
+
 function hoUpdateReturnBtns(vid){
   const vForms = hoForms2.filter(f=>f.vehicleId===vid);
   const hasOpenMission = vForms.some(f=>f.type==='mission'&&f.mode==='take'&&!f.closed);
@@ -6920,6 +6943,9 @@ function hoUpdateReturnBtns(vid){
   if(mr){ mr.style.opacity=hasOpenMission?'1':'0.4'; mr.style.pointerEvents=hasOpenMission?'auto':'none'; mr.style.cursor=hasOpenMission?'pointer':'default'; }
   if(lr){ lr.style.opacity=hasOpenLoaner?'1':'0.4';  lr.style.pointerEvents=hasOpenLoaner?'auto':'none';  lr.style.cursor=hasOpenLoaner?'pointer':'default'; }
   if(br){ br.style.opacity=hasOpenBridge?'1':'0.4';  br.style.pointerEvents=hasOpenBridge?'auto':'none';  br.style.cursor=hasOpenBridge?'pointer':'default'; }
+  // Show reset button only when there are open take forms
+  var resetRow = document.getElementById('ho-reset-row');
+  if(resetRow) resetRow.style.display=(hasOpenMission||hasOpenLoaner||hasOpenBridge)?'block':'none';
 }
 
 function hoDeletePair(ids){
