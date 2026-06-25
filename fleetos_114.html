@@ -186,8 +186,8 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 .tab.active{background:var(--card);color:var(--t1);border-color:var(--bdr2);box-shadow:0 1px 3px rgba(26,74,58,.06)}
 
 /* ─ MODAL ─ */
-.ov{display:none;visibility:hidden;position:fixed;inset:0;background:rgba(26,74,58,.38);z-index:100;align-items:center;justify-content:center;cursor:pointer}
-.ov.open{display:flex;visibility:visible}
+.ov{display:none!important;visibility:hidden!important;position:fixed;inset:0;background:rgba(26,74,58,.38);z-index:100;align-items:center;justify-content:center;cursor:pointer;-webkit-transform:translateZ(0);transform:translateZ(0)}
+.ov.open{display:flex!important;visibility:visible!important}
 .modal{background:var(--card);border:1px solid var(--bdr2);border-radius:14px;width:700px;max-width:96vw;max-height:90vh;overflow-y:auto;direction:rtl;box-shadow:0 16px 48px rgba(26,74,58,.2);cursor:default}
 .mh{padding:13px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:var(--gd);border-radius:14px 14px 0 0}
 .mh h3{font-size:14px;font-weight:600;color:#fff}
@@ -8086,7 +8086,7 @@ function renderCal(){
 
 function openMonthDetail(){}
 
-function closeModal(mid){var el=id(mid);if(!el)return;el.classList.remove('open');el.style.display='none';}
+function closeModal(mid){var el=id(mid);if(!el)return;el.classList.remove('open');el.style.display='none';el.style.visibility='hidden';}
 
 function showDocsModal(){
   const ms=vehicles.filter(v=>!v.docs);
@@ -11242,13 +11242,32 @@ function showDocsModal(){
 }
 
 /* ── MODAL MANAGEMENT ── */
-function closeModal(mid){var el=id(mid);if(!el)return;el.classList.remove('open');el.style.display='none';}
-function openModal(mid){var el=id(mid);if(!el)return;el.classList.add('open');el.style.display='';}
+function closeModal(mid){
+  var el=id(mid);if(!el)return;
+  el.classList.remove('open');
+  el.style.display='none';
+  el.style.visibility='hidden';
+  // iOS Safari fix: restore body scroll + scroll to top
+  if(!document.querySelector('.ov.open')){
+    document.body.style.overflow='';
+    document.body.style.position='';
+    window.scrollTo(0,0);
+  }
+}
+function openModal(mid){
+  var el=id(mid);if(!el)return;
+  el.classList.add('open');
+  el.style.display='';
+  el.style.visibility='';
+  // iOS Safari fix: prevent background scroll when modal open
+  document.body.style.overflow='hidden';
+}
 // click-outside to close
 document.addEventListener('click',e=>{
   document.querySelectorAll('.ov.open').forEach(ov=>{
-    if(e.target===ov){ov.classList.remove('open');ov.style.display='none';}
+    if(e.target===ov){ov.classList.remove('open');ov.style.display='none';ov.style.visibility='hidden';}
   });
+  if(!document.querySelector('.ov.open')){document.body.style.overflow='';window.scrollTo(0,0);}
 });
 
 /* ── ADD + AI SCAN ── */
