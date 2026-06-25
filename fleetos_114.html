@@ -4155,6 +4155,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                   <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">מטרת נסיעה</label>
                   <input id="ho-purpose" type="text" placeholder="לדוגמה: טיפול שנתי, בדיקה..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
                 </div>
+                <div style="margin-bottom:10px">
+                  <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">יעד</label>
+                  <input id="ho-destination" type="text" placeholder="לדוגמה: תל אביב, מוסך רמת גן..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
+                </div>
                 <div id="ho-altplate-row" style="margin-bottom:10px;display:none">
                   <label id="ho-altplate-label" style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">מספר רישוי הרכב החלופי</label>
                   <input id="ho-altplate" type="text" placeholder="לדוגמה: 12-345-67" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
@@ -7162,6 +7166,7 @@ async function hoOpenForm(type, mode){
   hoDamages = {}; hoPhotos = []; hoFuel = ''; hoNoDmg = false; hoCurrentView = 'front';
   // Reset text fields from previous form
   var _hp = document.getElementById('ho-purpose'); if(_hp) _hp.value='';
+  var _hd = document.getElementById('ho-destination'); if(_hd) _hd.value='';
   var _hsn = document.getElementById('ho-sig-name'); if(_hsn) _hsn.value='';
   // Clear signature canvas
   if(hoSigCtx){ var _hsc = document.getElementById('ho-sig-canvas'); if(_hsc) hoSigCtx.clearRect(0,0,_hsc.width,_hsc.height); hoSigEmpty=true; }
@@ -7577,6 +7582,7 @@ function hoSaveForm(){
     driverPhone: v.driver?.phone||'',
     vehicle: { plate:v.plate, make:v.make, model:v.model, code:v.code },
     purpose: document.getElementById('ho-purpose')?.value.trim()||'',
+    destination: document.getElementById('ho-destination')?.value.trim()||'',
     altPlate: document.getElementById('ho-altplate')?.value.trim()||'',
     fuel: hoFuel,
     date: document.getElementById('ho-date')?.value||'',
@@ -7765,6 +7771,7 @@ async function hoBuildCombinedPDF(takeForm, retForm){
     tripHTML += '<div style="font-size:10px;font-weight:bold;color:' + accentColor + ';margin-bottom:8px;text-transform:uppercase">פרטי ' + pageLabel + '</div>';
     tripHTML += '<table style="width:100%;border-collapse:collapse">';
     if(!isReturn && f.purpose) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">מטרת נסיעה</td><td style="font-weight:bold">' + f.purpose + '</td></tr>';
+    if(f.destination) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">יעד</td><td style="font-weight:bold">' + f.destination + '</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">כמות דלק</td><td style="font-weight:bold">' + (f.fuel||'&#x2014;') + '</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">תאריך ושעה</td><td style="font-weight:bold">' + (f.date||'') + ' ' + (f.time||'') + '</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">קילומטרים</td><td style="font-weight:bold">' + (f.km||'&#x2014;') + '</td></tr>';
@@ -8035,6 +8042,7 @@ async function hoDownloadPDF(){
   html += '<div style="font-size:10px;font-weight:bold;color:#1A4A3A;margin-bottom:8px;text-transform:uppercase">פרטי נסיעה</div>';
   html += '<table style="width:100%;border-collapse:collapse">';
   if(f.purpose) html += '<tr><td style="color:#888;padding:3px 0;width:40%">מטרת נסיעה</td><td style="font-weight:bold">' + f.purpose + '</td></tr>';
+  if(f.destination) html += '<tr><td style="color:#888;padding:3px 0;width:40%">יעד</td><td style="font-weight:bold">' + f.destination + '</td></tr>';
   [['כמות דלק',f.fuel],['תאריך ושעה',(f.date||'')+' '+(f.time||'')],['קילומטרים',f.km],['הערות',f.notes]].forEach(function(r){
     if(r[1]) html += '<tr><td style="color:#888;padding:3px 0;width:40%">' + r[0] + '</td><td style="font-weight:bold">' + r[1] + '</td></tr>';
   });
