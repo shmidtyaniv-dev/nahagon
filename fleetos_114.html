@@ -10467,6 +10467,8 @@ function openDet(vid){
   if(driverStatsEl){
     const vAccidents = (typeof accidentsList!=='undefined'?accidentsList:[]).filter(a=>a.vehicleId===v.id);
     const tireCount = (v.tireChanges||[]).reduce((s,c)=>s+(c.qty||0),0);
+    const thisYear = new Date().getFullYear();
+    const punctureCount = (v.punctureRepairs||[]).filter(p=>p.date&&p.date.startsWith(thisYear)).length;
     const statRow = (icon,label,val,extra='')=>`
       <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0">
         <div style="width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f4f4f2">${icon}</div>
@@ -10488,6 +10490,11 @@ function openDet(vid){
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>',
         'החלפת צמינים', tireCount,
         `<button onclick="openTireUpdateModal(_currentVid)" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--bdr2);background:#fff;cursor:pointer;color:var(--t2);white-space:nowrap">+ עדכון</button>`
+      )}
+      ${statRow(
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+        'תיקון פנצ\'ר (השנה)', punctureCount,
+        `<button onclick="openPunctureModal(_currentVid)" style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--bdr2);background:#fff;cursor:pointer;color:var(--t2);white-space:nowrap">+ עדכון</button>`
       )}`;
     const rows = driverStatsEl.querySelectorAll('[style*="border-bottom"]');
     if(rows.length) rows[rows.length-1].style.borderBottom='none';
@@ -12226,6 +12233,51 @@ function saveTireUpdate(vid){
   if(!v.tireChanges)v.tireChanges=[];
   v.tireChanges.push({date:dateVal,qty:qty,notes:notes,addedAt:new Date().toISOString()});
   document.getElementById('tire-update-modal').remove();
+  refresh();
+  openDet(vid);
+}
+
+/* ── PUNCTURE REPAIR ── */
+function openPunctureModal(vid){
+  var v=vehicles.find(function(x){return x.id===vid});if(!v)return;
+  var existing=document.getElementById('puncture-modal');if(existing)existing.remove();
+  var modal=document.createElement('div');
+  modal.id='puncture-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  var repairs=v.punctureRepairs||[];
+  var histHtml='';
+  if(repairs.length){
+    var thisYear=new Date().getFullYear();
+    var recent=repairs.slice().reverse().slice(0,5);
+    histHtml='<div style="margin-bottom:14px;border:1px solid var(--bdr);border-radius:8px;overflow:hidden">'
+      +'<div style="padding:7px 12px;font-size:11px;font-weight:600;color:var(--t3);background:var(--bg);border-bottom:1px solid var(--bdr)">היסטוריית תיקונים</div>'
+      +recent.map(function(r){return'<div style="padding:7px 12px;font-size:12px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between"><span style="color:var(--t2)">'+r.date+'</span><span style="color:var(--t1)">'+(r.notes||'—')+'</span></div>';}).join('')
+      +'</div>';
+  }
+  modal.innerHTML='<div style="background:var(--card);border-radius:12px;width:100%;max-width:380px;overflow:hidden" onclick="event.stopPropagation()">'
+    +'<div style="background:#16a34a;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">'
+    +'<div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><span style="color:#fff;font-size:15px;font-weight:500">תיקון פנצ\'ר</span></div>'
+    +'<button onclick="document.getElementById(\'puncture-modal\').remove()" style="background:rgba(255,255,255,.15);border:none;width:28px;height:28px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+    +'</div>'
+    +'<div style="padding:18px">'
+    +'<div style="font-size:12px;color:var(--t2);margin-bottom:12px">רכב: <strong>'+v.plate+'</strong> · '+(v.driver&&v.driver.name||'')+'</div>'
+    +histHtml
+    +'<div style="margin-bottom:12px"><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">תאריך תיקון *</label><input type="date" id="puncture-date" value="'+new Date().toISOString().slice(0,10)+'" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
+    +'<div style="margin-bottom:16px"><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">הערות (אופציונלי)</label><input type="text" id="puncture-notes" placeholder="איזה צמיג, מוסך..." style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
+    +'<div style="display:flex;gap:8px"><button onclick="document.getElementById(\'puncture-modal\').remove()" style="flex:1;padding:10px;background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">ביטול</button>'
+    +'<button onclick="savePunctureUpdate(\''+vid+'\')" style="flex:2;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">שמור</button></div>'
+    +'</div></div>';
+  document.body.appendChild(modal);
+}
+function savePunctureUpdate(vid){
+  var v=vehicles.find(function(x){return x.id===vid});if(!v)return;
+  var dateVal=document.getElementById('puncture-date').value;
+  if(!dateVal){alert('יש לבחור תאריך');return;}
+  var notes=document.getElementById('puncture-notes').value.trim();
+  if(!v.punctureRepairs)v.punctureRepairs=[];
+  v.punctureRepairs.push({date:dateVal,notes:notes,addedAt:new Date().toISOString()});
+  document.getElementById('puncture-modal').remove();
   refresh();
   openDet(vid);
 }
