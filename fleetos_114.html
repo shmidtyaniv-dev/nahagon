@@ -12264,18 +12264,32 @@ function openTireServiceModal(vid){
     var tireHist='',puncHist='';
     var tireChanges=v.tireChanges||[];
     if(tireChanges.length){
-      var rTire=tireChanges.slice().reverse().slice(0,4);
+      var rTire=tireChanges.slice().reverse().slice(0,5);
       tireHist='<div style="margin-bottom:12px;border:1px solid var(--bdr);border-radius:8px;overflow:hidden">'
         +'<div style="padding:6px 10px;font-size:10px;font-weight:600;color:var(--t3);background:var(--bg);border-bottom:1px solid var(--bdr)">היסטוריה</div>'
-        +rTire.map(function(r){return'<div style="padding:6px 10px;font-size:12px;display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #f0f0f0"><span style="color:var(--t2);flex-shrink:0">'+r.date+'</span><span style="color:var(--t1)">'+(r.qty||0)+' צמיגים'+(r.notes?' · '+r.notes:'')+'</span></div>';}).join('')
+        +rTire.map(function(r,i){
+          var realIdx=tireChanges.length-1-i;
+          return'<div style="padding:6px 10px;font-size:12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f0f0f0">'
+            +'<span style="color:var(--t2);flex-shrink:0">'+r.date+'</span>'
+            +'<span style="color:var(--t1);flex:1">'+(r.qty||0)+' צמיגים'+(r.notes?' · '+r.notes:'')+'</span>'
+            +'<button onclick="deleteTireEntry(\''+vid+'\','+realIdx+',\'tire\')" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:14px;padding:2px 4px;line-height:1;flex-shrink:0" title="מחק">×</button>'
+            +'</div>';
+        }).join('')
         +'</div>';
     }
     var punctureRepairs=v.punctureRepairs||[];
     if(punctureRepairs.length){
-      var rPunc=punctureRepairs.slice().reverse().slice(0,4);
+      var rPunc=punctureRepairs.slice().reverse().slice(0,5);
       puncHist='<div style="margin-bottom:12px;border:1px solid var(--bdr);border-radius:8px;overflow:hidden">'
         +'<div style="padding:6px 10px;font-size:10px;font-weight:600;color:var(--t3);background:var(--bg);border-bottom:1px solid var(--bdr)">היסטוריה</div>'
-        +rPunc.map(function(r){return'<div style="padding:6px 10px;font-size:12px;display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #f0f0f0"><span style="color:var(--t2);flex-shrink:0">'+r.date+'</span><span style="color:var(--t1)">'+(r.qty||1)+' צמיגים'+(r.notes?' · '+r.notes:'')+'</span></div>';}).join('')
+        +rPunc.map(function(r,i){
+          var realIdx=punctureRepairs.length-1-i;
+          return'<div style="padding:6px 10px;font-size:12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f0f0f0">'
+            +'<span style="color:var(--t2);flex-shrink:0">'+r.date+'</span>'
+            +'<span style="color:var(--t1);flex:1">'+(r.qty||1)+' צמיגים'+(r.notes?' · '+r.notes:'')+'</span>'
+            +'<button onclick="deleteTireEntry(\''+vid+'\','+realIdx+',\'puncture\')" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:14px;padding:2px 4px;line-height:1;flex-shrink:0" title="מחק">×</button>'
+            +'</div>';
+        }).join('')
         +'</div>';
     }
     var todayVal=new Date().toISOString().slice(0,10);
@@ -12343,6 +12357,25 @@ function saveTireServiceUpdate(vid,type){
   document.getElementById('tire-service-modal').remove();
   refresh();
   openDet(vid);
+}
+function deleteTireEntry(vid,idx,type){
+  var v=vehicles.find(function(x){return x.id==vid});if(!v)return;
+  if(type==='tire'){
+    if(!v.tireChanges||!v.tireChanges[idx])return;
+    var entry=v.tireChanges[idx];
+    v.tireChanges.splice(idx,1);
+    // remove matching historyLog entry
+    if(v.historyLog)v.historyLog=v.historyLog.filter(function(h){return!(h.kind==='tire'&&h.desc&&h.desc.includes(entry.qty+' צמיגים')&&h.createdAt===entry.addedAt);});
+  } else {
+    if(!v.punctureRepairs||!v.punctureRepairs[idx])return;
+    var entry=v.punctureRepairs[idx];
+    v.punctureRepairs.splice(idx,1);
+    if(v.historyLog)v.historyLog=v.historyLog.filter(function(h){return!(h.kind==='puncture'&&h.createdAt===entry.addedAt);});
+  }
+  if(typeof persistVehiclesDebounced==='function')persistVehiclesDebounced();
+  var curTab=type==='tire'?'tire':'puncture';
+  openTireServiceModal(vid);
+  if(window.tireServiceTab)window.tireServiceTab(curTab);
 }
 
 /* ── PUNCTURE REPAIR ── */
