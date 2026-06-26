@@ -380,6 +380,8 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 .vc-timeline-icon.driver{color:#72243E;background:#FBEAF0}
 .vc-timeline-icon.document{color:var(--blue-dark);background:var(--blue-light)}
 .vc-timeline-icon.test{color:var(--amber-dark);background:var(--amber-light)}
+.vc-timeline-icon.tire{color:#185FA5;background:#E6F1FB}
+.vc-timeline-icon.puncture{color:#16a34a;background:#dcfce7}
 .vc-timeline-content{flex:1;min-width:0;padding-top:8px}
 .vc-timeline-type{font-size:15px;font-weight:500;color:var(--t1);margin-bottom:4px;line-height:1.3}
 .vc-timeline-desc{font-size:13px;color:var(--t2);line-height:1.5}
@@ -10025,11 +10027,14 @@ function renderVehicleTimeline(vid){
 
   // 1. History log entries (services, notes, eob)
   (v.historyLog||[]).forEach(function(h){
-    var icon=h.kind==='service'?'🔧':h.kind==='test'?'📋':h.kind==='eob'?'✅':h.kind==='km'?'🚗':'📝';
-    var iconBg=h.kind==='service'?'#dbeafe':h.kind==='test'?'#fef3c7':h.kind==='eob'?'#dcfce7':h.kind==='km'?'#ecfdf5':'#e0e7ff';
-    var iconClr=h.kind==='service'?'#1e40af':h.kind==='test'?'#854d0e':h.kind==='eob'?'#166534':h.kind==='km'?'#065f46':'#3730a3';
+    var icon=h.kind==='service'?'🔧':h.kind==='test'?'📋':h.kind==='eob'?'✅':h.kind==='km'?'🚗':h.kind==='tire'?'🔄':h.kind==='puncture'?'🟢':h.kind==='edit'?'✏️':'📝';
+    var iconBg=h.kind==='service'?'#dbeafe':h.kind==='test'?'#fef3c7':h.kind==='eob'?'#dcfce7':h.kind==='km'?'#ecfdf5':h.kind==='tire'?'#E6F1FB':h.kind==='puncture'?'#dcfce7':h.kind==='edit'?'#f0f9ff':'#e0e7ff';
+    var iconClr=h.kind==='service'?'#1e40af':h.kind==='test'?'#854d0e':h.kind==='eob'?'#166534':h.kind==='km'?'#065f46':h.kind==='tire'?'#185FA5':h.kind==='puncture'?'#16a34a':h.kind==='edit'?'#0369a1':'#3730a3';
     var autoTitle=h.serviceType||'';
     if(h.kind==='km') autoTitle='עדכון ק"מ';
+    if(h.kind==='tire') autoTitle='החלפת צמיגים';
+    if(h.kind==='puncture') autoTitle='תיקון פנצ\'ר';
+    if(h.kind==='edit') autoTitle='עריכת פרטים';
     if(!autoTitle && h.desc){
       if(h.desc.includes('נהג שונה')) autoTitle='עדכון נהג';
       else if(h.desc.includes('ק"מ עודכן')) autoTitle='עדכון ק"מ';
@@ -10038,7 +10043,7 @@ function renderVehicleTimeline(vid){
       else autoTitle='עדכון פרטים';
     }
     if(!autoTitle) autoTitle=h.kind==='service'?'טיפול':h.kind==='test'?'טסט':'עדכון';
-    events.push({date:h.createdAt||h.date||'',icon:icon,bg:iconBg,clr:iconClr,title:autoTitle,desc:h.desc||'',source:h.source||'manual'});
+    events.push({date:h.createdAt||h.date||'',icon:icon,bg:iconBg,clr:iconClr,title:autoTitle,desc:h.desc||'',source:h.source||'manual',kind:h.kind||''});
   });
 
   // 2. Violations
@@ -10073,7 +10078,12 @@ function renderVehicleTimeline(vid){
 
   // 5. Tire changes
   (v.tireChanges||[]).forEach(function(tc){
-    events.push({date:tc.addedAt||tc.date||'',icon:'🔄',bg:'#E6F1FB',clr:'#185FA5',title:'החלפת צמיגים'+(tc.qty?' · '+tc.qty+' צמיגים':''),desc:tc.notes||'',source:'manual'});
+    events.push({date:tc.addedAt||tc.date||'',icon:'🔄',bg:'#E6F1FB',clr:'#185FA5',title:'החלפת צמיגים'+(tc.qty?' · '+tc.qty+' צמיגים':''),desc:tc.notes||'',source:'manual',kind:'tire'});
+  });
+
+  // 5.5 Puncture repairs
+  (v.punctureRepairs||[]).forEach(function(pr){
+    events.push({date:pr.addedAt||pr.date||'',icon:'🟢',bg:'#dcfce7',clr:'#16a34a',title:'תיקון פנצ\'ר'+(pr.qty?' · '+pr.qty+' צמיגים':''),desc:pr.notes||'',source:'manual',kind:'puncture'});
   });
 
   // 6. Document uploads
@@ -10094,6 +10104,9 @@ function renderVehicleTimeline(vid){
   // Map event kinds to timeline icon classes and SVGs
   function getTimelineIconInfo(ev){
     var title=(ev.title||'').toLowerCase();
+    var kind=ev.kind||'';
+    if(kind==='tire'||title.includes('החלפת צמיג')) return {cls:'tire',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>'};
+    if(kind==='puncture'||title.includes('פנצ')) return {cls:'puncture',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'};
     if(title.includes('סיום עסקה')) return {cls:'document',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>'};
     if(title.includes('מסירת רכב')||title.includes('מסירה')) return {cls:'delivery',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 19 9 19 22 5 22 5 9 12 2"/></svg>'};
     if(title.includes('טיפול')||title.includes('service')) return {cls:'service',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'};
@@ -12307,21 +12320,26 @@ function openTireServiceModal(vid){
 }
 function saveTireServiceUpdate(vid,type){
   var v=vehicles.find(function(x){return x.id==vid});if(!v)return;
+  if(!v.historyLog)v.historyLog=[];
+  var now=new Date().toISOString();
   if(type==='tire'){
     var dateVal=document.getElementById('tsm-tire-date').value;
     if(!dateVal){alert('יש לבחור תאריך');return;}
     var qty=parseInt(document.getElementById('tsm-tire-qty').value)||4;
     var notes=document.getElementById('tsm-tire-notes').value.trim();
     if(!v.tireChanges)v.tireChanges=[];
-    v.tireChanges.push({date:dateVal,qty:qty,notes:notes,addedAt:new Date().toISOString()});
+    v.tireChanges.push({date:dateVal,qty:qty,notes:notes,addedAt:now});
+    v.historyLog.unshift({id:'h'+Date.now(),kind:'tire',desc:'החלפת צמיגים · '+qty+' צמיגים'+(notes?' · '+notes:''),createdAt:now,source:'manual'});
   } else {
     var dateVal=document.getElementById('tsm-punc-date').value;
     if(!dateVal){alert('יש לבחור תאריך');return;}
     var qty=parseInt(document.getElementById('tsm-punc-qty').value)||1;
     var notes=document.getElementById('tsm-punc-notes').value.trim();
     if(!v.punctureRepairs)v.punctureRepairs=[];
-    v.punctureRepairs.push({date:dateVal,qty:qty,notes:notes,addedAt:new Date().toISOString()});
+    v.punctureRepairs.push({date:dateVal,qty:qty,notes:notes,addedAt:now});
+    v.historyLog.unshift({id:'h'+Date.now(),kind:'puncture',desc:'תיקון פנצ\'ר · '+qty+' צמיגים'+(notes?' · '+notes:''),createdAt:now,source:'manual'});
   }
+  if(typeof persistVehiclesDebounced==='function')persistVehiclesDebounced();
   document.getElementById('tire-service-modal').remove();
   refresh();
   openDet(vid);
@@ -12430,6 +12448,15 @@ function saveEditVehicle(){
   const svcType=parseInt(id('ev-svc-type')?.value)||0;
   if(svcType){v.serviceKm=svcType;const next=svcType+15000;v.nextServiceType=`${next.toLocaleString('he-IL')} ק"מ`;}
   const ckmVal=id('ev-ckm');if(ckmVal)v.currentKm=getRawKm('ev-ckm');
+  // Log edit to historyLog
+  if(!v.historyLog)v.historyLog=[];
+  var editNow=new Date().toISOString();
+  var editParts=[];
+  if(id('ev-plate').value.trim()&&id('ev-plate').value.trim()!==v.plate) editParts.push('לוחית: '+id('ev-plate').value.trim());
+  if(id('ev-dname').value.trim()) editParts.push('נהג: '+id('ev-dname').value.trim());
+  if(id('ev-dphone').value.trim()) editParts.push('טל\': '+id('ev-dphone').value.trim());
+  if(ckmVal&&ckmVal.value) editParts.push('ק"מ: '+ckmVal.value);
+  v.historyLog.unshift({id:'h'+Date.now(),kind:'edit',desc:'עריכת פרטים'+(editParts.length?' · '+editParts.join(' | '):''),createdAt:editNow,source:'manual'});
   closeModal('edit-ov');
   refresh();
   openDet(vid);
