@@ -11141,7 +11141,8 @@ function checkKmRequest(){
     page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:16px;color:#991b1b">שגיאה בטעינה</div></div>';
     return true;
   }
-  db.collection('kmRequests').doc(token).get().then(function(snap){
+  function _doKmLoad(){
+    db.collection('kmRequests').doc(token).get().then(function(snap){
     if(!snap.exists){
       page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">❌</div><div style="font-size:16px;font-weight:600;color:#991b1b">קישור לא תקין</div></div>';
       return;
@@ -11169,9 +11170,16 @@ function checkKmRequest(){
           '<div id="km-pub-status" style="text-align:center;margin-top:10px;font-size:13px"></div>'+
           '<div style="text-align:center;margin-top:18px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
         '</div></div>';
-  }).catch(function(){
-    page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:16px;color:#991b1b">שגיאה בטעינה</div></div>';
-  });
+    }).catch(function(){
+      page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:16px;color:#991b1b">שגיאה בטעינה</div></div>';
+    });
+  }
+  // נייד/ציבורי: כניסה אנונימית לפני גישה ל-Firestore
+  if(auth && !auth.currentUser){
+    auth.signInAnonymously().then(_doKmLoad).catch(_doKmLoad);
+  } else {
+    _doKmLoad();
+  }
   return true;
 }
 
