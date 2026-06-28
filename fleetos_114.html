@@ -4023,6 +4023,36 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             </div>
           </div>
         </div>
+        <!-- כמות דלק / חשמל -->
+        <div style="background:#fff;border-radius:10px;border:1px solid var(--bdr);padding:14px 16px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">כמות דלק / חשמל</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+            <label style="font-size:12px;color:var(--t3)">סוג אנרגיה:</label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+              <input type="radio" name="eob-energy-type" id="eob-energy-fuel" value="fuel" onchange="eobToggleEnergyType()" checked style="accent-color:var(--gl)"> דלק
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+              <input type="radio" name="eob-energy-type" id="eob-energy-electric" value="electric" onchange="eobToggleEnergyType()" style="accent-color:var(--gl)"> ⚡ חשמלי
+            </label>
+          </div>
+          <div id="eob-fuel-section">
+            <div style="font-size:11px;color:var(--t3);margin-bottom:6px">כמות דלק</div>
+            <div style="display:flex;gap:6px">
+              <button class="eob-fuel-btn" onclick="eobSetFuel(this,'ריק')" style="flex:1;padding:9px 4px;border:1.5px solid var(--bdr);border-radius:20px;font-size:13px;cursor:pointer;background:var(--card);color:var(--t2);font-family:inherit;transition:all .2s" onchange="saveEobData()">ריק</button>
+              <button class="eob-fuel-btn" onclick="eobSetFuel(this,'¼')" style="flex:1;padding:9px 4px;border:1.5px solid var(--bdr);border-radius:20px;font-size:13px;cursor:pointer;background:var(--card);color:var(--t2);font-family:inherit;transition:all .2s">1/4</button>
+              <button class="eob-fuel-btn" onclick="eobSetFuel(this,'½')" style="flex:1;padding:9px 4px;border:1.5px solid var(--bdr);border-radius:20px;font-size:13px;cursor:pointer;background:var(--card);color:var(--t2);font-family:inherit;transition:all .2s">1/2</button>
+              <button class="eob-fuel-btn" onclick="eobSetFuel(this,'¾')" style="flex:1;padding:9px 4px;border:1.5px solid var(--bdr);border-radius:20px;font-size:13px;cursor:pointer;background:var(--card);color:var(--t2);font-family:inherit;transition:all .2s">3/4</button>
+              <button class="eob-fuel-btn" onclick="eobSetFuel(this,'מלא')" style="flex:1;padding:9px 4px;border:1.5px solid var(--bdr);border-radius:20px;font-size:13px;cursor:pointer;background:var(--card);color:var(--t2);font-family:inherit;transition:all .2s">מלא</button>
+            </div>
+          </div>
+          <div id="eob-battery-section" style="display:none">
+            <div style="font-size:11px;color:var(--t3);margin-bottom:6px">אחוז סוללה</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" id="eob-battery-range" min="0" max="100" step="5" value="100" oninput="document.getElementById('eob-battery-pct').textContent=this.value+'%';saveEobData()" style="flex:1;accent-color:var(--gl)">
+              <span id="eob-battery-pct" style="font-size:15px;font-weight:700;color:var(--gd);min-width:40px;text-align:center">100%</span>
+            </div>
+          </div>
+        </div>
         <div style="background:#fff;border-radius:10px;border:1px solid var(--bdr);overflow:hidden;margin-bottom:12px">
           <div style="font-size:11px;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:.05em;padding:10px 14px;border-bottom:1px solid var(--bdr)">טבלת נזקים</div>
           <div class="eob-table-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
@@ -12171,7 +12201,7 @@ function addVehicle(){
   document.querySelectorAll('#add-ov .acc-arrow').forEach(a=>a.style.transform='');
   id('fa-isnew').checked=false;toggleNewVehicle();
   id('svc-calc-result').style.display='none';
-  refresh();go('vehicles',q('[dp=vehicles]'));
+  refresh();go('vehicles',q('[dp=vehicles]'));openDet(newVid);
 }
 
 /* ── TIRE UPDATE ── */
@@ -21747,12 +21777,35 @@ function eobInitDiagram(){
   eobRenderDmgList();
 }
 
+function eobToggleEnergyType(){
+  var isFuel = document.getElementById('eob-energy-fuel')?.checked;
+  var fuelSec = document.getElementById('eob-fuel-section');
+  var batSec  = document.getElementById('eob-battery-section');
+  if(fuelSec) fuelSec.style.display = isFuel ? '' : 'none';
+  if(batSec)  batSec.style.display  = isFuel ? 'none' : '';
+  saveEobData();
+}
+function eobSetFuel(btn, val){
+  document.querySelectorAll('.eob-fuel-btn').forEach(function(b){ b.style.background='var(--card)'; b.style.color='var(--t2)'; b.style.borderColor='var(--bdr)'; b.style.fontWeight=''; });
+  btn.style.background = 'var(--gd)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--gd)'; btn.style.fontWeight = '700';
+  btn.dataset.val = val;
+  saveEobData();
+}
+function eobGetFuelVal(){
+  var active = document.querySelector('.eob-fuel-btn[style*="var(--gd)"]');
+  return active ? (active.dataset.val || active.textContent.trim()) : '';
+}
+
 function saveEobData(){
   if(!_eobVid) return;
+  var energyType = document.getElementById('eob-energy-fuel')?.checked ? 'fuel' : 'electric';
+  var fuelVal    = energyType === 'fuel' ? eobGetFuelVal() : '';
+  var batteryVal = energyType === 'electric' ? (document.getElementById('eob-battery-range')?.value || '100') : '';
   var data = {
     km:   (document.getElementById('eob-km')?.value)   || '',
     date: (document.getElementById('eob-date')?.value) || '',
     time: (document.getElementById('eob-time')?.value) || '',
+    energyType, fuelVal, batteryVal,
     rows: []
   };
   EOB_ITEMS.forEach(function(item, idx){
@@ -21783,6 +21836,25 @@ function loadEobData(vid){
     el = document.getElementById('eob-km');   if(el && data.km)   el.value = data.km;
     el = document.getElementById('eob-date'); if(el) el.value = data.date || today;
     el = document.getElementById('eob-time'); if(el && data.time) el.value = data.time;
+    // טעינת דלק/חשמל
+    if(data.energyType === 'electric'){
+      var elecRad = document.getElementById('eob-energy-electric');
+      if(elecRad){ elecRad.checked = true; eobToggleEnergyType(); }
+      var rangeEl = document.getElementById('eob-battery-range');
+      var pctEl   = document.getElementById('eob-battery-pct');
+      if(rangeEl && data.batteryVal){ rangeEl.value = data.batteryVal; if(pctEl) pctEl.textContent = data.batteryVal + '%'; }
+    } else {
+      var fuelRad = document.getElementById('eob-energy-fuel');
+      if(fuelRad){ fuelRad.checked = true; eobToggleEnergyType(); }
+      if(data.fuelVal){
+        var fuelLabelMap = {'ריק':'ריק','¼':'1/4','½':'1/2','¾':'3/4','מלא':'מלא'};
+        document.querySelectorAll('.eob-fuel-btn').forEach(function(b){
+          if(b.dataset.val === data.fuelVal || b.textContent.trim() === data.fuelVal){
+            eobSetFuel(b, data.fuelVal);
+          }
+        });
+      }
+    }
     if(data.rows){
       data.rows.forEach(function(row, idx){
         var i = idx + 1;
@@ -21804,6 +21876,12 @@ function clearEobForm(){
   var sigNameEl = document.getElementById('eob-sig-name-rep');
   if(sigNameEl) sigNameEl.value = '';
   eobClearSig();
+  // איפוס דלק/חשמל
+  var fuelRad = document.getElementById('eob-energy-fuel');
+  if(fuelRad){ fuelRad.checked = true; eobToggleEnergyType(); }
+  document.querySelectorAll('.eob-fuel-btn').forEach(function(b){ b.style.background='var(--card)'; b.style.color='var(--t2)'; b.style.borderColor='var(--bdr)'; b.style.fontWeight=''; delete b.dataset.val; });
+  var rangeEl = document.getElementById('eob-battery-range'); if(rangeEl) rangeEl.value = 100;
+  var pctEl   = document.getElementById('eob-battery-pct');   if(pctEl)   pctEl.textContent = '100%';
   eobDamages={}; eobNoDmg=false;
   initEndOfBusinessTab(_eobVid);
   showToast('הטופס נוקה');
@@ -21869,6 +21947,13 @@ function exportEndOfBusinessPDF(saveToDoc){
   var km          = (document.getElementById('eob-km')?.value)   || '—';
   var dateVal     = (document.getElementById('eob-date')?.value) || '';
   var timeVal     = (document.getElementById('eob-time')?.value) || '';
+  var energyType  = document.getElementById('eob-energy-fuel')?.checked ? 'fuel' : 'electric';
+  var fuelDisplay = '';
+  if(energyType === 'fuel'){
+    var fv = eobGetFuelVal(); fuelDisplay = fv ? 'דלק: ' + fv : '';
+  } else {
+    var bv = document.getElementById('eob-battery-range')?.value || '100'; fuelDisplay = 'סוללה: ' + bv + '%';
+  }
   var dateDisplay = dateVal ? new Date(dateVal).toLocaleDateString('he-IL') : new Date().toLocaleDateString('he-IL');
 
   var colLogo = '';
@@ -21933,6 +22018,7 @@ function exportEndOfBusinessPDF(saveToDoc){
   html1 += '<div><span style="color:#888;font-size:10px">סוג: </span><span style="font-size:12px">' + model + '</span></div>';
   html1 += '<div><span style="color:#888;font-size:10px">שנה: </span><span style="font-size:12px">' + year + '</span></div>';
   html1 += '<div><span style="color:#888;font-size:10px">מד אוץ: </span><span style="font-size:12px">' + km + '</span></div>';
+  if(fuelDisplay) html1 += '<div><span style="color:#888;font-size:10px">' + fuelDisplay.split(':')[0] + ': </span><span style="font-size:12px;font-weight:700">' + fuelDisplay.split(':')[1] + '</span></div>';
   html1 += '</div>';
   html1 += '<div style="padding:8px 14px">';
   html1 += '<table style="border:1px solid #d4d4d0">' + theadHTML + '<tbody>' + rowsHTML1 + '</tbody></table>';
