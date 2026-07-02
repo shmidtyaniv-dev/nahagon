@@ -1,19 +1,39 @@
 // ============================================================
-//  מרכז הרכב של מור — אוטומציית עדכון ק"מ חודשית
+//  מרכז הרכב של מור — אוטומציית עדכון ק"מ חודשית (גרסה 2)
 //  קובץ זה יושב ב: api/monthly-km.js בפרויקט ה-Vercel
-//  הוא "הדלת האחורית" שהרובוט (Make) דופק בה פעם ביום.
+//  חדש בגרסה זו: הרובוט מתחבר עם "תעודת עובד" (משתמש Firebase)
+//  כדי לעבור את מנעול האבטחה של Firestore.
 // ============================================================
 
 // ------------------ הגדרות (מותר לשנות) ------------------
-const SECRET       = 'CHANGE-ME-to-a-long-random-string-12345'; // סיסמה שרק Make ידע. חובה לשנות!
+const SECRET       = 'CHANGE-ME-to-a-long-random-string-12345'; // סיסמת הדלת של הרובוט
+const ROBOT_EMAIL    = 'robot@mor-fleet.co.il';    // האימייל של משתמש הרובוט שיצרת ב-Firebase
+const ROBOT_PASSWORD = 'sd250987'; // הסיסמה של משתמש הרובוט
 const SEND_DAY     = 1;   // באיזה יום בחודש לשלוח את הבקשות
 const REMIND_DAY   = 6;   // באיזה יום בחודש לשלוח תזכורת למי שלא עדכן
-const PROJECT_ID   = 'crmsystem-3dfd8';                 // מזהה ה-Firebase שלך (מהקובץ)
-const API_KEY      = 'AIzaSyC3VMcLRen5FxO8iphsgzeov1NFQQsSuo8'; // מפתח ה-web של Firebase (מהקובץ)
-const APP_ORIGIN   = 'https://nahagon.vercel.app';      // כתובת האפליקציה
+const PROJECT_ID   = 'crmsystem-3dfd8';
+const API_KEY      = 'AIzaSyC3VMcLRen5FxO8iphsgzeov1NFQQsSuo8';
+const APP_ORIGIN   = 'https://nahagon.vercel.app';
 // -----------------------------------------------------------
 
 const FS_BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+
+// --- הרובוט מתחבר עם תעודת העובד שלו ומקבל "תג כניסה" זמני ---
+async function getIdToken() {
+  const r = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: ROBOT_EMAIL, password: ROBOT_PASSWORD, returnSecureToken: true })
+    }
+  );
+  const data = await r.json();
+  if (!data.idToken) {
+    throw new Error('התחברות משתמש הרובוט נכשלה: ' + JSON.stringify(data.error || data));
+  }
+  return data.idToken;
+}
 
 // --- ממיר ערכים מפורמט Firestore REST לג'אווהסקריפט רגיל ---
 function fsVal(v) {
@@ -54,7 +74,7 @@ async function getHolidays(year) {
   const data = await r.json();
   const set = new Set();
   for (const item of (data.items || [])) {
-    if (item.yomtov) set.add(item.date.slice(0, 10)); // רק ימי חג שבתון
+    if (item.yomtov) set.add(item.date.slice(0, 10));
   }
   return set;
 }
@@ -62,7 +82,7 @@ async function getHolidays(year) {
 // --- האם התאריך הוא יום עבודה? (לא שישי, לא שבת, לא חג) ---
 function isWorkday(dateStr, holidays) {
   const d = new Date(dateStr + 'T12:00:00');
-  const dow = d.getUTCDay(); // 5 = שישי, 6 = שבת
+  const dow = d.getUTCDay();
   if (dow === 5 || dow === 6) return false;
   if (holidays.has(dateStr)) return false;
   return true;
@@ -70,8 +90,8 @@ function isWorkday(dateStr, holidays) {
 
 // --- מוצא את יום העבודה הראשון החל מיום נתון בחודש הנוכחי ---
 function firstWorkdayFrom(dayOfMonth, holidays) {
-  const today = todayIL();                    // "2026-07-02"
-  const ym = today.slice(0, 7);               // "2026-07"
+  const today = todayIL();
+  const ym = today.slice(0, 7);
   for (let d = dayOfMonth; d <= dayOfMonth + 14; d++) {
     const candidate = `${ym}-${String(d).padStart(2, '0')}`;
     if (isWorkday(candidate, holidays)) return candidate;
@@ -84,15 +104,18 @@ function normPhone(p) {
   return String(p || '').replace(/[^0-9]/g, '').replace(/^0/, '972');
 }
 
-// --- קורא את כל הרכבים מ-Firestore ---
-async function getVehicles() {
-  const r = await fetch(`${FS_BASE}/vehicles?pageSize=300&key=${API_KEY}`);
+// --- קורא את כל הרכבים מ-Firestore (עם תג הכניסה) ---
+async function getVehicles(idToken) {
+  const r = await fetch(`${FS_BASE}/vehicles?pageSize=300&key=${API_KEY}`, {
+    headers: { Authorization: 'Bearer ' + idToken }
+  });
   const data = await r.json();
+  if (data.error) throw new Error('קריאת רכבים נכשלה: ' + JSON.stringify(data.error));
   return (data.documents || []).map(doc => fsObj(doc.fields || {}));
 }
 
 // --- יוצר מסמך kmRequest — בדיוק כמו שהאפליקציה יוצרת ---
-async function createKmRequest(token, vid, plate, driverName) {
+async function createKmRequest(idToken, token, vid, plate, driverName) {
   const body = {
     fields: {
       vid:        toFs(vid),
@@ -100,18 +123,18 @@ async function createKmRequest(token, vid, plate, driverName) {
       driverName: toFs(driverName),
       createdAt:  toFs(new Date().toISOString()),
       status:     toFs('pending'),
-      source:     toFs('auto') // סימון שזה נוצר על ידי האוטומציה
+      source:     toFs('auto')
     }
   };
   await fetch(`${FS_BASE}/kmRequests?documentId=${encodeURIComponent(token)}&key=${API_KEY}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + idToken },
     body: JSON.stringify(body)
   });
 }
 
 // --- קורא את כל בקשות הק"מ של החודש הנוכחי ---
-async function getMonthRequests() {
+async function getMonthRequests(idToken) {
   const monthStart = todayIL().slice(0, 7) + '-01';
   const query = {
     structuredQuery: {
@@ -128,7 +151,7 @@ async function getMonthRequests() {
   };
   const r = await fetch(`${FS_BASE.replace('/documents', '')}/documents:runQuery?key=${API_KEY}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + idToken },
     body: JSON.stringify(query)
   });
   const rows = await r.json();
@@ -157,6 +180,7 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'סיסמה שגויה' });
     }
 
+    const idToken = await getIdToken(); // הרובוט מציג את תעודת העובד
     const today = todayIL();
     const holidays = await getHolidays(Number(today.slice(0, 4)));
 
@@ -168,17 +192,16 @@ export default async function handler(req, res) {
           note: 'עוד לא הגיע יום השליחה החודשי (או שהוא נדחה בגלל חג/סופ"ש)' });
       }
 
-      const vehicles = await getVehicles();
+      const vehicles = await getVehicles(idToken);
       const drivers = [];
       for (const v of vehicles) {
         const name  = v.driver?.name  || '';
         const phone = normPhone(v.driver?.phone);
         const plate = v.plate || '';
-        if (!phone || !v.id) continue; // מדלגים על רכב בלי נהג/טלפון
+        if (!phone || !v.id) continue;
 
-        // טוקן — בדיוק באותו פורמט של האפליקציה שלך
         const token = 'KM-' + v.id + '-' + Date.now().toString(36).slice(-5);
-        if (!dry) await createKmRequest(token, v.id, plate, name);
+        if (!dry) await createKmRequest(idToken, token, v.id, plate, name);
 
         drivers.push({ name, plate, phone, link: APP_ORIGIN + '/?km=' + token });
       }
@@ -193,13 +216,12 @@ export default async function handler(req, res) {
           note: 'עוד לא הגיע יום התזכורת החודשי' });
       }
 
-      const requests = await getMonthRequests();
+      const requests = await getMonthRequests(idToken);
       const auto = requests.filter(r => r.source === 'auto');
       const done    = auto.filter(r => r.status === 'done');
       const pending = auto.filter(r => r.status === 'pending');
 
-      // משלימים טלפון מכרטיס הרכב (הבקשה לא שומרת טלפון)
-      const vehicles = await getVehicles();
+      const vehicles = await getVehicles(idToken);
       const phoneByVid = {};
       for (const v of vehicles) phoneByVid[v.id] = normPhone(v.driver?.phone);
 
@@ -207,7 +229,7 @@ export default async function handler(req, res) {
         name:  r.driverName || '',
         plate: r.plate || '',
         phone: phoneByVid[r.vid] || '',
-        link:  APP_ORIGIN + '/?km=' + r._token   // אותו קישור מקורי — עדיין תקף
+        link:  APP_ORIGIN + '/?km=' + r._token
       })).filter(d => d.phone);
 
       return res.json({
