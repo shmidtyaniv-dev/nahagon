@@ -197,13 +197,14 @@ export default async function handler(req, res) {
       for (const v of vehicles) {
         const name  = v.driver?.name  || '';
         const phone = normPhone(v.driver?.phone);
+        const finalPhone = req.query.test_phone ? String(req.query.test_phone) : phone;
         const plate = v.plate || '';
         if (!phone || !v.id) continue;
 
         const token = 'KM-' + v.id + '-' + Date.now().toString(36).slice(-5);
         if (!dry) await createKmRequest(idToken, token, v.id, plate, name);
 
-        drivers.push({ name, plate, phone, link: APP_ORIGIN + '/?km=' + token });
+        drivers.push({ name, plate, phone: finalPhone, link: APP_ORIGIN + '/?km=' + token });
       }
       return res.json({ send: true, mode: 'send', date: today, count: drivers.length, drivers });
     }
