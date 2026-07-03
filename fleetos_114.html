@@ -9900,6 +9900,8 @@ function globalSearch(query){
     return null;
   })();
   if(_kmRange && _kmRange.min < _kmRange.max){
+    console.log('[KM DEBUG] range:', _kmRange, '| vehicles count:', (vehicles||[]).length);
+    (vehicles||[]).slice(0,5).forEach(function(v){ console.log('[KM DEBUG] vehicle:', v.plate, '| currentKm:', v.currentKm, '| type:', typeof v.currentKm, '| curKm:', v.curKm); });
     kmRangeMatches = (vehicles||[]).filter(function(v){
       // parse robustly — currentKm יכול להיות מספר, מחרוזת, או עם פסיקים
       var raw = v.currentKm || v.curKm;
