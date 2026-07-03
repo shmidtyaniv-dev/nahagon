@@ -440,6 +440,8 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .topbar > div[style*="gap:10px"] { flex:1!important;min-width:0!important;overflow:hidden!important;justify-content:center!important }
   /* כפתור תפריט - גדול יותר */
   .mobile-menu-btn{width:44px!important;height:44px!important;border-radius:10px}
+  /* הסתר כפתור טווח ק"מ בטופבר מובייל (יש שורת חיפוש נפרדת) */
+  #km-filter-wrap{display:none!important}
   .mobile-menu-btn svg{width:24px!important;height:24px!important}
   /* "הוסף רכב" - רק אייקון + */
   .topbar > button[onclick*="openAdd"] { font-size:0!important;gap:0!important;padding:0!important;width:36px!important;height:36px!important;justify-content:center }
@@ -617,6 +619,17 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .field-section{background:var(--card);border-radius:12px;padding:14px;margin-bottom:14px;border:1px solid var(--bdr)}
 .field-section-title{font-size:12px;font-weight:700;color:var(--gl);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+
+/* KM RANGE FILTER */
+.km-filter-btn{height:36px;padding:0 13px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:all .15s}
+.km-filter-btn.active{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.km-filter-panel{position:absolute;top:calc(100% + 8px);left:0;width:300px;background:var(--card);border:1px solid var(--bdr);border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.18);padding:18px;z-index:501;direction:rtl;display:none}
+.km-dual-wrap{position:relative;height:36px;margin:12px 0 4px}
+.km-dual-wrap input[type=range]{position:absolute;width:100%;height:4px;top:50%;transform:translateY(-50%);background:transparent;-webkit-appearance:none;appearance:none;pointer-events:none;outline:none}
+.km-dual-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;background:var(--gd);cursor:pointer;pointer-events:auto;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.km-dual-wrap input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--gd);cursor:pointer;pointer-events:auto;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.km-track{position:absolute;height:4px;border-radius:2px;background:var(--bdr2);width:100%;top:50%;transform:translateY(-50%)}
+.km-fill{position:absolute;height:4px;border-radius:2px;background:var(--gd);top:50%;transform:translateY(-50%)}
 
 /* FUEL SELECTOR */
 .fuel-btns{display:flex;gap:6px;flex-wrap:wrap}
@@ -2316,10 +2329,51 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <span id="topbar-greet-sub" style="display:none" onclick="showAttentionDetails()"></span>
     <!-- Search -->
     <span style="flex:1"></span>
-    <div style="position:relative;width:350px;flex-shrink:0">
-      <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="חיפוש: רכב, נהג, יצרן, ק״מ 10000-18000..." id="srch-inp" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
-      <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <!-- שורת חיפוש -->
+      <div style="position:relative;width:320px">
+        <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="חיפוש: רכב, נהג, יצרן..." id="srch-inp" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
+        <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
+      </div>
+      <!-- כפתור פילטר ק"מ -->
+      <div style="position:relative;flex-shrink:0" id="km-filter-wrap">
+        <button class="km-filter-btn" id="km-filter-btn" onclick="toggleKmFilterPanel()" title="חיפוש לפי טווח ק&quot;מ">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          טווח ק"מ
+        </button>
+        <div class="km-filter-panel" id="km-filter-panel">
+          <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px">חיפוש לפי ק"מ נוכחי</div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:14px">גרור את הנקודות לבחירת טווח</div>
+          <!-- תצוגת מינ/מקס -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2px">
+            <div style="text-align:right">
+              <div style="font-size:10px;color:var(--t3);margin-bottom:2px">מ-</div>
+              <div id="km-min-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">0</div>
+            </div>
+            <div style="font-size:12px;color:var(--t3);padding-bottom:4px">—</div>
+            <div style="text-align:left">
+              <div style="font-size:10px;color:var(--t3);margin-bottom:2px">עד</div>
+              <div id="km-max-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">200,000</div>
+            </div>
+          </div>
+          <!-- סליידר כפול -->
+          <div class="km-dual-wrap">
+            <div class="km-track"></div>
+            <div class="km-fill" id="km-fill"></div>
+            <input type="range" id="km-min-slider" min="0" max="200000" step="1000" value="0" oninput="kmRangeUpdate('min')">
+            <input type="range" id="km-max-slider" min="0" max="200000" step="1000" value="200000" oninput="kmRangeUpdate('max')">
+          </div>
+          <!-- סימוני ציר -->
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:14px;direction:ltr">
+            <span>0</span><span>50,000</span><span>100,000</span><span>150,000</span><span>200,000</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button onclick="kmRangeReset()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
+            <button onclick="kmRangeApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">חפש</button>
+          </div>
+        </div>
+      </div>
     </div>
     <span style="flex:1"></span>
     <!-- System name -->
@@ -10010,6 +10064,69 @@ function closeGlobalSearch(){
   const el = document.getElementById('global-search-results');
   if(el) el.style.display='none';
 }
+
+/* ── KM RANGE FILTER ── */
+function toggleKmFilterPanel(){
+  var panel = document.getElementById('km-filter-panel');
+  var btn   = document.getElementById('km-filter-btn');
+  var open  = panel.style.display === 'block';
+  panel.style.display = open ? 'none' : 'block';
+  btn.classList.toggle('active', !open);
+  if(!open) kmRangeUpdate('max'); // ערוך מיד את הפיל
+}
+function kmRangeUpdate(changed){
+  var minEl = document.getElementById('km-min-slider');
+  var maxEl = document.getElementById('km-max-slider');
+  var min = parseInt(minEl.value);
+  var max = parseInt(maxEl.value);
+  // מניעת חפיפה — מרווח מינימום 1,000
+  if(changed === 'min' && min >= max){ min = max - 1000; minEl.value = min; }
+  if(changed === 'max' && max <= min){ max = min + 1000; maxEl.value = max; }
+  // תוויות עם פסיק
+  document.getElementById('km-min-lbl').textContent = min.toLocaleString('he-IL');
+  document.getElementById('km-max-lbl').textContent = max.toLocaleString('he-IL');
+  // פיל בין שני הידיות
+  var pctMin = (min / 200000) * 100;
+  var pctMax = (max / 200000) * 100;
+  var fill = document.getElementById('km-fill');
+  if(fill){ fill.style.left = pctMin + '%'; fill.style.width = (pctMax - pctMin) + '%'; }
+  // z-index: הידית הקרובה לקצה שמאל תהיה מעל
+  minEl.style.zIndex = min > 150000 ? 5 : 3;
+  maxEl.style.zIndex = min > 150000 ? 3 : 5;
+}
+function kmRangeApply(){
+  var min = parseInt(document.getElementById('km-min-slider').value);
+  var max = parseInt(document.getElementById('km-max-slider').value);
+  var q   = min + '-' + max;
+  var inp = document.getElementById('srch-inp');
+  if(inp){ inp.value = q; }
+  globalSearch(q);
+  // סגור פאנל
+  document.getElementById('km-filter-panel').style.display = 'none';
+  document.getElementById('km-filter-btn').classList.add('active');
+}
+function kmRangeReset(){
+  document.getElementById('km-min-slider').value = 0;
+  document.getElementById('km-max-slider').value = 200000;
+  kmRangeUpdate('max');
+  var inp = document.getElementById('srch-inp');
+  if(inp) inp.value = '';
+  closeGlobalSearch();
+  document.getElementById('km-filter-panel').style.display = 'none';
+  document.getElementById('km-filter-btn').classList.remove('active');
+  filterV('');
+}
+// סגירה בלחיצה מחוץ לפאנל
+document.addEventListener('click', function(e){
+  var wrap = document.getElementById('km-filter-wrap');
+  var panel = document.getElementById('km-filter-panel');
+  if(panel && panel.style.display==='block' && wrap && !wrap.contains(e.target)){
+    panel.style.display = 'none';
+    // הסר active רק אם אין חיפוש פעיל
+    var inp = document.getElementById('srch-inp');
+    if(!inp || !inp.value) document.getElementById('km-filter-btn')?.classList.remove('active');
+  }
+});
 function switchTab(f,el){vFilter=f;document.querySelectorAll('#page-vehicles .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderV()}
 
 /* ── VEHICLE CARD PAGE ── */
