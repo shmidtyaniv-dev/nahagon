@@ -9814,8 +9814,9 @@ function globalSearch(query){
   const q = (query||'').trim().toLowerCase();
   const resEl = document.getElementById('global-search-results');
   if(!resEl) return;
-  // Also apply as vehicle filter
-  filterV(query||'');
+  // Also apply as vehicle filter — אל תסנן לפי טקסט אם זה חיפוש טווח ק"מ
+  var _isKmRangeQuery = /^\d[\d,]*\s*(?:-|עד)\s*\d[\d,]*$/.test((query||'').trim());
+  if(!_isKmRangeQuery) filterV(query||'');
   if(!q || q.length<1){ resEl.style.display='none'; return; }
 
   // Search vehicles (by plate, driver, make, model, code)
@@ -9891,7 +9892,6 @@ function globalSearch(query){
   });
 
   // ── חיפוש לפי טווח ק"מ ──
-  // פורמטים נתמכים: "10000-18000" / "10,000-18,000" / "10000 עד 18000" / "10000 - 18000"
   var kmRangeMatches = [];
   var _kmRange = (function(){
     var clean = q.replace(/,/g,'').replace(/\s+/g,' ').trim();
@@ -9901,16 +9901,22 @@ function globalSearch(query){
   })();
   if(_kmRange && _kmRange.min < _kmRange.max){
     kmRangeMatches = (vehicles||[]).filter(function(v){
-      var km = v.currentKm || v.curKm || 0;
+      // parse robustly — currentKm יכול להיות מספר, מחרוזת, או עם פסיקים
+      var raw = v.currentKm || v.curKm;
+      var km = raw ? parseInt(String(raw).replace(/[^0-9]/g,'')) || 0 : 0;
       return km >= _kmRange.min && km <= _kmRange.max;
-    }).sort(function(a,b){ return (b.currentKm||0)-(a.currentKm||0); });
+    }).sort(function(a,b){
+      var aKm = parseInt(String(a.currentKm||a.curKm||0).replace(/[^0-9]/g,''))||0;
+      var bKm = parseInt(String(b.currentKm||b.curKm||0).replace(/[^0-9]/g,''))||0;
+      return bKm - aKm;
+    });
   }
 
-  // ── Service type search ──
+  // ── Service type search — skip if km range query ──
   const svcGroups = {}; // { "15,000 ק\"מ": [v, ...], ... }
   (vehicles||[]).forEach(function(v){
     if(!v.nextServiceType) return;
-    if(_matchSvcQuery(v, q)){
+    if(!_kmRange && _matchSvcQuery(v, q)){
       const key = v.nextServiceType;
       if(!svcGroups[key]) svcGroups[key] = [];
       svcGroups[key].push(v);
