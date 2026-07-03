@@ -8969,7 +8969,7 @@ function getTimelineItems(rangeDays){
 }
 
 /* ── TABLES ── */
-let vFilter='all',vSearch='';
+let vFilter='all',vSearch='',_vKmRange=null;
 function docsIcon(vid){
   const v=vehicles.find(x=>x.id===vid);
   if(v && (v.status==='waiting_vehicle' || (v.driver&&v.driver.name&&v.driver.name.includes('ממתין')))){
@@ -9097,6 +9097,11 @@ function fil(){
            (v.model||'').toLowerCase().includes(q)||
            (v.code||'').toLowerCase().includes(q)||
            _matchSvcQuery(v,q);
+  });
+  if(_vKmRange) r=r.filter(function(v){
+    var raw=v.currentKm||v.curKm;
+    var km=raw?parseInt(String(raw).replace(/[^0-9]/g,''))||0:0;
+    return km>=_vKmRange.min && km<=_vKmRange.max;
   });
   var statusOrder={danger:0,warn:1,success:2};
   r.sort(function(a,b){var aS=getVehicleStatus(a).cls;var bS=getVehicleStatus(b).cls;return(statusOrder[aS]||2)-(statusOrder[bS]||2);});
@@ -9816,8 +9821,11 @@ function globalSearch(query){
   if(!resEl) return;
   // Also apply as vehicle filter — אל תסנן לפי טקסט אם זה חיפוש טווח ק"מ
   var _isKmRangeQuery = /^\d[\d,]*\s*(?:-|עד)\s*\d[\d,]*$/.test((query||'').trim());
-  console.log('[KM DEBUG] query:', JSON.stringify(query), '| q:', JSON.stringify(q), '| isKmRange:', _isKmRangeQuery);
-  if(!_isKmRangeQuery) filterV(query||'');
+  if(!_isKmRangeQuery){
+    // אם יצאנו מחיפוש טווח ק"מ — אפס את פילטר הק"מ
+    if(_vKmRange){ _vKmRange=null; if(typeof renderV==='function') renderV(); }
+    filterV(query||'');
+  }
   if(!q || q.length<1){ resEl.style.display='none'; return; }
 
   // Search vehicles (by plate, driver, make, model, code)
@@ -9901,8 +9909,10 @@ function globalSearch(query){
     return null;
   })();
   if(_kmRange && _kmRange.min < _kmRange.max){
-    console.log('[KM DEBUG] range:', _kmRange, '| vehicles count:', (vehicles||[]).length);
-    (vehicles||[]).slice(0,5).forEach(function(v){ console.log('[KM DEBUG] vehicle:', v.plate, '| currentKm:', v.currentKm, '| type:', typeof v.currentKm, '| curKm:', v.curKm); });
+    // סנן את רשימת הרכבים הראשית ועבור לדף הרכבים
+    _vKmRange = _kmRange;
+    if(typeof renderV==='function') renderV();
+    if(typeof go==='function') go('vehicles', document.querySelector('[dp=vehicles]'));
     kmRangeMatches = (vehicles||[]).filter(function(v){
       // parse robustly — currentKm יכול להיות מספר, מחרוזת, או עם פסיקים
       var raw = v.currentKm || v.curKm;
@@ -10123,7 +10133,9 @@ function kmRangeReset(){
   closeGlobalSearch();
   document.getElementById('km-filter-panel').style.display = 'none';
   document.getElementById('km-filter-btn').classList.remove('active');
+  _vKmRange = null;
   filterV('');
+  if(typeof renderV==='function') renderV();
 }
 // סגירה בלחיצה מחוץ לפאנל
 document.addEventListener('click', function(e){
