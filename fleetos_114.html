@@ -9816,6 +9816,7 @@ function globalSearch(query){
   if(!resEl) return;
   // Also apply as vehicle filter — אל תסנן לפי טקסט אם זה חיפוש טווח ק"מ
   var _isKmRangeQuery = /^\d[\d,]*\s*(?:-|עד)\s*\d[\d,]*$/.test((query||'').trim());
+  console.log('[KM DEBUG] query:', JSON.stringify(query), '| q:', JSON.stringify(q), '| isKmRange:', _isKmRangeQuery);
   if(!_isKmRangeQuery) filterV(query||'');
   if(!q || q.length<1){ resEl.style.display='none'; return; }
 
