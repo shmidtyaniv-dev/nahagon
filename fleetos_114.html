@@ -20252,6 +20252,33 @@ function subscribeToTreatments() {
 // ============================================================
 var _scanInProgress = false;
 
+// סגירה אוטומטית של טיפול פתוח כשהרכב כבר טופל (הטיפול הבא רחוק)
+async function autoCloseServicedTreatments(vehicle, lastSvcDate) {
+  try {
+    var snap = await db.collection('treatments')
+      .where('vehicleId', '==', String(vehicle.id))
+      .where('kind', '==', 'treatment')
+      .get();
+    var lastSvc = new Date(lastSvcDate);
+    snap.forEach(async function(doc) {
+      var d = doc.data();
+      if (d.status === 'closed') return;
+      // אם תאריך הטיפול האחרון חדש יותר מתאריך יצירת הרשומה — הרכב טופל אחרי שנשלחה הבקשה
+      var createdAt = d.lastEmailSentAt ? new Date(d.lastEmailSentAt) : null;
+      if (!createdAt || lastSvc >= createdAt) {
+        await db.collection('treatments').doc(doc.id).update({
+          status: 'closed',
+          closedReason: 'auto_serviced',
+          closedAt: new Date().toISOString()
+        });
+        console.log('[Treatments] סגירה אוטומטית — טיפול בוצע:', doc.id);
+      }
+    });
+  } catch (err) {
+    console.error('[Treatments] שגיאה בסגירה אוטומטית:', err);
+  }
+}
+
 async function performLocalScan() {
   if (_scanInProgress) return;
   _scanInProgress = true;
@@ -20282,6 +20309,9 @@ async function performLocalScan() {
         var daysUntilTreatment = daysBetween(today, nextTreatmentDate);
         if (daysUntilTreatment <= range) {
           await createTreatmentIfNotExists(vehicle, 'treatment', nextTreatmentDate);
+        } else {
+          // הטיפול הבא רחוק — סגור כל טיפול פתוח ישן (הרכב כבר טופל)
+          await autoCloseServicedTreatments(vehicle, lastSvcDate);
         }
       }
 
