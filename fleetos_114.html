@@ -428,6 +428,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   /* === Topbar מובייל - הסתרת אלמנטים שלא נחוצים === */
   /* הסתר את שורת החיפוש הדסקטופית (global-search-results הוזז ל-body ב-JS) */
   .topbar > div[style*="width:350px"] { display:none!important }
+  #topbar-search-wrap { display:none!important }
   /* הסתר את שם המערכת */
   #topbar-system-name { display:none!important }
   /* הסתר את ה-spacers (span flex:1) */
@@ -2329,7 +2330,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <span id="topbar-greet-sub" style="display:none" onclick="showAttentionDetails()"></span>
     <!-- Search -->
     <span style="flex:1"></span>
-    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+    <div id="topbar-search-wrap" style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <!-- שורת חיפוש -->
       <div style="position:relative;width:320px">
         <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
