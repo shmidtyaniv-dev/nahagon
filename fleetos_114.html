@@ -2318,7 +2318,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     <span style="flex:1"></span>
     <div style="position:relative;width:350px;flex-shrink:0">
       <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="חיפוש: רכב, נהג, יצרן, טיפול 15, טיפול 30..." id="srch-inp" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
+      <input type="text" placeholder="חיפוש: רכב, נהג, יצרן, ק״מ 10000-18000..." id="srch-inp" oninput="globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
       <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
     </div>
     <span style="flex:1"></span>
@@ -2347,7 +2347,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   <!-- שורת חיפוש מובייל - מוצגת רק מתחת ל-768px -->
   <div class="mobile-search-bar" id="mobile-search-bar">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="mobile-srch-inp" placeholder="חיפוש: רכב, נהג, יצרן, טיפול 15, טיפול 30..." oninput="document.getElementById('srch-inp').value=this.value;globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off">
+    <input type="text" id="mobile-srch-inp" placeholder="חיפוש: רכב, נהג, יצרן, ק״מ 10000-18000..." oninput="document.getElementById('srch-inp').value=this.value;globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off">
   </div>
 
   <div class="content">
@@ -9836,6 +9836,22 @@ function globalSearch(query){
            (veh?.driver?.name||'').toLowerCase().includes(q);
   });
 
+  // ── חיפוש לפי טווח ק"מ ──
+  // פורמטים נתמכים: "10000-18000" / "10,000-18,000" / "10000 עד 18000" / "10000 - 18000"
+  var kmRangeMatches = [];
+  var _kmRange = (function(){
+    var clean = q.replace(/,/g,'').replace(/\s+/g,' ').trim();
+    var m = clean.match(/^(\d+)\s*(?:-|עד)\s*(\d+)$/);
+    if(m){ return {min:parseInt(m[1]), max:parseInt(m[2])}; }
+    return null;
+  })();
+  if(_kmRange && _kmRange.min < _kmRange.max){
+    kmRangeMatches = (vehicles||[]).filter(function(v){
+      var km = v.currentKm || v.curKm || 0;
+      return km >= _kmRange.min && km <= _kmRange.max;
+    }).sort(function(a,b){ return (b.currentKm||0)-(a.currentKm||0); });
+  }
+
   // ── Service type search ──
   const svcGroups = {}; // { "15,000 ק\"מ": [v, ...], ... }
   (vehicles||[]).forEach(function(v){
@@ -9849,6 +9865,35 @@ function globalSearch(query){
   const svcKeys = Object.keys(svcGroups).sort(function(a,b){ return _svcKmFromStr(a)-_svcKmFromStr(b); });
 
   let html='';
+
+  // ── קטגוריית טווח ק"מ ──
+  if(kmRangeMatches.length || _kmRange){
+    var _rLabel = _kmRange ? _kmRange.min.toLocaleString('he-IL')+' — '+_kmRange.max.toLocaleString('he-IL')+' ק"מ' : '';
+    html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:#2563eb;border-bottom:1px solid var(--bdr);background:#eff6ff">📍 חיפוש לפי טווח ק"מ: '+_rLabel+'</div>';
+    if(!kmRangeMatches.length){
+      html += '<div style="padding:16px 14px;font-size:13px;color:var(--t3);text-align:center">אין רכבים בטווח זה</div>';
+    } else {
+      html += '<div style="padding:8px 14px 4px;font-size:11px;color:var(--t3)">'+kmRangeMatches.length+' רכבים נמצאו</div>';
+      kmRangeMatches.slice(0,15).forEach(function(v){
+        var km = (v.currentKm||v.curKm||0).toLocaleString('he-IL');
+        var nextSvc = v.nextServiceType || '—';
+        html += '<div onclick="openDet('+v.id+');closeGlobalSearch()" style="padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
+          '<div style="width:36px;height:36px;border-radius:8px;background:#dbeafe;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">🚗</div>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:13px;font-weight:600;color:var(--t1)">'+v.plate+' · '+(v.driver?.name||'')+'</div>'+
+            '<div style="font-size:11px;color:var(--t3)">'+v.make+' '+v.model+' · טיפול הבא: '+nextSvc+'</div>'+
+          '</div>'+
+          '<div style="text-align:left;flex-shrink:0">'+
+            '<div style="font-size:13px;font-weight:700;color:#1d4ed8">'+km+'</div>'+
+            '<div style="font-size:10px;color:var(--t3)">ק"מ נוכחי</div>'+
+          '</div>'+
+        '</div>';
+      });
+      if(kmRangeMatches.length > 15){
+        html += '<div style="padding:6px 14px 8px;font-size:11px;color:var(--t3)">ועוד '+(kmRangeMatches.length-15)+' רכבים נוספים</div>';
+      }
+    }
+  }
 
   // ── קטגוריית טיפולים ──
   if(svcKeys.length){
@@ -9952,7 +9997,7 @@ function globalSearch(query){
     });
   }
 
-  const totalCount = svcKeys.length + mfrKeys.length + vehicleMatches.length + driverMatches.length + violMatches.length + accMatches.length + reminderMatches.length + eventMatches.length;
+  const totalCount = (_kmRange?1:0) + svcKeys.length + mfrKeys.length + vehicleMatches.length + driverMatches.length + violMatches.length + accMatches.length + reminderMatches.length + eventMatches.length;
   if(!totalCount){
     html = '<div style="padding:28px 16px;text-align:center;color:var(--t3);font-size:13px"><div style="font-size:32px;margin-bottom:6px">🔍</div>לא נמצאו תוצאות עבור "'+query+'"</div>';
   }
