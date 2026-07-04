@@ -10112,6 +10112,7 @@ function globalSearch(query){
   }
 
   resEl.innerHTML = html;
+  if(typeof window._positionSearchResults === 'function') window._positionSearchResults();
   resEl.style.display = 'block';
 }
 
@@ -21805,12 +21806,27 @@ function shouldShowAccidentReminder(acc) {
 // 23. אתחול בעת טעינה
 // ============================================================
 
-// הזז את global-search-results ל-body כדי שלא יוסתר כשה-parent מוסתר במובייל
+// הזז את global-search-results ל-body ועדכן מיקום fixed ליד שורת החיפוש
 (function(){
   var resultsEl = document.getElementById('global-search-results');
   if (resultsEl && resultsEl.parentNode !== document.body) {
     document.body.appendChild(resultsEl);
   }
+  // מיקום fixed על desktop: מתחת לשורת החיפוש
+  function positionSearchResults(){
+    if(window.innerWidth <= 768) return; // מובייל מטופל ב-CSS
+    var inp = document.getElementById('srch-inp');
+    if(!inp || !resultsEl) return;
+    var rect = inp.getBoundingClientRect();
+    resultsEl.style.position = 'fixed';
+    resultsEl.style.top = (rect.bottom + 6) + 'px';
+    resultsEl.style.right = (window.innerWidth - rect.right) + 'px';
+    resultsEl.style.left = 'auto';
+    resultsEl.style.width = '440px';
+  }
+  window._positionSearchResults = positionSearchResults;
+  window.addEventListener('resize', positionSearchResults);
+  positionSearchResults();
 })();
 
 if (document.readyState === 'loading') {
