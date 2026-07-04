@@ -10111,10 +10111,18 @@ function globalSearch(query){
     html = '<div style="padding:28px 16px;text-align:center;color:var(--t3);font-size:13px"><div style="font-size:32px;margin-bottom:6px">🔍</div>לא נמצאו תוצאות עבור "'+query+'"</div>';
   }
 
-  // שורת כותרת: גרירה + סגירה
+  // חישוב סך התוצאות לתצוגה בכותרת
+  var _displayCount = _kmRange ? kmRangeMatches.length :
+    vehicleMatches.length + driverMatches.length + violMatches.length +
+    accMatches.length + reminderMatches.length + eventMatches.length +
+    svcKeys.reduce(function(s,k){return s+svcGroups[k].length;},0) +
+    Object.keys(mfrGroups).reduce(function(s,k){return s+mfrGroups[k].length;},0);
+
+  // שורת כותרת: גרירה + מונה + סגירה
   var closeBar = '<div id="search-drag-bar" style="position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;background:var(--card);padding:7px 10px 5px;border-radius:10px 10px 0 0;cursor:grab;border-bottom:1px solid var(--bdr);user-select:none">' +
-    '<span style="font-size:11px;color:var(--t3);pointer-events:none">⠿ גרור להזזה</span>' +
     '<button onmousedown="event.stopPropagation();event.preventDefault();closeGlobalSearch()" style="background:none;border:none;cursor:pointer;color:#888;font-size:18px;line-height:1;padding:2px 6px;border-radius:6px" onmouseover="this.style.background=\'#f0f0f0\'" onmouseout="this.style.background=\'none\'">✕</button>' +
+    (_displayCount ? '<span style="font-size:12px;font-weight:600;color:var(--t1);pointer-events:none">' + _displayCount + ' תוצאות</span>' : '<span></span>') +
+    '<span style="font-size:11px;color:var(--t3);pointer-events:none">גרור ⠿</span>' +
     '</div>';
   resEl.innerHTML = closeBar + html;
   if(typeof window._positionSearchResults === 'function') window._positionSearchResults();
