@@ -10111,9 +10111,10 @@ function globalSearch(query){
     html = '<div style="padding:28px 16px;text-align:center;color:var(--t3);font-size:13px"><div style="font-size:32px;margin-bottom:6px">🔍</div>לא נמצאו תוצאות עבור "'+query+'"</div>';
   }
 
-  // כפתור סגירה — שורת כותרת דביקה בראש הפאנל
-  var closeBar = '<div style="position:sticky;top:0;z-index:10;display:flex;justify-content:flex-end;background:var(--card);padding:6px 8px 0;border-radius:10px 10px 0 0">' +
-    '<button onmousedown="event.preventDefault();closeGlobalSearch()" style="background:none;border:none;cursor:pointer;color:#888;font-size:20px;line-height:1;padding:2px 6px;border-radius:6px;transition:background .1s" onmouseover="this.style.background=\'#f0f0f0\'" onmouseout="this.style.background=\'none\'">✕</button>' +
+  // שורת כותרת: גרירה + סגירה
+  var closeBar = '<div id="search-drag-bar" style="position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;background:var(--card);padding:7px 10px 5px;border-radius:10px 10px 0 0;cursor:grab;border-bottom:1px solid var(--bdr);user-select:none">' +
+    '<span style="font-size:11px;color:var(--t3);pointer-events:none">⠿ גרור להזזה</span>' +
+    '<button onmousedown="event.stopPropagation();event.preventDefault();closeGlobalSearch()" style="background:none;border:none;cursor:pointer;color:#888;font-size:18px;line-height:1;padding:2px 6px;border-radius:6px" onmouseover="this.style.background=\'#f0f0f0\'" onmouseout="this.style.background=\'none\'">✕</button>' +
     '</div>';
   resEl.innerHTML = closeBar + html;
   if(typeof window._positionSearchResults === 'function') window._positionSearchResults();
@@ -21816,31 +21817,83 @@ function shouldShowAccidentReminder(acc) {
   if (resultsEl && resultsEl.parentNode !== document.body) {
     document.body.appendChild(resultsEl);
   }
-  // מיקום fixed על desktop: מתחת לשורת החיפוש (ואם פאנל ק"מ פתוח — מתחתיו)
-  function positionSearchResults(){
-    if(window.innerWidth <= 768) return; // מובייל מטופל ב-CSS
+  // הגדרת פאנל גרירה
+  resultsEl.style.position = 'fixed';
+  resultsEl.style.width = '460px';
+  resultsEl.style.cursor = 'default';
+
+  // מיקום ברירת מחדל: מתחת לשורת החיפוש
+  function defaultPosition(){
+    if(window.innerWidth <= 768) return;
     var inp = document.getElementById('srch-inp');
-    if(!inp || !resultsEl) return;
-    var inpRect = inp.getBoundingClientRect();
-    // בדוק אם פאנל טווח ק"מ פתוח — אם כן, השתמש בתחתיתו
+    if(!inp) return;
+    var rect = inp.getBoundingClientRect();
     var kmPanel = document.getElementById('km-filter-panel');
-    var topY = inpRect.bottom + 6;
+    var topY = rect.bottom + 8;
     if(kmPanel && kmPanel.style.display === 'block'){
-      var kmRect = kmPanel.getBoundingClientRect();
-      topY = kmRect.bottom + 6;
+      topY = kmPanel.getBoundingClientRect().bottom + 8;
     }
-    // יישר לימין עם כפתור ה-km או עם שורת החיפוש
     var kmWrap = document.getElementById('km-filter-wrap');
-    var rightEdge = kmWrap ? kmWrap.getBoundingClientRect().right : inpRect.right;
-    resultsEl.style.position = 'fixed';
-    resultsEl.style.top = topY + 'px';
-    resultsEl.style.right = (window.innerWidth - rightEdge) + 'px';
-    resultsEl.style.left = 'auto';
-    resultsEl.style.width = '460px';
+    var rightEdge = kmWrap ? kmWrap.getBoundingClientRect().right : rect.right;
+    return { top: topY, left: window.innerWidth - rightEdge - 460 };
   }
-  window._positionSearchResults = positionSearchResults;
-  window.addEventListener('resize', positionSearchResults);
-  positionSearchResults();
+
+  // טען מיקום שמור
+  function loadPos(){
+    try {
+      var s = localStorage.getItem('search_panel_pos');
+      if(s) return JSON.parse(s);
+    } catch(e){}
+    return null;
+  }
+  function savePos(left, top){
+    try { localStorage.setItem('search_panel_pos', JSON.stringify({left:left, top:top})); } catch(e){}
+  }
+  function applyPos(left, top){
+    // ודא שלא יוצא מגבולות המסך
+    left = Math.max(0, Math.min(left, window.innerWidth - 460));
+    top  = Math.max(0, Math.min(top,  window.innerHeight - 100));
+    resultsEl.style.left = left + 'px';
+    resultsEl.style.top  = top  + 'px';
+    resultsEl.style.right = 'auto';
+  }
+
+  // מיקום בפתיחה: שמור או ברירת מחדל
+  window._positionSearchResults = function(){
+    if(window.innerWidth <= 768) return;
+    var saved = loadPos();
+    if(saved){ applyPos(saved.left, saved.top); return; }
+    var def = defaultPosition();
+    if(def) applyPos(def.left, def.top);
+  };
+
+  // גרירה — מבוצעת על כותרת הפאנל (closeBar)
+  var _drag = null;
+  document.addEventListener('mousedown', function(e){
+    var bar = e.target.closest && e.target.closest('#search-drag-bar');
+    if(!bar) return;
+    e.preventDefault();
+    var rect = resultsEl.getBoundingClientRect();
+    _drag = { startX: e.clientX, startY: e.clientY, origLeft: rect.left, origTop: rect.top };
+    resultsEl.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', function(e){
+    if(!_drag) return;
+    var dx = e.clientX - _drag.startX;
+    var dy = e.clientY - _drag.startY;
+    applyPos(_drag.origLeft + dx, _drag.origTop + dy);
+  });
+  document.addEventListener('mouseup', function(e){
+    if(!_drag) return;
+    var rect = resultsEl.getBoundingClientRect();
+    savePos(rect.left, rect.top);
+    _drag = null;
+    resultsEl.style.userSelect = '';
+  });
+
+  window.addEventListener('resize', function(){
+    if(resultsEl.style.display !== 'none') window._positionSearchResults();
+  });
 })();
 
 if (document.readyState === 'loading') {
