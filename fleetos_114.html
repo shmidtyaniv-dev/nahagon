@@ -9978,11 +9978,14 @@ function globalSearch(query){
   // ── קטגוריית טווח ק"מ ──
   if(kmRangeMatches.length || _kmRange){
     var _rLabel = _kmRange ? _kmRange.min.toLocaleString('he-IL')+' — '+_kmRange.max.toLocaleString('he-IL')+' ק"מ' : '';
-    html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:#2563eb;border-bottom:1px solid var(--bdr);background:#eff6ff">📍 חיפוש לפי טווח ק"מ: '+_rLabel+'</div>';
+    var _countLabel = kmRangeMatches.length ? kmRangeMatches.length+' רכבים נמצאו' : 'אין רכבים בטווח זה';
+    html += '<div style="padding:10px 12px 8px;font-size:11px;font-weight:700;color:#2563eb;border-bottom:1px solid var(--bdr);background:#eff6ff;display:flex;align-items:center;justify-content:space-between">'+
+      '<span>📍 חיפוש לפי טווח ק"מ: '+_rLabel+'</span>'+
+      '<span style="font-size:11px;font-weight:600;color:#1d4ed8;background:#dbeafe;padding:2px 8px;border-radius:10px">'+_countLabel+'</span>'+
+    '</div>';
     if(!kmRangeMatches.length){
       html += '<div style="padding:16px 14px;font-size:13px;color:var(--t3);text-align:center">אין רכבים בטווח זה</div>';
     } else {
-      html += '<div style="padding:8px 14px 4px;font-size:11px;color:var(--t3)">'+kmRangeMatches.length+' רכבים נמצאו</div>';
       kmRangeMatches.slice(0,15).forEach(function(v){
         var km = (v.currentKm||v.curKm||0).toLocaleString('he-IL');
         var nextSvc = v.nextServiceType || '—';
