@@ -10111,7 +10111,9 @@ function globalSearch(query){
     html = '<div style="padding:28px 16px;text-align:center;color:var(--t3);font-size:13px"><div style="font-size:32px;margin-bottom:6px">🔍</div>לא נמצאו תוצאות עבור "'+query+'"</div>';
   }
 
-  resEl.innerHTML = html;
+  // כפתור סגירה בראש הפאנל
+  var closeBtn = '<button onclick="closeGlobalSearch()" style="position:sticky;top:0;float:left;margin:8px 8px 0 0;background:none;border:none;cursor:pointer;color:var(--t3);font-size:18px;line-height:1;z-index:1;padding:2px 6px;border-radius:6px" title="סגור">✕</button>';
+  resEl.innerHTML = closeBtn + html;
   if(typeof window._positionSearchResults === 'function') window._positionSearchResults();
   resEl.style.display = 'block';
 }
@@ -21812,17 +21814,27 @@ function shouldShowAccidentReminder(acc) {
   if (resultsEl && resultsEl.parentNode !== document.body) {
     document.body.appendChild(resultsEl);
   }
-  // מיקום fixed על desktop: מתחת לשורת החיפוש
+  // מיקום fixed על desktop: מתחת לשורת החיפוש (ואם פאנל ק"מ פתוח — מתחתיו)
   function positionSearchResults(){
     if(window.innerWidth <= 768) return; // מובייל מטופל ב-CSS
     var inp = document.getElementById('srch-inp');
     if(!inp || !resultsEl) return;
-    var rect = inp.getBoundingClientRect();
+    var inpRect = inp.getBoundingClientRect();
+    // בדוק אם פאנל טווח ק"מ פתוח — אם כן, השתמש בתחתיתו
+    var kmPanel = document.getElementById('km-filter-panel');
+    var topY = inpRect.bottom + 6;
+    if(kmPanel && kmPanel.style.display === 'block'){
+      var kmRect = kmPanel.getBoundingClientRect();
+      topY = kmRect.bottom + 6;
+    }
+    // יישר לימין עם כפתור ה-km או עם שורת החיפוש
+    var kmWrap = document.getElementById('km-filter-wrap');
+    var rightEdge = kmWrap ? kmWrap.getBoundingClientRect().right : inpRect.right;
     resultsEl.style.position = 'fixed';
-    resultsEl.style.top = (rect.bottom + 6) + 'px';
-    resultsEl.style.right = (window.innerWidth - rect.right) + 'px';
+    resultsEl.style.top = topY + 'px';
+    resultsEl.style.right = (window.innerWidth - rightEdge) + 'px';
     resultsEl.style.left = 'auto';
-    resultsEl.style.width = '440px';
+    resultsEl.style.width = '460px';
   }
   window._positionSearchResults = positionSearchResults;
   window.addEventListener('resize', positionSearchResults);
