@@ -10279,6 +10279,16 @@ let MANDATORY_DOCS=[
   {key:'driver_license',label:'רישיון נהיגה'},
   {key:'driver_declaration',label:'הצהרת נהג'},
 ];
+// טעינת מסמכי חובה מותאמים שנשמרו בהגדרות
+(function(){
+  try{
+    const s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+    (s.customMandatoryDocs||[]).forEach(function(d){
+      if(d&&d.key&&!MANDATORY_DOCS.find(function(x){return x.key===d.key;}))
+        MANDATORY_DOCS.push({key:d.key,label:d.label,custom:true});
+    });
+  }catch(e){}
+})();
 const vehicleDocs={};
 
 function vcTab(name,el){
@@ -11696,13 +11706,15 @@ function addCustomMandatoryDoc(vid){
   const key='custom_'+Date.now();
   if(!MANDATORY_DOCS.find(d=>d.key===key))
     MANDATORY_DOCS.push({key,label:name.trim(),custom:true});
+  saveSettings({customMandatoryDocs: MANDATORY_DOCS.filter(d=>d.custom)});
   openDet(vid);
   vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]);
 }
 
 function removeMandatoryDoc(key){
   const idx=MANDATORY_DOCS.findIndex(d=>d.key===key);
-  if(idx>-1)MANDATORY_DOCS.splice(idx,1);
+  if(idx>-1) MANDATORY_DOCS.splice(idx,1);
+  saveSettings({customMandatoryDocs: MANDATORY_DOCS.filter(d=>d.custom)});
 }
 
 function renderExtraDocs(vid){
@@ -15684,8 +15696,7 @@ function renderExtraDocs(vid){
   el.innerHTML='<div class="tw" style="border-radius:var(--r)">'+docs.map((d,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--bdr)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--t1)">${d.name}</div><div style="font-size:11px;color:var(--t3)">${d.exp?'תוקף: '+fd(d.exp)+' · ':''}${fd(d.date)}</div></div>${d.data?`<button onclick="openDocViewer('${d.data}','${d.fileType||''}','${d.name}')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit">צפה</button>`:''}<button onclick="removeExtraDoc(${vid},${i})" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:16px;padding:2px 6px">×</button></div>`).join('')+'</div>';
 }
 function removeExtraDoc(vid,idx){if(extraDocs[vid])extraDocs[vid].splice(idx,1);renderExtraDocs(vid);}
-function addCustomMandatoryDoc(vid){const name=prompt('שם המסמך:');if(!name)return;MANDATORY_DOCS.push({key:'custom_'+Date.now(),label:name.trim(),custom:true});openDet(vid);vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]);}
-function removeMandatoryDoc(key){const idx=MANDATORY_DOCS.findIndex(d=>d.key===key);if(idx>-1)MANDATORY_DOCS.splice(idx,1);}
+// addCustomMandatoryDoc ו-removeMandatoryDoc מוגדרות בקובץ (גרסה יחידה עם persistence)
 
 /* ── DIGITAL FORMS ── */
 var fbState={
