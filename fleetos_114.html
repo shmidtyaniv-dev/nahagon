@@ -5733,6 +5733,8 @@ function fds(d){if(!d)return'';return new Date(d).toLocaleDateString('he-IL',{da
 function addY(d,y){const dt=new Date(d);dt.setFullYear(dt.getFullYear()+y);return dt.toISOString().split('T')[0]}
 function dys(d){if(!d)return 9999;return Math.ceil((new Date(d)-NOW)/86400000)}
 function fkm(n){return Number(n).toLocaleString('he-IL')}
+// המרת תאריך ISO (YYYY-MM-DD) לפורמט ישראלי (DD/MM/YYYY)
+function isoToIL(d){if(!d)return '';var m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[3]+'/'+m[2]+'/'+m[1]:d;}
 function inits(n){return n.split(' ').map(w=>w[0]).join('').slice(0,2)}
 
 // Company badge - returns HTML circle with company abbreviation
@@ -8055,7 +8057,7 @@ async function hoBuildCombinedPDF(takeForm, retForm){
     if(f.destination) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">יעד</td><td style="font-weight:bold">' + f.destination + '</td></tr>';
     if(f.loanerTolls&&f.loanerTolls.length) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">'+(isReturn?'מנויי אגרה שהוסרו':'מנויי אגרה שהתווספו')+'</td><td style="font-weight:bold">'+f.loanerTolls.join(', ')+'</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">'+(f.isElectric?'⚡ סוללה':'כמות דלק')+'</td><td style="font-weight:bold">'+(f.isElectric?(f.batteryPct||'—'):(f.fuel||'&#x2014;'))+'</td></tr>';
-    tripHTML += '<tr><td style="color:#888;padding:3px 0">תאריך ושעה</td><td style="font-weight:bold">' + (f.date||'') + ' ' + (f.time||'') + '</td></tr>';
+    tripHTML += '<tr><td style="color:#888;padding:3px 0">תאריך ושעה</td><td style="font-weight:bold">' + isoToIL(f.date||'') + ' ' + (f.time||'') + '</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">קילומטרים</td><td style="font-weight:bold">' + (f.km||'&#x2014;') + '</td></tr>';
     tripHTML += '</table></div>';
 
@@ -8326,7 +8328,7 @@ async function hoDownloadPDF(){
   if(f.purpose) html += '<tr><td style="color:#888;padding:3px 0;width:40%">מטרת נסיעה</td><td style="font-weight:bold">' + f.purpose + '</td></tr>';
   if(f.destination) html += '<tr><td style="color:#888;padding:3px 0;width:40%">יעד</td><td style="font-weight:bold">' + f.destination + '</td></tr>';
   if(f.loanerTolls&&f.loanerTolls.length) html += '<tr><td style="color:#888;padding:3px 0;width:40%">'+(f.mode==='return'?'מנויי אגרה שהוסרו':'מנויי אגרה שהתווספו')+'</td><td style="font-weight:bold">'+f.loanerTolls.join(', ')+'</td></tr>';
-  [[(f.isElectric?'⚡ סוללה':'כמות דלק'),(f.isElectric?(f.batteryPct||'—'):f.fuel)],['תאריך ושעה',(f.date||'')+' '+(f.time||'')],['קילומטרים',f.km],['הערות',f.notes]].forEach(function(r){
+  [[(f.isElectric?'⚡ סוללה':'כמות דלק'),(f.isElectric?(f.batteryPct||'—'):f.fuel)],['תאריך ושעה',isoToIL(f.date||'')+' '+(f.time||'')],['קילומטרים',f.km],['הערות',f.notes]].forEach(function(r){
     if(r[1]) html += '<tr><td style="color:#888;padding:3px 0;width:40%">' + r[0] + '</td><td style="font-weight:bold">' + r[1] + '</td></tr>';
   });
   html += '</table></div>';
@@ -19357,7 +19359,7 @@ function exportToExcel(type){
         'רישוי רכב חלופי/גישור':f.altPlate||'',
         'דלק':f.fuel||'',
         'ק"מ':f.km||'',
-        'תאריך':f.date||'',
+        'תאריך':isoToIL(f.date||''),
         'שעה':f.time||'',
         'ללא נזקים':f.noDamage?'כן':'לא',
         'מספר נזקים':Object.values(f.damages||{}).reduce(function(s,arr){return s+(arr?arr.length:0);},0),
@@ -22405,7 +22407,7 @@ function exportEndOfBusinessPDF(saveToDoc){
   } else {
     var bv = document.getElementById('eob-battery-range')?.value || '100'; fuelDisplay = 'סוללה: ' + bv + '%';
   }
-  var dateDisplay = dateVal ? new Date(dateVal).toLocaleDateString('he-IL') : new Date().toLocaleDateString('he-IL');
+  var dateDisplay = isoToIL(dateVal) || new Date().toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});
 
   var colLogo = '';
   try { colLogo = localStorage.getItem('logo_client') || ''; } catch(e){}
