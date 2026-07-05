@@ -6048,20 +6048,6 @@ function removeSubscriptionType(idx){
   showToast('מנוי נמחק');
 }
 
-function saveAiApiKey(){
-  const el = document.getElementById('ai-api-key');
-  if(!el) return;
-  const key = el.value.trim();
-  saveSettings({aiApiKey: key});
-  const statusEl = document.getElementById('ai-key-status');
-  if(statusEl){
-    statusEl.innerHTML = key?'<span style="color:#16a34a">✓ מפתח נשמר</span>':'<span style="color:var(--t3)">לא מוגדר מפתח - הסריקה לא תפעל</span>';
-    setTimeout(()=>{
-      if(key) statusEl.innerHTML = '<span style="color:#16a34a">✓ מפתח מוגדר</span>';
-    }, 2500);
-  }
-  showToast(key?'✓ מפתח AI נשמר':'המפתח נמחק');
-}
 
 // ── EmailJS ──
 function isEmailJSConfigured(){
@@ -6281,13 +6267,7 @@ function initSettingsPage(){
     // Default: ON (true) unless explicitly set to false
     pendingCb.checked = s.showPendingBanner !== false;
   }
-  // AI API key
-  const aiKeyEl = document.getElementById('ai-api-key');
-  if(aiKeyEl){
-    aiKeyEl.value = s.aiApiKey||'';
-    const statusEl = document.getElementById('ai-key-status');
-    if(statusEl) statusEl.innerHTML = s.aiApiKey?'<span style="color:#16a34a">✓ מפתח מוגדר</span>':'<span style="color:var(--t3)">לא מוגדר מפתח - הסריקה לא תפעל</span>';
-  }
+
   if(document.getElementById('viol-msg-template')) document.getElementById('viol-msg-template').value = s.violMsgTemplate||VIOL_MSG_DEFAULT;
   if(document.getElementById('viol-msg-transfer-template')) document.getElementById('viol-msg-transfer-template').value = s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT;
   if(document.getElementById('svc-msg-template')) document.getElementById('svc-msg-template').value = s.svcMsgTemplate||SVC_MSG_DEFAULT;
