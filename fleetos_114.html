@@ -13849,7 +13849,12 @@ function viewViolationDoc(vid){
 
 function changeViolStatus(vid,newStatus){
   const v=violationsList.find(x=>x.id===vid);
-  if(v){v.status=newStatus;showToast('סטטוס עודכן');}
+  if(v){
+    v.status=newStatus;
+    try{ syncPersistItem('violations', v); }catch(e){console.error(e);}
+    try{ localStorage.setItem('violationsList', JSON.stringify(violationsList)); }catch(e){}
+    showToast('סטטוס עודכן');
+  }
 }
 
 function deleteViolation(vid){
@@ -14223,6 +14228,8 @@ function sendViolToDriver(vid,stage){
 
   // Update status to "waiting for driver approval" when sending
   v.status='waiting';
+  try{ syncPersistItem('violations', v); }catch(e){console.error(e);}
+  try{ localStorage.setItem('violationsList', JSON.stringify(violationsList)); }catch(e){}
   renderViolations();if(_currentVid)renderVcViolations(_currentVid);
 }
 
@@ -14530,32 +14537,37 @@ function confirmViolApproval(token){
 function applyApprovalToViolation(v,token,info){
   // Determine which stage this approval belongs to
   const stage=info.stage||'notice';
+  function _persistViol(viol){
+    try{ syncPersistItem('violations', viol); }catch(e){console.error(e);}
+    try{ localStorage.setItem('violationsList', JSON.stringify(violationsList)); }catch(e){}
+  }
   if(stage==='transfer'){
     if(v.transferToken===token && !v.transferApprovedAt){
       v.transferApprovedAt=info.approvedAt;
       v.status='done'; // final: "נהג עודכן - טופל"
-      // Auto-log
       if(!v.logs)v.logs=[];
       v.logs.push({date:info.approvedAt,text:'✅ הנהג אישר שהדוח הוסב על שמו - הטיפול בדוח הושלם'});
+      _persistViol(v);
       return true;
     }
   }else{
     if(v.noticeToken===token && !v.noticeApprovedAt){
       v.noticeApprovedAt=info.approvedAt;
       v.status='waiting'; // after first approval: "ממתין אישור הסבה"
-      // Auto-log
       if(!v.logs)v.logs=[];
       v.logs.push({date:info.approvedAt,text:'✅ הנהג אישר קבלת הודעה על קיום הדוח'});
+      _persistViol(v);
       return true;
     }
   }
-  // Legacy fallback - if no stage info, set legacy field as notice approval
+  // Legacy fallback
   if(!info.stage && v.approvalToken===token && !v.approvedAt){
     v.approvedAt=info.approvedAt;
     v.noticeApprovedAt=info.approvedAt;
     v.status='waiting';
     if(!v.logs)v.logs=[];
     v.logs.push({date:info.approvedAt,text:'✅ הנהג אישר קבלת הודעה על קיום הדוח'});
+    _persistViol(v);
     return true;
   }
   return false;
