@@ -10722,10 +10722,12 @@ function openDet(vid){
   vcTab('overview', document.querySelector('.vc-tab-btn'));
   // גלול לראש הכרטיס — חשוב במובייל
   setTimeout(function(){
-    var main = document.querySelector('.main');
-    if(main) main.scrollTop = 0;
-    window.scrollTo(0,0);
-  }, 30);
+    var content = document.querySelector('.content');
+    if(content) content.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    window.scrollTo({top:0, behavior:'instant'});
+  }, 50);
 
   // ── header (hero card) ──
   // License plate (Israeli style)
