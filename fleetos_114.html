@@ -4626,7 +4626,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
         <div id="viol-vehicle-row">
           <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">רכב בציר <span style="color:#E24B4A">*</span></label>
-          <select id="viol-vehicle" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer"><option value="">בחר רכב</option></select>
+          <div style="position:relative">
+            <input id="viol-vehicle-search" oninput="filterVehiclePicker('viol')" onfocus="openVehiclePicker('viol')" onblur="setTimeout(function(){closeVehiclePicker('viol')},200)" placeholder="חיפוש לפי לוחית או שם נהג..." autocomplete="off" style="width:100%;height:40px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;box-sizing:border-box">
+            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <div id="viol-vehicle-drop" style="display:none;position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;z-index:600;margin-top:2px"></div>
+            <input type="hidden" id="viol-vehicle">
+          </div>
+          <div id="viol-vehicle-selected" style="display:none;margin-top:6px;padding:7px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:7px;font-size:13px;color:#166534;display:flex;align-items:center;justify-content:space-between"></div>
         </div>
         <div id="viol-status-row">
           <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">סטטוס</label>
@@ -4689,7 +4695,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
         <div>
           <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">רכב <span style="color:#E24B4A">*</span></label>
-          <select id="acc-vehicle" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer"><option value="">בחר רכב</option></select>
+          <div style="position:relative">
+            <input id="acc-vehicle-search" oninput="filterVehiclePicker('acc')" onfocus="openVehiclePicker('acc')" onblur="setTimeout(function(){closeVehiclePicker('acc')},200)" placeholder="חיפוש לפי לוחית או שם נהג..." autocomplete="off" style="width:100%;height:40px;padding:0 36px 0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;box-sizing:border-box">
+            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <div id="acc-vehicle-drop" style="display:none;position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;z-index:600;margin-top:2px"></div>
+            <input type="hidden" id="acc-vehicle">
+          </div>
+          <div id="acc-vehicle-selected" style="display:none;margin-top:6px;padding:7px 10px;background:#f0fdf4;border:1px solid #86efac;border-radius:7px;font-size:13px;color:#166534;display:flex;align-items:center;justify-content:space-between"></div>
         </div>
         <div>
           <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">תאריך האירוע <span style="color:#E24B4A">*</span></label>
@@ -13736,20 +13748,81 @@ function toggleViolIssuer(){
   const wrap=document.getElementById('viol-city-wrap');
   if(wrap)wrap.style.display=t==='city'?'block':'none';
 }
+/* ── Vehicle Picker (searchable) — for violations & accidents ── */
+function initVehiclePicker(prefix){
+  var searchEl = document.getElementById(prefix+'-vehicle-search');
+  var hiddenEl = document.getElementById(prefix+'-vehicle');
+  var selEl    = document.getElementById(prefix+'-vehicle-selected');
+  if(!searchEl||!hiddenEl) return;
+  searchEl.value = '';
+  if(hiddenEl) hiddenEl.value = '';
+  if(selEl){ selEl.style.display='none'; selEl.innerHTML=''; }
+}
+function openVehiclePicker(prefix){
+  filterVehiclePicker(prefix);
+  var drop = document.getElementById(prefix+'-vehicle-drop');
+  if(drop) drop.style.display='block';
+}
+function closeVehiclePicker(prefix){
+  var drop = document.getElementById(prefix+'-vehicle-drop');
+  if(drop) drop.style.display='none';
+}
+function filterVehiclePicker(prefix){
+  var searchEl = document.getElementById(prefix+'-vehicle-search');
+  var drop     = document.getElementById(prefix+'-vehicle-drop');
+  if(!searchEl||!drop) return;
+  var q = (searchEl.value||'').trim().toLowerCase();
+  var list = (vehicles||[]).filter(function(v){
+    return !q ||
+      (v.plate||'').toLowerCase().includes(q) ||
+      ((v.driver&&v.driver.name)||'').toLowerCase().includes(q);
+  });
+  drop.style.display = 'block';
+  if(!list.length){
+    drop.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:#888;text-align:center">לא נמצאו רכבים</div>';
+    return;
+  }
+  drop.innerHTML = list.map(function(v){
+    var name = (v.driver&&v.driver.name)||'—';
+    return '<div onmousedown="pickVehicle(\''+prefix+'\',\''+v.id+'\',\''+v.plate+'\',\''+name.replace(/'/g,"\\'")+'\')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background=\'#f8fffe\'" onmouseout="this.style.background=\'\'">'+
+      '<span style="font-size:13px;font-weight:600;color:#1A1A1A">'+v.plate+'</span>'+
+      '<span style="font-size:12px;color:#666">'+name+'</span>'+
+    '</div>';
+  }).join('');
+}
+function pickVehicle(prefix, vid, plate, name){
+  var hiddenEl = document.getElementById(prefix+'-vehicle');
+  var searchEl = document.getElementById(prefix+'-vehicle-search');
+  var selEl    = document.getElementById(prefix+'-vehicle-selected');
+  var drop     = document.getElementById(prefix+'-vehicle-drop');
+  if(hiddenEl) hiddenEl.value = vid;
+  if(searchEl) searchEl.value = plate+' — '+name;
+  if(drop) drop.style.display = 'none';
+  if(selEl){
+    selEl.style.display = 'flex';
+    selEl.innerHTML = '<span>✓ '+plate+' · '+name+'</span>'+
+      '<button onmousedown="initVehiclePicker(\''+prefix+'\')" style="background:none;border:none;cursor:pointer;color:#888;font-size:16px;padding:0 2px" title="נקה">×</button>';
+  }
+}
+function selectVehiclePicker(prefix, vid){
+  if(!vid){ initVehiclePicker(prefix); return; }
+  var v = (vehicles||[]).find(function(x){ return String(x.id)===String(vid); });
+  if(v) pickVehicle(prefix, v.id, v.plate, (v.driver&&v.driver.name)||'—');
+}
 function openViolationModal(editId){
   id('viol-edit-id').value=editId||'';
-  id('viol-vehicle').innerHTML=`<option value="">בחר רכב</option>`+vehicles.map(v=>`<option value="${v.id}">${v.plate} — ${v.driver.name}</option>`).join('');
+  initVehiclePicker('viol');
   if(editId){
     const v=violationsList.find(x=>x.id===editId);if(!v)return;
     id('viol-modal-title').textContent='עריכת דוח תנועה';
     id('viol-num').value=v.num;id('viol-date').value=v.date;
-    id('viol-vehicle').value=v.vehicleId||'';
+    selectVehiclePicker('viol', v.vehicleId||'');
     id('viol-status').value=v.status;id('viol-notes').value=v.notes||'';
   }else{
     id('viol-modal-title').textContent='פתיחת דוח תנועה';
     const nextN='D-'+new Date().getFullYear()+'-'+(violationsList.length+1).toString().padStart(3,'0');
     id('viol-num').value=nextN;id('viol-date').value=new Date().toISOString().split('T')[0];
-    id('viol-vehicle').value='';id('viol-status').value='sent';id('viol-notes').value='';
+    selectVehiclePicker('viol','');id('viol-status').value='sent';id('viol-notes').value='';
   }
   openModal('viol-ov');
 }
@@ -14795,7 +14868,7 @@ function accRemoveFile(){
 
 function openAccidentModal(editId){
   id('acc-edit-id').value=editId||'';
-  id('acc-vehicle').innerHTML='<option value="">בחר רכב</option>'+vehicles.map(function(v){return '<option value="'+v.id+'">'+v.plate+' — '+v.driver.name+'</option>';}).join('');
+  initVehiclePicker('acc');
   accPendingFile=null;
   const fileInput=id('acc-file');
   if(fileInput)fileInput.value='';
@@ -14805,7 +14878,7 @@ function openAccidentModal(editId){
     id('acc-num').value=a.num||'';
     id('acc-date').value=a.date||'';
     id('acc-report-date').value=a.reportDate||'';
-    id('acc-vehicle').value=a.vehicleId||'';
+    selectVehiclePicker('acc', a.vehicleId||'');
     id('acc-fault').value=a.fault||'self';
     updateAccStatusOptions();
     id('acc-status').value=a.status||'waiting_garage';
