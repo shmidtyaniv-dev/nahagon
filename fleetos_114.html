@@ -10450,9 +10450,10 @@ function renderVehicleTimeline(vid){
     var ev=events[i];
     var evDate=ev.date?new Date(ev.date):null;
     var dateStr=evDate?evDate.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+    var timeStr=evDate?evDate.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',hour12:false}):'';
     var iconInfo=getTimelineIconInfo(ev);
     html+='<div class="vc-timeline-item">';
-    html+='<div class="vc-timeline-date-label">'+dateStr+'</div>';
+    html+='<div class="vc-timeline-date-label">'+dateStr+(timeStr?'<div style="font-size:11px;color:var(--t3);margin-top:2px;letter-spacing:.2px">'+timeStr+'</div>':'')+'</div>';
     html+='<div class="vc-timeline-icon-wrap"><div class="vc-timeline-icon '+iconInfo.cls+'">'+iconInfo.svg+'</div></div>';
     html+='<div class="vc-timeline-content">';
     html+='<div class="vc-timeline-type">'+ev.title+'</div>';
