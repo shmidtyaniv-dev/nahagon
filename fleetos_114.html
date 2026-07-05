@@ -10720,6 +10720,12 @@ function openDet(vid){
   _currentVid=vid;
   go('vehicle-card', null);
   vcTab('overview', document.querySelector('.vc-tab-btn'));
+  // גלול לראש הכרטיס — חשוב במובייל
+  setTimeout(function(){
+    var main = document.querySelector('.main');
+    if(main) main.scrollTop = 0;
+    window.scrollTo(0,0);
+  }, 30);
 
   // ── header (hero card) ──
   // License plate (Israeli style)
