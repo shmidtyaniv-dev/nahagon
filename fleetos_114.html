@@ -329,7 +329,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
 .vc-docs-card-summary{font-size:11px;padding:2px 9px;border-radius:999px;font-weight:500}
 .vc-docs-card-summary.danger{background:var(--red-light);color:var(--red-dark)}
 .vc-docs-card-summary.ok{background:var(--gbg);color:#166534}
-.vc-docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr);gap:10px}
+.vc-docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .vc-doc-card{background:white;border:0.5px solid var(--bdr);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;transition:all .15s;position:relative;overflow:hidden}
 .vc-doc-card:hover{border-color:var(--bdr2);transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.04)}
 .vc-doc-card::before{content:'';position:absolute;top:0;right:0;left:0;height:3px}
@@ -463,7 +463,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .cal-item-driver{font-size:11px!important}
   .cal-item-date{font-size:11px!important}
   .cal-item .il-plate{transform:scale(.85);transform-origin:right center}
-  #vc-summary-cards{grid-template-columns:repeat(2,minmax(0,1fr)!important}
+  #vc-summary-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   #vc-summary-cards2,#vc-summary-cards3{grid-template-columns:1fr!important}
   .mg{grid-template-columns:1fr!important}
   .modal{max-width:100vw!important;border-radius:14px 14px 0 0;margin:0;position:fixed;bottom:0;left:0;right:0;max-height:92vh}
@@ -2460,7 +2460,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
 
       <!-- metrics -->
-      <div class="metrics" style="grid-template-columns:repeat(4,minmax(0,1fr)">
+      <div class="metrics" style="grid-template-columns:repeat(4,minmax(0,1fr))">
         <div class="mc" onclick="go('accidents',q('[dp=accidents]'))">
           <div class="stat-row">
             <div class="stat-text">
@@ -15826,7 +15826,7 @@ function renderFormTemplates(){
     el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:36px;margin-bottom:8px">📄</div><div style="font-size:14px;font-weight:500;margin-bottom:4px">אין טפסים עדיין</div><div style="font-size:12px">לחץ "+ טופס חדש" כדי להעלות PDF ולסמן שדות</div></div>';
     return;
   }
-  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr);gap:8px">'+
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">'+
     templates.map(function(t){
       const fieldsCount=(t.fields||[]).length;
       const createdStr=t.createdAt?fd(t.createdAt.split('T')[0]):'';
@@ -15857,7 +15857,7 @@ function renderFormSubmissions(){
     el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:32px;margin-bottom:8px">📥</div><div style="font-size:14px">אין תגובות עדיין</div><div style="font-size:12px;margin-top:4px">ברגע שנהג ימלא טופס, הוא יופיע כאן בזמן אמת</div></div>';
     return;
   }
-  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr);gap:8px">'+
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:8px">'+
     subs.map(function(s){
       const d=s.submittedAt?new Date(s.submittedAt):null;
       const dateStr=d?d.toLocaleDateString('he-IL')+' '+d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}):'';
