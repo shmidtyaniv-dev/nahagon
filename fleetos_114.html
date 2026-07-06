@@ -1938,7 +1938,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 }
 </style>
 <script>
-(function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')||p.get('book')||p.get('km'){document.documentElement.style.visibility='hidden';}})();
+(function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')||p.get('book')||p.get('km')){document.documentElement.style.visibility='hidden';}})();
 </script>
 
 <!-- PWA Manifest -->
@@ -2461,7 +2461,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
       <!-- metrics -->
       <div class="metrics" style="grid-template-columns:repeat(4,minmax(0,1fr)">
-        <div class="mc" onclick="go('accidents',q('[dp=accidents]')">
+        <div class="mc" onclick="go('accidents',q('[dp=accidents]'))">
           <div class="stat-row">
             <div class="stat-text">
               <div class="mc-lbl">תאונות פתוחות</div>
@@ -2474,7 +2474,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             </div>
           </div>
         </div>
-        <div class="mc" onclick="go('violations',q('[dp=violations]')">
+        <div class="mc" onclick="go('violations',q('[dp=violations]'))">
           <div class="stat-row">
             <div class="stat-text">
               <div class="mc-lbl">דוחות להסבה</div>
@@ -3376,7 +3376,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             if(slider)slider.addEventListener('input',function(){
               var h=+this.value;
               document.getElementById('logo-size-val').textContent=h+'px';
-              try{var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');s.logoH=h;localStorage.setItem('fleetSettings',JSON.stringify(s);}catch(e){}
+              try{var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');s.logoH=h;localStorage.setItem('fleetSettings',JSON.stringify(s));}catch(e){}
               var pm=document.getElementById('prev-more');if(pm)pm.style.height=h+'px';
               var pc=document.getElementById('prev-col');if(pc)pc.style.height=h+'px';
               if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
@@ -3385,7 +3385,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               _deleteLogo('logo_client');_deleteLogo('logo_company');
               try{localStorage.removeItem('logo_client');localStorage.removeItem('logo_company');}catch(e){}
               try{localStorage.removeItem('logo_logo_client_synced_at');localStorage.removeItem('logo_logo_company_synced_at');}catch(e){}
-              try{var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');delete s.moreB64;delete s.colB64;localStorage.setItem('fleetSettings',JSON.stringify(s);}catch(e){}
+              try{var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');delete s.moreB64;delete s.colB64;localStorage.setItem('fleetSettings',JSON.stringify(s));}catch(e){}
               // מחק גם מ-Firestore
               if(typeof db!=='undefined'&&db){db.collection('settings').doc('logos').delete().catch(function(e){console.error('שגיאה במחיקת לוגואים מ-Firestore:',e);});}
               document.getElementById('client-logo-preview-area').innerHTML='<span style="font-size:12px;color:var(--t3)">אין לוגו</span>';
@@ -3883,14 +3883,14 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <div class="settings-danger-item-title">איפוס כל ההגדרות</div>
               <div class="settings-danger-item-desc">מחזיר את כל ההגדרות לברירת מחדל - לוגויים, צבעים, תבניות</div>
             </div>
-            <button class="settings-btn settings-btn-danger-outline" onclick="if(confirm('האם אתה בטוח שברצונך לאפס את כל ההגדרות?'){localStorage.removeItem('fleetos_settings');location.reload()}">אפס הגדרות</button>
+            <button class="settings-btn settings-btn-danger-outline" onclick="if(confirm('האם אתה בטוח שברצונך לאפס את כל ההגדרות?')){localStorage.removeItem('fleetos_settings');location.reload()}">אפס הגדרות</button>
           </div>
           <div class="settings-danger-item">
             <div class="settings-danger-item-info">
               <div class="settings-danger-item-title">מחק חשבון משתמש</div>
               <div class="settings-danger-item-desc">פעולה סופית - מסיר את כל הגישה שלך למערכת</div>
             </div>
-            <button class="settings-btn settings-btn-danger" onclick="if(confirm('האם אתה בטוח שברצונך למחוק את החשבון? פעולה זו אינה ניתנת לשחזור!'){alert('פנה למנהל המערכת למחיקת חשבון')}">מחק חשבון</button>
+            <button class="settings-btn settings-btn-danger" onclick="if(confirm('האם אתה בטוח שברצונך למחוק את החשבון? פעולה זו אינה ניתנת לשחזור!')){alert('פנה למנהל המערכת למחיקת חשבון')}">מחק חשבון</button>
           </div>
         </div>
       </div>
@@ -5613,7 +5613,7 @@ function doLogout(){
   var menu = document.getElementById('sb-user-menu');
   if(menu) menu.remove();
 
-  if(!confirm('להתנתק מהמערכת?') return;
+  if(!confirm('להתנתק מהמערכת?')) return;
 
   if(!auth){
     location.reload();
@@ -5706,7 +5706,7 @@ function dupPreview(input){
   const img = document.getElementById('dup-preview-img');
   const name = document.getElementById('dup-preview-name');
   const btn = document.getElementById('dup-submit-btn');
-  if(file.type.startsWith('image/'){
+  if(file.type.startsWith('image/')){
     const reader = new FileReader();
     reader.onload = function(e){ img.src = e.target.result; prev.style.display = 'block'; };
     reader.readAsDataURL(file);
@@ -5732,7 +5732,7 @@ function dupSubmit(token, vid, docKey){
   reader.onload = function(e){
     var data = e.target.result;
     // Compress images
-    if(file.type.startsWith('image/'){
+    if(file.type.startsWith('image/')){
       var img = new Image();
       img.onload = function(){
         var canvas = document.createElement('canvas');
@@ -5832,7 +5832,7 @@ function companyBadge(company){
   return '';
 }
 
-function parseKm(s){if(!s)return 0;return parseInt(String(s).replace(/[^\d]/g,'')||0}
+function parseKm(s){if(!s)return 0;return parseInt(String(s).replace(/[^\d]/g,'')||0)}
 
 // Auto-calculate next service (1 year from last service). Prefer historyLog over lastService field.
 function calcNextSvc(v){
@@ -5843,12 +5843,12 @@ function calcNextSvc(v){
   if(v.historyLog && v.historyLog.length){
     const services = v.historyLog.filter(h=>h.kind==='service');
     if(services.length){
-      const sorted = services.slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0);
+      const sorted = services.slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
       const latest = sorted[0];
       if(latest.createdAt){
         lastSvcDate = latest.createdAt.split('T')[0];
         if(latest.km){
-          const parsed = parseInt(String(latest.km).replace(/[^0-9]/g,'');
+          const parsed = parseInt(String(latest.km).replace(/[^0-9]/g,''));
           if(parsed) lastSvcKm = parsed;
         }
       }
@@ -5877,7 +5877,7 @@ function calcNextSvc(v){
   };
 }
 function slvl(v){
-  const dd=[dys(v.licenseExp),dys(v.driver.licenseExp),...v.family.map(f=>dys(f.licenseExp)];
+  const dd=[dys(v.licenseExp),dys(v.driver.licenseExp),...v.family.map(f=>dys(f.licenseExp))];
   const kmN=v.nextServiceType?(parseKm(v.nextServiceType)+v.serviceKm-v.currentKm):9999;
   if(Math.min(...dd)<0||kmN<=0)return'danger';
   if(Math.min(...dd)<60||kmN<2000)return'warn';
@@ -5927,8 +5927,8 @@ const BRAND_SVGS={
 };
 function getBrandLogo(make){
   if(!make)return null;
-  for(const[k,v]of Object.entries(BRAND_SVGS){
-    if(make.includes(k)return v;
+  for(const[k,v]of Object.entries(BRAND_SVGS)){
+    if(make.includes(k)) return v;
   }
   return null;
 }
@@ -6008,7 +6008,7 @@ function compressVehiclePhoto(file,cb){
       if(w>max||h>max){var ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
       canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
-      cb(canvas.toDataURL('image/jpeg',.8);
+      cb(canvas.toDataURL('image/jpeg',.8));
     };
     img.src=e.target.result;
   };
@@ -6035,7 +6035,7 @@ function getSettings(){
 function saveSettings(obj){
   const s = getSettings();
   Object.assign(s,obj);
-  localStorage.setItem('fleetSettings', JSON.stringify(s);
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
   // Sync to Firestore (exclude binary logo data — those have their own sync)
   if(typeof db!=='undefined'&&db){
     var toSync=Object.assign({},s);
@@ -6051,8 +6051,8 @@ function startDailyCheckScheduler(){
     var s=getSettings();
     var target=s.schedDailyCheckTime||'08:00';
     var now=new Date();
-    var hh=String(now.getHours().padStart(2,'0');
-    var mm=String(now.getMinutes().padStart(2,'0');
+    var hh=String(now.getHours()).padStart(2,'0');
+    var mm=String(now.getMinutes()).padStart(2,'0');
     var nowStr=hh+':'+mm;
     var todayKey=localDateStr(now)+'|'+target;
     if(nowStr===target && _dailyCheckLastRun!==todayKey){
@@ -6099,7 +6099,7 @@ function addSubscriptionType(){
   var inp=document.getElementById('sub-type-new');if(!inp)return;
   var val=inp.value.trim();if(!val)return;
   var types=getSubscriptionTypes();
-  if(types.includes(val){showToast('מנוי זה כבר קיים');return;}
+  if(types.includes(val)){showToast('מנוי זה כבר קיים');return;}
   types.push(val);
   saveSettings({subscriptionTypes:types});
   inp.value='';
@@ -6134,7 +6134,7 @@ function saveEmailJSSettings(){
     s.emailjsPublicKey=pkv;
     s.emailjsServiceId=siv;
     s.emailjsTemplateId=tiv;
-    localStorage.setItem('fleetSettings',JSON.stringify(s);
+    localStorage.setItem('fleetSettings',JSON.stringify(s));
   }catch(e){
     alert('שגיאה בשמירה: '+e.message);
     return;
@@ -6157,11 +6157,11 @@ function sendViaEmailJS(toEmail, subject, bodyText){
   return new Promise(function(resolve, reject){
     var s=getSettings();
     if(!s.emailjsPublicKey||!s.emailjsServiceId||!s.emailjsTemplateId){
-      reject(new Error('EmailJS not configured');
+      reject(new Error('EmailJS not configured'));
       return;
     }
     if(typeof emailjs==='undefined'){
-      reject(new Error('EmailJS SDK not loaded');
+      reject(new Error('EmailJS SDK not loaded'));
       return;
     }
     emailjs.send(s.emailjsServiceId, s.emailjsTemplateId, {
@@ -6171,7 +6171,7 @@ function sendViaEmailJS(toEmail, subject, bodyText){
       from_name: s.repName||'מרכז הרכב של מור בית השקעות'
     }, s.emailjsPublicKey).then(resolve).catch(function(err){
       var msg = (err && err.text) || (err && err.message) || JSON.stringify(err) || 'שגיאה לא ידועה';
-      reject(new Error(msg);
+      reject(new Error(msg));
     });
   });
 }
@@ -6180,7 +6180,7 @@ function testEmailJS(){
   var s=getSettings();
   var to=s.repEmail||'';
   if(!to){showToast('הגדר קודם כתובת מייל בפרופיל');return;}
-  if(!isEmailJSConfigured(){showToast('מלא את כל שדות EmailJS');return;}
+  if(!isEmailJSConfigured()){showToast('מלא את כל שדות EmailJS');return;}
   var st=document.getElementById('emailjs-status');
   if(st) st.innerHTML='<span style="color:var(--t2)">שולח מייל ניסיון...</span>';
   sendViaEmailJS(to,'מייל ניסיון - מרכז הרכב של מור','זהו מייל ניסיון מהמערכת.\nאם קיבלת אותו - EmailJS מוגדר ועובד!').then(function(){
@@ -6201,7 +6201,7 @@ function toggleSbUserMenu(){
   m.style.cssText='position:fixed;bottom:60px;right:16px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:300;min-width:180px;padding:6px;direction:rtl';
   m.innerHTML='<div onclick="doLogout()" style="padding:9px 14px;font-size:13px;color:#dc2626;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s" onmouseover="this.style.background=\'#FEF2F2\'" onmouseout="this.style.background=\'transparent\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>התנתק</div>';
   document.body.appendChild(m);
-  setTimeout(function(){document.addEventListener('click',function handler(e){if(!m.contains(e.target){m.remove();document.removeEventListener('click',handler);}});},10);
+  setTimeout(function(){document.addEventListener('click',function handler(e){if(!m.contains(e.target)){m.remove();document.removeEventListener('click',handler);}});},10);
 }
 
 // Init sidebar logos - loads from IndexedDB
@@ -6234,10 +6234,10 @@ function initLogoSidebar(){
     if(local && local.length>50){ _applyLogo(local, imgEl, textEl); return; }
     var lastSync=localStorage.getItem('logo_'+key+'_synced_at');
     var oneDay=24*60*60*1000;
-    if(lastSync && (Date.now()-parseInt(lastSync)<oneDay) return;
+    if(lastSync && (Date.now()-parseInt(lastSync)<oneDay)) return;
     if(typeof db!=='undefined' && db){
       db.collection('settings').doc('logos').get().then(function(doc){
-        try{localStorage.setItem('logo_'+key+'_synced_at',String(Date.now());}catch(e){}
+        try{localStorage.setItem('logo_'+key+'_synced_at',String(Date.now()));} catch(e){}
         if(doc.exists && doc.data()[key] && doc.data()[key].length>50){
           _applyLogo(doc.data()[key], imgEl, textEl);
           if(typeof window._saveLogoToDB==='function'){try{window._saveLogoToDB(key,doc.data()[key]);}catch(e){}}
@@ -6278,8 +6278,8 @@ function initRepSidebar(){
 
 // Settings tab switching
 function setSettingsTab(tabName){
-  document.querySelectorAll('.settings-tab').forEach(t=>t.classList.remove('active');
-  document.querySelectorAll('.settings-tab-content').forEach(c=>c.classList.remove('active');
+  document.querySelectorAll('.settings-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.settings-tab-content').forEach(c=>c.classList.remove('active'));
   const btn = document.querySelector('.settings-tab[onclick*="\''+tabName+'\'"]');
   if(btn) btn.classList.add('active');
   const content = document.querySelector('.settings-tab-content[data-settings-tab="'+tabName+'"]');
@@ -6288,7 +6288,7 @@ function setSettingsTab(tabName){
 }
 
 function setTemplatesSubTab(tabName){
-  document.querySelectorAll('.settings-templates-tab').forEach(t=>t.classList.remove('active');
+  document.querySelectorAll('.settings-templates-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.settings-templates-content').forEach(c=>c.style.display='none');
   const btn = document.querySelector('.settings-templates-tab[onclick*="\''+tabName+'\'"]');
   if(btn) btn.classList.add('active');
@@ -6327,19 +6327,19 @@ function initSettingsPage(){
   var repClientName=document.getElementById('rep-client-name');if(repClientName)repClientName.value=s.clientName||'';
   var sysTitle=document.getElementById('sys-title');if(sysTitle)sysTitle.value=s.sysTitle||'מרכז הרכב של מור';
   var sysSubtitle=document.getElementById('sys-subtitle');if(sysSubtitle)sysSubtitle.value=s.sysSubtitle||'בית השקעות';
-  if(document.getElementById('rep-email') document.getElementById('rep-email').value = s.repEmail||'';
+  if(document.getElementById('rep-email')) document.getElementById('rep-email').value = s.repEmail||'';
   const pendingCb = document.getElementById('rep-show-pending-banner');
   if(pendingCb){
     // Default: ON (true) unless explicitly set to false
     pendingCb.checked = s.showPendingBanner !== false;
   }
 
-  if(document.getElementById('viol-msg-template') document.getElementById('viol-msg-template').value = s.violMsgTemplate||VIOL_MSG_DEFAULT;
-  if(document.getElementById('viol-msg-transfer-template') document.getElementById('viol-msg-transfer-template').value = s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT;
-  if(document.getElementById('svc-msg-template') document.getElementById('svc-msg-template').value = s.svcMsgTemplate||SVC_MSG_DEFAULT;
-  if(document.getElementById('test-msg-template') document.getElementById('test-msg-template').value = s.testMsgTemplate||TEST_MSG_DEFAULT;
-  if(document.getElementById('viol-include-file') document.getElementById('viol-include-file').checked = s.violIncludeFile!==false;
-  if(document.getElementById('viol-approval-base-url') document.getElementById('viol-approval-base-url').value = s.violApprovalBaseUrl||'';
+  if(document.getElementById('viol-msg-template')) document.getElementById('viol-msg-template').value = s.violMsgTemplate||VIOL_MSG_DEFAULT;
+  if(document.getElementById('viol-msg-transfer-template')) document.getElementById('viol-msg-transfer-template').value = s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT;
+  if(document.getElementById('svc-msg-template')) document.getElementById('svc-msg-template').value = s.svcMsgTemplate||SVC_MSG_DEFAULT;
+  if(document.getElementById('test-msg-template')) document.getElementById('test-msg-template').value = s.testMsgTemplate||TEST_MSG_DEFAULT;
+  if(document.getElementById('viol-include-file')) document.getElementById('viol-include-file').checked = s.violIncludeFile!==false;
+  if(document.getElementById('viol-approval-base-url')) document.getElementById('viol-approval-base-url').value = s.violApprovalBaseUrl||'';
   if(typeof updateRepPreview==='function') try{updateRepPreview();}catch(e){}
   if(typeof initSchedulingSettings==='function') initSchedulingSettings();
   if(typeof initRequestTemplates==='function') initRequestTemplates();
@@ -6374,7 +6374,7 @@ function _compressLogo(dataUrl, callback){
     canvas.width=w;canvas.height=h;
     var ctx=canvas.getContext('2d');
     ctx.drawImage(img,0,0,w,h);
-    callback(canvas.toDataURL('image/png');
+    callback(canvas.toDataURL('image/png'));
   };
   img.src=dataUrl;
 }
@@ -6643,14 +6643,14 @@ function openKmUpdate(vid){
     // פרמוט עם פסיקים תוך שמירת מיקום cursor
     const sel = inp.selectionStart;
     const before = inp.value.slice(0, sel).replace(/[^0-9]/g,'').length; // ספרות לפני cursor
-    const raw=parseInt(inp.value.replace(/[^0-9]/g,'')||0;
+    const raw=parseInt(inp.value.replace(/[^0-9]/g,'')||0);
     if(raw>0){
       const formatted = raw.toLocaleString('he-IL');
       inp.value = formatted;
       // חשב מיקום cursor החדש: מנה ספרות עד before
       let digits=0, newPos=0;
       for(let i=0;i<formatted.length;i++){
-        if(/[0-9]/.test(formatted[i]) digits++;
+        if(/[0-9]/.test(formatted[i])) digits++;
         if(digits===before){ newPos=i+1; break; }
         newPos=i+1;
       }
@@ -6671,8 +6671,8 @@ function openKmUpdate(vid){
 function saveKmUpdate(vid){
   const v=vehicles.find(x=>x.id===vid);
   if(!v)return;
-  const raw=parseInt(document.getElementById('km-upd-val').value.replace(/[^0-9]/g,'');
-  if(!raw||isNaN(raw){alert('יש להזין ק"מ תקין');return;}
+  const raw=parseInt(document.getElementById('km-upd-val').value.replace(/[^0-9]/g,''));
+  if(!raw||isNaN(raw)){alert('יש להזין ק"מ תקין');return;}
   const prevKm=v.currentKm||v.curKm||0;
   v.currentKm=raw;
   v.lastKmUpdate=localDateStr();
@@ -6710,7 +6710,7 @@ function saveRequestTemplates(){
   var docEl=document.getElementById('doc-msg-template');
   if(kmEl) s.kmMsgTemplate=kmEl.value;
   if(docEl) s.docMsgTemplate=docEl.value;
-  localStorage.setItem('fleetSettings',JSON.stringify(s);
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
   var el=document.getElementById('req-msg-saved');
   if(el){el.textContent='✓ נשמר';el.style.opacity='1';setTimeout(function(){el.style.opacity='0';},2000);}
 }
@@ -6865,7 +6865,7 @@ function saveTaskForm(vid,editIdx){
 }
 
 function deleteVehicleTask(idx,vid){
-  if(!confirm('למחוק משימה זו?')return;
+  if(!confirm('למחוק משימה זו?')) return;
   tasks.splice(idx,1);
   renderVcMissions(vid);
 }
@@ -6949,7 +6949,7 @@ function confirmArchive(vid){
     periodTo:localDateStr(),
   };
   archivedVehicles.push(record);
-  localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles);
+  localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
   if(typeof syncPersistItem==='function') syncPersistItem('archivedVehicles', record);
 
   if(action==='keep_driver'){
@@ -6972,7 +6972,7 @@ function confirmArchive(vid){
 
   persistVehiclesDebounced();
   document.getElementById('archive-modal').remove();
-  go('vehicles',document.querySelector('.ni[dp="vehicles"]');
+  go('vehicles',document.querySelector('.ni[dp="vehicles"]'));
   refresh();
   setTimeout(()=>showArchiveSuccess(record),300);
 }
@@ -7019,7 +7019,7 @@ function showArchive(){
     <div style="flex:1;overflow-y:auto">${rows}</div>`;
 
   // Add slide animation
-  if(!document.getElementById('archive-anim-style'){
+  if(!document.getElementById('archive-anim-style')){
     const st=document.createElement('style');
     st.id='archive-anim-style';
     st.textContent='@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}';
@@ -7074,7 +7074,7 @@ const hoPhotoStore=(function(){
       return _open().then(function(db){
         return new Promise(function(resolve,reject){
           var tx=db.transaction('photos','readwrite');
-          tx.objectStore('photos').put(photos,String(formId);
+          tx.objectStore('photos').put(photos,String(formId));
           tx.oncomplete=function(){resolve();};
           tx.onerror=function(e){reject(e.target.error);};
         });
@@ -7083,7 +7083,7 @@ const hoPhotoStore=(function(){
     load:function(formId){
       return _open().then(function(db){
         return new Promise(function(resolve){
-          var req=db.transaction('photos').objectStore('photos').get(String(formId);
+          var req=db.transaction('photos').objectStore('photos').get(String(formId));
           req.onsuccess=function(e){resolve(e.target.result||[]);};
           req.onerror=function(){resolve([]);};
         });
@@ -7093,7 +7093,7 @@ const hoPhotoStore=(function(){
       return _open().then(function(db){
         return new Promise(function(resolve){
           var tx=db.transaction('photos','readwrite');
-          tx.objectStore('photos').delete(String(formId);
+          tx.objectStore('photos').delete(String(formId));
           tx.oncomplete=resolve; tx.onerror=resolve;
         });
       }).catch(function(){});
@@ -7111,7 +7111,7 @@ function getAltVehicleStatus(vid){
   const openTakes = vForms.filter(f=>(f.type==='loaner'||f.type==='bridge')&&f.mode==='take'&&!f.closed);
   if(!openTakes.length) return null;
   // Pick most recent
-  openTakes.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt);
+  openTakes.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
   const t = openTakes[0];
   return { type:t.type, plate:t.altPlate||'', createdAt:t.createdAt };
 }
@@ -7123,7 +7123,7 @@ function countDriversOnAlt(){
   forms.forEach(f=>{
     if((f.type==='loaner'||f.type==='bridge')&&f.mode==='take'&&!f.closed){
       const key = f.vehicleId+'_'+f.type;
-      if(ids.has(key) return;
+      if(ids.has(key)) return;
       ids.add(key);
       if(f.type==='loaner') loaner++; else bridge++;
     }
@@ -7147,35 +7147,35 @@ function initHandoverTab(vid){
 }
 
 function hoResetAllOpenTakes(){
-  if(!confirm('לאפס את כל הלקיחות הפתוחות בכל הרכבים?\n(הטפסים ישארו ברשימה אבל יסומנו כסגורים)') return;
+  if(!confirm('לאפס את כל הלקיחות הפתוחות בכל הרכבים?\n(הטפסים ישארו ברשימה אבל יסומנו כסגורים)')) return;
   hoForms2 = JSON.parse(localStorage.getItem('hoForms2')||'[]');
   var count = 0;
   hoForms2.forEach(function(f){
     if(f.mode==='take' && !f.closed){
       f.closed = true; count++;
-      try{ syncPersistItem('hoForms2', Object.assign({},f,{photos:[]}); }catch(e){}
+      try{ syncPersistItem('hoForms2', Object.assign({},f,{photos:[]})); }catch(e){}
     }
   });
   if(!count){ showToast('אין לקיחות פתוחות'); return; }
-  try{ localStorage.setItem('hoForms2', JSON.stringify(hoForms2); }catch(e){}
+  try{ localStorage.setItem('hoForms2',JSON.stringify(hoForms2)); }catch(e){}
   if(hoCurrentVid){ hoUpdateReturnBtns(hoCurrentVid); hoRenderList(hoCurrentVid); }
   showToast('✓ אופסו '+count+' לקיחות');
 }
 
 function hoResetOpenForms(){
   if(!hoCurrentVid) return;
-  if(!confirm('לאפס את כל הלקיחות הפתוחות לרכב זה?\n(הטפסים ישארו ברשימה אבל יסומנו כסגורים)') return;
+  if(!confirm('לאפס את כל הלקיחות הפתוחות לרכב זה?\n(הטפסים ישארו ברשימה אבל יסומנו כסגורים)')) return;
   hoForms2 = JSON.parse(localStorage.getItem('hoForms2')||'[]');
   var changed = false;
   hoForms2.forEach(function(f){
     if(f.vehicleId===hoCurrentVid && f.mode==='take' && !f.closed){
       f.closed = true;
       changed = true;
-      try{ syncPersistItem('hoForms2', Object.assign({},f,{photos:[]}); }catch(e){}
+      try{ syncPersistItem('hoForms2', Object.assign({},f,{photos:[]})); }catch(e){}
     }
   });
   if(!changed){ showToast('אין לקיחות פתוחות לאיפוס'); return; }
-  try{ localStorage.setItem('hoForms2', JSON.stringify(hoForms2); }catch(e){}
+  try{ localStorage.setItem('hoForms2',JSON.stringify(hoForms2)); }catch(e){}
   hoUpdateReturnBtns(hoCurrentVid);
   hoRenderList(hoCurrentVid);
   showToast('✓ המצב אופס');
@@ -7198,10 +7198,10 @@ function hoUpdateReturnBtns(vid){
 }
 
 function hoDeletePair(ids){
-  if(!confirm('למחוק משימה זו לצמיתות?') return;
+  if(!confirm('למחוק משימה זו לצמיתות?')) return;
   const removedIds = ids;
-  hoForms2 = hoForms2.filter(f=>!ids.includes(f.id);
-  try{ localStorage.setItem('hoForms2', JSON.stringify(hoForms2); }catch(e){}
+  hoForms2 = hoForms2.filter(f=>!ids.includes(f.id));
+  try{ localStorage.setItem('hoForms2',JSON.stringify(hoForms2)); }catch(e){}
   removedIds.forEach(function(rid){
     try{ syncRemoveItem('hoForms2', rid); }catch(e){}
     hoPhotoStore.remove(rid); // מחק תמונות מ-IndexedDB
@@ -7257,7 +7257,7 @@ async function hoOpenFormDirect(type, mode){
     const takeFrm = hoForms2.find(x=>x.id===hoLinkedTakeId);
     if(takeFrm){
       // נזקים — סנכרוני
-      hoDamages = JSON.parse(JSON.stringify(takeFrm.damages||{});
+      hoDamages = JSON.parse(JSON.stringify(takeFrm.damages||{}));
       if(takeFrm.noDamage) hoNoDmg = true;
       // תמונות — טען מ-IndexedDB (await — מחכים שיגיעו לפני שמצייר)
       const savedPhotos = (takeFrm.photos && takeFrm.photos.length)
@@ -7336,8 +7336,8 @@ async function hoOpenFormDirect(type, mode){
       if(altInp) altInp.value='';
     }
   }
-  document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active');
-  hoSetView('front', document.querySelector('.ho-view-btn');
+  document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active'));
+  hoSetView('front', document.querySelector('.ho-view-btn'));
   hoRenderDmgList();
   var _noDmgCb = document.getElementById('ho-no-damage');
   if(_noDmgCb) _noDmgCb.checked = hoNoDmg;
@@ -7362,14 +7362,14 @@ function hoRenderList(vid){
   const pairs = [];
   const usedIds = new Set();
   vForms.forEach(f=>{
-    if(usedIds.has(f.id) return;
+    if(usedIds.has(f.id)) return;
     if(f.mode==='take'){
       // Find matching return
       const ret = vForms.find(r=>r.type===f.type&&r.mode==='return'&&!usedIds.has(r.id)&&r.createdAt>f.createdAt);
       pairs.push({take:f, ret:ret||null});
       usedIds.add(f.id);
       if(ret) usedIds.add(ret.id);
-    } else if(!usedIds.has(f.id){
+    } else if(!usedIds.has(f.id)){
       pairs.push({take:null,ret:f});
       usedIds.add(f.id);
     }
@@ -7400,7 +7400,7 @@ function hoRenderList(vid){
         <div style="font-size:12px;color:var(--t3);font-weight:500">${typeLabel}${purpose?` · ${purpose}`:''}</div>
         <div style="flex:1"></div>
         ${badge}
-        <button onclick="event.stopPropagation();hoDeletePair(${JSON.stringify([p.take?.id,p.ret?.id].filter(Boolean)})" style="width:26px;height:26px;border-radius:50%;background:#fee2e2;border:1px solid #fecaca;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" title="מחק">
+        <button onclick="event.stopPropagation();hoDeletePair(${JSON.stringify([p.take?.id,p.ret?.id].filter(Boolean))})" style="width:26px;height:26px;border-radius:50%;background:#fee2e2;border:1px solid #fecaca;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" title="מחק">
           <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </button>
       </div>
@@ -7480,7 +7480,7 @@ async function hoOpenForm(type, mode){
     const takeForm = hoForms2.find(function(x){ return x.id===hoLinkedTakeId; });
     if(takeForm){
       // נזקים — סנכרוני
-      if(takeForm.damages) hoDamages = JSON.parse(JSON.stringify(takeForm.damages);
+      if(takeForm.damages) hoDamages = JSON.parse(JSON.stringify(takeForm.damages));
       if(takeForm.noDamage) hoNoDmg = true;
       // תמונות — טען מ-IndexedDB (await — מחכים שיגיעו לפני שמצייר)
       const savedPhotos = (takeForm.photos && takeForm.photos.length)
@@ -7570,10 +7570,10 @@ async function hoOpenForm(type, mode){
   }
 
   // Reset fuel buttons
-  document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active');
+  document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active'));
 
   // Load car image
-  hoSetView('front', document.querySelector('.ho-view-btn');
+  hoSetView('front', document.querySelector('.ho-view-btn'));
 
   // Render damage list (for pre-loaded damages from take form)
   hoRenderDmgList();
@@ -7609,23 +7609,23 @@ function hoToggleEnergyType(){
   var batSec = document.getElementById('ho-battery-section');
   if(fuelSec) fuelSec.style.display = isElec ? 'none' : 'block';
   if(batSec) batSec.style.display = isElec ? 'block' : 'none';
-  if(isElec){ hoFuel = ''; document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active'); }
+  if(isElec){ hoFuel = ''; document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active')); }
 }
 
 function hoSetFuel(btn, val){
-  document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active');
+  document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   hoFuel = val;
 }
 
 function hoFmtKm(el){
-  const raw = parseInt((el.value||'').replace(/[^0-9]/g,'')||0;
+  const raw = parseInt((el.value||'').replace(/[^0-9]/g,'')||0);
   if(raw) el.value = raw.toLocaleString('he-IL');
 }
 
 function hoSetView(v, btn){
   hoCurrentView = v;
-  document.querySelectorAll('.ho-view-btn').forEach(b=>b.classList.remove('active');
+  document.querySelectorAll('.ho-view-btn').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   const img = document.getElementById('ho-car-img');
   if(!img) return;
@@ -7644,7 +7644,7 @@ function hoInitCarClick(){
   if(wrap._hoClickFn) wrap.removeEventListener('click', wrap._hoClickFn);
   wrap._hoClickFn = function(e){
     if(hoNoDmg) return;
-    if(e.target.classList.contains('ho-dot') return;
+    if(e.target.classList.contains('ho-dot')) return;
     const r = wrap.getBoundingClientRect();
     const px = ((e.clientX - r.left) / r.width) * 100;
     const py = ((e.clientY - r.top) / r.height) * 100;
@@ -7692,7 +7692,7 @@ function hoRenderDmgList(){
   if(!el) return;
   const all=[];
   ['front','right','back','left','interior'].forEach(v=>{
-    (hoDamages[v]||[]).forEach((d,i)=>all.push({num:all.length+1,label:HO_LABELS[v],types:d.types||[],view:v,idx:i});
+    (hoDamages[v]||[]).forEach((d,i)=>all.push({num:all.length+1,label:HO_LABELS[v],types:d.types||[],view:v,idx:i}));
   });
   el.innerHTML = all.map(d=>{
     const typesHTML = d.types.length
@@ -7830,7 +7830,7 @@ function hoHandlePhotos(input){
       }
       canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(bmp,0,0,w,h);
-      hoPhotos.push(canvas.toDataURL('image/jpeg',.94);
+      hoPhotos.push(canvas.toDataURL('image/jpeg',.94));
       hoRenderPhotosGrid();
     }).catch(()=>{
       const reader=new FileReader();
@@ -7843,7 +7843,7 @@ function hoHandlePhotos(input){
           if(w>max||h>max){const ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
           canvas.width=w;canvas.height=h;
           canvas.getContext('2d').drawImage(img,0,0,w,h);
-          hoPhotos.push(canvas.toDataURL('image/jpeg',.94);
+          hoPhotos.push(canvas.toDataURL('image/jpeg',.94));
           hoRenderPhotosGrid();
         };
         img.src=e.target.result;
@@ -7928,7 +7928,7 @@ function hoSaveForm(){
     time: document.getElementById('ho-time')?.value||'',
     km: document.getElementById('ho-km')?.value.trim()||'',
     noDamage: hoNoDmg,
-    damages: JSON.parse(JSON.stringify(hoDamages),
+    damages: JSON.parse(JSON.stringify(hoDamages)),
     photos: hoPhotos.slice(),
     
     sigData,
@@ -7949,17 +7949,17 @@ function hoSaveForm(){
       if(idx>=0){ hoForms2[idx].closed=true; formData.linkedTakeId=hoForms2[idx].id; closedTakeForm=hoForms2[idx]; }
     }
     // Sync the closed take form to Firestore so other devices see it as closed
-    if(closedTakeForm){ try{ syncPersistItem('hoForms2', Object.assign({},closedTakeForm,{photos:[]}); }catch(e){} }
+    if(closedTakeForm){ try{ syncPersistItem('hoForms2', Object.assign({},closedTakeForm,{photos:[]})); }catch(e){} }
   }
 
   // שמור תמונות ב-IndexedDB (אין מגבלת גודל)
-  hoPhotoStore.save(formData.id, hoPhotos.slice();
+  hoPhotoStore.save(formData.id, hoPhotos.slice());
 
   // שמור טופס ב-localStorage ללא תמונות (מונע QuotaExceededError)
   const lsForm = Object.assign({}, formData, {photos:[]});
   hoForms2.unshift(lsForm);
   try{
-    localStorage.setItem('hoForms2', JSON.stringify(hoForms2);
+    localStorage.setItem('hoForms2',JSON.stringify(hoForms2));
   }catch(e){
     console.warn('localStorage save error (quota?):', e);
     // נמשיך בכל מקרה — התמונות שמורות ב-IndexedDB
@@ -8115,7 +8115,7 @@ async function hoBuildCombinedPDF(takeForm, retForm){
     if(!isReturn && f.purpose) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">מטרת נסיעה</td><td style="font-weight:bold">' + f.purpose + '</td></tr>';
     if(f.destination) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">יעד</td><td style="font-weight:bold">' + f.destination + '</td></tr>';
     if(f.loanerTolls&&f.loanerTolls.length) tripHTML += '<tr><td style="color:#888;padding:3px 0;width:40%">'+(isReturn?'מנויי אגרה שהוסרו':'מנויי אגרה שהתווספו')+'</td><td style="font-weight:bold">'+f.loanerTolls.join(', ')+'</td></tr>';
-    tripHTML += '<tr><td style="color:#888;padding:3px 0">'+(f.isElectric?'⚡ סוללה':'כמות דלק')+'</td><td style="font-weight:bold">'+(f.isElectric?(f.batteryPct||'—'):(f.fuel||'&#x2014;')+'</td></tr>';
+    tripHTML += '<tr><td style="color:#888;padding:3px 0">'+(f.isElectric?'⚡ סוללה':'כמות דלק')+'</td><td style="font-weight:bold">'+(f.isElectric?(f.batteryPct||'—'):(f.fuel||'&#x2014;'))+'</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">תאריך ושעה</td><td style="font-weight:bold">' + isoToIL(f.date||'') + ' ' + (f.time||'') + '</td></tr>';
     tripHTML += '<tr><td style="color:#888;padding:3px 0">קילומטרים</td><td style="font-weight:bold">' + (f.km||'&#x2014;') + '</td></tr>';
     tripHTML += '</table></div>';
@@ -8191,7 +8191,7 @@ async function hoBuildCombinedPDF(takeForm, retForm){
   document.body.appendChild(div);
 
   const loadLib = function(src, cb){
-    if(document.querySelector('script[src="' + src + '"]'){ cb(); return; }
+    if(document.querySelector('script[src="' + src + '"]')) { cb(); return; }
     const s = document.createElement('script');
     s.src = src; s.onload = cb;
     document.head.appendChild(s);
@@ -8246,7 +8246,7 @@ function hoGetWhiteCarImg(view){
       ctx.fillStyle='#ffffff';
       ctx.fillRect(0,0,c.width,c.height);
       ctx.drawImage(img,0,0);
-      resolve(c.toDataURL('image/png');
+      resolve(c.toDataURL('image/png'));
     };
     img.onerror=function(){ resolve(HO_IMGS[view]); };
     img.src=HO_IMGS[view];
@@ -8272,7 +8272,7 @@ function hoCarSVGtoPng(view, w, h){
       var ctx = c.getContext('2d');
       ctx.scale(2,2);
       ctx.drawImage(img, 0, 0, w||200, h||150);
-      resolve(c.toDataURL('image/png');
+      resolve(c.toDataURL('image/png'));
     };
     img.onerror = function(){ resolve(svgUri); };
     img.src = svgUri;
@@ -8420,7 +8420,7 @@ async function hoDownloadPDF(){
   document.body.appendChild(div);
 
   const loadLib = function(src, cb){
-    if(document.querySelector('script[src="'+src+'"]'){ cb(); return; }
+    if(document.querySelector('script[src="'+src+'"]')){ cb(); return; }
     const s=document.createElement('script'); s.src=src; s.onload=cb; document.head.appendChild(s);
   };
   loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', function(){
@@ -8496,8 +8496,8 @@ function saveExtraDoc(){
   if(!v.extraDocs)v.extraDocs=[];
   v.extraDocs.push({id:Date.now(),name,exp});
   closeModal('ext-doc-modal');
-  if(document.getElementById('ext-doc-name')document.getElementById('ext-doc-name').value='';
-  if(document.getElementById('ext-doc-exp')document.getElementById('ext-doc-exp').value='';
+  if(document.getElementById('ext-doc-name')) document.getElementById('ext-doc-name').value='';
+  if(document.getElementById('ext-doc-exp')) document.getElementById('ext-doc-exp').value='';
   renderExtraDocs(_currentVid); showToast('נוסף ✅');
 }
 
@@ -8558,7 +8558,7 @@ function saveUpdate(){
       driver:{name:v.driver.name,id:v.driver.id,phone:v.driver.phone,email:v.driver.email},
       periodFrom:v.delivery||'',periodTo:localDateStr()
     });
-    localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles);
+    localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
     // Update vehicle with new details
     v.plate=newPlate;
     v.code=id('upd-code')?.value.trim()||'';
@@ -8581,7 +8581,7 @@ function saveUpdate(){
       var svcType=parseInt(id('upd-svc-type')?.value)||0;
       if(svcType){v.serviceKm=svcType;var nextKm=svcType+15000;v.nextServiceType=nextKm.toLocaleString('he-IL')+' ק"מ';}
       v.lastService=id('upd-svc-date')?.value||'';
-      var ckmEl=id('upd-ckm');if(ckmEl&&ckmEl.value)v.currentKm=parseInt(ckmEl.value.replace(/[^0-9]/g,'')||0;
+      var ckmEl=id('upd-ckm');if(ckmEl&&ckmEl.value)v.currentKm=parseInt(ckmEl.value.replace(/[^0-9]/g,''))||0;
     }
     // Log
     v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'החלפת רכב: '+v.make+' '+v.model+' ('+newPlate+') ← '+oldMake+' '+oldModel+' ('+oldPlate+')',createdAt:now,source:'auto'});
@@ -8599,7 +8599,7 @@ function saveUpdate(){
       driver:{name:oldDriver.name,id:oldDriver.id,phone:oldDriver.phone,email:oldDriver.email},
       periodFrom:v.delivery||'',periodTo:localDateStr()
     });
-    localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles);
+    localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
     // Update driver
     v.driver.name=newName;
     v.driver.id=id('upd-did')?.value.trim()||'';
@@ -8698,7 +8698,7 @@ function isWithin30Days(isoDate, customDays){
   today.setHours(0,0,0,0);
   const d = new Date(isoDate);
   d.setHours(0,0,0,0);
-  const diff = Math.round((d-today)/(1000*60*60*24);
+  const diff = Math.round((d-today)/(1000*60*60*24));
   const threshold = customDays || 30;
   return diff <= threshold;
 }
@@ -8710,7 +8710,7 @@ function getMonthItems(mo){
   vehicles.forEach(v=>{
     const primaryDriverName = v.driver?.name||'';
     // vehicle test (רישיון רכב / טסט) - only show if within 30 days
-    if(inM(v.licenseExp,m,y) && isWithin30Days(v.licenseExp){
+    if(inM(v.licenseExp,m,y) && isWithin30Days(v.licenseExp)){
       items.push({
         uid:'test-'+v.id,
         type:'test',
@@ -8723,7 +8723,7 @@ function getMonthItems(mo){
       });
     }
     // driver license (רישיון נהיגה) - only show if within 30 days
-    if(inM(v.driver.licenseExp,m,y) && isWithin30Days(v.driver.licenseExp){
+    if(inM(v.driver.licenseExp,m,y) && isWithin30Days(v.driver.licenseExp)){
       items.push({
         uid:'lic-drv-'+v.id,
         type:'lic',
@@ -8738,7 +8738,7 @@ function getMonthItems(mo){
     }
     // family licenses - only show if within 30 days
     if(v.family) v.family.forEach((f,fi)=>{
-      if(inM(f.licenseExp,m,y) && isWithin30Days(f.licenseExp){
+      if(inM(f.licenseExp,m,y) && isWithin30Days(f.licenseExp)){
         items.push({
           uid:'lic-fam-'+v.id+'-'+fi,
           type:'lic',
@@ -8760,7 +8760,7 @@ function getMonthItems(mo){
       const anniversary = new Date(lastSvcDate);
       while(anniversary <= NOW) anniversary.setFullYear(anniversary.getFullYear()+1);
       const annivStr = localDateStr(anniversary);
-      if(inM(annivStr,m,y) && isWithin30Days(annivStr){
+      if(inM(annivStr,m,y) && isWithin30Days(annivStr)){
         items.push({
           uid:'svc-'+v.id,
           type:'svc',
@@ -8785,7 +8785,7 @@ function getVehicleLastServiceDate(v){
   if(v.historyLog && v.historyLog.length){
     const services = v.historyLog.filter(h=>h.kind==='service');
     if(services.length){
-      const sorted = services.slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0);
+      const sorted = services.slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
       if(sorted[0].createdAt) return sorted[0].createdAt.split('T')[0];
     }
   }
@@ -8809,7 +8809,7 @@ function renderCalCard(mo){
   const doneKey=`cal-done-${m}-${y}`;
   const done=JSON.parse(localStorage.getItem(doneKey)||'[]');
   // Use stable uids for the "done" state
-  const activeItems=items.filter(it=>!done.includes(it.uid);
+  const activeItems=items.filter(it=>!done.includes(it.uid));
   const badge=`<span class="cal-tasks-badge">${activeItems.length} תזכורות</span>`;
   const tagMap={svc:'svc',test:'test',lic:'lic'};
   // Map label by type + subType
@@ -8830,7 +8830,7 @@ function renderCalCard(mo){
       if(daysLeft<0){daysColor='#dc2626';daysBg='#fef2f2';}
       else if(daysLeft<14){daysColor='#d97706';daysBg='#fffbeb';}
     }
-    const daysText=daysLeft!==null?(daysLeft<0?'באיחור של '+Math.abs(daysLeft)+' ימים':(daysLeft===0?'היום!':'עוד '+daysLeft+' ימים'):'';
+    const daysText=daysLeft!==null?(daysLeft<0?'באיחור של '+Math.abs(daysLeft)+' ימים':(daysLeft===0?'היום!':'עוד '+daysLeft+' ימים')):'';
     const dateHtml=it.date?`<div style="display:flex;align-items:center;gap:6px;margin-top:6px"><span style="font-size:11px;color:var(--t3)">עד: ${fds(it.date)}</span><span style="font-size:10px;font-weight:600;color:${daysColor};background:${daysBg};padding:1px 8px;border-radius:999px">${daysText}</span></div>`:'';
 
     // Tag colors
@@ -8866,7 +8866,7 @@ function calMarkDone(key,uid){
   const done=JSON.parse(localStorage.getItem(key)||'[]');
   const pos=done.indexOf(uid);
   if(pos===-1)done.push(uid);else done.splice(pos,1);
-  localStorage.setItem(key,JSON.stringify(done);
+  localStorage.setItem(key,JSON.stringify(done));
   // Also sync with dismissedReminders for the main calendar panel
   try{
     const dismissed = JSON.parse(localStorage.getItem('dismissedReminders')||'{}');
@@ -8879,7 +8879,7 @@ function calMarkDone(key,uid){
     if(remId){
       if(pos===-1) dismissed[remId] = new Date().toISOString();
       else delete dismissed[remId];
-      localStorage.setItem('dismissedReminders', JSON.stringify(dismissed);
+      localStorage.setItem('dismissedReminders',JSON.stringify(dismissed));
     }
   }catch(e){}
   renderCal();
@@ -8887,7 +8887,7 @@ function calMarkDone(key,uid){
   if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
 }
 function renderCal(){
-  if(!id('cal-range')||!id('cal-grid')return;
+  if(!id('cal-range')||!id('cal-grid'))return;
   const base=new Date(NOW.getFullYear(),NOW.getMonth()+calOffset,1);
   const next=new Date(NOW.getFullYear(),NOW.getMonth()+calOffset+1,1);
   id('cal-range').textContent=`${HEM[base.getMonth()]} ${base.getFullYear()} — ${HEM[next.getMonth()]} ${next.getFullYear()}`;
@@ -8956,7 +8956,7 @@ function getTimelineItems(rangeDays){
 let vFilter='all',vSearch='',_vKmRange=null;
 function docsIcon(vid){
   const v=vehicles.find(x=>x.id===vid);
-  if(v && (v.status==='waiting_vehicle' || (v.driver&&v.driver.name&&v.driver.name.includes('ממתין')){
+  if(v && (v.status==='waiting_vehicle' || (v.driver&&v.driver.name&&v.driver.name.includes('ממתין')))){
     return '<span style="color:#92400e;font-size:11px;font-style:italic">ימולאו בקליטת הרכב</span>';
   }
   const vd=vehicleDocs[vid]||{};
@@ -8999,15 +8999,15 @@ function getVehicleStatus(v){
     var vt=viol.status==='waiting'?'ממתין להסבה':'נשלח להסבה';
     var vcol=viol.status==='waiting'?'#BA7517':'#185FA5';
     var vbg=viol.status==='waiting'?'#FAEEDA':'#E6F1FB';
-    badges.push(_vsBadge(vt,vcol,vbg);
+    badges.push(_vsBadge(vt,vcol,vbg));
   } else if(vc>1){
-    badges.push(_vsBadge(vc+' דוחות פתוחים','#BA7517','#FAEEDA');
+    badges.push(_vsBadge(vc+' דוחות פתוחים','#BA7517','#FAEEDA'));
   }
   // Accidents badge(s)
   if(ac===1){
-    badges.push(getAccidentStatusLabel(openAccs[0]);
+    badges.push(getAccidentStatusLabel(openAccs[0]));
   } else if(ac>1){
-    badges.push(_vsBadge(ac+' תאונות פתוחות','#A32D2D','#FCEBEB');
+    badges.push(_vsBadge(ac+' תאונות פתוחות','#A32D2D','#FCEBEB'));
   }
   // If we have violations or accidents
   if(badges.length>0){
@@ -9018,7 +9018,7 @@ function getVehicleStatus(v){
   // Standard checks (no violations/accidents)
   var licDays=dys(v.licenseExp);
   if(licDays<0)return{cls:'danger',label:'רישיון פג',html:_vsBadge('רישיון פג','#A32D2D','#FCEBEB')};
-  if(hasMissingDocs(v)return{cls:'danger',label:'מסמכים חסרים',html:_vsBadge('מסמכים חסרים','#A32D2D','#FCEBEB')};
+  if(hasMissingDocs(v))return{cls:'danger',label:'מסמכים חסרים',html:_vsBadge('מסמכים חסרים','#A32D2D','#FCEBEB')};
   if(typeof getAltVehicleStatus==='function'){var alt=getAltVehicleStatus(v.id);if(alt)return{cls:'info',label:'עם חלופי',html:_vsBadge('עם חלופי','#185FA5','#E6F1FB')};}
   var nxt=calcNextSvc(v);
   if(nxt.km){var kLeft=nxt.km-(v.currentKm||0);if(kLeft<=0)return{cls:'danger',label:'דחוף',html:_vsBadge('דחוף','#A32D2D','#FCEBEB')};}
@@ -9067,7 +9067,7 @@ function _matchSvcQuery(v,q){
   // מוציאים את המספרים מהחיפוש
   var nums=ql.match(/\d+/g);
   if(!nums)return(ql.includes('טיפול')&&!!nst);
-  var qnum=parseInt(nums.join('');
+  var qnum=parseInt(nums.join(''));
   if(qnum<1000)qnum*=1000; // "15" → 15000
   return _svcKmFromStr(nst)===qnum;
 }
@@ -9084,7 +9084,7 @@ function fil(){
   });
   if(_vKmRange) r=r.filter(function(v){
     var raw=v.currentKm||v.curKm;
-    var km=raw?parseInt(String(raw).replace(/[^0-9]/g,'')||0:0;
+    var km=raw?parseInt(String(raw).replace(/[^0-9]/g,''))||0:0;
     return km>=_vKmRange.min && km<=_vKmRange.max;
   });
   var statusOrder={danger:0,warn:1,success:2};
@@ -9151,7 +9151,7 @@ function renderDash(){
   // Update sort icons
   ['name','status','service'].forEach(function(c){var el=document.getElementById('sort-'+c);if(el)el.textContent=_dashSort===c?(_dashSortDir==='asc'?'▲':'▼'):'';});
   // Pagination
-  var totalPages=Math.max(1,Math.ceil(r.length/_dashPerPage);
+  var totalPages=Math.max(1,Math.ceil(r.length/_dashPerPage));
   if(_dashPage>totalPages)_dashPage=totalPages;
   var start=(_dashPage-1)*_dashPerPage;
   var pageItems=r.slice(start,start+_dashPerPage);
@@ -9346,7 +9346,7 @@ function renderDocsModal(){
     return b.docs.length-a.docs.length;
   });
   // Pagination
-  var totalPages=Math.max(1,Math.ceil(groupedArr.length/_docsModalPerPage);
+  var totalPages=Math.max(1,Math.ceil(groupedArr.length/_docsModalPerPage));
   if(_docsModalPage>totalPages)_docsModalPage=totalPages;
   var start=(_docsModalPage-1)*_docsModalPerPage;
   var pageItems=groupedArr.slice(start,start+_docsModalPerPage);
@@ -9460,7 +9460,7 @@ function openSvcStatusModal(type){
     });
   } else if(type==='waiting'){
     bookings.filter(function(b){return b.status==='pending';}).forEach(function(b){
-      var daysSince=Math.floor((new Date()-new Date(b.createdAt||'')/86400000);
+      var daysSince=Math.floor((new Date()-new Date(b.createdAt||''))/86400000);
       items.push({name:b.driverName||'',plate:b.plate||'',detail:b.serviceType||'',date:b.createdAt?b.createdAt.split('T')[0]:'',days:daysSince,status:daysSince+'  ימים ללא תשובה',vid:b.vid});
     });
   } else if(type==='scheduled'){
@@ -9513,7 +9513,7 @@ function simulateServiceTest(){
   // Save to Firestore
   if(db){
     db.collection('vehicles').doc(String(v.id)).update({lastService:v.lastService,historyLog:v.historyLog||[]}).then(function(){
-      showToast('✅ בדיקה: טיפול אחרון של '+v.driver.name+' הוגדר ל-'+fd(v.lastService);
+      showToast('✅ בדיקה: טיפול אחרון של '+v.driver.name+' הוגדר ל-'+fd(v.lastService));
       refresh();
     }).catch(function(e){
       console.error(e);
@@ -9596,7 +9596,7 @@ function renderSvcSection(){
   var overdueDrivers=[];
   // Find drivers with pending status for 5+ days
   monthBookings.filter(function(b){return b.status==='pending'}).forEach(function(b){
-    var daysSince=Math.floor((now-new Date(b.createdAt||'')/86400000);
+    var daysSince=Math.floor((now-new Date(b.createdAt||''))/86400000);
     if(daysSince>=5){
       overdueDrivers.push({name:b.driverName||'',type:b.serviceType==='טסט'?'test':'svc',detail:b.plate||'',company:'',days:daysSince,vid:b.vid});
     }
@@ -9700,7 +9700,7 @@ function toggleSvcAlert(){
   if(footer&&footer.dataset.shouldShow==='true')footer.style.display=isOpen?'none':'';
   if(arrow)arrow.style.transform=isOpen?'rotate(0deg)':'rotate(180deg)';
 }
-function showAllOverdueDrivers(){go('calendar',q('[dp=calendar]');}
+function showAllOverdueDrivers(){go('calendar',q('[dp=calendar]'));}
 
 function updateDashGreeting(){
   const h=new Date().getHours();
@@ -9716,7 +9716,7 @@ function updateDashGreeting(){
   if(greetEl) greetEl.textContent=greetText;
   // Count attention items
   const altCount=(countDriversOnAlt()||{}).total||0;
-  const missingDocsCount=vehicles.filter(v=>hasMissingDocs(v).length;
+  const missingDocsCount=vehicles.filter(v=>hasMissingDocs(v)).length;
   const accCount=(typeof accidentsList!=='undefined'?accidentsList:[]).filter(function(a){return a.status!=='closed';}).length;
   const violCount=(typeof violationsList!=='undefined'?violationsList:[]).filter(function(v){return v.status!=='done'&&v.status!=='closed';}).length;
   const totalAttention=altCount+missingDocsCount+accCount+violCount;
@@ -9752,7 +9752,7 @@ function showAltDriversModal(){
   const rows = [];
   open.forEach(f=>{
     const key = f.vehicleId+'_'+f.type;
-    if(seen.has(key) return;
+    if(seen.has(key)) return;
     seen.add(key);
     const v = vehicles.find(x=>x.id===f.vehicleId);
     rows.push({f, v});
@@ -9804,7 +9804,7 @@ function globalSearch(query){
   const resEl = document.getElementById('global-search-results');
   if(!resEl) return;
   // Also apply as vehicle filter — אל תסנן לפי טקסט אם זה חיפוש טווח ק"מ
-  var _isKmRangeQuery = /^\d[\d,]*\s*(?:-|עד)\s*\d[\d,]*$/.test((query||'').trim();
+  var _isKmRangeQuery = /^\d[\d,]*\s*(?:-|עד)\s*\d[\d,]*$/.test((query||'').trim());
   if(!_isKmRangeQuery){
     // אם יצאנו מחיפוש טווח ק"מ — אפס את פילטר הק"מ
     if(_vKmRange){ _vKmRange=null; if(typeof renderV==='function') renderV(); }
@@ -9825,7 +9825,7 @@ function globalSearch(query){
   const mfrGroups = {};
   (vehicles||[]).forEach(function(v){
     const mfr = (v.make||'').trim();
-    if(mfr && mfr.toLowerCase().includes(q){
+    if(mfr && mfr.toLowerCase().includes(q)){
       if(!mfrGroups[mfr]) mfrGroups[mfr] = [];
       mfrGroups[mfr].push(v);
     }
@@ -9836,13 +9836,13 @@ function globalSearch(query){
   const seenDrivers = new Set();
   (vehicles||[]).forEach(function(v){
     const name = v.driver?.name||'';
-    if(name && name.toLowerCase().includes(q) && !seenDrivers.has(name){
+    if(name && name.toLowerCase().includes(q) && !seenDrivers.has(name)){
       seenDrivers.add(name);
       driverMatches.push({name, vid:v.id, plate:v.plate});
     }
     // family
     if(v.family) v.family.forEach(function(f){
-      if(f.name && f.name.toLowerCase().includes(q) && !seenDrivers.has(f.name){
+      if(f.name && f.name.toLowerCase().includes(q) && !seenDrivers.has(f.name)){
         seenDrivers.add(f.name);
         driverMatches.push({name:f.name, vid:v.id, plate:v.plate, family:true});
       }
@@ -9896,15 +9896,15 @@ function globalSearch(query){
     // סנן את רשימת הרכבים הראשית ועבור לדף הרכבים
     _vKmRange = _kmRange;
     if(typeof renderV==='function') renderV();
-    if(typeof go==='function') go('vehicles', document.querySelector('[dp=vehicles]');
+    if(typeof go==='function') go('vehicles', document.querySelector('[dp=vehicles]'));
     kmRangeMatches = (vehicles||[]).filter(function(v){
       // parse robustly — currentKm יכול להיות מספר, מחרוזת, או עם פסיקים
       var raw = v.currentKm || v.curKm;
-      var km = raw ? parseInt(String(raw).replace(/[^0-9]/g,'') || 0 : 0;
+      var km = raw ? parseInt(String(raw).replace(/[^0-9]/g,'')) || 0 : 0;
       return km >= _kmRange.min && km <= _kmRange.max;
     }).sort(function(a,b){
-      var aKm = parseInt(String(a.currentKm||a.curKm||0).replace(/[^0-9]/g,'')||0;
-      var bKm = parseInt(String(b.currentKm||b.curKm||0).replace(/[^0-9]/g,'')||0;
+      var aKm = parseInt(String(a.currentKm||a.curKm||0).replace(/[^0-9]/g,''))||0;
+      var bKm = parseInt(String(b.currentKm||b.curKm||0).replace(/[^0-9]/g,''))||0;
       return bKm - aKm;
     });
   }
@@ -9913,7 +9913,7 @@ function globalSearch(query){
   const svcGroups = {}; // { "15,000 ק\"מ": [v, ...], ... }
   (vehicles||[]).forEach(function(v){
     if(!v.nextServiceType) return;
-    if(!_kmRange && _matchSvcQuery(v, q){
+    if(!_kmRange && _matchSvcQuery(v, q)){
       const key = v.nextServiceType;
       if(!svcGroups[key]) svcGroups[key] = [];
       svcGroups[key].push(v);
@@ -10196,14 +10196,14 @@ function mkmReset(){
 document.addEventListener('click', function(e){
   var wrap = document.getElementById('km-filter-wrap');
   var panel = document.getElementById('km-filter-panel');
-  if(panel && panel.style.display==='block' && wrap && !wrap.contains(e.target){
+  if(panel && panel.style.display==='block' && wrap && !wrap.contains(e.target)){
     panel.style.display = 'none';
     // הסר active רק אם אין חיפוש פעיל
     var inp = document.getElementById('srch-inp');
     if(!inp || !inp.value) document.getElementById('km-filter-btn')?.classList.remove('active');
   }
 });
-function switchTab(f,el){vFilter=f;document.querySelectorAll('#page-vehicles .tab').forEach(t=>t.classList.remove('active');el.classList.add('active');renderV()}
+function switchTab(f,el){vFilter=f;document.querySelectorAll('#page-vehicles .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderV()}
 
 /* ── VEHICLE CARD PAGE ── */
 let MANDATORY_DOCS=[
@@ -10217,7 +10217,7 @@ let MANDATORY_DOCS=[
   try{
     const s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
     (s.customMandatoryDocs||[]).forEach(function(d){
-      if(d&&d.key&&!MANDATORY_DOCS.find(function(x){return x.key===d.key;})
+      if(d&&d.key&&!MANDATORY_DOCS.find(function(x){return x.key===d.key;}))
         MANDATORY_DOCS.push({key:d.key,label:d.label,custom:true});
     });
   }catch(e){}
@@ -10226,7 +10226,7 @@ const vehicleDocs={};
 
 function vcTab(name,el){
   document.querySelectorAll('.vc-tab-panel').forEach(p=>{p.style.display='none';});
-  document.querySelectorAll('.vc-tab-btn').forEach(t=>t.classList.remove('active');
+  document.querySelectorAll('.vc-tab-btn').forEach(t=>t.classList.remove('active'));
   if(name==='handover'){
     initHandoverTab(_currentVid);
     const hoPanel = id('vct-handover');
@@ -10258,7 +10258,7 @@ function renderVcHistory(vid){
   if(!v) return;
   if(!v.historyLog) v.historyLog = [];
   // Sort by createdAt desc
-  const list = v.historyLog.slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0);
+  const list = v.historyLog.slice().sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
   const el = document.getElementById('vc-history-list');
   if(!el) return;
   if(!list.length){
@@ -10315,10 +10315,10 @@ function renderVehicleTimeline(vid){
     if(h.kind==='puncture') autoTitle='תיקון פנצ\'ר';
     if(h.kind==='edit') autoTitle='עריכת פרטים';
     if(!autoTitle && h.desc){
-      if(h.desc.includes('נהג שונה') autoTitle='עדכון נהג';
-      else if(h.desc.includes('ק"מ עודכן') autoTitle='עדכון ק"מ';
-      else if(h.desc.includes('רישיון') autoTitle='עדכון רישיון';
-      else if(h.desc.includes('מסירה') autoTitle='עדכון מסירה';
+      if(h.desc.includes('נהג שונה')) autoTitle='עדכון נהג';
+      else if(h.desc.includes('ק"מ עודכן')) autoTitle='עדכון ק"מ';
+      else if(h.desc.includes('רישיון')) autoTitle='עדכון רישיון';
+      else if(h.desc.includes('מסירה')) autoTitle='עדכון מסירה';
       else autoTitle='עדכון פרטים';
     }
     if(!autoTitle) autoTitle=h.kind==='service'?'טיפול':h.kind==='test'?'טסט':'עדכון';
@@ -10340,7 +10340,7 @@ function renderVehicleTimeline(vid){
   hoForms.filter(function(f){return f.vehicleId===vid;}).forEach(function(f){
     var title, desc='';
     if(f.type==='mission'){
-      title=f.mode==='take'?('לקיחת רכב'+(f.purpose?' ל'+f.purpose:''):'החזרת רכב';
+      title=f.mode==='take'?('לקיחת רכב'+(f.purpose?' ל'+f.purpose:'')):'החזרת רכב';
     } else if(f.type==='loaner'){
       title=f.mode==='take'?'מסירה לנהג רכב חלופי':'החזרה מנהג רכב חלופי';
     } else if(f.type==='bridge'){
@@ -10384,17 +10384,17 @@ function renderVehicleTimeline(vid){
   function getTimelineIconInfo(ev){
     var title=(ev.title||'').toLowerCase();
     var kind=ev.kind||'';
-    if(kind==='tire'||title.includes('החלפת צמיג') return {cls:'tire',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>'};
-    if(kind==='puncture'||title.includes('פנצ') return {cls:'puncture',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'};
-    if(title.includes('סיום עסקה') return {cls:'document',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>'};
-    if(title.includes('מסירת רכב')||title.includes('מסירה') return {cls:'delivery',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 19 9 19 22 5 22 5 9 12 2"/></svg>'};
-    if(title.includes('טיפול')||title.includes('service') return {cls:'service',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'};
-    if(title.includes('תאונה')||title.includes('accident') return {cls:'accident',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'};
-    if(title.includes('דוח') return {cls:'report',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg>'};
-    if(title.includes('נהג')||title.includes('שיוך') return {cls:'driver',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'};
-    if(title.includes('מסמך')||title.includes('הועלה') return {cls:'document',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'};
-    if(title.includes('טסט') return {cls:'test',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'};
-    if(title.includes('ביטוח') return {cls:'update',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'};
+    if(kind==='tire'||title.includes('החלפת צמיג')) return {cls:'tire',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>'};
+    if(kind==='puncture'||title.includes('פנצ')) return {cls:'puncture',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'};
+    if(title.includes('סיום עסקה')) return {cls:'document',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>'};
+    if(title.includes('מסירת רכב')||title.includes('מסירה')) return {cls:'delivery',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 19 9 19 22 5 22 5 9 12 2"/></svg>'};
+    if(title.includes('טיפול')||title.includes('service')) return {cls:'service',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>'};
+    if(title.includes('תאונה')||title.includes('accident')) return {cls:'accident',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'};
+    if(title.includes('דוח')) return {cls:'report',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg>'};
+    if(title.includes('נהג')||title.includes('שיוך')) return {cls:'driver',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'};
+    if(title.includes('מסמך')||title.includes('הועלה')) return {cls:'document',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'};
+    if(title.includes('טסט')) return {cls:'test',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'};
+    if(title.includes('ביטוח')) return {cls:'update',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'};
     return {cls:'update',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>'};
   }
 
@@ -10438,20 +10438,20 @@ function renderVcHandoverHistory(vid){
   const v = vehicles.find(x=>x.id===vid);
   if(!v) return;
   // Find all handover forms for this vehicle
-  const vForms = hoForms2.filter(f=>f.vehicleId===vid).slice().sort((a,b)=>new Date(b.createdAt||b.date||0)-new Date(a.createdAt||a.date||0);
+  const vForms = hoForms2.filter(f=>f.vehicleId===vid).slice().sort((a,b)=>new Date(b.createdAt||b.date||0)-new Date(a.createdAt||a.date||0));
   if(!vForms.length){ el.innerHTML=''; return; }
   // Pair take+return forms
   const pairs = [];
   const used = new Set();
   const takes = vForms.filter(f=>f.mode==='take');
   takes.forEach(tk=>{
-    const ret = vForms.find(f=>f.mode==='return'&&f.type===tk.type&&f.linkedTakeId===tk.id&&!used.has(f.id);
+    const ret = vForms.find(f=>f.mode==='return'&&f.type===tk.type&&f.linkedTakeId===tk.id&&!used.has(f.id));
     if(ret) used.add(ret.id);
     used.add(tk.id);
     pairs.push({take:tk, ret:ret||null});
   });
   // Add orphan returns
-  vForms.filter(f=>f.mode==='return'&&!used.has(f.id).forEach(f=>{ pairs.push({take:null,ret:f}); });
+  vForms.filter(f=>f.mode==='return'&&!used.has(f.id)).forEach(f=>{ pairs.push({take:null,ret:f}); });
 
   const typeIcon = {mission:'🚗',loaner:'🔄',bridge:'🌉'};
   const typeName = {mission:'משימה',loaner:'רכב חלופי',bridge:'רכב גישור'};
@@ -10541,7 +10541,7 @@ function openAddHistoryModal(vid){
   document.getElementById('hist-time').value = now.toTimeString().slice(0,5);
   // Pre-fill current km from vehicle
   const v = vehicles.find(x=>x.id===vid);
-  if(v && (v.currentKm||v.curKm){
+  if(v && (v.currentKm||v.curKm)){
     document.getElementById('hist-km').value = Number(v.currentKm||v.curKm).toLocaleString('he-IL');
   }
 }
@@ -10554,7 +10554,7 @@ function saveHistoryEntry(vid){
   const desc = document.getElementById('hist-desc').value.trim();
   // Validation: service/test needs serviceType. Note needs desc.
   if((kind==='service'||kind==='test') && !serviceType){
-    showToast('נא למלא סוג '+(kind==='service'?'טיפול':'טסט');
+    showToast('נא למלא סוג '+(kind==='service'?'טיפול':'טסט'));
     return;
   }
   if(kind==='note' && !desc){
@@ -10570,7 +10570,7 @@ function saveHistoryEntry(vid){
   if(date){
     try{
       const dt = new Date(date+'T'+(time||'00:00')+':00');
-      if(!isNaN(dt) createdAt = dt.toISOString();
+      if(!isNaN(dt)) createdAt = dt.toISOString();
     }catch(e){}
   }
   v.historyLog.unshift({
@@ -10595,9 +10595,9 @@ function histServiceTypeKey(e){
     const el = e.target;
     const val = el.value;
     // Only add comma if last char isn't already comma/space
-    if(val && !/[,\s]$/.test(val){
+    if(val && !/[,\s]$/.test(val)){
       el.value = val + ', ';
-    } else if(val && !val.endsWith(' '){
+    } else if(val && !val.endsWith(' ')){
       el.value = val + ' ';
     }
     // Move cursor to end
@@ -10608,7 +10608,7 @@ function histServiceTypeKey(e){
 function deleteHistoryEntry(vid, hid){
   const v = vehicles.find(x=>x.id===vid);
   if(!v||!v.historyLog) return;
-  if(!confirm('למחוק תיעוד זה?') return;
+  if(!confirm('למחוק תיעוד זה?')) return;
   v.historyLog = v.historyLog.filter(h=>h.id!==hid);
   _persistVehicleHistory();
   renderVcHistory(vid);
@@ -10638,7 +10638,7 @@ function _persistVehicleHistory(){
     if(typeof persistVehiclesDebounced === 'function'){
       persistVehiclesDebounced();
     } else {
-      localStorage.setItem('fleetVehicles', JSON.stringify(vehicles);
+      localStorage.setItem('fleetVehicles',JSON.stringify(vehicles));
     }
   }catch(e){ console.error('persist history error:', e); }
 }
@@ -10675,7 +10675,7 @@ function openDet(vid){
   const v=vehicles.find(x=>x.id===vid);if(!v)return;
   _currentVid=vid;
   go('vehicle-card', null);
-  vcTab('overview', document.querySelector('.vc-tab-btn');
+  vcTab('overview', document.querySelector('.vc-tab-btn'));
   // גלול לראש הכרטיס — חשוב במובייל
   setTimeout(function(){
     var content = document.querySelector('.content');
@@ -10746,7 +10746,7 @@ function openDet(vid){
     const _dPhone = v.driver?.phone||'';
     const _dEmail = v.driver?.email||'';
     let _waPhone = _dPhone.replace(/[^0-9]/g,'');
-    if(_waPhone.startsWith('0') _waPhone='972'+_waPhone.substring(1);
+    if(_waPhone.startsWith('0')) _waPhone='972'+_waPhone.substring(1);
     contactEl.innerHTML=`
       <button class="vc-contact-btn whatsapp" onclick="window.open('https://wa.me/${_waPhone}','_blank')" style="font-size:12px;padding:7px 14px;flex-direction:column;gap:4px;min-width:70px">
         <svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -10804,7 +10804,7 @@ function openDet(vid){
 
   // ── OVERVIEW: summary cards ──
   const nxtSvc=calcNextSvc(v);
-  const kmN=nxtSvc.km?(nxtSvc.km-(v.currentKm||0):null;
+  const kmN=nxtSvc.km?(nxtSvc.km-(v.currentKm||0)):null;
   const kmColor=kmN===null?null:kmN<=0?'#dc2626':kmN<2000?'#d97706':null;
   const kmTxt=kmN===null?'—':kmN<=0?'דחוף!':nxtSvc.type;
 
@@ -10830,7 +10830,7 @@ function openDet(vid){
   const svcDate=nxtSvc.date?fd(nxtSvc.date):'';
   const svcTxt=nxtSvc.type?svcType+(svcDate?' · '+svcDate:''):'—';
   const tollsTxt=(v.tolls&&v.tolls.length)?v.tolls.join(', '):'אין';
-  const curKm=(v.currentKm||v.curKm)?((v.currentKm||v.curKm).toLocaleString('he-IL')+' ק"מ':'—';
+  const curKm=(v.currentKm||v.curKm)?((v.currentKm||v.curKm).toLocaleString('he-IL')+' ק"מ'):'—';
 
   // Driver license color (needed in overview card)
   const dLic=dys(v.driver.licenseExp);
@@ -10842,8 +10842,8 @@ function openDet(vid){
   const dealEndDate=v.dealEnd?new Date(v.dealEnd):null;
   let dealPct=0, dealMonthsTotal=0, dealMonthsCurrent=0, dealMonthsRemain=0;
   if(dealStartDate&&dealEndDate){
-    dealMonthsTotal=Math.round((dealEndDate-dealStartDate)/(1000*60*60*24*30);
-    dealMonthsCurrent=Math.round((new Date()-dealStartDate)/(1000*60*60*24*30);
+    dealMonthsTotal=Math.round((dealEndDate-dealStartDate)/(1000*60*60*24*30));
+    dealMonthsCurrent=Math.round((new Date()-dealStartDate)/(1000*60*60*24*30));
     if(dealMonthsCurrent<0) dealMonthsCurrent=0;
     if(dealMonthsCurrent>dealMonthsTotal) dealMonthsCurrent=dealMonthsTotal;
     dealMonthsRemain=dealMonthsTotal-dealMonthsCurrent;
@@ -10855,7 +10855,7 @@ function openDet(vid){
 
   // Row 2: Deal period + KM + Next service (3 columns)
   var kmUpdateAgo='';
-  if(v.lastKmUpdate){var diffDays=Math.round((new Date()-new Date(v.lastKmUpdate)/86400000);kmUpdateAgo='עודכן לפני '+diffDays+' ימים · '+fd(v.lastKmUpdate);}
+  if(v.lastKmUpdate){var diffDays=Math.round((new Date()-new Date(v.lastKmUpdate))/86400000);kmUpdateAgo='עודכן לפני '+diffDays+' ימים · '+fd(v.lastKmUpdate);}
   id('vc-summary-cards2').style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px';
   var oldTitle=document.getElementById('vc-row2-title');if(oldTitle)oldTitle.remove();
   id('vc-summary-cards2').insertAdjacentHTML('beforebegin','<div style="font-size:13px;font-weight:500;color:var(--t2);margin-bottom:10px;letter-spacing:.02em" id="vc-row2-title">עסקה וטיפולים</div>');
@@ -10883,7 +10883,7 @@ function openDet(vid){
         <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.delivery)}</div><div style="font-size:10px;color:var(--t2)">מסירה</div></div>
         <span style="color:var(--t3)">←</span>
         <div style="text-align:center"><div style="font-size:15px;font-weight:500">${fd(v.dealEnd)||'—'}</div><div style="font-size:10px;color:var(--t2)">סיום</div></div>
-      </div>${(function(){var start=new Date(v.delivery);var end=v.dealEnd?new Date(v.dealEnd):new Date(start.getTime()+3*365.25*86400000);var total=Math.round((end-start)/2592000000);var elapsed=Math.max(0,Math.round((new Date()-start)/2592000000);var pct=Math.min(100,Math.max(0,Math.round(elapsed/total*100));var remaining=Math.max(0,total-elapsed);var bar='<div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:6px;width:100%"><div style="height:100%;background:var(--green,#1D9E75);border-radius:2px;width:'+pct+'%"></div></div><div style="font-size:12px;color:var(--t2);text-align:center">חודש <strong style="color:var(--t1)">'+elapsed+'</strong> מתוך <strong style="color:var(--t1)">'+total+'</strong> · נותרו '+remaining+' חודשים</div>';if(remaining<=4){bar+='<div style="margin-top:10px;padding:8px 10px;background:'+(v.newVehicleDate?'#E1F5EE':'#FAEEDA')+';border:1px solid '+(v.newVehicleDate?'#1D9E75':'#D97706')+';border-radius:8px">';if(v.newVehicleDate){bar+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div><div style="font-size:11px;font-weight:600;color:#0F6E56">🚗 רכב חדש בדרך</div><div style="font-size:12px;color:#0F6E56;margin-top:2px">צפוי ב-'+fd(v.newVehicleDate)+'</div></div><button onclick="openNewVehicleDateModal('+vid+')" style="background:#0F6E56;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">עדכן</button></div>';}else{bar+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div style="font-size:11px;font-weight:500;color:#854F0B">⏰ העסקה מסתיימת בקרוב</div><button onclick="openNewVehicleDateModal('+vid+')" style="background:#854F0B;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">עדכן תאריך רכב חדש</button></div>';}bar+='</div>';}return bar;})()}`:'<div style="font-size:14px;color:var(--t3)">—</div>'}
+      </div>${(function(){var start=new Date(v.delivery);var end=v.dealEnd?new Date(v.dealEnd):new Date(start.getTime()+3*365.25*86400000);var total=Math.round((end-start)/2592000000);var elapsed=Math.max(0,Math.round((new Date()-start)/2592000000));var pct=Math.min(100,Math.max(0,Math.round(elapsed/total*100)));var remaining=Math.max(0,total-elapsed);var bar='<div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:6px;width:100%"><div style="height:100%;background:var(--green,#1D9E75);border-radius:2px;width:'+pct+'%"></div></div><div style="font-size:12px;color:var(--t2);text-align:center">חודש <strong style="color:var(--t1)">'+elapsed+'</strong> מתוך <strong style="color:var(--t1)">'+total+'</strong> · נותרו '+remaining+' חודשים</div>';if(remaining<=4){bar+='<div style="margin-top:10px;padding:8px 10px;background:'+(v.newVehicleDate?'#E1F5EE':'#FAEEDA')+';border:1px solid '+(v.newVehicleDate?'#1D9E75':'#D97706')+';border-radius:8px">';if(v.newVehicleDate){bar+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div><div style="font-size:11px;font-weight:600;color:#0F6E56">🚗 רכב חדש בדרך</div><div style="font-size:12px;color:#0F6E56;margin-top:2px">צפוי ב-'+fd(v.newVehicleDate)+'</div></div><button onclick="openNewVehicleDateModal('+vid+')" style="background:#0F6E56;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">עדכן</button></div>';}else{bar+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div style="font-size:11px;font-weight:500;color:#854F0B">⏰ העסקה מסתיימת בקרוב</div><button onclick="openNewVehicleDateModal('+vid+')" style="background:#854F0B;color:#fff;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;font-family:inherit">עדכן תאריך רכב חדש</button></div>';}bar+='</div>';}return bar;})()}`:'<div style="font-size:14px;color:var(--t3)">—</div>'}
     </div>`+
     // Next service - split view
     `<div class="vc-info-box">
@@ -10904,8 +10904,8 @@ function openDet(vid){
     </div>`;
 
   // Row 3: Documents & vehicle details (4 columns)
-  var dLicDays=v.licenseExp?Math.ceil((new Date(v.licenseExp)-new Date()/86400000):null;
-  var drvLicDays=v.driver.licenseExp?Math.ceil((new Date(v.driver.licenseExp)-new Date()/86400000):null;
+  var dLicDays=v.licenseExp?Math.ceil((new Date(v.licenseExp)-new Date())/86400000):null;
+  var drvLicDays=v.driver.licenseExp?Math.ceil((new Date(v.driver.licenseExp)-new Date())/86400000):null;
   id('vc-summary-cards3').innerHTML=
     `<div style="font-size:13px;font-weight:500;color:#5F5E5A;margin-bottom:10px;letter-spacing:.02em">מסמכים ופרטי רכב</div>
     <div class="vc-docs-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
@@ -11001,7 +11001,7 @@ function openDet(vid){
   var dEmail=v.driver.email||'';
   var dName=v.driver.name||'';
   var waPhone=dPhone.replace(/[^0-9]/g,'');
-  if(waPhone.startsWith('0')waPhone='972'+waPhone.substring(1);
+  if(waPhone.startsWith('0'))waPhone='972'+waPhone.substring(1);
 
   // Driver Details Card — moved to hero, removed from sidebar
 
@@ -11015,7 +11015,7 @@ function openDet(vid){
   var tireChanges=v.tireChanges||[];
   var tireCount=tireChanges.length;
   var lastTire=tireCount>0?tireChanges[tireCount-1].date:'';
-  var tireDaysAgo=lastTire?Math.floor((new Date()-new Date(lastTire)/86400000):null;
+  var tireDaysAgo=lastTire?Math.floor((new Date()-new Date(lastTire))/86400000):null;
   var violTotal=vViol.reduce(function(s,x){return s+(x.amount||0)},0);
 
 
@@ -11095,7 +11095,7 @@ function loadVehicleDocsStore(){
       var d=doc.data();
       if(d.vid==null)return;
       if(d.docs&&typeof d.docs==='object') vehicleDocs[d.vid]=d.docs;
-      if(Array.isArray(d.extra) extraDocs[d.vid]=d.extra;
+      if(Array.isArray(d.extra)) extraDocs[d.vid]=d.extra;
     });
     if(_currentVid&&typeof openDet==='function'){try{openDet(_currentVid);}catch(e){}}
   }).catch(function(e){console.error('vehicleDocsStore load error:',e);});
@@ -11134,17 +11134,17 @@ function cleanGarbledDriverData(){
     if(!v.driver)return;
     var changed=false;
     // Phone: valid is short (≤20 chars) and no Hebrew
-    if(v.driver.phone&&(v.driver.phone.length>20||hebrewRe.test(v.driver.phone)){
+    if(v.driver.phone&&(v.driver.phone.length>20||hebrewRe.test(v.driver.phone))){
       console.warn('[cleanup] garbled phone on vehicle',v.id,'→ clearing');
       v.driver.phone='';changed=true;
     }
     // Email: no Hebrew
-    if(v.driver.email&&hebrewRe.test(v.driver.email){
+    if(v.driver.email&&hebrewRe.test(v.driver.email)){
       console.warn('[cleanup] garbled email on vehicle',v.id,'→ clearing');
       v.driver.email='';changed=true;
     }
     // Address: if it contains form-label-like text (contains ▼ or 🔧 or שדה חובה)
-    if(v.driver.address&&(v.driver.address.indexOf('▼')>=0||v.driver.address.indexOf('שדה חובה')>=0){
+    if(v.driver.address&&(v.driver.address.indexOf('▼')>=0||v.driver.address.indexOf('שדה חובה')>=0)){
       console.warn('[cleanup] garbled address on vehicle',v.id,'→ clearing');
       v.driver.address='';changed=true;
     }
@@ -11159,7 +11159,7 @@ function loadVehiclesFromFirestore(){
   return db.collection('vehicles').get().then(function(snap){
     if(snap.empty)return false;
     const arr=[];
-    snap.forEach(function(doc){arr.push(doc.data();});
+    snap.forEach(function(doc){arr.push(doc.data());});
     vehicles.length=0;
     arr.forEach(function(v){vehicles.push(v);});
     _vehiclesLoaded=true;
@@ -11175,7 +11175,7 @@ function startVehiclesListener(){
     if(!_vehiclesLoaded){
       // Initial load - replace local array
       const arr=[];
-      snap.forEach(function(doc){arr.push(doc.data();});
+      snap.forEach(function(doc){arr.push(doc.data());});
       if(arr.length){
         vehicles.length=0;
         arr.forEach(function(v){vehicles.push(v);});
@@ -11192,7 +11192,7 @@ function startVehiclesListener(){
         if(change.type==='added' || change.type==='modified'){
           if(idx>=0){
             // Only update if different (avoids loops)
-            if(JSON.stringify(vehicles[idx])!==JSON.stringify(data){
+            if(JSON.stringify(vehicles[idx])!==JSON.stringify(data)){
               vehicles[idx]=data;
             }
           }else{
@@ -11225,7 +11225,7 @@ function startVehiclesListener(){
         if(typeof openDet==='function') openDet(_currentVid);
         // Restore active tab if it wasn't overview
         if(activeTabName && activeTabName!=='overview'){
-          const targetBtn = Array.from(document.querySelectorAll('.vc-tab-btn').find(function(b){
+          const targetBtn = Array.from(document.querySelectorAll('.vc-tab-btn')).find(function(b){
             const oc = b.getAttribute('onclick')||'';
             return oc.indexOf("vcTab('"+activeTabName+"'")>=0;
           });
@@ -11313,18 +11313,18 @@ function syncStartListener(name){
     if(!reg.loaded){
       // FIRST LOAD: merge local + remote (union - prefer remote on id conflict)
       const remoteArr = [];
-      snap.forEach(function(doc){ remoteArr.push(doc.data(); });
+      snap.forEach(function(doc){ remoteArr.push(doc.data()); });
       const merged = [];
       const seenIds = new Set();
       // Add remote first (authority)
-      remoteArr.forEach(function(r){ if(r.id!==undefined && !seenIds.has(String(r.id)){ seenIds.add(String(r.id); merged.push(r); } });
+      remoteArr.forEach(function(r){ if(r.id!==undefined && !seenIds.has(String(r.id))){ seenIds.add(String(r.id)); merged.push(r); } });
       // Add local items that aren't in remote (new on this device)
-      current.forEach(function(l){ if(l.id!==undefined && !seenIds.has(String(l.id)){ seenIds.add(String(l.id); merged.push(l); } });
+      current.forEach(function(l){ if(l.id!==undefined && !seenIds.has(String(l.id))){ seenIds.add(String(l.id)); merged.push(l); } });
       reg.setArr(merged);
       reg.loaded = true;
       // Push local-only items to Firestore so other devices get them
       current.forEach(function(l){
-        if(l.id!==undefined && !remoteArr.find(function(r){return String(r.id)===String(l.id);}){
+        if(l.id!==undefined && !remoteArr.find(function(r){return String(r.id)===String(l.id);})){
           syncPersistItem(name, l);
         }
       });
@@ -11337,7 +11337,7 @@ function syncStartListener(name){
         const idx = arr.findIndex(function(x){ return String(x.id)===String(data.id); });
         if(change.type==='added' || change.type==='modified'){
           if(idx>=0){
-            if(JSON.stringify(arr[idx])!==JSON.stringify(data){
+            if(JSON.stringify(arr[idx])!==JSON.stringify(data)){
               arr[idx] = data; changed = true;
             }
           } else {
@@ -11410,7 +11410,7 @@ function startKmUpdatesListener(){
         if(!isFirst){
           var notifId = 'km_update_' + change.doc.id;
           var existing = JSON.parse(localStorage.getItem('km_update_notifications') || '[]');
-          if(!existing.find(function(n){return n.id===notifId;}){
+          if(!existing.find(function(n){return n.id===notifId;})){
             existing.unshift({
               id: notifId,
               vid: d.vid,
@@ -11420,7 +11420,7 @@ function startKmUpdatesListener(){
               time: d.updatedAt || new Date().toISOString()
             });
             if(existing.length>20) existing=existing.slice(0,20); // שמור מקסימום 20
-            localStorage.setItem('km_update_notifications', JSON.stringify(existing);
+            localStorage.setItem('km_update_notifications',JSON.stringify(existing));
             try{ updateBellBadge(); }catch(e){}
             try{ renderNotificationsPanel(); }catch(e){}
           }
@@ -11491,7 +11491,7 @@ function checkKmRequest(){
 
 function submitKmUpdate(token, vid){
   var input=document.getElementById('km-pub-input');
-  var km=parseInt((input.value||'').replace(/[^0-9,]/g,'').replace(/,/g,'');
+  var km=parseInt((input.value||'').replace(/[^0-9,]/g,'').replace(/,/g,''));
   if(!km||km<100){
     var st=document.getElementById('km-pub-status');
     if(st){st.textContent='נא להזין ק"מ תקין';st.style.color='#dc2626';}
@@ -11536,7 +11536,7 @@ function startDocUploadsListener(){
         }
         // הצג toast רק לשינויים אחרי הטעינה הראשונה
         if(!_docUploadsInitialLoad){
-          showToast('📄 מסמך חדש התקבל: '+(d.fileName||d.docKey);
+          showToast('📄 מסמך חדש התקבל: '+(d.fileName||d.docKey));
         }
       }
     });
@@ -11546,8 +11546,8 @@ function startDocUploadsListener(){
 
 // Reset ALL vehicles data (for fresh start)
 function clearAllVehiclesData(){
-  if(!confirm('⚠️ למחוק את כל נתוני המערכת?\nרכבים, טיפולים, טסטים, תאונות, דוחות תנועה, משימות — הכל!\nפעולה זו לא ניתנת לשחזור!')return;
-  if(!confirm('בטוח לגמרי? אין דרך חזרה!')return;
+  if(!confirm('⚠️ למחוק את כל נתוני המערכת?\nרכבים, טיפולים, טסטים, תאונות, דוחות תנועה, משימות — הכל!\nפעולה זו לא ניתנת לשחזור!')) return;
+  if(!confirm('בטוח לגמרי? אין דרך חזרה!')) return;
   if(!db){alert('אין חיבור לשרת');return;}
   _clearingAllData = true;
 
@@ -11598,23 +11598,23 @@ function clearAllVehiclesData(){
         batch.delete(doc.ref);
         count++;
         if(count === 499){
-          batches.push(batch.commit();
+          batches.push(batch.commit());
           batch = db.batch();
           count = 0;
         }
       });
-      if(count > 0) batches.push(batch.commit();
+      if(count > 0) batches.push(batch.commit());
       return Promise.all(batches);
     });
   };
 
-  Promise.all(collections.map(deleteCollection)
+  Promise.all(collections.map(deleteCollection))
     .then(function(){ _clearingAllData = false; showToast('✓ כל הנתונים נמחקו מהשרת'); })
     .catch(function(e){ _clearingAllData = false; console.error(e); showToast('שגיאה במחיקה מהשרת: ' + e.message); });
 }
 
 function clearHandoverForms(){
-  if(!confirm('למחוק את כל טפסי רכב חלופי וגישור?\nפעולה זו לא ניתנת לשחזור!') return;
+  if(!confirm('למחוק את כל טפסי רכב חלופי וגישור?\nפעולה זו לא ניתנת לשחזור!')) return;
   if(!db){ alert('אין חיבור לשרת'); return; }
 
   // עצור את ה-listener של hoForms2
@@ -11643,12 +11643,12 @@ function clearHandoverForms(){
       batch.delete(doc.ref);
       count++;
       if(count === 499){
-        batches.push(batch.commit();
+        batches.push(batch.commit());
         batch = db.batch();
         count = 0;
       }
     });
-    if(count > 0) batches.push(batch.commit();
+    if(count > 0) batches.push(batch.commit());
     return Promise.all(batches);
   }).then(function(){ showToast('✓ כל טפסי החלופי/גישור נמחקו'); })
     .catch(function(e){ console.error(e); showToast('שגיאה במחיקה: ' + e.message); });
@@ -11658,7 +11658,7 @@ function addCustomMandatoryDoc(vid){
   const name=prompt('שם המסמך:');
   if(!name)return;
   const key='custom_'+Date.now();
-  if(!MANDATORY_DOCS.find(d=>d.key===key)
+  if(!MANDATORY_DOCS.find(d=>d.key===key))
     MANDATORY_DOCS.push({key,label:name.trim(),custom:true});
   saveSettings({customMandatoryDocs: MANDATORY_DOCS.filter(d=>d.custom)});
   openDet(vid);
@@ -11783,15 +11783,15 @@ function saveExtDoc(vid){
 function showSvcModal(){
   const mN=NOW.getMonth(),yN=NOW.getFullYear();
   const mNext=new Date(yN,mN+1,1);
-  function needsSvc(v,maxKm){const k=v.nextServiceType?(parseInt(v.nextServiceType.replace(/,/g,'')+v.serviceKm-v.currentKm):9999;return k>0&&k<maxKm}
-  function sRow(v){const k=parseInt(v.nextServiceType.replace(/,/g,'')+v.serviceKm-v.currentKm;
+  function needsSvc(v,maxKm){const k=v.nextServiceType?(parseInt(v.nextServiceType.replace(/,/g,''))+v.serviceKm-v.currentKm):9999;return k>0&&k<maxKm}
+  function sRow(v){const k=parseInt(v.nextServiceType.replace(/,/g,''))+v.serviceKm-v.currentKm;
     return`<tr onclick="closeModal('svc-ov');openDet(${v.id})" style="cursor:pointer">
       <td><div class="dc"><div class="av">${inits(v.driver.name)}</div>${esc(v.driver.name)}</div></td>
       <td><span class="vn">${esc(v.plate)}</span></td><td>${esc(v.make)} ${esc(v.model)}</td>
       <td>${v.nextServiceType||'—'}</td>
       <td><span style="color:${k<1000?'var(--red)':'var(--amber)'};font-weight:500">${fkm(k)} ק"מ</span></td></tr>`}
-  const cur=vehicles.filter(v=>needsSvc(v,3000);
-  const nxt=vehicles.filter(v=>needsSvc(v,6000)&&!needsSvc(v,3000);
+  const cur=vehicles.filter(v=>needsSvc(v,3000));
+  const nxt=vehicles.filter(v=>needsSvc(v,6000)&&!needsSvc(v,3000));
   id('svc-title').textContent=`טיפולים — ${HEM[mN]} + ${HEM[mNext.getMonth()]} ${mNext.getFullYear()}`;
   id('svc-body').innerHTML=`
     <div class="igt">${HEM[mN]} ${yN} — ${cur.length} רכבים</div>
@@ -11819,7 +11819,7 @@ function closeModal(mid){
   el.style.display='none';
   el.style.visibility='hidden';
   // iOS Safari fix: restore body scroll + scroll to top
-  if(!document.querySelector('.ov.open'){
+  if(!document.querySelector('.ov.open')){
     document.body.style.overflow='';
     document.body.style.position='';
     window.scrollTo(0,0);
@@ -11838,7 +11838,7 @@ document.addEventListener('click',e=>{
   document.querySelectorAll('.ov.open').forEach(ov=>{
     if(e.target===ov){ov.classList.remove('open');ov.style.display='none';ov.style.visibility='hidden';}
   });
-  if(!document.querySelector('.ov.open'){document.body.style.overflow='';window.scrollTo(0,0);}
+  if(!document.querySelector('.ov.open')){document.body.style.overflow='';window.scrollTo(0,0);}
 });
 
 /* ── ADD + AI SCAN ── */
@@ -11874,7 +11874,7 @@ function saveSystemName(){
   var val=document.getElementById('system-name-input')?.value.trim()||'מרכז הרכב של מור השקעות';
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   s.systemName=val;
-  localStorage.setItem('fleetSettings',JSON.stringify(s);
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
   var el=document.getElementById('topbar-system-name');
   if(el) el.textContent=val;
   showToast('✓ שם המערכת עודכן');
@@ -11915,7 +11915,7 @@ function showAttentionDetails(){
   });
   popup.innerHTML=html;
   document.body.appendChild(popup);
-  setTimeout(function(){document.addEventListener('click',function handler(e){if(!popup.contains(e.target){popup.remove();document.removeEventListener('click',handler);}},{once:false});},100);
+  setTimeout(function(){document.addEventListener('click',function handler(e){if(!popup.contains(e.target)){popup.remove();document.removeEventListener('click',handler);}},{once:false});},100);
 }
 
 function saveThemeColors(){
@@ -11923,7 +11923,7 @@ function saveThemeColors(){
   s.themeTopbar=document.getElementById('theme-topbar-color')?.value||'#ffffff';
   s.themeSidebar=document.getElementById('theme-sidebar-color')?.value||'#ffffff';
   s.themeBg=document.getElementById('theme-bg-color')?.value||'#f5f5f0';
-  localStorage.setItem('fleetSettings',JSON.stringify(s);
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
   showToast('✓ צבעים נשמרו');
 }
 function resetThemeColors(){
@@ -11936,7 +11936,7 @@ function resetThemeColors(){
   ['theme-bg-color','theme-bg-hex'].forEach(function(x){var e=document.getElementById(x);if(e)e.value='#f5f5f0';});
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   delete s.themeTopbar;delete s.themeSidebar;delete s.themeBg;
-  localStorage.setItem('fleetSettings',JSON.stringify(s);
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
   showToast('צבעים אופסו');
 }
 function applyThemeColors(){
@@ -11945,7 +11945,7 @@ function applyThemeColors(){
   if(s.themeSidebar) document.querySelector('.sb').style.background=s.themeSidebar;
   if(s.themeBg){var c=document.querySelector('.content');if(c)c.style.background=s.themeBg;document.body.style.background=s.themeBg;}
   ['topbar','sidebar','bg'].forEach(function(k){
-    var cv=document.getElementById('theme-'+k+'-color'),hv=document.getElementById('theme-'+k+'-hex'),val=s['theme'+(k.charAt(0).toUpperCase()+k.slice(1)];
+    var cv=document.getElementById('theme-'+k+'-color'),hv=document.getElementById('theme-'+k+'-hex'),val=s['theme'+(k.charAt(0).toUpperCase()+k.slice(1))]; 
     if(cv&&val)cv.value=val;if(hv&&val)hv.value=val;
   });
 }
@@ -11979,7 +11979,7 @@ function fmtKmInput(el){
   const raw=el.value.replace(/[^\d]/g,'');
   if(raw)el.value=Number(raw).toLocaleString('he-IL');
 }
-function getRawKm(elId){return parseInt((id(elId).value||'').replace(/[^\d]/g,'')||0}
+function getRawKm(elId){return parseInt((id(elId).value||'').replace(/[^\d]/g,''))||0}
 
 function calcNextService(){
   const lastSvcDate=id('fa-svc').value;
@@ -12015,9 +12015,9 @@ async function fileToBase64(file){
 function toIsoDate(val){
   if(!val)return null;
   val=val.trim();
-  if(/^\d{4}-\d{2}-\d{2}$/.test(val)return val;
-  if(/^\d{2}\/\d{2}\/\d{4}$/.test(val){const p=val.split('/');return`${p[2]}-${p[1]}-${p[0]}`}
-  if(/^\d{2}\/\d{2}\/\d{2}$/.test(val){const p=val.split('/');return`20${p[2]}-${p[1]}-${p[0]}`}
+  if(/^\d{4}-\d{2}-\d{2}$/.test(val))return val;
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(val)){const p=val.split('/');return`${p[2]}-${p[1]}-${p[0]}`}
+  if(/^\d{2}\/\d{2}\/\d{2}$/.test(val)){const p=val.split('/');return`20${p[2]}-${p[1]}-${p[0]}`}
   return null;
 }
 
@@ -12097,7 +12097,7 @@ function preprocessOCRImage(srcCanvas) {
   for (let i = 0; i < d.length; i += 4) {
     let g = d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114 + adj*0.5;
     g = ((g - 128) * 1.4) + 128;
-    g = Math.max(0, Math.min(255, g);
+    g = Math.max(0, Math.min(255, g));
     d[i] = d[i+1] = d[i+2] = g;
   }
   ctx.putImageData(imgData, 0, 0);
@@ -12109,7 +12109,7 @@ function ocrExtractDates(text) {
   const dates = [];
   const re = /(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{2,4})/g;
   let m;
-  while ((m = re.exec(text) !== null) {
+  while ((m = re.exec(text)) !== null) {
     let d = +m[1], mo = +m[2], y = +m[3];
     if (y < 100) y += 2000;
     if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1990 || y > 2099) continue;
@@ -12142,12 +12142,12 @@ function ocrEscapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function ocrIsGarbage(text) {
   if (!text) return true;
   const s = String(text);
-  if (/(.)\1{2,}/.test(s) return true;
+  if (/(.)\1{2,}/.test(s)) return true;
   const chars = s.replace(/\s/g, '');
   if (chars.length > 0) {
     const charCount = {};
     for (const c of chars) charCount[c] = (charCount[c] || 0) + 1;
-    const maxCount = Math.max(...Object.values(charCount);
+    const maxCount = Math.max(...Object.values(charCount));
     if (maxCount / chars.length > 0.5) return true;
   }
   return false;
@@ -12159,12 +12159,12 @@ function ocrIsValidName(text) {
   const hasHebrew = /[\u0590-\u05FF]/.test(s);
   const hasEnglish = /[A-Za-z]/.test(s);
   if (!hasHebrew && !hasEnglish) return false;
-  if (ocrIsGarbage(s) return false;
+  if (ocrIsGarbage(s)) return false;
   if (hasHebrew) {
     const hebWords = s.match(/[\u0590-\u05FF]{2,}/g) || [];
     if (hebWords.length === 0) return false;
     for (const word of hebWords) {
-      if (ocrIsGarbage(word) return false;
+      if (ocrIsGarbage(word)) return false;
       if (word.length < 2) return false;
     }
     if (hebWords.join('').length < 4) return false;
@@ -12226,20 +12226,20 @@ function ocrExtractVehicle(text) {
     const dates = ocrExtractDates(norm);
     const today = new Date();
     const future = dates.filter(d => { const dt = new Date(d.iso); return dt > today && dt < new Date(today.getFullYear()+10, 0, 1); });
-    if (future.length > 0) { future.sort((a,b) => new Date(a.iso) - new Date(b.iso); exp = future[0].iso; }
+    if (future.length > 0) { future.sort((a,b) => new Date(a.iso) - new Date(b.iso)); exp = future[0].iso; }
   }
   result.licenseExp = exp;
   const knownMakers = ['יונדאי','טויוטה','מאזדה','הונדה','קיה','ניסאן','סוזוקי','מיצובישי','סובארו','לקסוס','פולקסווגן','אאודי','מרצדס','אופל','סקודה','סיאט','פיאט','רנו','וולוו','פורד','שברולט','טסלה','BMW','MG','איסוזו'];
   for (const maker of knownMakers) {
     const re = new RegExp(`(?:^|[\\s,\\.\\|])(${ocrEscapeRegex(maker)})(?:[\\s,\\.\\|]|$)`, 'i');
-    if (re.test(norm) { result.make = maker; break; }
+    if (re.test(norm)) { result.make = maker; break; }
   }
   const blacklist = new Set(['ID','PDF','JPG','PNG','ABS','GPS','USB','LED','ISRAEL','STATE','DRIVING','LICENCE','LICENSE','NO','OF','THE','VIN','CC','HP','KW','SUV','MPV','CAR','VAN','AC','DC']);
   m = norm.match(/(?:כינוי\s*מסחרי)[\s\S]{0,40}?\b([A-Z][A-Z0-9\-]{2,15})\b/);
-  if (m && !blacklist.has(m[1]) result.model = m[1];
+  if (m && !blacklist.has(m[1])) result.model = m[1];
   if (!result.model) {
     const matches = [...norm.matchAll(/\b([A-Z]{4,}[A-Z0-9\-]*)\b/g)].map(m => m[1]);
-    for (const cand of matches) { if (cand.length >= 4 && cand.length <= 15 && !blacklist.has(cand) { result.model = cand; break; } }
+    for (const cand of matches) { if (cand.length >= 4 && cand.length <= 15 && !blacklist.has(cand)) { result.model = cand; break; } }
   }
   return result;
 }
@@ -12248,18 +12248,18 @@ function ocrExtractVehicle(text) {
 function ocrExtractDriver(text) {
   const result = {fullName: null, id: null, licenseExp: null};
   const norm = text;
-  const lines = norm.split('\n').map(l => l.trim().filter(l => l);
+  const lines = norm.split('\n').map(l => l.trim()).filter(l => l);
   let m = norm.match(/(?:מס[׳']?\s*ת\.?ז\.?|תעודת\s*זהות|ID\s*No|ת\.?ז\.?)[\s\S]{0,15}?(\d{8,9}[\-\s]?\d?)/i);
-  if (m) { const cleanId = m[1].replace(/\D/g, ''); if (ocrIsValidId(cleanId) result.id = ocrFormatId(cleanId); }
-  if (!result.id) { const allIds = [...norm.matchAll(/\b(\d{8,9})\b/g)].map(m => m[1]); for (const c of allIds) { if (ocrIsValidId(c) { result.id = ocrFormatId(c); break; } } }
-  if (!result.id) { const dashId = norm.match(/\b(\d{7,8})[-\s](\d)\b/); if (dashId) { const full = dashId[1] + dashId[2]; if (ocrIsValidId(full) result.id = ocrFormatId(full); } }
+  if (m) { const cleanId = m[1].replace(/\D/g, ''); if (ocrIsValidId(cleanId)) result.id = ocrFormatId(cleanId); }
+  if (!result.id) { const allIds = [...norm.matchAll(/\b(\d{8,9})\b/g)].map(m => m[1]); for (const c of allIds) { if (ocrIsValidId(c)) { result.id = ocrFormatId(c); break; } } }
+  if (!result.id) { const dashId = norm.match(/\b(\d{7,8})[-\s](\d)\b/); if (dashId) { const full = dashId[1] + dashId[2]; if (ocrIsValidId(full)) result.id = ocrFormatId(full); } }
   m = norm.match(/(?:בתוקף\s*עד|תוקף|valid|4\s*b)[\s\S]{0,30}?(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i);
   if (m) { const dates = ocrExtractDates(m[1]); if (dates.length > 0) result.licenseExp = dates[0].iso; }
   if (!result.licenseExp) {
     const dates = ocrExtractDates(norm);
     const today = new Date();
     const future = dates.filter(d => { const dt = new Date(d.iso); return dt > today && dt < new Date(today.getFullYear()+15, 0, 1); });
-    if (future.length > 0) { future.sort((a,b) => new Date(a.iso) - new Date(b.iso); result.licenseExp = future[0].iso; }
+    if (future.length > 0) { future.sort((a,b) => new Date(a.iso) - new Date(b.iso)); result.licenseExp = future[0].iso; }
   }
   result.fullName = ocrExtractDriverName(norm, lines);
   return result;
@@ -12326,7 +12326,7 @@ function ocrExtractInsurance(text) {
     const dates = ocrExtractDates(text);
     const today = new Date();
     const future = dates.filter(d => { const dt = new Date(d.iso); return dt > today && dt < new Date(today.getFullYear()+5, 0, 1); });
-    if (future.length > 0) { future.sort((a,b) => new Date(a.iso) - new Date(b.iso); result.insuranceExp = future[0].iso; }
+    if (future.length > 0) { future.sort((a,b) => new Date(a.iso) - new Date(b.iso)); result.insuranceExp = future[0].iso; }
   }
   return result;
 }
@@ -12334,14 +12334,14 @@ function ocrExtractInsurance(text) {
 /* ── VALIDATE FIELDS ── */
 function ocrValidateFields(fields) {
   const validated = {};
-  for (const [key, value] of Object.entries(fields) {
+  for (const [key, value] of Object.entries(fields)) {
     if (!value) { validated[key] = null; continue; }
     const v = String(value).trim();
     if (key === 'plate') { validated[key] = /^\d{7,8}$/.test(v) ? v : null; }
     else if (key === 'id') { const clean = v.replace(/\D/g, ''); validated[key] = ocrIsValidId(clean) ? ocrFormatId(clean) : null; }
-    else if (key === 'licenseExp' || key === 'insuranceExp') { validated[key] = (/^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(new Date(v) && new Date(v).getFullYear() >= 2020) ? v : null; }
+    else if (key === 'licenseExp' || key === 'insuranceExp') { validated[key] = (/^\d{4}-\d{2}-\d{2}$/.test(v) && !isNaN(new Date(v)) && new Date(v).getFullYear() >= 2020) ? v : null; }
     else if (key === 'make') { validated[key] = (ocrIsValidName(v) && v.length >= 2 && v.length <= 20) ? v : null; }
-    else if (key === 'model') { validated[key] = (/^[A-Z][A-Z0-9\-]{1,14}$/.test(v) && !ocrIsGarbage(v) ? v : null; }
+    else if (key === 'model') { validated[key] = (/^[A-Z][A-Z0-9\-]{1,14}$/.test(v) && !ocrIsGarbage(v)) ? v : null; }
     else if (key === 'fullName') { validated[key] = (ocrIsValidName(v) && v.length >= 4 && v.length <= 30) ? v : null; }
     else { validated[key] = v; }
   }
@@ -12351,8 +12351,8 @@ function ocrValidateFields(fields) {
 /* ── MAIN OCR FUNCTION (replaces callClaudeWithDoc) ── */
 async function callClaudeWithDoc(file, prompt) {
   let docType = 'vehicle';
-  if (prompt.includes('נהיגה') || prompt.includes('שם מלא') || prompt.includes('ID') docType = 'driver';
-  else if (prompt.includes('ביטוח') || prompt.includes('insurance') docType = 'insurance';
+  if (prompt.includes('נהיגה') || prompt.includes('שם מלא') || prompt.includes('ID')) docType = 'driver';
+  else if (prompt.includes('ביטוח') || prompt.includes('insurance')) docType = 'insurance';
 
   try {
     const orig = await fileToCanvasForOCR(file);
@@ -12360,7 +12360,7 @@ async function callClaudeWithDoc(file, prompt) {
     const worker = await getOCRWorker();
     const {data} = await worker.recognize(proc);
     const text = data.text || '';
-    console.log('[OCR] טקסט שזוהה (' + docType + '):', text.substring(0, 400);
+    console.log('[OCR] טקסט שזוהה (' + docType + '):', text.substring(0, 400));
 
     let fields;
     if (docType === 'vehicle') fields = ocrExtractVehicle(text);
@@ -12458,7 +12458,7 @@ function addVehicle(){
     let createdAt = new Date().toISOString();
     try{
       const dt = new Date(lastService+'T12:00:00');
-      if(!isNaN(dt) createdAt = dt.toISOString();
+      if(!isNaN(dt)) createdAt = dt.toISOString();
     }catch(e){}
     hLog.push({
       id: 'h'+Date.now()+Math.floor(Math.random()*1000),
@@ -12509,7 +12509,7 @@ function addVehicle(){
   document.querySelectorAll('#add-ov .acc-arrow').forEach(a=>a.style.transform='');
   id('fa-isnew').checked=false;toggleNewVehicle();
   id('svc-calc-result').style.display='none';
-  refresh();go('vehicles',q('[dp=vehicles]');openDet(newVid);
+  refresh();go('vehicles',q('[dp=vehicles]'));openDet(newVid);
 }
 
 /* ── TIRE UPDATE ── */
@@ -12823,9 +12823,9 @@ function saveEditVehicle(){
   if(!v.historyLog)v.historyLog=[];
   var editNow=new Date().toISOString();
   var editParts=[];
-  if(id('ev-plate').value.trim()&&id('ev-plate').value.trim()!==v.plate) editParts.push('לוחית: '+id('ev-plate').value.trim();
-  if(id('ev-dname').value.trim() editParts.push('נהג: '+id('ev-dname').value.trim();
-  if(id('ev-dphone').value.trim() editParts.push('טל\': '+id('ev-dphone').value.trim();
+  if(id('ev-plate').value.trim()&&id('ev-plate').value.trim()!==v.plate) editParts.push('לוחית: '+id('ev-plate').value.trim());
+  if(id('ev-dname').value.trim()) editParts.push('נהג: '+id('ev-dname').value.trim());
+  if(id('ev-dphone').value.trim()) editParts.push('טל\': '+id('ev-dphone').value.trim());
   if(ckmVal&&ckmVal.value) editParts.push('ק"מ: '+ckmVal.value);
   v.historyLog.unshift({id:'h'+Date.now(),kind:'edit',desc:'עריכת פרטים'+(editParts.length?' · '+editParts.join(' | '):''),createdAt:editNow,source:'manual'});
   closeModal('edit-ov');
@@ -13004,7 +13004,7 @@ function saveTask(){
 }
 
 function deleteTask(tid){
-  if(!confirm('למחוק את המשימה?')return;
+  if(!confirm('למחוק את המשימה?')) return;
   tasks=tasks.filter(t=>t.id!==tid);
   renderTasks();
   document.querySelector('[dp=tasks] .nb') && (document.querySelector('[dp=tasks] .nb').textContent=tasks.filter(t=>getTaskStatus(t)!=='done'&&getTaskStatus(t)!=='cancelled').length);
@@ -13015,7 +13015,7 @@ function sendTaskReminder(tid){
   const t=tasks.find(x=>x.id===tid);if(!t)return;
   const s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   const email=s.repEmail;
-  if(!email){showToast('יש להגדיר מייל בהגדרות');go('settings',document.querySelector('[dp=settings]');return;}
+  if(!email){showToast('יש להגדיר מייל בהגדרות');go('settings',document.querySelector('[dp=settings]'));return;}
   const subject=encodeURIComponent('תזכורת משימה: '+t.title);
   const body=encodeURIComponent('תזכורת למשימה:\n\nכותרת: '+t.title+'\nקטגוריה: '+t.type+'\nעדיפות: '+(TASK_PRIORITY_LABELS[t.priority]||t.priority)+'\nתאריך יעד: '+(t.due||'לא הוגדר')+'\n\nתיאור: '+(t.desc||'ללא')+'\n\n---\nמרכז הרכב של מור בית השקעות');
   window.open('mailto:'+email+'?subject='+subject+'&body='+body);
@@ -13104,7 +13104,7 @@ function openSendSchedMessageModal(tid){
   const msg = template
     .replace(/\{נהג\}/g, v.driver?.name||'')
     .replace(/\{רכב\}/g, v.plate||'')
-    .replace(/\{תאריך\}/g, fd(t.scheduledDate)
+    .replace(/\{תאריך\}/g, fd(t.scheduledDate))
     .replace(/\{סוג\}/g, t.title||'');
 
   const modal = document.createElement('div');
@@ -13147,7 +13147,7 @@ function sendSchedMsgWhatsapp(tid){
   if(!phone){ showToast('אין טלפון לנהג'); return; }
   // Convert local format 05X... to 9725X...
   let waPhone = phone;
-  if(phone.startsWith('0') waPhone = '972'+phone.slice(1);
+  if(phone.startsWith('0')) waPhone = '972'+phone.slice(1);
   const msg = document.getElementById('sched-msg-text').value;
   const url = 'https://wa.me/'+waPhone+'?text='+encodeURIComponent(msg);
   const a = document.createElement('a');
@@ -13230,7 +13230,7 @@ function confirmTaskDone(tid){
   const t=tasks.find(x=>x.id===tid);
   if(!t) return;
   const serviceType = document.getElementById('tdone-service-type').value.trim();
-  if(!serviceType){ showToast('נא למלא סוג '+(t.type==='טסט רכב'?'טסט':'טיפול'); return; }
+  if(!serviceType){ showToast('נא למלא סוג '+(t.type==='טסט רכב'?'טסט':'טיפול')); return; }
   const date = document.getElementById('tdone-date').value;
   const km = document.getElementById('tdone-km').value.trim();
   const note = document.getElementById('tdone-note').value.trim();
@@ -13243,7 +13243,7 @@ function confirmTaskDone(tid){
     if(date){
       try{
         const dt = new Date(date+'T'+new Date().toTimeString().slice(0,5)+':00');
-        if(!isNaN(dt) createdAt = dt.toISOString();
+        if(!isNaN(dt)) createdAt = dt.toISOString();
       }catch(e){}
     }
     v.historyLog.unshift({
@@ -13276,9 +13276,9 @@ var _lastViolationIds = new Set();
 function persistViolationsList(){
   if(!db) return;
   (violationsList||[]).forEach(function(v){ syncPersistItem('violations', v); });
-  const currentIds = new Set((violationsList||[]).map(v=>String(v.id));
+  const currentIds = new Set((violationsList||[]).map(v=>String(v.id)));
   _lastViolationIds.forEach(function(id){
-    if(!currentIds.has(id){ syncRemoveItem('violations', id); }
+    if(!currentIds.has(id)){ syncRemoveItem('violations', id); }
   });
   _lastViolationIds = currentIds;
 }
@@ -13481,7 +13481,7 @@ function viewPaymentReceipt(vid){
 }
 
 function removePaymentReceipt(vid){
-  if(!confirm('להסיר את אסמכתא התשלום?') return;
+  if(!confirm('להסיר את אסמכתא התשלום?')) return;
   const v = violationsList.find(function(x){return x.id===vid;});
   if(!v) return;
   v.paymentReceipt = null;
@@ -13694,7 +13694,7 @@ function violAddLogToModal(vid){
 }
 
 function violDeleteLog(vid,idx){
-  if(!confirm('למחוק את התיעוד?')return;
+  if(!confirm('למחוק את התיעוד?')) return;
   const v=violationsList.find(function(x){return x.id===vid;});
   if(!v||!v.logs)return;
   v.logs.splice(idx,1);
@@ -13839,13 +13839,13 @@ function changeViolStatus(vid,newStatus){
   if(v){
     v.status=newStatus;
     try{ syncPersistItem('violations', v); }catch(e){console.error(e);}
-    try{ localStorage.setItem('violationsList', JSON.stringify(violationsList); }catch(e){}
+    try{ localStorage.setItem('violationsList',JSON.stringify(violationsList)); }catch(e){}
     showToast('סטטוס עודכן');
   }
 }
 
 function deleteViolation(vid){
-  if(!confirm('למחוק את הדוח? פעולה זו אינה ניתנת לשחזור.')return;
+  if(!confirm('למחוק את הדוח? פעולה זו אינה ניתנת לשחזור.')) return;
   violationsList=violationsList.filter(function(v){return v.id!==vid;});
   var _cachedF=_violFileCache[vid];
   delete _violFileCache[vid];
@@ -13925,7 +13925,7 @@ function saveViolation(){
     }catch(e){console.error('persist error:',e);}
     // Save list to localStorage (without file data)
     try{
-      localStorage.setItem('violationsList', JSON.stringify(violationsList);
+      localStorage.setItem('violationsList',JSON.stringify(violationsList));
     }catch(e){console.error('localStorage save error:',e);}
     // reset file input
     if(fileInput)fileInput.value='';
@@ -13934,7 +13934,7 @@ function saveViolation(){
     closeModal('viol-ov');renderViolations();if(_currentVid)renderVcViolations(_currentVid);
   };
   if(file){
-    if(file.type.startsWith('image/'){
+    if(file.type.startsWith('image/')){
       // Compress images before saving
       const reader=new FileReader();
       reader.onload=function(e){
@@ -14053,7 +14053,7 @@ function getViolPaymentInfo(issuer){
   }
   // Try partial match
   for(var k in CITY_PAYMENT_MAP){
-    if(city.includes(k)||k.includes(city){
+    if(city.includes(k)||k.includes(city)){
       return {url:CITY_PAYMENT_MAP[k], label:'תשלום דוח - '+k};
     }
   }
@@ -14070,7 +14070,7 @@ const TEST_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} 
     delete s.violMsgTemplate;
     delete s.violMsgTransferTemplate;
     s._tplVersion=5;
-    localStorage.setItem('fleetSettings',JSON.stringify(s);
+    localStorage.setItem('fleetSettings',JSON.stringify(s));
   }
 })();
 
@@ -14086,7 +14086,7 @@ function getViolApproveUrl(token){
     }
   }
   base=base.replace(/[?#].*$/,'');
-  if(!base.endsWith('/') base+='/';
+  if(!base.endsWith('/')) base+='/';
   return base+'?a='+token;
 }
 
@@ -14183,7 +14183,7 @@ function sendViolToDriver(vid,stage){
   const approvalData={violId:v.id,num:v.num,plate:veh.plate,date:v.date,driverName:veh.driver.name,issuer:v.issuer||'—',createdAt:Date.now(),stage:stage};
   const approvals=JSON.parse(localStorage.getItem('violApprovals')||'{}');
   approvals[v.approvalToken]=approvalData;
-  localStorage.setItem('violApprovals',JSON.stringify(approvals);
+  localStorage.setItem('violApprovals',JSON.stringify(approvals));
   // Write to Firestore so driver can access from any device
   if(db){
     db.collection('approvals').doc(v.approvalToken).set(approvalData)
@@ -14248,7 +14248,7 @@ function sendViolToDriver(vid,stage){
   // Update status to "waiting for driver approval" when sending
   v.status='waiting';
   try{ syncPersistItem('violations', v); }catch(e){console.error(e);}
-  try{ localStorage.setItem('violationsList', JSON.stringify(violationsList); }catch(e){}
+  try{ localStorage.setItem('violationsList',JSON.stringify(violationsList)); }catch(e){}
   renderViolations();if(_currentVid)renderVcViolations(_currentVid);
 }
 
@@ -14293,8 +14293,8 @@ function violSendWhatsApp(token){
   let waUrl;
   if(phone){
     let intlPhone=phone;
-    if(phone.startsWith('972')intlPhone=phone;
-    else if(phone.startsWith('0')intlPhone='972'+phone.slice(1);
+    if(phone.startsWith('972'))intlPhone=phone;
+    else if(phone.startsWith('0'))intlPhone='972'+phone.slice(1);
     else intlPhone='972'+phone;
     waUrl='https://wa.me/'+intlPhone+'?text='+encodeURIComponent(msg);
   }else{
@@ -14428,7 +14428,7 @@ function checkViolApproval(){
   if(db){
     db.collection('approvals').doc(token).get().then(function(doc){
       if(doc.exists){
-        renderApprovalPage(doc.data();
+        renderApprovalPage(doc.data());
       }else if(localInfo){
         renderApprovalPage(localInfo);
       }else{
@@ -14494,7 +14494,7 @@ function driverUploadReceipt(input, token){
   reader.onload = function(e){
     var data = e.target.result;
     // Compress images
-    if(file.type.startsWith('image/'){
+    if(file.type.startsWith('image/')){
       var img = new Image();
       img.onload = function(){
         var canvas = document.createElement('canvas');
@@ -14502,7 +14502,7 @@ function driverUploadReceipt(input, token){
         if(w>max||h>max){var ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
         canvas.width=w;canvas.height=h;
         canvas.getContext('2d').drawImage(img,0,0,w,h);
-        doUpload(canvas.toDataURL('image/jpeg',.85);
+        doUpload(canvas.toDataURL('image/jpeg',.85));
       };
       img.src=data;
     } else { doUpload(data); }
@@ -14542,7 +14542,7 @@ function confirmViolApproval(token){
   const approvals=JSON.parse(localStorage.getItem('violApprovals')||'{}');
   if(approvals[token]){
     approvals[token].approvedAt=dateStr;
-    localStorage.setItem('violApprovals',JSON.stringify(approvals);
+    localStorage.setItem('violApprovals',JSON.stringify(approvals));
   }
 
   // Update violation in main data if on same device
@@ -14578,7 +14578,7 @@ function applyApprovalToViolation(v,token,info){
   const stage=info.stage||'notice';
   function _persistViol(viol){
     try{ syncPersistItem('violations', viol); }catch(e){console.error(e);}
-    try{ localStorage.setItem('violationsList', JSON.stringify(violationsList); }catch(e){}
+    try{ localStorage.setItem('violationsList',JSON.stringify(violationsList)); }catch(e){}
   }
   if(stage==='transfer'){
     if(v.transferToken===token && !v.transferApprovedAt){
@@ -14634,11 +14634,11 @@ function startViolApprovalsListener(){
       // Update localStorage
       const approvals=JSON.parse(localStorage.getItem('violApprovals')||'{}');
       approvals[token]=Object.assign(approvals[token]||{},info);
-      localStorage.setItem('violApprovals',JSON.stringify(approvals);
+      localStorage.setItem('violApprovals',JSON.stringify(approvals));
       // Update violation in memory if approved
       if(info.approvedAt){
         const v=violationsList.find(function(x){return x.noticeToken===token||x.transferToken===token||x.approvalToken===token;});
-        if(v && applyApprovalToViolation(v,token,info){
+        if(v && applyApprovalToViolation(v,token,info)){
           changed=true;
           const stageLabel=info.stage==='transfer'?'הסבת דוח':'הודעה על דוח';
           if(typeof showToast==='function') showToast('🎉 הנהג אישר '+stageLabel+' '+v.num);
@@ -14706,7 +14706,7 @@ function renderVehicleViolations(){
 }
 
 function goToViolation(violId){
-  go('violations', document.querySelector('[dp=violations]');
+  go('violations', document.querySelector('[dp=violations]'));
   setTimeout(function(){
     const row=document.querySelector('.viol-data-row[data-vid="'+violId+'"]');
     if(!row)return;
@@ -14739,9 +14739,9 @@ var _lastAccidentIds = new Set();
 function persistAccidentsList(){
   if(!db) return;
   (accidentsList||[]).forEach(function(a){ syncPersistItem('accidents', a); });
-  const currentIds = new Set((accidentsList||[]).map(a=>String(a.id));
+  const currentIds = new Set((accidentsList||[]).map(a=>String(a.id)));
   _lastAccidentIds.forEach(function(id){
-    if(!currentIds.has(id){ syncRemoveItem('accidents', id); }
+    if(!currentIds.has(id)){ syncRemoveItem('accidents', id); }
   });
   _lastAccidentIds = currentIds;
 }
@@ -14864,7 +14864,7 @@ function accAddLogToModal(aid){
 }
 
 function accDeleteLog(aid,idx){
-  if(!confirm('למחוק את התיעוד?')return;
+  if(!confirm('למחוק את התיעוד?')) return;
   const a=accidentsList.find(function(x){return x.id===aid;});
   if(!a||!a.logs)return;
   a.logs.splice(idx,1);
@@ -14879,7 +14879,7 @@ function changeAccStatus(aid,newStatus){
 }
 
 function deleteAccident(aid){
-  if(!confirm('למחוק את האירוע?')return;
+  if(!confirm('למחוק את האירוע?')) return;
   accidentsList=accidentsList.filter(function(a){return a.id!==aid;});
   if(typeof persistAccidentsList==='function') persistAccidentsList();
   renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);
@@ -15009,7 +15009,7 @@ function saveAccident(){
         Object.assign(target,data);
       }
     }else{
-      accidentsList.unshift(Object.assign({id:++accIdSeq,logs:[]},data);
+      accidentsList.unshift(Object.assign({id:++accIdSeq,logs:[]},data));
     }
     if(typeof persistAccidentsList==='function') persistAccidentsList();
     accPendingFile=null;
@@ -15071,7 +15071,7 @@ function renderVcAccidents(vid){
 }
 
 function goToAccident(accId){
-  go('accidents', document.querySelector('[dp=accidents]');
+  go('accidents', document.querySelector('[dp=accidents]'));
   setTimeout(function(){
     const row=document.querySelector('.acc-row[data-aid="'+accId+'"]');
     if(!row)return;
@@ -15112,7 +15112,7 @@ function saveFamilyEdit(){
 
 function removeFamilyMember(idx){
   const v=vehicles.find(x=>x.id===_currentVid);if(!v||!v.family||!v.family[idx])return;
-  if(!confirm('להסיר את '+v.family[idx].name+'?')return;
+  if(!confirm('להסיר את '+v.family[idx].name+'?'))return;
   v.family.splice(idx,1);
   try{ if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }catch(e){}
   renderFamilyRows(_currentVid);
@@ -15125,8 +15125,8 @@ function toggleSidebar(){
 // Close sidebar on outside tap (mobile)
 document.addEventListener('click',e=>{
   const sb=document.querySelector('.sb');
-  if(window.innerWidth<=768&&sb&&sb.classList.contains('open'){
-    if(!sb.contains(e.target)&&!e.target.closest('.mobile-menu-btn'){
+  if(window.innerWidth<=768&&sb&&sb.classList.contains('open')){
+    if(!sb.contains(e.target)&&!e.target.closest('.mobile-menu-btn')){
       sb.classList.remove('open');
     }
   }
@@ -15145,8 +15145,8 @@ function go(name,el){
   const _vm=id('ho-view-modal'); if(_vm)_vm.remove();
   const _ls=id('ho-list-screen'); if(_ls)_ls.style.display='block';
 
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active');
-  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   const pg=id('page-'+name);
   if(!pg)return;
   pg.classList.add('active');
@@ -15177,7 +15177,7 @@ function refresh(){
   const today = new Date(); today.setHours(0,0,0,0);
   (vehicles||[]).forEach(function(v){
     // Vehicle license (test) - within testReminderDays
-    if(v.licenseExp && typeof isWithin30Days==='function' && isWithin30Days(v.licenseExp, testDaysThreshold){
+    if(v.licenseExp && typeof isWithin30Days==='function' && isWithin30Days(v.licenseExp, testDaysThreshold)){
       testCount++;
     }
     // Annual service - within svcReminderDays from last service anniversary
@@ -15187,14 +15187,14 @@ function refresh(){
         const anniversary = new Date(lastSvc);
         while(anniversary<=today) anniversary.setFullYear(anniversary.getFullYear()+1);
         const annivStr = localDateStr(anniversary);
-        if(typeof isWithin30Days==='function' && isWithin30Days(annivStr, svcDaysThreshold){
+        if(typeof isWithin30Days==='function' && isWithin30Days(annivStr, svcDaysThreshold)){
           treatmentCount++;
         }
       } else if(v.isNew && v.delivery){
         const firstSvc = new Date(v.delivery);
         firstSvc.setFullYear(firstSvc.getFullYear()+1);
         const firstStr = localDateStr(firstSvc);
-        if(typeof isWithin30Days==='function' && isWithin30Days(firstStr, svcDaysThreshold){
+        if(typeof isWithin30Days==='function' && isWithin30Days(firstStr, svcDaysThreshold)){
           treatmentCount++;
         }
       }
@@ -15215,9 +15215,9 @@ function refresh(){
 }
 // זרימות ציבוריות - פועלות בלי אימות, מזוהות מיד בטעינה
 var _isPublicPage = checkViolApproval()
-  || (typeof checkFormFillPage==='function' && checkFormFillPage()
-  || (typeof checkServiceBooking==='function' && checkServiceBooking()
-  || (typeof checkKmRequest==='function' && checkKmRequest();
+  || (typeof checkFormFillPage==='function' && checkFormFillPage())
+  || (typeof checkServiceBooking==='function' && checkServiceBooking())
+  || (typeof checkKmRequest==='function' && checkKmRequest());
 
 // כל המאזינים והטעינות האמיתיות - מופעלים רק אחרי אימות מוצלח
 var _authedAppStarted = false;
@@ -15235,13 +15235,13 @@ function startAuthedApp(){
       // Self reminders
       registerSyncCollection('selfReminders',
         function(){ return typeof selfReminders!=='undefined'&&selfReminders?selfReminders:[]; },
-        function(arr){ if(typeof selfReminders==='undefined'||!selfReminders){selfReminders=[];} selfReminders.length=0; arr.forEach(function(r){ selfReminders.push(r); }); try{localStorage.setItem('selfReminders',JSON.stringify(selfReminders);}catch(e){} _lastSelfReminderIds = new Set(selfReminders.map(r=>String(r.id)); },
+        function(arr){ if(typeof selfReminders==='undefined'||!selfReminders){selfReminders=[];} selfReminders.length=0; arr.forEach(function(r){ selfReminders.push(r); }); try{localStorage.setItem('selfReminders',JSON.stringify(selfReminders));}catch(e){} _lastSelfReminderIds = new Set(selfReminders.map(r=>String(r.id))); },
         function(){ if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}} }
       );
       // Fleet events (user-created events in calendar)
       registerSyncCollection('fleetEvents',
         function(){ return JSON.parse(localStorage.getItem('fleetEvents')||'[]'); },
-        function(arr){ try{localStorage.setItem('fleetEvents',JSON.stringify(arr);}catch(e){} _lastFleetEventIds = new Set((arr||[]).map(e=>String(e.id)); },
+        function(arr){ try{localStorage.setItem('fleetEvents',JSON.stringify(arr));}catch(e){} _lastFleetEventIds = new Set((arr||[]).map(e=>String(e.id))); },
         function(){ if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}} }
       );
       // Violations (traffic reports)
@@ -15265,19 +15265,19 @@ function startAuthedApp(){
       // Service bookings (לוח טיפולים)
       registerSyncCollection('serviceBookings',
         function(){ return JSON.parse(localStorage.getItem('serviceBookings')||'[]'); },
-        function(arr){ try{localStorage.setItem('serviceBookings',JSON.stringify(arr||[]);}catch(e){} _lastBookingIds = new Set((arr||[]).map(b=>String(b.id)); },
+        function(arr){ try{localStorage.setItem('serviceBookings',JSON.stringify(arr||[]));}catch(e){} _lastBookingIds = new Set((arr||[]).map(b=>String(b.id))); },
         function(){
           if(typeof renderScheduling==='function'){try{renderScheduling();}catch(e){}}
           // Check for new driver bookings and show toast
           var bks=JSON.parse(localStorage.getItem('serviceBookings')||'[]');
-          bks.forEach(function(b){if(b.status==='booked'&&!b._toasted){showToast('נהג קבע תור: '+fd(b.bookedDate);b._toasted=true;}});
-          try{localStorage.setItem('serviceBookings',JSON.stringify(bks);}catch(e){}
+          bks.forEach(function(b){if(b.status==='booked'&&!b._toasted){showToast('נהג קבע תור: '+fd(b.bookedDate));b._toasted=true;}});
+          try{localStorage.setItem('serviceBookings',JSON.stringify(bks));}catch(e){}
         }
       );
       // Handover forms (מסירה וקבלה)
       registerSyncCollection('hoForms2',
         function(){ return JSON.parse(localStorage.getItem('hoForms2')||'[]'); },
-        function(arr){ hoForms2 = arr||[]; try{localStorage.setItem('hoForms2',JSON.stringify(hoForms2);}catch(e){} },
+        function(arr){ hoForms2 = arr||[]; try{localStorage.setItem('hoForms2',JSON.stringify(hoForms2));}catch(e){} },
         function(){ if(_currentVid && typeof hoRenderList==='function'){try{hoRenderList(_currentVid);}catch(e){}} }
       );
       // Archived vehicles (ארכיון) — was localStorage-only, now synced cross-device
@@ -15290,7 +15290,7 @@ function startAuthedApp(){
             if(!r.id) r.id='arc_'+(r.vehicleId||'x')+'_'+Date.now();
             archivedVehicles.push(r);
           });
-          try{localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles);}catch(e){}
+          try{localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));}catch(e){}
         },
         function(){ if(typeof renderArchivePage==='function'){try{renderArchivePage();}catch(e){}} }
       );
@@ -15306,7 +15306,7 @@ function startAuthedApp(){
           var merged=Object.assign({},local,remote);
           if(local.moreB64)merged.moreB64=local.moreB64;
           if(local.colB64)merged.colB64=local.colB64;
-          localStorage.setItem('fleetSettings',JSON.stringify(merged);
+          localStorage.setItem('fleetSettings',JSON.stringify(merged));
           // Refresh system name in header if changed
           if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
         },function(e){console.error('fleetSettings listener:',e);});
@@ -15350,10 +15350,10 @@ function renderArchivePage(){
   el.innerHTML=html;
 }
 function deleteFromArchive(idx){
-  if(!confirm('למחוק את הרשומה מהארכיון לצמיתות?')return;
+  if(!confirm('למחוק את הרשומה מהארכיון לצמיתות?')) return;
   var rec = archivedVehicles[idx];
   archivedVehicles.splice(idx,1);
-  localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles);
+  localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
   // Sync deletion to Firestore
   if(rec && rec.id){
     try{ syncRemoveItem('archivedVehicles', rec.id); }catch(e){}
@@ -15362,7 +15362,7 @@ function deleteFromArchive(idx){
   showToast('נמחק מהארכיון');
 }
 function restoreFromArchive(idx){
-  if(!confirm('להחזיר את הרכב לציר הפעיל?')return;
+  if(!confirm('להחזיר את הרכב לציר הפעיל?')) return;
   var r=archivedVehicles[idx];if(!r)return;
 
   if(r.action==='keep_driver'){
@@ -15391,7 +15391,7 @@ function restoreFromArchive(idx){
   }
 
   archivedVehicles.splice(idx,1);
-  localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles);
+  localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));
   if(r.id&&typeof syncRemoveItem==='function')syncRemoveItem('archivedVehicles',r.id);
   renderArchivePage();refresh();
   showToast('✓ '+r.plate+' הוחזר לציר');
@@ -15690,7 +15690,7 @@ function openDocViewer(dataUrl,type,name){
   const lbl=document.createElement('span');lbl.style.cssText='color:#fff;font-size:13px;font-weight:500';lbl.textContent=name;
   const btn=document.createElement('button');btn.style.cssText='background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px';btn.textContent='×';btn.onclick=()=>document.body.removeChild(overlay);
   hdr.appendChild(lbl);hdr.appendChild(btn);overlay.appendChild(hdr);
-  if(type&&type.startsWith('image/'){
+  if(type&&type.startsWith('image/')){
     const wrap=document.createElement('div');wrap.style.cssText='flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:16px';
     const img=document.createElement('img');img.src=dataUrl;img.style.cssText='max-width:100%;max-height:100%;object-fit:contain';
     wrap.appendChild(img);overlay.appendChild(wrap);
@@ -15751,13 +15751,13 @@ function saveFormTemplatesArr(arr){
     // Fallback to localStorage (without PDF data)
     try{
       var light=arr.map(function(t){var c=Object.assign({},t);delete c.pdfBase64;return c;});
-      localStorage.setItem('formTemplates',JSON.stringify(light);
+      localStorage.setItem('formTemplates',JSON.stringify(light));
     }catch(e2){console.error('localStorage fallback error:',e2);}
   });
   // Also try to keep localStorage in sync (without heavy PDF data) for quick load
   try{
     var light=arr.map(function(t){var c=Object.assign({},t);delete c.pdfBase64;return c;});
-    localStorage.setItem('formTemplates',JSON.stringify(light);
+    localStorage.setItem('formTemplates',JSON.stringify(light));
   }catch(e){}
 }
 function loadFormTemplatesFromDB(){
@@ -15794,7 +15794,7 @@ function loadFormTemplatesFromDB(){
 }
 // Init: load from IndexedDB at startup
 loadFormTemplatesFromDB().then(function(){
-  if(typeof renderFormTemplates==='function' && document.getElementById('forms-templates-list'){
+  if(typeof renderFormTemplates==='function' && document.getElementById('forms-templates-list')){
     renderFormTemplates();
   }
 });
@@ -15892,7 +15892,7 @@ function startFormSubmissionsListener(){
   _formSubsListener=db.collection('formSubmissions').onSnapshot(function(snap){
     const prev=(formSubmissionsCache||[]).length;
     formSubmissionsCache=[];
-    snap.forEach(function(doc){formSubmissionsCache.push(doc.data();});
+    snap.forEach(function(doc){formSubmissionsCache.push(doc.data());});
     // Notify on new submissions after initial load
     if(!initial && formSubmissionsCache.length>prev){
       const newOnes=formSubmissionsCache.length-prev;
@@ -15973,7 +15973,7 @@ function viewSubmission(subId){
   // Try to get template from Firestore
   if(db){
     db.collection('formTemplates').doc(tid).get().then(function(doc){
-      if(doc.exists)showModal(doc.data();
+      if(doc.exists)showModal(doc.data());
       else showToast('התבנית לא נמצאה');
     }).catch(function(e){console.error(e);showToast('שגיאה בטעינה');});
   }
@@ -16176,7 +16176,7 @@ async function drawTextAsImage(pdfDoc,page,text,x,y,w,h){
 }
 
 function deleteSubmission(subId){
-  if(!confirm('למחוק את התגובה?')return;
+  if(!confirm('למחוק את התגובה?')) return;
   if(db){
     db.collection('formSubmissions').doc(subId).delete().then(function(){
       showToast('נמחק');
@@ -16232,7 +16232,7 @@ function closeFormBuilder(){
 function onFbPdfUpload(input){
   const file=input.files[0];
   if(!file)return;
-  if(!file.name.toLowerCase().endsWith('.pdf'){alert('יש להעלות קובץ PDF בלבד');input.value='';return;}
+  if(!file.name.toLowerCase().endsWith('.pdf')){alert('יש להעלות קובץ PDF בלבד');input.value='';return;}
   // Show loading state
   var uploadArea=id('fb-upload-area');
   if(uploadArea){
@@ -16307,7 +16307,7 @@ function setupFbCanvasClicks(){
   wrap._fbClicked=true;
   wrap.addEventListener('click',function(e){
     // Ignore clicks on existing field boxes, X buttons, or resize handles
-    if(e.target.closest('.fb-field-box')||e.target.classList.contains('fb-field-x')||e.target.classList.contains('fb-field-edit')||e.target.classList.contains('fb-field-resize')return;
+    if(e.target.closest('.fb-field-box')||e.target.classList.contains('fb-field-x')||e.target.classList.contains('fb-field-edit')||e.target.classList.contains('fb-field-resize'))return;
     // No tool selected = do nothing
     const type=fbState.currentFieldType;
     if(!type)return;
@@ -16558,12 +16558,12 @@ function attachFieldDragHandlers(){
 
     // Drag the whole box (only if not clicking on buttons/handles)
     box.onmousedown=function(e){
-      if(e.target.classList.contains('fb-field-x')||e.target.classList.contains('fb-field-edit')||e.target.classList.contains('fb-field-resize')return;
+      if(e.target.classList.contains('fb-field-x')||e.target.classList.contains('fb-field-edit')||e.target.classList.contains('fb-field-resize'))return;
       e.preventDefault();
       startFieldDrag(e,fid);
     };
     box.ontouchstart=function(e){
-      if(e.target.classList.contains('fb-field-x')||e.target.classList.contains('fb-field-edit')||e.target.classList.contains('fb-field-resize')return;
+      if(e.target.classList.contains('fb-field-x')||e.target.classList.contains('fb-field-edit')||e.target.classList.contains('fb-field-resize'))return;
       startFieldDrag(e.touches[0],fid);
     };
   });
@@ -16583,8 +16583,8 @@ function startFieldDrag(startEvent,fid){
     const ev=e.touches?e.touches[0]:e;
     const dx=(ev.clientX-startX)/rect.width;
     const dy=(ev.clientY-startY)/rect.height;
-    field.x=Math.max(0,Math.min(1-field.w,origX+dx);
-    field.y=Math.max(0,Math.min(1-field.h,origY+dy);
+    field.x=Math.max(0,Math.min(1-field.w,origX+dx));
+    field.y=Math.max(0,Math.min(1-field.h,origY+dy));
     updateFieldBoxPosition(fid);
   };
   const onUp=function(){
@@ -16613,8 +16613,8 @@ function startFieldResize(startEvent,fid){
     const ev=e.touches?e.touches[0]:e;
     const dx=(ev.clientX-startX)/rect.width;
     const dy=(ev.clientY-startY)/rect.height;
-    field.w=Math.max(0.02,Math.min(1-field.x,origW+dx);
-    field.h=Math.max(0.015,Math.min(1-field.y,origH+dy);
+    field.w=Math.max(0.02,Math.min(1-field.x,origW+dx));
+    field.h=Math.max(0.015,Math.min(1-field.y,origH+dy));
     updateFieldBoxPosition(fid);
   };
   const onUp=function(){
@@ -16653,7 +16653,7 @@ function renderFbFieldsList(){
     const isStatic=f.type==='strike'||f.type==='label';
     return '<div style="background:var(--bg);border:1px solid var(--bdr);border-radius:6px;padding:7px 10px;margin-bottom:5px;display:flex;align-items:center;gap:8px">'+
       '<span style="font-size:14px">'+iconMap[f.type]+'</span>'+
-      '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(f.label||'')+'</div>'+(isStatic?'<div style="font-size:9px;color:var(--t3)">קבוע</div>':(f.required?'<div style="font-size:9px;color:var(--red)">חובה</div>':'')+'</div>'+
+      '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(f.label||'')+'</div>'+(isStatic?'<div style="font-size:9px;color:var(--t3)">קבוע</div>':(f.required?'<div style="font-size:9px;color:var(--red)">חובה</div>':''))+'</div>'+
       '<button onclick="removeFbField(\''+f.id+'\')" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:16px;padding:0 4px">×</button>'+
     '</div>';
   }).join('');
@@ -16669,7 +16669,7 @@ function saveFormTemplate(){
   const name=id('fb-name').value.trim();
   if(!name){alert('נא להזין שם לטופס');return;}
   if(!fbState.pdfBase64){alert('נא להעלות קובץ PDF');return;}
-  if(!fbState.fields.length){if(!confirm('לא הוספת שדות. לשמור בכל זאת?')return;}
+  if(!fbState.fields.length){if(!confirm('לא הוספת שדות. לשמור בכל זאת?')) return;}
 
   const templates=getFormTemplates();
   const id_=fbState.editTemplateId||'ft-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
@@ -16705,7 +16705,7 @@ function saveFormTemplate(){
     delete metaDoc.pdfBase64;
     var CHUNK_SIZE=800000; // ~800KB per chunk
     var chunks=[];
-    for(var ci=0;ci<pdfData.length;ci+=CHUNK_SIZE){chunks.push(pdfData.substring(ci,ci+CHUNK_SIZE);}
+    for(var ci=0;ci<pdfData.length;ci+=CHUNK_SIZE){chunks.push(pdfData.substring(ci,ci+CHUNK_SIZE));}
     metaDoc.pdfChunks=chunks.length;
     var batch=db.batch();
     batch.set(db.collection('formTemplates').doc(id_),metaDoc);
@@ -16730,7 +16730,7 @@ function editFormTemplate(tid){
 }
 
 function deleteFormTemplate(tid){
-  if(!confirm('למחוק את הטופס?')return;
+  if(!confirm('למחוק את הטופס?')) return;
   const templates=getFormTemplates().filter(function(x){return x.id!==tid;});
   saveFormTemplatesArr(templates);
   if(db){
@@ -16738,7 +16738,7 @@ function deleteFormTemplate(tid){
     db.collection('formTemplates').doc(tid).collection('pdfChunks').get().then(function(snap){
       var batch=db.batch();
       snap.forEach(function(d){batch.delete(d.ref);});
-      batch.delete(db.collection('formTemplates').doc(tid);
+      batch.delete(db.collection('formTemplates').doc(tid));
       return batch.commit();
     }).catch(function(){db.collection('formTemplates').doc(tid).delete().catch(function(){});});
   }
@@ -17032,15 +17032,15 @@ function submitFormFill(){
 
 /* ── CALENDAR / FLEET EVENTS ── */
 function getFleetEvents(){return JSON.parse(localStorage.getItem('fleetEvents')||'[]');}
-var _lastFleetEventIds = new Set((JSON.parse(localStorage.getItem('fleetEvents')||'[]').map(e=>String(e.id));
+var _lastFleetEventIds = new Set(JSON.parse(localStorage.getItem('fleetEvents')||'[]').map(e=>String(e.id)));
 
 function saveFleetEvents(arr){
-  try{ localStorage.setItem('fleetEvents', JSON.stringify(arr); }catch(e){}
+  try{ localStorage.setItem('fleetEvents',JSON.stringify(arr)); }catch(e){}
   if(!db) return;
   (arr||[]).forEach(function(e){ syncPersistItem('fleetEvents', e); });
-  const currentIds = new Set((arr||[]).map(e=>String(e.id));
+  const currentIds = new Set((arr||[]).map(e=>String(e.id)));
   _lastFleetEventIds.forEach(function(id){
-    if(!currentIds.has(id){ syncRemoveItem('fleetEvents', id); }
+    if(!currentIds.has(id)){ syncRemoveItem('fleetEvents', id); }
   });
   _lastFleetEventIds = currentIds;
 }
@@ -17169,7 +17169,7 @@ function exportCalendar(type){
 document.addEventListener('click',function(e){
   var wrap=document.querySelector('.cal-export-wrap');
   var dd=document.getElementById('cal-export-dropdown');
-  if(wrap&&dd&&!wrap.contains(e.target)dd.style.display='none';
+  if(wrap&&dd&&!wrap.contains(e.target))dd.style.display='none';
 });
 function calToday(){
   calCurrentDate=new Date();
@@ -17182,7 +17182,7 @@ function toggleLegendFilter(type){
   document.querySelectorAll('.cal-legend-item').forEach(function(el){el.classList.remove('active')});
   if(_legendFilter){
     document.querySelectorAll('.cal-legend-item').forEach(function(el){
-      if(el.getAttribute('onclick').includes(_legendFilter) el.classList.add('active');
+      if(el.getAttribute('onclick').includes(_legendFilter)) el.classList.add('active');
     });
   }
   renderCalendar();
@@ -17192,8 +17192,8 @@ function renderCalSummary(events){
   var y=now.getFullYear(),m=now.getMonth();
   var monthLabel=document.getElementById('cal-summary-month');
   if(monthLabel) monthLabel.textContent='סיכום החודש';
-  var monthStart=localDateStr(new Date(y,m,1);
-  var monthEnd=localDateStr(new Date(y,m+1,0);
+  var monthStart=localDateStr(new Date(y,m,1));
+  var monthEnd=localDateStr(new Date(y,m+1,0));
   var monthEvents=events.filter(function(e){return e.date>=monthStart&&e.date<=monthEnd;});
   var svcCount=monthEvents.filter(function(e){return e.type==='svc-pickup'}).length;
   var testCount=monthEvents.filter(function(e){return e.type==='test-pickup'}).length;
@@ -17238,7 +17238,7 @@ function buildSystemAlertItems(rangeDays){
 }
 
 function renderCalendar(){
-  if(!id('cal-grid-area')return;
+  if(!id('cal-grid-area'))return;
   var allEvents=getCalendarEvents();
   // Apply filter
   var filteredEvents=allEvents;
@@ -17364,7 +17364,7 @@ function openDayPicker(iso){
   if(!iso) return;
   // Parse the iso date and jump to day view
   const dt = new Date(iso+'T12:00:00');
-  if(isNaN(dt) return;
+  if(isNaN(dt)) return;
   calCurrentDate = dt;
   calViewMode = 'day';
   // Update view buttons
@@ -17486,7 +17486,7 @@ function openSelfReminderModal(presetDate, editId){
 function deleteSelfReminderFromModal(){
   const editId = document.getElementById('sr-edit-id').value;
   if(!editId) return;
-  if(!confirm('למחוק תזכורת זו לצמיתות?') return;
+  if(!confirm('למחוק תזכורת זו לצמיתות?')) return;
   selfReminders = selfReminders.filter(x=>x.id!==editId);
   persistSelfReminders();
   document.getElementById('self-reminder-modal').remove();
@@ -17495,18 +17495,18 @@ function deleteSelfReminderFromModal(){
 }
 
 var selfReminders = JSON.parse(localStorage.getItem('selfReminders')||'[]');
-var _lastSelfReminderIds = new Set((selfReminders||[]).map(r=>String(r.id));
+var _lastSelfReminderIds = new Set((selfReminders||[]).map(r=>String(r.id)));
 
 // Persist self reminders: localStorage + Firestore (with deletion tracking)
 function persistSelfReminders(){
-  try{ localStorage.setItem('selfReminders', JSON.stringify(selfReminders); }catch(e){}
+  try{ localStorage.setItem('selfReminders',JSON.stringify(selfReminders)); }catch(e){}
   if(!db) return;
   // Push all current items
   selfReminders.forEach(function(r){ syncPersistItem('selfReminders', r); });
   // Detect deletions
-  const currentIds = new Set((selfReminders||[]).map(r=>String(r.id));
+  const currentIds = new Set((selfReminders||[]).map(r=>String(r.id)));
   _lastSelfReminderIds.forEach(function(id){
-    if(!currentIds.has(id){ syncRemoveItem('selfReminders', id); }
+    if(!currentIds.has(id)){ syncRemoveItem('selfReminders', id); }
   });
   _lastSelfReminderIds = currentIds;
 }
@@ -17539,7 +17539,7 @@ function saveSelfReminder(){
 }
 
 function deleteSelfReminder(id){
-  if(!confirm('למחוק תזכורת זו?') return;
+  if(!confirm('למחוק תזכורת זו?')) return;
   selfReminders = selfReminders.filter(x=>x.id!==id);
   persistSelfReminders();
   renderSelfReminders();
@@ -17697,7 +17697,7 @@ function saveCalEventEdit(vehicleId, fieldKey, familyIdx){
 
   // Persist
   persistVehicle(v);
-  try{ localStorage.setItem('vehicles', JSON.stringify(vehicles); }catch(e){}
+  try{ localStorage.setItem('vehicles',JSON.stringify(vehicles)); }catch(e){}
 
   document.getElementById('cal-event-edit-modal').remove();
   renderCalendar();
@@ -17793,13 +17793,13 @@ function openEnhancedEventModal(editId, presetDate){
   // Pre-fill date
   document.getElementById('enh-ev-date').value = presetDate || localDateStr();
   // Set default type to "service"
-  setEnhEventType('service', document.querySelector('.enh-type-btn[data-type="service"]');
+  setEnhEventType('service', document.querySelector('.enh-type-btn[data-type="service"]'));
   // Edit mode
   if(editId){
     const events = getFleetEvents();
     const e = events.find(x=>x.id===editId);
     if(e){
-      setEnhEventType(e.enhType||'service', document.querySelector('.enh-type-btn[data-type="'+(e.enhType||'service')+'"]');
+      setEnhEventType(e.enhType||'service', document.querySelector('.enh-type-btn[data-type="'+(e.enhType||'service')+'"]'));
       if(e.enhType==='other'){
         document.getElementById('enh-other-text').value = e.otherText||e.title||'';
       }
@@ -17823,7 +17823,7 @@ function openEnhancedEventModal(editId, presetDate){
 function deleteEnhancedEvent(){
   const editId = document.getElementById('enh-ev-edit-id').value;
   if(!editId) return;
-  if(!confirm('למחוק אירוע זה לצמיתות?') return;
+  if(!confirm('למחוק אירוע זה לצמיתות?')) return;
   const events = getFleetEvents();
   const filtered = events.filter(x=>x.id!==editId);
   saveFleetEvents(filtered);
@@ -17922,7 +17922,7 @@ function openSendEventMessageModal(evId){
   const msg = template
     .replace(/\{נהג\}/g, v.driver?.name||'')
     .replace(/\{רכב\}/g, v.plate||'')
-    .replace(/\{תאריך\}/g, fd(e.date)+(e.time?' · '+e.time:'')
+    .replace(/\{תאריך\}/g, fd(e.date)+(e.time?' · '+e.time:''))
     .replace(/\{סוג\}/g, e.title||'');
   const modal = document.createElement('div');
   modal.id = 'send-event-msg-modal';
@@ -17961,7 +17961,7 @@ function sendEventMsgWhatsapp(evId){
   const phone = (v.driver?.phone||'').replace(/[^0-9]/g,'');
   if(!phone){ showToast('אין טלפון לנהג'); return; }
   let waPhone = phone;
-  if(phone.startsWith('0') waPhone = '972'+phone.slice(1);
+  if(phone.startsWith('0')) waPhone = '972'+phone.slice(1);
   const msg = document.getElementById('sem-text').value;
   const url = 'https://wa.me/'+waPhone+'?text='+encodeURIComponent(msg);
   const a = document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener';
@@ -17995,7 +17995,7 @@ function checkPendingReminders(){
   // 1. Personal reminders (selfReminders) - overdue & not sent
   const pendingSelf = (selfReminders||[]).filter(function(r){
     if(r.sent) return false;
-    const dt = new Date(r.date+'T'+(r.time||'00:00');
+    const dt = new Date(r.date+'T'+(r.time||'00:00'));
     return dt <= now;
   });
 
@@ -18004,13 +18004,13 @@ function checkPendingReminders(){
   const pendingPre = events.filter(function(e){
     if(e.preReminderSent) return false;
     if(!e.preReminderDate) return false;
-    const dt = new Date(e.preReminderDate+'T'+(e.preReminderTime||'09:00');
+    const dt = new Date(e.preReminderDate+'T'+(e.preReminderTime||'09:00'));
     return dt <= now;
   });
 
   // 3. Service/test reminders - vehicles with upcoming service/test within threshold
   var pendingSvc=[];
-  if(typeof isEmailJSConfigured==='function' && isEmailJSConfigured(){
+  if(typeof isEmailJSConfigured==='function' && isEmailJSConfigured()){
     var _ss=typeof getSchedulingSettings==='function'?getSchedulingSettings():{};
     var svcThreshold=_ss.reminderDays||20;
     var testThreshold=_ss.testReminderDays||30;
@@ -18084,7 +18084,7 @@ function checkPendingReminders(){
   if(total===0) return;
 
   // AUTO-SEND via EmailJS if configured
-  if(typeof isEmailJSConfigured==='function' && isEmailJSConfigured(){
+  if(typeof isEmailJSConfigured==='function' && isEmailJSConfigured()){
     var promises=[];
     pendingSelf.forEach(function(r){
       if(!myEmail) return;
@@ -18093,7 +18093,7 @@ function checkPendingReminders(){
       promises.push(sendViaEmailJS(myEmail,subj,body).then(function(){
         r.sent=true;r.sentAt=new Date().toISOString();
         return {ok:true,type:'self',title:r.title};
-      }).catch(function(e){return {ok:false,type:'self',title:r.title,err:e.message};});
+      }).catch(function(e){return {ok:false,type:'self',title:r.title,err:e.message};}));
     });
     var evts=getFleetEvents();
     pendingPre.forEach(function(e){
@@ -18104,7 +18104,7 @@ function checkPendingReminders(){
       promises.push(sendViaEmailJS(v.driver.email,subj,body).then(function(){
         e.preReminderSent=true;e.preReminderSentAt=new Date().toISOString();
         return {ok:true,type:'pre',title:e.title};
-      }).catch(function(err){return {ok:false,type:'pre',title:e.title,err:err.message};});
+      }).catch(function(err){return {ok:false,type:'pre',title:e.title,err:err.message};}));
     });
     // Service/test reminders to drivers
     var svcSentMap=JSON.parse(localStorage.getItem('_svcRemindersSent')||'{}');
@@ -18114,14 +18114,14 @@ function checkPendingReminders(){
       promises.push(sendViaEmailJS(item.email,subj,body).then(function(){
         svcSentMap[item.key]=new Date().toISOString();
         return {ok:true,type:'svc',title:item.type+' '+item.plate};
-      }).catch(function(err){return {ok:false,type:'svc',title:item.type+' '+item.plate,err:err.message};});
+      }).catch(function(err){return {ok:false,type:'svc',title:item.type+' '+item.plate,err:err.message};}));
     });
 
     Promise.allSettled(promises).then(function(results){
       if(typeof persistSelfReminders==='function') persistSelfReminders();
       if(typeof saveFleetEvents==='function') saveFleetEvents(evts);
       // Save service reminder sent map
-      try{localStorage.setItem('_svcRemindersSent',JSON.stringify(svcSentMap);}catch(e){}
+      try{localStorage.setItem('_svcRemindersSent',JSON.stringify(svcSentMap));}catch(e){}
       var sent=results.filter(function(r){return r.value&&r.value.ok;}).length;
       var failed=results.filter(function(r){return r.value&&!r.value.ok;}).length;
       if(sent>0) showToast('✓ '+sent+' תזכורות נשלחו אוטומטית במייל');
@@ -18208,12 +18208,12 @@ function fireSelfReminderMail(id){
   var subjRaw='תזכורת: '+r.title;
   var bodyRaw='תזכורת אישית:\n'+r.title+'\n\nנקבעה ל: '+fd(r.date)+' '+r.time+'\n\n'+(r.note||'')+'\n\n---\nמרכז הרכב של מור בית השקעות';
   function _markSent(){r.sent=true;r.sentAt=new Date().toISOString();persistSelfReminders();renderSelfReminders();}
-  if(isEmailJSConfigured(){
+  if(isEmailJSConfigured()){
     sendViaEmailJS(email,subjRaw,bodyRaw).then(function(){_markSent();showToast('✓ תזכורת נשלחה במייל');}).catch(function(){
-      window.open('mailto:'+email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw);_markSent();
+      window.open('mailto:'+email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
     });
   } else {
-    window.open('mailto:'+email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw);_markSent();
+    window.open('mailto:'+email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
   }
 }
 
@@ -18226,12 +18226,12 @@ function firePreReminderMail(evId){
   var subjRaw='תזכורת: '+e.title+' - '+v.plate;
   var bodyRaw='שלום '+(v.driver.name||'')+',\n\nתזכורת: נקבע '+e.title+' לרכב '+v.plate+' בתאריך '+fd(e.date)+(e.time?' בשעה '+e.time:'')+'.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
   function _markSent(){e.preReminderSent=true;e.preReminderSentAt=new Date().toISOString();saveFleetEvents(events);}
-  if(isEmailJSConfigured(){
+  if(isEmailJSConfigured()){
     sendViaEmailJS(v.driver.email,subjRaw,bodyRaw).then(function(){_markSent();showToast('✓ תזכורת נשלחה לנהג');}).catch(function(){
-      window.open('mailto:'+v.driver.email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw);_markSent();
+      window.open('mailto:'+v.driver.email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
     });
   } else {
-    window.open('mailto:'+v.driver.email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw);_markSent();
+    window.open('mailto:'+v.driver.email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
   }
 }
 
@@ -18602,7 +18602,7 @@ function showAllAlerts(){
   _alertRange=30;
   // Actually let's just navigate to reminders page
   if(typeof go==='function'){
-    go('reminders',document.querySelector('[dp=reminders]');
+    go('reminders',document.querySelector('[dp=reminders]'));
   }
 }
 
@@ -18613,18 +18613,18 @@ function openEventModalForDay(iso){
 function openEventModal(evId,presetDate){
   // Auto events (from vehicle expiration) -> open the vehicle card instead
   // Self reminder events: pass to self reminder modal
-  if(typeof evId==='string' && evId.startsWith('self-'){
+  if(typeof evId==='string' && evId.startsWith('self-')){
     const srId = evId.substring(5);
     openSelfReminderModal(null, srId);
     return;
   }
-  if(typeof evId==='string' && evId.startsWith('auto-'){
+  if(typeof evId==='string' && evId.startsWith('auto-')){
     // Extract vehicleId from the id (format: auto-<type>-<vid> or auto-fam-<vid>-<i>)
     const parts = evId.split('-');
     const vid = parseInt(parts[parts.length-1]);
-    if(!isNaN(vid){ openDet(vid); return; }
+    if(!isNaN(vid)){ openDet(vid); return; }
     const vid2 = parseInt(parts[2]);
-    if(!isNaN(vid2){ openDet(vid2); return; }
+    if(!isNaN(vid2)){ openDet(vid2); return; }
     return;
   }
   // If event was created with the new enhanced flow (has enhType) - use new modal
@@ -18706,7 +18706,7 @@ function saveEvent(){
 function deleteEvent(){
   const editId=id('ev-edit-id').value;
   if(!editId)return;
-  if(!confirm('למחוק את האירוע?')return;
+  if(!confirm('למחוק את האירוע?')) return;
   const events=getFleetEvents().filter(function(x){return x.id!==editId;});
   saveFleetEvents(events);
   closeModal('event-ov');
@@ -18736,7 +18736,7 @@ function markEventDone(){
       // Add to history
       if(!v.history)v.history=[];
       v.history.push({date:e.date,type:e.title,km:doneKm});
-      showToast('✓ בוצע - עדכון ק"מ: '+doneKm.toLocaleString('he-IL');
+      showToast('✓ בוצע - עדכון ק"מ: '+doneKm.toLocaleString('he-IL'));
     }
   }else{
     showToast('✓ האירוע סומן כבוצע');
@@ -18800,7 +18800,7 @@ function getCustomReminders(){
   return JSON.parse(localStorage.getItem('customReminders')||'[]');
 }
 function saveCustomRemindersArr(arr){
-  localStorage.setItem('customReminders',JSON.stringify(arr);
+  localStorage.setItem('customReminders',JSON.stringify(arr));
 }
 
 function openCustomReminderModal(editId){
@@ -18906,7 +18906,7 @@ function saveCustomReminder(){
 }
 
 function deleteCustomReminder(rid){
-  if(!confirm('למחוק את התזכורת?')return;
+  if(!confirm('למחוק את התזכורת?')) return;
   const arr=getCustomReminders().filter(function(x){return x.id!==rid;});
   saveCustomRemindersArr(arr);
   renderReminders();
@@ -18929,14 +18929,14 @@ function getDismissedReminders(){
 function dismissReminder(rid){
   const d=getDismissedReminders();
   d[rid]=new Date().toISOString();
-  localStorage.setItem('dismissedReminders',JSON.stringify(d);
+  localStorage.setItem('dismissedReminders',JSON.stringify(d));
   renderReminders();
   showToast('התזכורת סומנה כטופלה');
 }
 function restoreReminder(rid){
   const d=getDismissedReminders();
   delete d[rid];
-  localStorage.setItem('dismissedReminders',JSON.stringify(d);
+  localStorage.setItem('dismissedReminders',JSON.stringify(d));
   renderReminders();
 }
 
@@ -19195,7 +19195,7 @@ function remindersUrgencyBg(days){
 }
 
 function renderReminders(){
-  if(!id('reminders-list')return;
+  if(!id('reminders-list')) return;
   const filterEl=id('reminders-filter');
   const filter=filterEl?filterEl.value:'all';
   let list=buildReminders();
@@ -19276,7 +19276,7 @@ function openReminderAction(rid){
   if(r.action.type==='openVehicle'){
     openDet(r.action.vid);
   }else if(r.action.type==='openTask'){
-    go('tasks',document.querySelector('[dp=tasks]');
+    go('tasks',document.querySelector('[dp=tasks]'));
     setTimeout(function(){if(typeof openTaskModal==='function')openTaskModal(r.action.tid);},100);
   }
 }
@@ -19284,7 +19284,7 @@ function openReminderAction(rid){
 function initReminders(){
   renderReminders();
 }
-function fireEmailReminder(taskId){const reminders=JSON.parse(localStorage.getItem('fleetReminders')||'[]');const r=reminders.find(x=>x.taskId===taskId&&!x.sent);if(!r)return;const sub=encodeURIComponent('תזכורת מרכז הרכב של מור בית השקעות: '+r.title);const body=encodeURIComponent('שלום,\n\nתזכורת למשימה: '+r.title+'\nרכב: '+r.plate+'\nתאריך: '+r.date+' '+r.time+'\n\n— מרכז הרכב של מור בית השקעות');window.open('mailto:'+r.email+'?subject='+sub+'&body='+body,'_blank');r.sent=true;localStorage.setItem('fleetReminders',JSON.stringify(reminders);showToast('✉️ מייל תזכורת נפתח: '+r.title);}
+function fireEmailReminder(taskId){const reminders=JSON.parse(localStorage.getItem('fleetReminders')||'[]');const r=reminders.find(x=>x.taskId===taskId&&!x.sent);if(!r)return;const sub=encodeURIComponent('תזכורת מרכז הרכב של מור בית השקעות: '+r.title);const body=encodeURIComponent('שלום,\n\nתזכורת למשימה: '+r.title+'\nרכב: '+r.plate+'\nתאריך: '+r.date+' '+r.time+'\n\n— מרכז הרכב של מור בית השקעות');window.open('mailto:'+r.email+'?subject='+sub+'&body='+body,'_blank');r.sent=true;localStorage.setItem('fleetReminders',JSON.stringify(reminders));showToast('✉️ מייל תזכורת נפתח: '+r.title);}
 function updateReminderBadge(){renderReminders();}
 function saveReminderSettings(){const email=document.getElementById('reminder-email')?.value.trim();if(email!==undefined){saveSettings({reminderEmail:email});const el=document.getElementById('reminder-saved');if(el){el.textContent='✓ נשמר';el.style.opacity='1';setTimeout(()=>el.style.opacity='0',2500);}}}
 
@@ -19467,7 +19467,7 @@ function exportToExcel(type){
         'מצב':f.mode==='take'?'לקיחה':'החזרה',
         'תאריך יצירה':f.createdAt?new Date(f.createdAt).toLocaleDateString('he-IL'):'',
         'מספר רכב':f.vehicle?.plate||'',
-        'יצרן/דגם':((f.vehicle?.make||'')+' '+(f.vehicle?.model||'').trim(),
+        'יצרן/דגם':((f.vehicle?.make||'')+' '+(f.vehicle?.model||'')).trim(),
         'שם נהג':f.driverName||'',
         'טלפון נהג':f.driverPhone||'',
         'מטרת נסיעה':f.purpose||'',
@@ -19567,7 +19567,7 @@ function saveSchedulingSettings(){
   if(capEl) s.schedDailyCapacity=parseInt(capEl.value)||2;
   var daysCbs=document.querySelectorAll('.sched-day-cb');
   var days=[];
-  daysCbs.forEach(function(cb){if(cb.checked) days.push(parseInt(cb.value);});
+  daysCbs.forEach(function(cb){if(cb.checked) days.push(parseInt(cb.value));});
   s.schedOpenDays=days;
   // שדות חדשים
   var scanEl=document.getElementById('sched-scan-range');
@@ -19582,7 +19582,7 @@ function saveSchedulingSettings(){
   if(postEl) s.schedPostReminder=parseInt(postEl.value)||5;
   var timeEl=document.getElementById('sched-daily-check-time');
   if(timeEl&&timeEl.value) s.schedDailyCheckTime=timeEl.value;
-  localStorage.setItem('fleetSettings',JSON.stringify(s);
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
   // שמור גם ל-Firestore settings/treatments
   if(typeof db!=='undefined'&&db){
     db.collection('settings').doc('treatments').set({
@@ -19611,7 +19611,7 @@ function initSchedulingSettings(){
   if(capEl) capEl.value=s.dailyCapacity;
   var daysCbs=document.querySelectorAll('.sched-day-cb');
   daysCbs.forEach(function(cb){
-    cb.checked=s.openDays.indexOf(parseInt(cb.value)>=0;
+    cb.checked=s.openDays.indexOf(parseInt(cb.value))>=0;
   });
   // שדות חדשים - טען מ-Firestore אם זמין, אחרת localStorage
   if(typeof TREATMENT_STATE!=='undefined'){
@@ -19659,7 +19659,7 @@ function getVehiclesNeedingService(withinDays){
       }
     }
     if(nextSvcDate){
-      var diff=Math.round((nextSvcDate-today)/(1000*60*60*24);
+      var diff=Math.round((nextSvcDate-today)/(1000*60*60*24));
       if(diff<=withinDays){
         results.push({vid:v.id, plate:v.plate||'', driver:v.driver?.name||'', driverPhone:v.driver?.phone||'', driverEmail:v.driver?.email||'', type:svcType, dueDate:localDateStr(nextSvcDate), daysLeft:diff, vehicle:v});
       }
@@ -19674,7 +19674,7 @@ function getServiceBookings(){
   return JSON.parse(localStorage.getItem('serviceBookings')||'[]');
 }
 function saveServiceBookings(arr){
-  try{localStorage.setItem('serviceBookings',JSON.stringify(arr);}catch(e){}
+  try{localStorage.setItem('serviceBookings',JSON.stringify(arr));}catch(e){}
 }
 
 function renderScheduling(){
@@ -19812,7 +19812,7 @@ function renderSchedulingMiniCal(mo,bookingsByDate,settings){
     var bks=bookingsByDate[isoD]||[];
     var cnt=bks.length;
     var cap=settings.dailyCapacity;
-    var isOpen=settings.openDays.indexOf(dt.getDay()>=0;
+    var isOpen=settings.openDays.indexOf(dt.getDay())>=0;
     var isPast=dt<today;
     var bg='transparent';var clr='var(--t1)';
     if(!isOpen||isPast){bg='var(--bg)';clr='var(--t3)';}
@@ -20022,7 +20022,7 @@ function confirmBooking(bookingId){
     .replace('{נהג}',b.driverName||'')
     .replace('{רכב}',b.plate||'')
     .replace('{סוג}',b.serviceType||'')
-    .replace('{תאריך}',fd(b.bookedDate)
+    .replace('{תאריך}',fd(b.bookedDate))
     .replace('{מוסך}',b.garage||'—')
     .replace('{רכב_חלופי}',altLine);
 
@@ -20075,7 +20075,7 @@ function checkServiceBooking(){
   if(db){
     db.collection('serviceBookings').doc(token).get().then(function(doc){
       if(doc.exists){
-        renderPublicBookingPage(page,token,doc.data();
+        renderPublicBookingPage(page,token,doc.data());
       } else {
         renderPublicBookingPage(page,token,null);
       }
@@ -20174,7 +20174,7 @@ function renderPublicBookingPage(page,token,info){
   if(db){
     db.collection('serviceBookings').get().then(function(snap){
       var all=[];
-      snap.forEach(function(doc){all.push(doc.data();});
+      snap.forEach(function(doc){all.push(doc.data());});
       renderCal(all);
     }).catch(function(e){renderCal([]);});
   } else {
@@ -20192,7 +20192,7 @@ function renderPublicMiniCal(mo,allBookings,settings,token,info){
   // Count bookings per date
   var countByDate={};
   allBookings.forEach(function(b){
-    if(b.bookedDate && (b.status==='booked'||b.status==='confirmed'||b.status==='pending'){
+    if(b.bookedDate && (b.status==='booked'||b.status==='confirmed'||b.status==='pending')){
       countByDate[b.bookedDate]=(countByDate[b.bookedDate]||0)+1;
     }
   });
@@ -20211,7 +20211,7 @@ function renderPublicMiniCal(mo,allBookings,settings,token,info){
     var isoD=localDateStr(dt);
     var cnt=countByDate[isoD]||0;
     var cap=settings.dailyCapacity;
-    var isOpen=settings.openDays.indexOf(dt.getDay()>=0;
+    var isOpen=settings.openDays.indexOf(dt.getDay())>=0;
     var isPast=dt<today;
     var isFull=cnt>=cap;
 
@@ -20258,7 +20258,7 @@ function selectBookingDate(isoDate){
 function submitPublicBooking(token){
   if(!_publicSelectedDate){alert('נא לבחור תאריך');return;}
   var kmEl=document.getElementById('booking-km');
-  var kmVal=kmEl?parseInt(kmEl.value.replace(/[^0-9]/g,''):0;
+  var kmVal=kmEl?parseInt(kmEl.value.replace(/[^0-9]/g,'')):0;
   if(!kmVal){alert('נא להזין ק"מ נוכחי');if(kmEl)kmEl.focus();return;}
   var btn=document.getElementById('booking-confirm-btn');
   if(btn){btn.disabled=true;btn.textContent='שומר...';}
@@ -20625,7 +20625,7 @@ async function loadTreatmentSettings() {
   try {
     var doc = await db.collection('settings').doc('treatments').get();
     if (doc.exists) {
-      TREATMENT_STATE.settings = Object.assign({}, TREATMENT_SETTINGS_DEFAULTS, doc.data();
+      TREATMENT_STATE.settings = Object.assign({}, TREATMENT_SETTINGS_DEFAULTS, doc.data());
     } else {
       await db.collection('settings').doc('treatments').set(TREATMENT_SETTINGS_DEFAULTS);
     }
@@ -20649,7 +20649,7 @@ function subscribeToVehicles() {
 function subscribeToTreatments() {
   db.collection('treatments').onSnapshot(function(snapshot) {
     TREATMENT_STATE.treatments = snapshot.docs.map(function(doc) {
-      return Object.assign({ id: doc.id }, doc.data();
+      return Object.assign({ id: doc.id }, doc.data());
     });
     renderTreatments();
   });
@@ -20806,7 +20806,7 @@ async function createTreatmentRecord(vehicle, kind, dueDate) {
   var driverName = (vehicle.driver && vehicle.driver.name) || '';
   var driverEmail = (vehicle.driver && vehicle.driver.email) || '';
   var driverPhone = (vehicle.driver && vehicle.driver.phone) || '';
-  var vehicleModel = ((vehicle.make || '') + ' ' + (vehicle.model || '').trim();
+  var vehicleModel = ((vehicle.make || '') + ' ' + (vehicle.model || '')).trim();
   var licensePlate = vehicle.plate || '';
   var currentMileage = vehicle.currentKm || vehicle.curKm || 0;
 
@@ -20850,10 +20850,10 @@ async function sendDriverEmail(vehicle, kind, treatmentId) {
   var driverEmail = (vehicle.driver && vehicle.driver.email) || vehicle.driverEmail || '';
   var driverName = (vehicle.driver && vehicle.driver.name) || vehicle.driverName || '';
   var licensePlate = vehicle.plate || vehicle.licensePlate || '';
-  var vehicleModel = ((vehicle.make || '') + ' ' + (vehicle.model || '').trim() || vehicle.vehicleModel || '';
+  var vehicleModel = ((vehicle.make || '') + ' ' + (vehicle.model || '')).trim() || vehicle.vehicleModel || '';
 
   console.log('[Treatments] sendDriverEmail:', {emailjs: typeof emailjs, configured: typeof isEmailJSConfigured === 'function' ? isEmailJSConfigured() : 'N/A', driverEmail: driverEmail});
-  if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured() {
+  if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured()) {
     if (!driverEmail) { console.warn('[Treatments] אין מייל לנהג'); return 'no_email'; }
     try {
       var settings = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
@@ -20894,21 +20894,21 @@ function addYears(date, years) {
 
 function daysBetween(d1, d2) {
   var ms = parseTreatmentDate(d2) - parseTreatmentDate(d1);
-  return Math.floor(ms / (1000 * 60 * 60 * 24);
+  return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
 function daysSince(date) {
-  return daysBetween(parseTreatmentDate(date), new Date();
+  return daysBetween(parseTreatmentDate(date), new Date());
 }
 
 function formatTreatmentDate(date) {
   var d = parseTreatmentDate(date);
-  return String(d.getDate().padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear();
+  return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear();
 }
 
 function formatTreatmentDateShort(date) {
   var d = parseTreatmentDate(date);
-  return String(d.getDate().padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0');
+  return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0');
 }
 
 function getHebrewDayName(date) {
@@ -21221,7 +21221,7 @@ function renderScheduledRow(t) {
     + '<div class="trt-driver-info-row">'
     + '<span class="trt-driver-name">' + t.driverName + '</span>'
     + '<span class="trt-driver-tag ' + timeTagClass + '">' + timeTag + '</span>'
-    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.treatmentType || (t.kind === 'treatment' ? 'טיפול' : 'טסט') + '</span>'
+    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.treatmentType || (t.kind === 'treatment' ? 'טיפול' : 'טסט')) + '</span>'
     + noteTag
     + '</div>'
     + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · אושר ב-' + formatTreatmentDate(t.approvedAt) + ' ב' + (t.approvedChannel === 'whatsapp' ? 'וואטסאפ' : 'מייל') + '</div>'
@@ -21253,7 +21253,7 @@ document.addEventListener('keydown', function(e) {
 
 function openVehicleCard(vehicleId) {
   if (typeof openDet === 'function') {
-    openDet(parseInt(vehicleId);
+    openDet(parseInt(vehicleId));
   } else {
     console.warn('[Treatments] openDet not found');
   }
@@ -21351,7 +21351,7 @@ async function confirmApproval() {
     await sendApprovalMessage(t, channel, customMessage);
     await addTreatmentToCalendar(t);
     closeTreatmentModal('modal-approve');
-    showToast('האישור נשלח ל' + t.driverName + ' ב' + (channel === 'whatsapp' ? 'וואטסאפ' : 'מייל');
+    showToast('האישור נשלח ל' + t.driverName + ' ב' + (channel === 'whatsapp' ? 'וואטסאפ' : 'מייל'));
   } catch (err) {
     console.error('[Treatments] שגיאה באישור:', err);
     alert('שגיאה באישור. נסה שוב.');
@@ -21368,7 +21368,7 @@ async function sendApprovalMessage(treatment, channel, customMessage) {
     var phone = (treatment.driverPhone || '').replace(/\D/g, '');
     var text = encodeURIComponent(customMessage);
     window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
-  } else if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured() {
+  } else if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured()) {
     var settings = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
     try {
       await emailjs.send(settings.emailjsServiceId, settings.emailjsTemplateId, {
@@ -21394,7 +21394,7 @@ async function addTreatmentToCalendar(treatment) {
       enhType: treatment.kind === 'treatment' ? 'service' : 'test',
       title: (treatment.kind === 'treatment' ? 'טיפול' : 'טסט') + ' - ' + treatment.driverName,
       vehicleId: parseInt(treatment.vehicleId) || null,
-      date: localDateStr(parseTreatmentDate(treatment.selectedDate),
+      date: localDateStr(parseTreatmentDate(treatment.selectedDate)),
       time: String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0') + ':00',
       desc: treatment.licensePlate + ' · ' + treatment.vehicleModel,
       status: 'planned',
@@ -21411,7 +21411,7 @@ async function addTreatmentToCalendar(treatment) {
 // 18. דחיית תאריך
 // ============================================================
 async function rejectDate(treatmentId) {
-  if (!confirm('לדחות את התאריך שהנהג בחר?') return;
+  if (!confirm('לדחות את התאריך שהנהג בחר?')) return;
   var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
   if (!t) return;
 
@@ -21428,9 +21428,9 @@ async function rejectDate(treatmentId) {
   var phone = (t.driverPhone || '').replace(/\D/g, '');
   var msg = buildTrtMessage('reject', t);
   if (phone) {
-    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg);
+    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg), '_blank');
   }
-  showToast('התאריך נדחה.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.');
+  showToast('התאריך נדחה.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
 
 
@@ -21485,7 +21485,7 @@ async function sendManualReminder(channel) {
     }
 
     closeTreatmentModal('modal-reminder');
-    showToast('התזכורת נשלחה ל' + t.driverName + ' ב' + (channel === 'whatsapp' ? 'וואטסאפ' : 'מייל');
+    showToast('התזכורת נשלחה ל' + t.driverName + ' ב' + (channel === 'whatsapp' ? 'וואטסאפ' : 'מייל'));
   } catch (err) {
     console.error('שגיאה בשליחת תזכורת:', err);
     alert('שגיאה. נסה שוב.');
@@ -21497,7 +21497,7 @@ async function sendManualReminder(channel) {
 // 20. ביטול מועד שנקבע
 // ============================================================
 async function cancelScheduled(treatmentId) {
-  if (!confirm('לבטל את המועד שנקבע? הנהג יקבל הודעה ויצטרך לבחור מחדש.') return;
+  if (!confirm('לבטל את המועד שנקבע? הנהג יקבל הודעה ויצטרך לבחור מחדש.')) return;
   var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
   if (!t) return;
 
@@ -21523,9 +21523,9 @@ async function cancelScheduled(treatmentId) {
   var phone = (t.driverPhone || '').replace(/\D/g, '');
   var msg = buildTrtMessage('cancel', t);
   if (phone) {
-    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg);
+    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg), '_blank');
   }
-  showToast('המועד בוטל.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.');
+  showToast('המועד בוטל.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
 
 
@@ -21629,13 +21629,13 @@ function isNotificationRead(id) {
 function markNotificationRead(id) {
   if (_readNotifications.indexOf(id) < 0) {
     _readNotifications.push(id);
-    localStorage.setItem('trt_read_notifications', JSON.stringify(_readNotifications);
+    localStorage.setItem('trt_read_notifications',JSON.stringify(_readNotifications));
   }
   // אם זו התראת ק"מ — הסר אותה מהרשימה
   if(id.indexOf('km_update_') === 0){
     var kmNotifs = JSON.parse(localStorage.getItem('km_update_notifications') || '[]');
     kmNotifs = kmNotifs.filter(function(n){ return n.id !== id; });
-    localStorage.setItem('km_update_notifications', JSON.stringify(kmNotifs);
+    localStorage.setItem('km_update_notifications',JSON.stringify(kmNotifs));
   }
   updateBellBadge();
   renderNotificationsPanel();
@@ -21646,7 +21646,7 @@ function markAllNotificationsRead() {
   all.forEach(function(n) {
     if (_readNotifications.indexOf(n.id) < 0) _readNotifications.push(n.id);
   });
-  localStorage.setItem('trt_read_notifications', JSON.stringify(_readNotifications);
+  localStorage.setItem('trt_read_notifications',JSON.stringify(_readNotifications));
   updateBellBadge();
   renderNotificationsPanel();
 }
@@ -21677,7 +21677,7 @@ function getTreatmentNotifications() {
     // סוג ב: נהג לא ענה X+ ימים
     if (t.status === 'awaiting_choice' && t.lastEmailSentAt) {
       var daysSinceEmail = daysSince(t.lastEmailSentAt);
-      if (daysSinceEmail >= (TREATMENT_STATE.settings.reminderIntervalDays || 5) {
+      if (daysSinceEmail >= (TREATMENT_STATE.settings.reminderIntervalDays || 5)) {
         notifications.push({
           id: 'noresponse_' + t.id,
           type: 'no_response',
@@ -21696,7 +21696,7 @@ function getTreatmentNotifications() {
     // סוג ג: טיפול שנקבע ועבר X ימים ולא סגרו
     if (t.status === 'scheduled' && t.selectedDate) {
       var daysSinceScheduled = daysSince(t.selectedDate);
-      if (daysSinceScheduled >= (TREATMENT_STATE.settings.postTreatmentReminderDays || 5) {
+      if (daysSinceScheduled >= (TREATMENT_STATE.settings.postTreatmentReminderDays || 5)) {
         notifications.push({
           id: 'forgot_' + t.id,
           type: 'forgot_to_close',
@@ -21736,9 +21736,9 @@ function getTreatmentNotifications() {
   // סוג ה: תזכורות תאונה
   var accListBell = (typeof accidentsList !== 'undefined' ? accidentsList : []);
   accListBell.forEach(function(acc) {
-    if (shouldShowAccidentReminder(acc) {
+    if (shouldShowAccidentReminder(acc)) {
       var reportDate = acc.reportDate || acc.date;
-      var daysSinceAcc = Math.floor((Date.now() - new Date(reportDate).getTime() / 86400000);
+      var daysSinceAcc = Math.floor((Date.now() - new Date(reportDate).getTime()) / 86400000);
       notifications.push({
         id: 'acc_reminder_' + acc.id,
         type: 'accident_reminder',
@@ -21834,7 +21834,7 @@ function renderNotificationsPanel() {
 document.addEventListener('click', function(e) {
   var panel = document.getElementById('trt-notifications-panel');
   var wrap = document.getElementById('trt-bell-wrap');
-  if (panel && panel.style.display !== 'none' && wrap && !wrap.contains(e.target) {
+  if (panel && panel.style.display !== 'none' && wrap && !wrap.contains(e.target)) {
     panel.style.display = 'none';
   }
 });
@@ -21881,7 +21881,7 @@ function saveTrtTemplates() {
   el = document.getElementById('trt-tpl-approval'); if (el) s.trtTplApproval = el.value;
   el = document.getElementById('trt-tpl-reject'); if (el) s.trtTplReject = el.value;
   el = document.getElementById('trt-tpl-cancel'); if (el) s.trtTplCancel = el.value;
-  localStorage.setItem('fleetSettings', JSON.stringify(s);
+  localStorage.setItem('fleetSettings',JSON.stringify(s));
   showToast('✓ תבניות הודעות נשמרו');
   var saved = document.getElementById('trt-tpl-saved');
   if (saved) { saved.style.opacity = '1'; setTimeout(function() { saved.style.opacity = '0'; }, 2000); }
@@ -21931,7 +21931,7 @@ function updateAccStatusOptions() {
     { value: 'closed_no_repair', label: 'תיק נסגר ללא כניסה למוסך' }
   ];
   select.innerHTML = options.map(function(o) { return '<option value="' + o.value + '">' + o.label + '</option>'; }).join('');
-  if (options.some(function(o) { return o.value === currentValue; }) {
+  if (options.some(function(o) { return o.value === currentValue; })) {
     select.value = currentValue;
   }
 }
@@ -21940,11 +21940,11 @@ function updateAccStatusOptions() {
 
 function shouldShowAccidentReminder(acc) {
   if (!acc || !acc.reminderEnabled) return false;
-  if (!isAccidentOpen(acc) return false;
+  if (!isAccidentOpen(acc)) return false;
   var days = parseInt(acc.reminderDays) || 14;
   var reportDate = acc.reportDate || acc.date;
   if (!reportDate) return false;
-  var daysSinceReport = Math.floor((Date.now() - new Date(reportDate).getTime() / 86400000);
+  var daysSinceReport = Math.floor((Date.now() - new Date(reportDate).getTime()) / 86400000);
   if (daysSinceReport < days) return false;
   var lastReminded = acc.lastReminderShown ? new Date(acc.lastReminderShown).getTime() : 0;
   var daysSinceLastReminder = Math.floor((Date.now() - lastReminded) / 86400000);
@@ -21990,12 +21990,12 @@ function shouldShowAccidentReminder(acc) {
     return null;
   }
   function savePos(left, top){
-    try { localStorage.setItem('search_panel_pos', JSON.stringify({left:left, top:top}); } catch(e){}
+    try { localStorage.setItem('search_panel_pos',JSON.stringify({left:left, top:top})); } catch(e){}
   }
   function applyPos(left, top){
     // ודא שלא יוצא מגבולות המסך
-    left = Math.max(0, Math.min(left, window.innerWidth - 460);
-    top  = Math.max(0, Math.min(top,  window.innerHeight - 100);
+    left = Math.max(0, Math.min(left, window.innerWidth - 460));
+    top  = Math.max(0, Math.min(top,  window.innerHeight - 100));
     resultsEl.style.left = left + 'px';
     resultsEl.style.top  = top  + 'px';
     resultsEl.style.right = 'auto';
@@ -22135,7 +22135,7 @@ function initEndOfBusinessTab(vid){
   if(!v) return;
   var driverName  = (v.driver && v.driver.name) ? v.driver.name : '—';
   var plate       = v.plate || '—';
-  var model       = ((v.make||'') + ' ' + (v.model||'').trim() || '—';
+  var model = ((v.make||'') + ' ' + (v.model||'')).trim() || '—';
   var year        = v.year || '—';
   var clientName  = getSettings().clientName || '—';
   var el;
@@ -22219,7 +22219,7 @@ function eobInitCarClick(){
   if(wrap._eobClickFn) wrap.removeEventListener('click', wrap._eobClickFn);
   wrap._eobClickFn = function(e){
     if(eobNoDmg) return;
-    if(e.target.classList.contains('eob-dot') return;
+    if(e.target.classList.contains('eob-dot')) return;
     var r = wrap.getBoundingClientRect();
     var px = ((e.clientX - r.left) / r.width) * 100;
     var py = ((e.clientY - r.top) / r.height) * 100;
@@ -22375,7 +22375,7 @@ function eobSetFuel(btn, val){
 }
 function eobGetFuelVal(){
   var active = document.querySelector('.eob-fuel-btn[style*="var(--gd)"]');
-  return active ? (active.dataset.val || active.textContent.trim() : '';
+  return active ? (active.dataset.val || active.textContent.trim()) : '';
 }
 
 function saveEobData(){
@@ -22398,9 +22398,9 @@ function saveEobData(){
       note:    (document.getElementById('eob-rownote-' + i)?.value) || ''
     });
   });
-  data.damages = JSON.parse(JSON.stringify(eobDamages);
+  data.damages = JSON.parse(JSON.stringify(eobDamages));
   data.noDamage = eobNoDmg;
-  try { localStorage.setItem('eob_' + _eobVid, JSON.stringify(data); } catch(e){}
+  try { localStorage.setItem('eob_' + _eobVid,JSON.stringify(data)); } catch(e){}
 }
 
 function loadEobData(vid){
@@ -22451,7 +22451,7 @@ function loadEobData(vid){
 }
 
 function clearEobForm(){
-  if(!confirm('לנקות את הטופס? כל הנתונים יימחקו.') return;
+  if(!confirm('לנקות את הטופס? כל הנתונים יימחקו.')) return;
   try { localStorage.removeItem('eob_' + _eobVid); } catch(e){}
   _eobAttachments = [];
   renderEobAttachments();
@@ -22524,7 +22524,7 @@ function exportEndOfBusinessPDF(saveToDoc){
 
   var driverName  = (v.driver && v.driver.name) ? v.driver.name : '—';
   var plate       = v.plate || '—';
-  var model       = ((v.make||'') + ' ' + (v.model||'').trim() || '—';
+  var model = ((v.make||'') + ' ' + (v.model||'')).trim() || '—';
   var year        = v.year || '—';
   var clientName  = getSettings().clientName || '—';
   var km          = (document.getElementById('eob-km')?.value)   || '—';
@@ -22643,7 +22643,7 @@ function exportEndOfBusinessPDF(saveToDoc){
 
   // ── יצירת PDF: טעינת ספריות → עמוד 1 → עמוד 2 → תמונות ──
   var loadLib = function(src, cb){
-    if(document.querySelector('script[src="' + src + '"]'){ cb(); return; }
+    if(document.querySelector('script[src="' + src + '"]')) { cb(); return; }
     var s = document.createElement('script'); s.src = src; s.onload = cb;
     document.head.appendChild(s);
   };
@@ -22833,7 +22833,7 @@ function eobAddAttachmentsPage(pdf, loadLib){
   // Split into chunks of 9 – one PDF page per chunk
   var chunks = [];
   for(var ci = 0; ci < _eobAttachments.length; ci += 9){
-    chunks.push(_eobAttachments.slice(ci, ci + 9);
+    chunks.push(_eobAttachments.slice(ci, ci + 9));
   }
 
   // Render one chunk at a time (sequential promise chain)
@@ -22876,13 +22876,13 @@ function eobAddAttachmentsPage(pdf, loadLib){
             var imgW = 210;
             var imgH = (canvas.height * imgW) / canvas.width;
             var pageH = 297;
-            pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, imgW, Math.min(imgH, pageH);
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, imgW, Math.min(imgH, pageH));
             resolve();
           }).catch(function(e){ fr.remove(); reject(e); });
         }, 400);
       });
     });
-  }, Promise.resolve();
+  }, Promise.resolve());
 }
 
 // ═══════════════════════════════════
@@ -22898,7 +22898,7 @@ function ordersLoad(){
 }
 
 function ordersSave(){
-  try { localStorage.setItem('vehicle_orders', JSON.stringify(_orders); } catch(e){}
+  try { localStorage.setItem('vehicle_orders',JSON.stringify(_orders)); } catch(e){}
   try { syncPersistItem('vehicle_orders_list', {items:_orders}); } catch(e){}
 }
 
@@ -23050,7 +23050,7 @@ function ordersViewFile(idx){
   var o = _orders[idx];
   if(!o || !o.fileData) return;
   var w = window.open();
-  if(o.fileType && o.fileType.startsWith('image/'){
+  if(o.fileType && o.fileType.startsWith('image/')){
     w.document.write('<html><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="'+o.fileData+'" style="max-width:100%;max-height:100vh;object-fit:contain"></body></html>');
   } else {
     var byteString = atob(o.fileData.split(',')[1]);
@@ -23063,7 +23063,7 @@ function ordersViewFile(idx){
 }
 
 function ordersDelete(idx){
-  if(!confirm('למחוק הזמנה זו?') return;
+  if(!confirm('למחוק הזמנה זו?')) return;
   ordersLoad();
   _orders.splice(idx,1);
   ordersSave();
