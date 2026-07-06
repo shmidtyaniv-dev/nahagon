@@ -1,0 +1,46 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ─────────────────────────────────────────────────────────────
+    // מסמכי רכב — קריאה וכתיבה רק למשתמש מאומת
+    // ─────────────────────────────────────────────────────────────
+    match /vehicles/{vid}/docs/{docKey} {
+      allow read, write: if request.auth != null;
+    }
+    match /vehicles/{vid}/extra/{docKey} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // קבצי דוחות תנועה — קריאה וכתיבה רק למשתמש מאומת
+    // ─────────────────────────────────────────────────────────────
+    match /violations/{violId}/file {
+      allow read, write: if request.auth != null;
+    }
+    match /violations/{violId}/attachments/{attachId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // קבלות תשלום שנהגים מעלים דרך הלינק הציבורי
+    match /violations/receipts/{token} {
+      allow read: if request.auth != null;
+      allow create: if request.resource.size < 10 * 1024 * 1024
+                    && (request.resource.contentType.matches('image/.*')
+                        || request.resource.contentType == 'application/pdf');
+      allow update, delete: if request.auth != null;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // העלאות ציבוריות על ידי נהגים (דרך לינק ייחודי)
+    // כתיבה ללא אימות — אבל קריאה רק עם auth
+    // ─────────────────────────────────────────────────────────────
+    match /uploads-public/{token} {
+      allow read: if request.auth != null;
+      allow create: if request.resource.size < 10 * 1024 * 1024  // עד 10MB
+                    && (request.resource.contentType.matches('image/.*')
+                        || request.resource.contentType == 'application/pdf');
+      allow update, delete: if request.auth != null;
+    }
+  }
+}

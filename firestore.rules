@@ -1,0 +1,153 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────────────────────
+    // אוספים פנימיים — קריאה וכתיבה רק למשתמש מאומת
+    // ─────────────────────────────────────────────────────────────
+    match /vehicles/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /violations/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /accidents/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /settings/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /fleetEvents/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /selfReminders/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /customReminders/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /serviceBookings/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /formTemplates/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /hoForms2/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /archivedVehicles/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /vehicleDocsStore/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /violationFiles/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /violApprovals/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /hoForms/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /kmUpdates/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /treatmentAppointments/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // אוספי טוקנים ציבוריים — גישה לפי מזהה בלבד, ללא list
+    // כתיבה מוגבלת לשדות הנדרשים בלבד
+    // ─────────────────────────────────────────────────────────────
+
+    // אישור הסבת דוח תנועה (נהג לוחץ על הלינק)
+    match /approvals/{token} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if false; // נוצר רק על ידי המנהל (דרך auth)
+      allow update: if request.resource.data.keys().hasOnly([
+        'status', 'approvedAt', 'driverName', 'signature', 'token'
+      ]);
+      allow delete: if request.auth != null;
+    }
+
+    // בקשות עדכון ק"מ שנשלחות לנהג
+    match /kmRequests/{token} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.resource.data.keys().hasOnly([
+        'status', 'updatedAt'
+      ]);
+      allow delete: if request.auth != null;
+    }
+
+    // עדכוני ק"מ שמגיעים מהנהג
+    match /kmUpdates/{token} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if request.resource.data.keys().hasOnly([
+        'vid', 'km', 'updatedAt'
+      ]);
+      allow update: if false;
+      allow delete: if request.auth != null;
+    }
+
+    // בקשות העלאת מסמכים שנשלחות לנהג
+    match /docRequests/{token} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if false;
+      allow delete: if request.auth != null;
+    }
+
+    // מסמכים שהנהג מעלה דרך הלינק
+    match /docUploads/{token} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if request.resource.data.keys().hasOnly([
+        'vid', 'docKey', 'fileName', 'fileType', 'data', 'uploadedAt'
+      ]);
+      allow update: if false;
+      allow delete: if request.auth != null;
+    }
+
+    // קבלות תשלום דוחות
+    match /paymentReceipts/{token} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if request.resource.data.keys().hasOnly([
+        'violationId', 'amount', 'paidAt', 'token'
+      ]);
+      allow update: if false;
+      allow delete: if request.auth != null;
+    }
+
+    // הגשות טפסים דיגיטליים (נהג ממלא טופס)
+    match /formSubmissions/{docId} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if request.resource.data.keys().hasOnly([
+        'templateId', 'submittedAt', 'driverName', 'driverPhone',
+        'vehicleId', 'plate', 'fields', 'signature', 'token'
+      ]);
+      allow update: if false;
+      allow delete: if request.auth != null;
+    }
+
+    // הזמנות שירות שנהג קובע דרך הלינק הציבורי
+    match /serviceBookings/{docId} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if request.resource.data.keys().hasOnly([
+        'vid', 'driverName', 'bookedDate', 'bookedTime',
+        'status', 'createdAt', 'token'
+      ]);
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+  }
+}
