@@ -4368,11 +4368,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div id="ho-reset-row" style="display:none;margin-top:4px;text-align:center">
               <button onclick="hoResetOpenForms()" style="background:none;border:none;font-size:11px;color:var(--t3);cursor:pointer;font-family:inherit;text-decoration:underline;padding:4px 8px">אפס מצב לקיחות פתוחות</button>
             </div>
-            <!-- תיעוד טפסים -->
-            <div id="ho-log-section" style="margin-top:16px;border-top:1px solid var(--bdr);padding-top:14px;display:none">
-              <div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:10px">📋 תיעוד פעילות</div>
-              <div id="ho-log-list"></div>
-            </div>
           </div>
         </div>
 
@@ -7541,32 +7536,6 @@ function hoRenderList(vid){
     </div>`;
   }).join('');
 
-  // תיעוד פעילות — ציר זמן מתחת לרשימה
-  const logSec = document.getElementById('ho-log-section');
-  const logList = document.getElementById('ho-log-list');
-  if(logSec && logList && vForms.length){
-    const sorted = vForms.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-    logList.innerHTML = sorted.map(f=>{
-      const icon = f.type==='mission'?'🚗':(f.type==='bridge'?'🌉':'🔄');
-      const typeLabel = f.type==='mission'?'משימה':(f.type==='bridge'?'רכב גישור':'רכב חלופי');
-      const modeLabel = f.mode==='take'?'מסירה לנהג':'החזרה מנהג';
-      const dt = new Date(f.createdAt);
-      const dateStr = dt.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});
-      const timeStr = dt.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-      const altInfo = f.altPlate?`<span style="font-size:11px;background:#fef3c7;color:#854d0e;padding:2px 7px;border-radius:999px;font-weight:600;margin-right:4px">לוחית: ${f.altPlate}</span>`:'';
-      return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr)">
-        <div style="font-size:18px;line-height:1.4">${icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--t1)">${typeLabel} — ${modeLabel} ${altInfo}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px">${dateStr} · ${timeStr}${f.driverName?' · '+f.driverName:''}</div>
-        </div>
-        <button onclick="event.stopPropagation();hoViewForm(${f.id})" style="flex-shrink:0;padding:4px 10px;border:1px solid var(--bdr2);border-radius:6px;background:var(--bg);font-size:11px;cursor:pointer;font-family:inherit;color:var(--t2)">צפה</button>
-      </div>`;
-    }).join('');
-    logSec.style.display='block';
-  } else if(logSec){
-    logSec.style.display='none';
-  }
 }
 
 async function hoOpenForm(type, mode){
