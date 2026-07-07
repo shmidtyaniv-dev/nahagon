@@ -2428,12 +2428,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   <!-- שורת חיפוש מובייל - מוצגת רק מתחת ל-768px -->
   <div class="mobile-search-bar" id="mobile-search-bar">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <div style="position:relative;flex:1;display:flex;align-items:center">
-      <input type="text" id="mobile-srch-inp" placeholder="חיפוש: רכב, נהג, יצרן..." oninput="document.getElementById('srch-inp').value=this.value;globalSearch(this.value);document.getElementById('mob-srch-clear').style.display=this.value?'flex':'none';document.getElementById('srch-clear').style.display=this.value?'flex':'none';" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="flex:1;border:none;background:transparent;font-size:16px;font-family:inherit;color:var(--t1);outline:none;padding-left:26px">
-      <button id="mob-srch-clear" onclick="document.getElementById('mobile-srch-inp').value='';document.getElementById('srch-inp').value='';document.getElementById('mobile-srch-inp').focus();globalSearch('');this.style.display='none';document.getElementById('srch-clear').style.display='none';" style="display:none;position:absolute;left:0;width:22px;height:22px;border-radius:50%;background:#bbb;border:none;cursor:pointer;align-items:center;justify-content:center;padding:0">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="10" height="10"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
+    <input type="text" id="mobile-srch-inp" placeholder="חיפוש: רכב, נהג, יצרן..." oninput="document.getElementById('srch-inp').value=this.value;globalSearch(this.value);document.getElementById('mob-srch-clear').style.display=this.value?'flex':'none';document.getElementById('srch-clear').style.display=this.value?'flex':'none';" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off">
+    <button id="mob-srch-clear" onclick="document.getElementById('mobile-srch-inp').value='';document.getElementById('srch-inp').value='';document.getElementById('mobile-srch-inp').focus();globalSearch('');this.style.display='none';document.getElementById('srch-clear').style.display='none';" style="display:none;flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#bbb;border:none;cursor:pointer;align-items:center;justify-content:center;padding:0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="10" height="10"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
     <!-- כפתור סינון מאוחד מובייל -->
     <div style="flex-shrink:0" id="mobile-unified-filter-wrap">
       <button id="mobile-unified-filter-btn" onclick="toggleUnifiedFilter()" style="height:32px;padding:0 10px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:12px;font-family:inherit;color:#1A1A1A;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s" title="סינון">
