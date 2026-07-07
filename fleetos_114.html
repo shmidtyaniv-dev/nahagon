@@ -10095,14 +10095,6 @@ function closeGlobalSearch(){
 }
 
 /* ── KM RANGE FILTER ── */
-function toggleKmFilterPanel(){
-  var panel = document.getElementById('km-filter-panel');
-  var btn   = document.getElementById('km-filter-btn');
-  var open  = panel.style.display === 'block';
-  panel.style.display = open ? 'none' : 'block';
-  btn.classList.toggle('active', !open);
-  if(!open) kmRangeUpdate('max'); // ערוך מיד את הפיל
-}
 function kmRangeUpdate(changed){
   var minEl = document.getElementById('km-min-slider');
   var maxEl = document.getElementById('km-max-slider');
@@ -10195,17 +10187,6 @@ function licToggleMonth(ym, ev){
   _renderLicCalGrid();
 }
 
-function toggleLicFilterPanel(){
-  var panel = document.getElementById('lic-filter-panel');
-  var btn   = document.getElementById('lic-filter-btn');
-  var open  = panel.style.display==='block';
-  panel.style.display = open ? 'none' : 'block';
-  btn.classList.toggle('active', !open);
-  if(!open) _renderLicCalGrid();
-  var kp = document.getElementById('km-filter-panel');
-  if(kp && kp.style.display==='block'){ kp.style.display='none'; document.getElementById('km-filter-btn').classList.remove('active'); }
-}
-
 function licFilterApply(){
   var up = document.getElementById('unified-filter-panel');
   if(up) up.style.display = 'none';
@@ -10224,59 +10205,6 @@ function licFilterReset(){
 }
 
 /* ── KM RANGE FILTER — מובייל ── */
-function toggleMobileKmPanel(){
-  var panel = document.getElementById('mobile-km-filter-panel');
-  var overlay = document.getElementById('mobile-km-overlay');
-  var open = panel.style.display === 'block';
-  panel.style.display = open ? 'none' : 'block';
-  overlay.style.display = open ? 'none' : 'block';
-  if(!open) mkmUpdate('max');
-}
-function closeMobileKmPanel(){
-  document.getElementById('mobile-km-filter-panel').style.display = 'none';
-  document.getElementById('mobile-km-overlay').style.display = 'none';
-}
-function mkmUpdate(changed){
-  var minEl = document.getElementById('mkm-min-slider');
-  var maxEl = document.getElementById('mkm-max-slider');
-  var min = parseInt(minEl.value);
-  var max = parseInt(maxEl.value);
-  if(changed === 'min' && min >= max){ min = max - 1000; minEl.value = min; }
-  if(changed === 'max' && max <= min){ max = min + 1000; maxEl.value = max; }
-  document.getElementById('mkm-min-lbl').textContent = min.toLocaleString('he-IL');
-  document.getElementById('mkm-max-lbl').textContent = max.toLocaleString('he-IL');
-  var pctMin = (min / 200000) * 100;
-  var pctMax = (max / 200000) * 100;
-  var fill = document.getElementById('mkm-fill');
-  if(fill){ fill.style.left = pctMin + '%'; fill.style.width = (pctMax - pctMin) + '%'; }
-  minEl.style.zIndex = min > 150000 ? 5 : 3;
-  maxEl.style.zIndex = min > 150000 ? 3 : 5;
-}
-function mkmApply(){
-  var min = parseInt(document.getElementById('mkm-min-slider').value);
-  var max = parseInt(document.getElementById('mkm-max-slider').value);
-  var q = min + '-' + max;
-  document.getElementById('mobile-srch-inp').value = q;
-  document.getElementById('srch-inp').value = q;
-  globalSearch(q);
-  closeMobileKmPanel();
-  var btn = document.getElementById('mobile-km-filter-btn');
-  if(btn){ btn.style.background='#1D9E75'; btn.style.color='#fff'; btn.style.borderColor='#1D9E75'; }
-}
-function mkmReset(){
-  document.getElementById('mkm-min-slider').value = 0;
-  document.getElementById('mkm-max-slider').value = 200000;
-  mkmUpdate('max');
-  document.getElementById('mobile-srch-inp').value = '';
-  document.getElementById('srch-inp').value = '';
-  closeGlobalSearch();
-  closeMobileKmPanel();
-  var btn = document.getElementById('mobile-km-filter-btn');
-  if(btn){ btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; }
-  _vKmRange = null;
-  filterV('');
-  if(typeof renderV==='function') renderV();
-}
 // סגירה בלחיצה מחוץ לפאנל
 document.addEventListener('click', function(e){
   var uPanel = document.getElementById('unified-filter-panel');
