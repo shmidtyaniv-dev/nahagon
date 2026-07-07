@@ -18748,10 +18748,16 @@ function sendCalEventWaReminder(vehicleId, fieldKey, currentVal){
   var phone = (v.driver&&v.driver.phone||v.driverPhone||'').replace(/\D/g,'').replace(/^0/,'972');
   if(!phone){ showToast('אין מספר טלפון לנהג'); return; }
   var plate = v.plate||'';
-  var dateStr = currentVal ? currentVal.split('-').reverse().join('/') : '';
+  // קרא תאריך מהשדה הנוכחי במודאל (אם קיים), אחרת מהפרמטר
+  var cevDate = document.getElementById('cev-date');
+  var dateVal = (cevDate && cevDate.value) ? cevDate.value : currentVal;
+  var dateStr = dateVal ? dateVal.split('-').reverse().join('/') : '';
   var isTest = fieldKey==='licenseExp'||fieldKey==='driverLicenseExp';
-  var tpls = getTrtTemplates();
-  var tpl = isTest ? tpls.reminderTest : tpls.reminderService;
+  // קרא תבנית ישירות מהטקסטאריאה בדום (הכי עדכנית) — fallback ל-localStorage — fallback לברירת מחדל
+  var elId = isTest ? 'trt-tpl-reminder-test' : 'trt-tpl-reminder-service';
+  var elTpl = document.getElementById(elId);
+  var tpl = (elTpl && elTpl.value.trim()) ? elTpl.value
+            : (isTest ? getTrtTemplates().reminderTest : getTrtTemplates().reminderService);
   var msg = tpl
     .replace(/\{נהג\}/g, driverName)
     .replace(/\{רכב\}/g, plate)
