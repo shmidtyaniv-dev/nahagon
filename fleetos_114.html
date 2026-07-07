@@ -5604,7 +5604,7 @@ try{
   // אם יש טוקן ציבורי ב-URL (אישור הסבה / עדכון ק"מ / העלאת מסמך)
   // לא דורשים לוגין - המסך הציבורי יטופל בנפרד
   var params = new URLSearchParams(location.search);
-  var hasPublicToken = params.get('approve') || params.get('km') || params.get('du') || params.get('docupload') || params.get('payment');
+  var hasPublicToken = params.get('approve') || params.has('km') || params.get('du') || params.get('docupload') || params.get('payment');
   if(hasPublicToken){
     document.body.classList.remove('auth-loading');
     document.body.classList.add('logged-in'); // נסתיר את מסך הלוגין
