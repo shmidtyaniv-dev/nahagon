@@ -6872,6 +6872,52 @@ function kmReqSendWA(){document.getElementById('km-req-modal')?.remove();locatio
 function kmReqSendEmail(){document.getElementById('km-req-modal')?.remove();location.href=_kmReqData.mailUrl;}
 function kmReqCopy(){navigator.clipboard.writeText(_kmReqData.copyUrl);showToast('✓ קישור הועתק');document.getElementById('km-req-modal')?.remove();}
 
+var _licReqData={};
+function sendLicenseRequest(vid){
+  var v=vehicles.find(function(x){return x.id===vid;});
+  if(!v){showToast('רכב לא נמצא');return;}
+  var driverName=v.driverName||v.driver?.name||'';
+  var driverPhone=(v.driverPhone||v.driver?.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'972');
+  var driverEmail=v.driverEmail||v.driver?.email||'';
+  var plate=v.plate||'';
+  var token='LIC-'+vid+'-'+Date.now().toString(36).slice(-5);
+  if(db){
+    db.collection('licenseRequests').doc(token).set({
+      vid:vid, plate:plate, driverName:driverName,
+      createdAt:new Date().toISOString(), status:'pending'
+    }).catch(function(e){console.error('licenseRequest save error:',e);});
+  }
+  var licUrl=location.origin+'/?lic='+token;
+  var waMsg='שלום '+driverName+', נא לעדכן תוקף רישיון הנהיגה שלך עבור רכב '+plate+'.\nלעדכון: '+licUrl;
+  _licReqData={waUrl:'https://wa.me/'+driverPhone+'?text='+encodeURIComponent(waMsg), mailUrl:'mailto:'+driverEmail+'?subject='+encodeURIComponent('בקשת עדכון רישיון נהיגה - '+plate)+'&body='+encodeURIComponent(waMsg), copyUrl:licUrl};
+  var ex=document.getElementById('lic-req-modal');if(ex)ex.remove();
+  var m=document.createElement('div');
+  m.id='lic-req-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.onclick=function(e){if(e.target===m)m.remove();};
+  m.innerHTML=
+    '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:400px;direction:rtl">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
+        '<div style="font-size:15px;font-weight:700;color:var(--gd)">📩 בקשת עדכון רישיון נהיגה</div>'+
+        '<button onclick="document.getElementById(\'lic-req-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">×</button>'+
+      '</div>'+
+      '<div style="font-size:12px;color:var(--t2);margin-bottom:14px;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--bdr);line-height:1.7">'+
+        '<div>שלום '+driverName+',</div>'+
+        '<div>נא לעדכן תוקף רישיון הנהיגה שלך עבור רכב '+plate+'.</div>'+
+        '<div style="margin-top:6px"><a href="'+licUrl+'" target="_blank" style="color:var(--gd);font-weight:600">לעדכון, לחץ כאן</a></div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="licReqSendWA()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">💬</span> וואצאפ</button>'+
+        '<button onclick="licReqSendEmail()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">✉️</span> מייל</button>'+
+      '</div>'+
+      '<button onclick="licReqCopy()" style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2)">📋 העתק קישור</button>'+
+    '</div>';
+  document.body.appendChild(m);
+}
+function licReqSendWA(){document.getElementById('lic-req-modal')?.remove();location.href=_licReqData.waUrl;}
+function licReqSendEmail(){document.getElementById('lic-req-modal')?.remove();location.href=_licReqData.mailUrl;}
+function licReqCopy(){navigator.clipboard.writeText(_licReqData.copyUrl);showToast('✓ קישור הועתק');document.getElementById('lic-req-modal')?.remove();}
+
 function sendQuickMsg(vid,tpl){
   var v=vehicles.find(function(x){return x.id===vid;});
   if(!v){showToast('רכב לא נמצא');return;}
@@ -11271,7 +11317,9 @@ function openDet(vid){
       </div>
       <div class="vc-info-box">
         <div class="vc-info-label">תוקף רישיון נהיגה</div>
-        <div style="font-size:18px;font-weight:500">${fd(v.driver.licenseExp)||'<button class="vc-add-btn" onclick="event.stopPropagation();openEditVehicle('+vid+')">+ הוסף תאריך</button>'}</div>
+        <div style="font-size:18px;font-weight:500">${v.driver.licenseExp
+          ?`${fd(v.driver.licenseExp)} <button class="vc-add-btn" style="font-size:11px;padding:2px 8px;margin-right:6px" onclick="event.stopPropagation();sendLicenseRequest(${vid})">בקשת עדכון</button>`
+          :'<button class="vc-add-btn" onclick="event.stopPropagation();sendLicenseRequest('+vid+')">+ בקשת עדכון</button>'}</div>
         ${drvLicDays!==null?`<div class="vc-info-sublabel">${drvLicDays<0?'<span style="color:#A32D2D">פג תוקף!</span>':'בתוקף · עוד '+drvLicDays+' ימים'}</div>`:''}
       </div>
       <div class="vc-info-box">
@@ -11758,6 +11806,8 @@ function startAllSyncListeners(){
   startPaymentReceiptsListener();
   // Listen for km updates from drivers
   startKmUpdatesListener();
+  // Listen for license updates from drivers
+  startLicenseUpdatesListener();
 }
 
 function startPaymentReceiptsListener(){
@@ -11822,6 +11872,31 @@ function startKmUpdatesListener(){
             try{ renderNotificationsPanel(); }catch(e){}
           }
         }
+      }
+    });
+  });
+}
+
+function startLicenseUpdatesListener(){
+  if(!db) return;
+  var _licInitialLoad = true;
+  db.collection('licenseUpdates').onSnapshot(function(snap){
+    var isFirst = _licInitialLoad;
+    _licInitialLoad = false;
+    snap.docChanges().forEach(function(change){
+      if(change.type==='added'||change.type==='modified'){
+        var d=change.doc.data();
+        if(!d.licenseExp||!d.vid) return;
+        var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
+        if(!v) return;
+        if(!v.driver) v.driver={};
+        v.driver.licenseExp=d.licenseExp;
+        if(!v.historyLog) v.historyLog=[];
+        v.historyLog.push({id:'h'+Date.now(),kind:'license',desc:'עדכון רישיון נהיגה מנהג: '+d.licenseExp.split('-').reverse().join('/'),createdAt:d.updatedAt||new Date().toISOString(),source:'driver'});
+        try{ if(typeof persistVehicle==='function') persistVehicle(v); }catch(e){ if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }
+        try{ if(_currentVid===v.id) openDet(v.id); }catch(e){}
+        try{ renderV(); }catch(e){}
+        if(!isFirst) showToast('🪪 רישיון נהיגה עודכן לרכב '+v.plate);
       }
     });
   });
@@ -12365,6 +12440,91 @@ function submitKmUpdate(token, vid){
   }).catch(function(){
     btn.disabled=false;btn.textContent='שלח עדכון ק"מ';btn.style.background='#16a34a';
     var st=document.getElementById('km-pub-status');
+    if(st){st.textContent='שגיאה, נסה שוב';st.style.color='#dc2626';}
+  });
+}
+
+function checkLicenseRequest(){
+  var params=new URLSearchParams(location.search);
+  var token=params.get('lic');
+  if(!token) return false;
+  document.querySelector('.app').style.display='none';
+  document.documentElement.style.visibility='visible';
+  var page=document.createElement('div');
+  page.id='lic-page';
+  page.style.cssText='min-height:100vh;background:#f2f5f2;display:flex;align-items:center;justify-content:center;direction:rtl;font-family:Heebo,Arial,sans-serif;padding:16px';
+  page.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px;max-width:400px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1)"><div style="font-size:32px;margin-bottom:12px">⏳</div><div style="font-size:14px;color:#666">טוען...</div></div>';
+  document.body.appendChild(page);
+  if(!db){
+    page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:16px;color:#991b1b">שגיאה בטעינה</div></div>';
+    return true;
+  }
+  function _doLicLoad(){
+    db.collection('licenseRequests').doc(token).get().then(function(snap){
+      if(!snap.exists){
+        page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">❌</div><div style="font-size:16px;font-weight:600;color:#991b1b">קישור לא תקין</div></div>';
+        return;
+      }
+      var req=snap.data();
+      if(req.status==='done'){
+        page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600;color:#166534">רישיון כבר עודכן, תודה!</div></div>';
+        return;
+      }
+      page.innerHTML=
+        '<div style="background:#fff;border-radius:16px;padding:0;max-width:400px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.1);overflow:hidden">'+
+          '<div style="background:#1A4A3A;padding:18px 24px;text-align:center">'+
+            '<div style="color:#7DC242;font-size:18px;font-weight:700;margin-bottom:2px">מרכז הרכב של מור</div>'+
+            '<div style="color:rgba(255,255,255,.7);font-size:12px">עדכון תוקף רישיון נהיגה</div></div>'+
+          '<div style="padding:24px">'+
+            '<div style="background:#f8f9f8;border-radius:10px;padding:14px 18px;margin-bottom:18px;text-align:right">'+
+              '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">נהג</span><span style="font-weight:600;font-size:14px">'+(req.driverName||'')+'</span></div>'+
+              '<div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:#888;font-size:13px">רכב</span><span style="font-weight:600;font-size:14px">'+(req.plate||'')+'</span></div>'+
+            '</div>'+
+            '<div style="margin-bottom:18px;text-align:right">'+
+              '<label style="font-size:13px;color:#666;display:block;margin-bottom:6px">תאריך פקיעת תוקף הרישיון</label>'+
+              '<input id="lic-pub-input" type="date" style="width:100%;padding:14px;border:2px solid #ddd;border-radius:10px;font-size:16px;font-family:inherit;text-align:center;box-sizing:border-box" onfocus="this.style.borderColor=\'#7DC242\'" onblur="this.style.borderColor=\'#ddd\'">'+
+            '</div>'+
+            '<button id="lic-pub-btn" onclick="submitLicenseUpdate(\''+token+'\','+req.vid+')" style="width:100%;padding:14px;background:#1A4A3A;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">שלח עדכון רישיון</button>'+
+            '<div id="lic-pub-status" style="text-align:center;margin-top:10px;font-size:13px"></div>'+
+            '<div style="text-align:center;margin-top:18px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
+          '</div></div>';
+    }).catch(function(){
+      page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:16px;color:#991b1b">שגיאה בטעינה</div></div>';
+    });
+  }
+  if(auth && !auth.currentUser){
+    auth.signInAnonymously().then(_doLicLoad).catch(_doLicLoad);
+  } else {
+    _doLicLoad();
+  }
+  return true;
+}
+
+function submitLicenseUpdate(token, vid){
+  var input=document.getElementById('lic-pub-input');
+  var val=input?input.value:'';
+  if(!val){
+    var st=document.getElementById('lic-pub-status');
+    if(st){st.textContent='נא לבחור תאריך';st.style.color='#dc2626';}
+    return;
+  }
+  var btn=document.getElementById('lic-pub-btn');
+  btn.disabled=true;btn.textContent='שולח...';btn.style.background='#9ca3af';
+  db.collection('licenseUpdates').doc(token).set({
+    vid:vid, licenseExp:val, updatedAt:new Date().toISOString()
+  }).then(function(){
+    db.collection('licenseRequests').doc(token).update({status:'done'});
+    var page=document.getElementById('lic-page');
+    if(page){
+      page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1)">'+
+        '<div style="font-size:48px;margin-bottom:12px">✅</div>'+
+        '<div style="font-size:18px;font-weight:600;color:#166534;margin-bottom:6px">רישיון עודכן בהצלחה!</div>'+
+        '<div style="font-size:14px;color:#666">תאריך תוקף: '+val.split('-').reverse().join('/')+'</div>'+
+        '<div style="margin-top:16px;color:#ccc;font-size:11px">תודה! מרכז הרכב של מור</div></div>';
+    }
+  }).catch(function(){
+    btn.disabled=false;btn.textContent='שלח עדכון רישיון';btn.style.background='#1A4A3A';
+    var st=document.getElementById('lic-pub-status');
     if(st){st.textContent='שגיאה, נסה שוב';st.style.color='#dc2626';}
   });
 }
@@ -16075,7 +16235,8 @@ function refresh(){
 var _isPublicPage = checkViolApproval()
   || (typeof checkFormFillPage==='function' && checkFormFillPage())
   || (typeof checkServiceBooking==='function' && checkServiceBooking())
-  || (typeof checkKmRequest==='function' && checkKmRequest());
+  || (typeof checkKmRequest==='function' && checkKmRequest())
+  || (typeof checkLicenseRequest==='function' && checkLicenseRequest());
 
 // כל המאזינים והטעינות האמיתיות - מופעלים רק אחרי אימות מוצלח
 var _authedAppStarted = false;
