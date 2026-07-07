@@ -6137,7 +6137,6 @@ function startDailyCheckScheduler(){
     if(nowStr===target && _dailyCheckLastRun!==todayKey){
       _dailyCheckLastRun=todayKey;
       console.log('[בדיקה יומית] מריץ סריקות אוטומטיות בשעה',nowStr);
-      if(typeof checkPendingReminders==='function') checkPendingReminders();
       if(typeof checkAutoReminders==='function') checkAutoReminders();
       showToast('✓ בדיקה יומית הושלמה');
     }
@@ -16272,7 +16271,6 @@ function startAuthedApp(){
   refresh();
   // Check pending reminders on load (wait for Firestore vehicles to load)
   setTimeout(function(){
-    try{ if(typeof checkPendingReminders==='function') checkPendingReminders(); }catch(e){ console.error('pending reminders check error:',e); }
   }, 5000);
 }
 
@@ -18745,26 +18743,6 @@ function openEnhancedEventModal(editId, presetDate){
         <div style="font-size:10px;color:#16a34a;margin-top:4px;margin-right:24px">ייפתח מודאל לבחירת מייל / וואצאפ עם תוכן מוכן</div>
       </div>
 
-      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:16px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input type="checkbox" id="enh-pre-reminder" onchange="toggleEnhPreReminder()" style="width:16px;height:16px;accent-color:#d97706;cursor:pointer">
-          <span style="font-size:13px;font-weight:600;color:#92400e">🔔 תזכורת לנהג לפני המועד</span>
-        </label>
-        <div style="font-size:10px;color:#92400e;margin-top:4px;margin-right:24px">תישלח אוטומטית במייל לנהג במועד שתקבע</div>
-        <div id="enh-pre-reminder-fields" style="display:none;margin-top:10px;display:none">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div>
-              <label style="font-size:11px;color:#92400e;display:block;margin-bottom:4px">תאריך שליחה</label>
-              <input id="enh-pre-date" type="date" style="width:100%;padding:8px 10px;border:1px solid #fde68a;border-radius:6px;font-size:13px;font-family:inherit;background:#fffbeb;color:var(--t1)">
-            </div>
-            <div>
-              <label style="font-size:11px;color:#92400e;display:block;margin-bottom:4px">שעת שליחה</label>
-              <input id="enh-pre-time" type="time" value="09:00" style="width:100%;padding:8px 10px;border:1px solid #fde68a;border-radius:6px;font-size:13px;font-family:inherit;background:#fffbeb;color:var(--t1)">
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div style="display:flex;gap:8px">
         <button onclick="document.getElementById('enh-event-modal').remove()" style="flex:1;padding:11px;background:var(--bg);color:var(--t2);border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">ביטול</button>
         <button id="enh-ev-delete-btn" onclick="deleteEnhancedEvent()" style="display:none;padding:11px 14px;background:#fef2f2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🗑 מחק</button>
@@ -18789,12 +18767,6 @@ function openEnhancedEventModal(editId, presetDate){
       document.getElementById('enh-ev-date').value = e.date||'';
       document.getElementById('enh-ev-time').value = e.time||'08:00';
       document.getElementById('enh-ev-desc').value = e.desc||'';
-      if(e.preReminderDate){
-        document.getElementById('enh-pre-reminder').checked = true;
-        document.getElementById('enh-pre-date').value = e.preReminderDate;
-        document.getElementById('enh-pre-time').value = e.preReminderTime||'09:00';
-        toggleEnhPreReminder();
-      }
       // Show delete button in edit mode
       const delBtn = document.getElementById('enh-ev-delete-btn');
       if(delBtn) delBtn.style.display = 'inline-block';
@@ -18829,12 +18801,6 @@ function setEnhEventType(type, btn){
   document.getElementById('enh-other-row').style.display = (type==='other') ? 'block' : 'none';
 }
 
-function toggleEnhPreReminder(){
-  const cb = document.getElementById('enh-pre-reminder');
-  const fields = document.getElementById('enh-pre-reminder-fields');
-  if(fields) fields.style.display = cb.checked ? 'block' : 'none';
-}
-
 function saveEnhancedEvent(){
   const type = document.getElementById('enh-ev-type').value;
   const otherText = document.getElementById('enh-other-text').value.trim();
@@ -18846,10 +18812,6 @@ function saveEnhancedEvent(){
   const time = document.getElementById('enh-ev-time').value || '08:00';
   const desc = document.getElementById('enh-ev-desc').value.trim();
   const sendOnCreate = document.getElementById('enh-send-on-create').checked;
-  const hasPreReminder = document.getElementById('enh-pre-reminder').checked;
-  const preDate = hasPreReminder ? document.getElementById('enh-pre-date').value : '';
-  const preTime = hasPreReminder ? (document.getElementById('enh-pre-time').value||'09:00') : '';
-  if(hasPreReminder && !preDate){ showToast('נא לבחור תאריך לתזכורת'); return; }
 
   const typeLabels = { test:'🔍 טסט', service:'🔧 טיפול', install:'🔩 התקנה', other:'📝 '+otherText };
   const titleText = type==='other' ? otherText : typeLabels[type].replace(/^\S+\s*/,'');
@@ -18869,9 +18831,6 @@ function saveEnhancedEvent(){
     desc,
     status: 'open',
     sendOnCreate,
-    preReminderDate: preDate,
-    preReminderTime: preTime,
-    preReminderSent: false,
     createdAt: new Date().toISOString()
   };
   if(editId){
@@ -18965,125 +18924,6 @@ function sendEventMsgEmail(evId){
   window.open('mailto:'+email+'?subject='+subj+'&body='+body);
   document.getElementById('send-event-msg-modal').remove();
   showToast('✓ נפתח מייל');
-}
-
-/* ── PENDING REMINDERS CHECK ON LOAD ── */
-function checkPendingReminders(){
-  const settings = JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  const bannerEnabled = settings.showPendingBanner !== false;
-  const myEmail = (settings.repEmail||'').trim();
-  const now = new Date();
-
-  // 1. Personal reminders (selfReminders) - overdue & not sent
-  const pendingSelf = (selfReminders||[]).filter(function(r){
-    if(r.sent) return false;
-    const dt = new Date(r.date+'T'+(r.time||'00:00'));
-    return dt <= now;
-  });
-
-  // 2. Pre-reminders for events - overdue & not sent
-  const events = getFleetEvents();
-  const pendingPre = events.filter(function(e){
-    if(e.preReminderSent) return false;
-    if(!e.preReminderDate) return false;
-    const dt = new Date(e.preReminderDate+'T'+(e.preReminderTime||'09:00'));
-    return dt <= now;
-  });
-
-  const total = pendingSelf.length + pendingPre.length;
-  if(total===0) return;
-
-  // Show banner (only if banner setting enabled)
-  if(!bannerEnabled) return;
-  const ex = document.getElementById('pending-reminders-banner');
-  if(ex) ex.remove();
-  const banner = document.createElement('div');
-  banner.id = 'pending-reminders-banner';
-  banner.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#f5f3ff,#fef3c7);border:2px solid #c4b5fd;border-radius:12px;padding:14px 20px;box-shadow:0 8px 30px rgba(139,92,246,.25);z-index:9998;max-width:480px;width:calc(100% - 32px);direction:rtl;cursor:pointer';
-  banner.innerHTML =
-    '<div style="display:flex;align-items:center;gap:12px">'+
-      '<div style="font-size:32px">⏰</div>'+
-      '<div style="flex:1">'+
-        '<div style="font-size:14px;font-weight:700;color:#5b21b6">יש '+total+' תזכורות ממתינות לשליחה</div>'+
-        '<div style="font-size:11px;color:#7c3aed;margin-top:2px">'+pendingSelf.length+' אישיות · '+pendingPre.length+' לנהגים · לחץ לטיפול</div>'+
-      '</div>'+
-      '<button onclick="event.stopPropagation();document.getElementById(\'pending-reminders-banner\').remove()" style="background:rgba(139,92,246,.15);border:none;color:#5b21b6;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;font-weight:700">×</button>'+
-    '</div>';
-  banner.onclick = function(){ openPendingRemindersModal(pendingSelf, pendingPre); document.getElementById('pending-reminders-banner').remove(); };
-  document.body.appendChild(banner);
-}
-
-function openPendingRemindersModal(pendingSelf, pendingPre){
-  const ex = document.getElementById('pending-modal');
-  if(ex) ex.remove();
-  const settings = JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  const myEmail = (settings.repEmail||'').trim();
-  const modal = document.createElement('div');
-  modal.id = 'pending-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
-  modal.onclick = function(e){ if(e.target===modal) modal.remove(); };
-
-  let selfHtml = '';
-  if(pendingSelf.length){
-    selfHtml = '<div style="font-size:12px;font-weight:700;color:#5b21b6;margin-bottom:6px">🔔 תזכורות אישיות ('+pendingSelf.length+')</div>';
-    pendingSelf.forEach(function(r){
-      const dtStr = fd(r.date)+' '+r.time;
-      selfHtml += '<div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">'+
-        '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:#5b21b6">'+r.title+'</div><div style="font-size:10px;color:#7c3aed;margin-top:2px">'+dtStr+'</div></div>'+
-        (myEmail?'<button onclick="fireSelfReminderMail(\''+r.id+'\');this.textContent=\'✓\';this.disabled=true" style="padding:6px 12px;background:#8b5cf6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit">✉ שלח</button>':'<span style="font-size:10px;color:#991b1b">אין מייל מוגדר</span>')+
-      '</div>';
-    });
-  }
-
-  let preHtml = '';
-  if(pendingPre.length){
-    preHtml = '<div style="font-size:12px;font-weight:700;color:#92400e;margin-top:12px;margin-bottom:6px">👤 תזכורות לנהגים לפני אירוע ('+pendingPre.length+')</div>';
-    pendingPre.forEach(function(e){
-      const veh = vehicles.find(function(v){return v.id===e.vehicleId;});
-      const driverEmail = veh?.driver?.email||'';
-      preHtml += '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px">'+
-        '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:#92400e">'+e.title+' · '+(veh?veh.plate:'')+'</div><div style="font-size:10px;color:#d97706;margin-top:2px">נהג: '+(veh?.driver?.name||'')+' · אירוע ב-'+fd(e.date)+'</div></div>'+
-        (driverEmail?'<button onclick="firePreReminderMail(\''+e.id+'\');this.textContent=\'✓\';this.disabled=true" style="padding:6px 12px;background:#d97706;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit">✉ שלח</button>':'<span style="font-size:10px;color:#991b1b">אין מייל לנהג</span>')+
-      '</div>';
-    });
-  }
-
-  modal.innerHTML =
-    '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:520px;direction:rtl;max-height:90vh;overflow-y:auto">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
-        '<div style="font-size:16px;font-weight:700;color:#5b21b6">⏰ תזכורות ממתינות לשליחה</div>'+
-        '<button onclick="document.getElementById(\'pending-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">×</button>'+
-      '</div>'+
-      (!myEmail ? '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:11px;color:#92400e">⚠️ לא הוגדר "מייל לתזכורות" בהגדרות. תזכורות אישיות לא יישלחו עד שתגדיר.</div>' : '')+
-      '<div style="font-size:11px;color:var(--t3);margin-bottom:12px">לחץ "שלח" ליד כל תזכורת - ייפתח לקוח מייל עם התוכן מוכן</div>'+
-      selfHtml+preHtml+
-      '<button onclick="document.getElementById(\'pending-modal\').remove()" style="width:100%;margin-top:12px;padding:10px;background:var(--bg);color:var(--t2);border:1.5px solid var(--bdr2);border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">סגור</button>'+
-    '</div>';
-  document.body.appendChild(modal);
-}
-
-function fireSelfReminderMail(id){
-  const settings = JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  const email = (settings.repEmail||'').trim();
-  if(!email) return;
-  const r = selfReminders.find(x=>x.id===id);
-  if(!r) return;
-  var subjRaw='תזכורת: '+r.title;
-  var bodyRaw='תזכורת אישית:\n'+r.title+'\n\nנקבעה ל: '+fd(r.date)+' '+r.time+'\n\n'+(r.note||'')+'\n\n---\nמרכז הרכב של מור בית השקעות';
-  function _markSent(){r.sent=true;r.sentAt=new Date().toISOString();persistSelfReminders();renderSelfReminders();}
-  window.open('mailto:'+email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
-}
-
-function firePreReminderMail(evId){
-  const events = getFleetEvents();
-  const e = events.find(x=>x.id===evId);
-  if(!e) return;
-  const v = vehicles.find(x=>x.id===e.vehicleId);
-  if(!v||!v.driver?.email) return;
-  var subjRaw='תזכורת: '+e.title+' - '+v.plate;
-  var bodyRaw='שלום '+(v.driver.name||'')+',\n\nתזכורת: נקבע '+e.title+' לרכב '+v.plate+' בתאריך '+fd(e.date)+(e.time?' בשעה '+e.time:'')+'.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
-  function _markSent(){e.preReminderSent=true;e.preReminderSentAt=new Date().toISOString();saveFleetEvents(events);}
-  window.open('mailto:'+v.driver.email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
 }
 
 function openCustomReminderModalForDate(iso){
