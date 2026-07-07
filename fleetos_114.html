@@ -10832,13 +10832,16 @@ function renderFamilyRows(vid){
     : '<div style="color:var(--t3);font-size:14px;padding:8px 0">אין בני משפחה מורשים</div>';
 }
 
-function openVehicleFromNotif(vid, plate){
-  // סגור חלונית התראות
+function openVehicleFromNotif(vid, plate, driverName){
   var panel=document.getElementById('trt-notifications-panel');
   if(panel) panel.style.display='none';
   var v=null;
   if(vid) v=vehicles.find(function(x){ return String(x.id)===String(vid); });
-  if(!v && plate) v=vehicles.find(function(x){ return (x.plate||'').replace(/[^0-9]/g,'')===plate.replace(/[^0-9]/g,''); });
+  if(!v && plate) v=vehicles.find(function(x){ return (x.plate||'').replace(/[^0-9]/g,'')===String(plate).replace(/[^0-9]/g,''); });
+  if(!v && driverName){
+    var dn=driverName.trim().toLowerCase();
+    v=vehicles.find(function(x){ return ((x.driverName||x.driver&&x.driver.name||'')).trim().toLowerCase()===dn; });
+  }
   if(v) openDet(v.id);
 }
 
@@ -22336,15 +22339,23 @@ function getTreatmentNotifications() {
   // סוג ו: עדכוני ק"מ מנהגים
   var kmNotifs = JSON.parse(localStorage.getItem('km_update_notifications') || '[]');
   kmNotifs.forEach(function(n) {
+    // לנוטיפיקציות מסוג kmr- — קח נתונים עדכניים מה-cache (אחרי שיוך)
+    var vid = n.vid || '';
+    var plate = n.plate || '';
+    if(n.id.indexOf('kmr-') === 0){
+      var reportId = n.id.replace('kmr-','');
+      var cached = (typeof _kmReportsCache!=='undefined'?_kmReportsCache:[]).find(function(r){return r.id===reportId;});
+      if(cached){ vid=cached.matchedVehicleId||''; plate=cached.matchedPlate||cached.vehicleNum||''; }
+    }
     notifications.push({
       id: n.id,
       type: 'km_update',
       dotClass: 'trt-notif-dot-blue',
       title: (n.driverName || 'נהג') + ' עדכן ק"מ',
-      detail: (n.plate || '') + ' · ' + (n.km ? n.km.toLocaleString('he-IL') : '') + ' ק"מ',
+      detail: (plate || '') + ' · ' + (n.km ? n.km.toLocaleString('he-IL') : '') + ' ק"מ',
       actionText: 'פתח רכב',
       actionClass: '',
-      actionFn: "openVehicleFromNotif('" + (n.vid||'') + "','" + (n.plate||'').replace(/'/g,'') + "')",
+      actionFn: "openVehicleFromNotif('" + (vid||'').replace(/'/g,'') + "','" + (plate||'').replace(/'/g,'') + "','" + (n.driverName||'').replace(/'/g,'') + "')",
       time: n.time
     });
   });
