@@ -18647,7 +18647,7 @@ function sendCalEventWaReminder(vehicleId, fieldKey, currentVal){
     .replace(/\{רכב\}/g, plate)
     .replace(/\{תאריך\}/g, dateStr);
   document.getElementById('cal-event-edit-modal')&&document.getElementById('cal-event-edit-modal').remove();
-  location.href = 'https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
 }
 
 function saveCalEventEdit(vehicleId, fieldKey, familyIdx){
