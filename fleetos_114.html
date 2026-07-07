@@ -16376,6 +16376,8 @@ function startAuthedApp(){
           localStorage.setItem('fleetSettings',JSON.stringify(merged));
           // Refresh system name in header if changed
           if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
+          // Refresh templates (synced from Firebase)
+          if(typeof initTrtTemplates==='function')try{initTrtTemplates();}catch(e){}
         },function(e){console.error('fleetSettings listener:',e);});
       }
     }catch(e){ console.error('sync setup error:', e); }
@@ -18703,7 +18705,7 @@ function openCalEventEditModal(info){
   var typeColor = info.type==='svc-pickup'?'#C9302C':info.type==='test-pickup'?'#D97706':'#6366f1';
   var typeIcon = info.type==='svc-pickup'?'🔧':info.type==='test-pickup'?'📋':'⚠️';
 
-  modal.innerHTML = '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:460px;direction:rtl;max-height:calc(100vh - 32px);overflow-y:auto;box-sizing:border-box">'
+  modal.innerHTML = '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:min(460px,calc(100vw - 32px));direction:rtl;max-height:calc(100vh - 32px);overflow-y:auto;box-sizing:border-box">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
     +'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:20px">'+typeIcon+'</span><span style="font-size:16px;font-weight:700;color:'+typeColor+'">עריכת אירוע</span></div>'
     +'<button onclick="document.getElementById(\'cal-event-edit-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">&times;</button>'
@@ -18753,11 +18755,8 @@ function sendCalEventWaReminder(vehicleId, fieldKey, currentVal){
   var dateVal = (cevDate && cevDate.value) ? cevDate.value : currentVal;
   var dateStr = dateVal ? dateVal.split('-').reverse().join('/') : '';
   var isTest = fieldKey==='licenseExp'||fieldKey==='driverLicenseExp';
-  // קרא תבנית ישירות מהטקסטאריאה בדום (הכי עדכנית) — fallback ל-localStorage — fallback לברירת מחדל
-  var elId = isTest ? 'trt-tpl-reminder-test' : 'trt-tpl-reminder-service';
-  var elTpl = document.getElementById(elId);
-  var tpl = (elTpl && elTpl.value.trim()) ? elTpl.value
-            : (isTest ? getTrtTemplates().reminderTest : getTrtTemplates().reminderService);
+  var tpls = getTrtTemplates();
+  var tpl = isTest ? tpls.reminderTest : tpls.reminderService;
   var msg = tpl
     .replace(/\{נהג\}/g, driverName)
     .replace(/\{רכב\}/g, plate)
@@ -23046,15 +23045,15 @@ function buildTrtMessage(templateKey, t) {
 }
 
 function saveTrtTemplates() {
-  var s = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
+  var obj = {};
   var el;
-  el = document.getElementById('trt-tpl-reminder'); if (el) s.trtTplReminder = el.value;
-  el = document.getElementById('trt-tpl-approval'); if (el) s.trtTplApproval = el.value;
-  el = document.getElementById('trt-tpl-reject'); if (el) s.trtTplReject = el.value;
-  el = document.getElementById('trt-tpl-cancel'); if (el) s.trtTplCancel = el.value;
-  el = document.getElementById('trt-tpl-reminder-service'); if (el) s.trtTplReminderService = el.value;
-  el = document.getElementById('trt-tpl-reminder-test'); if (el) s.trtTplReminderTest = el.value;
-  localStorage.setItem('fleetSettings',JSON.stringify(s));
+  el = document.getElementById('trt-tpl-reminder'); if (el) obj.trtTplReminder = el.value;
+  el = document.getElementById('trt-tpl-approval'); if (el) obj.trtTplApproval = el.value;
+  el = document.getElementById('trt-tpl-reject'); if (el) obj.trtTplReject = el.value;
+  el = document.getElementById('trt-tpl-cancel'); if (el) obj.trtTplCancel = el.value;
+  el = document.getElementById('trt-tpl-reminder-service'); if (el) obj.trtTplReminderService = el.value;
+  el = document.getElementById('trt-tpl-reminder-test'); if (el) obj.trtTplReminderTest = el.value;
+  if(typeof saveSettings==='function') saveSettings(obj); // שמור ל-localStorage + Firebase
   showToast('✓ תבניות הודעות נשמרו');
   var saved = document.getElementById('trt-tpl-saved');
   if (saved) { saved.style.opacity = '1'; setTimeout(function() { saved.style.opacity = '0'; }, 2000); }
