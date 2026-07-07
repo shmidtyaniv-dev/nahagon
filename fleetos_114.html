@@ -10831,6 +10831,13 @@ function renderFamilyRows(vid){
     : '<div style="color:var(--t3);font-size:14px;padding:8px 0">אין בני משפחה מורשים</div>';
 }
 
+function openVehicleFromNotif(vid, plate){
+  var v=null;
+  if(vid) v=vehicles.find(function(x){ return String(x.id)===String(vid); });
+  if(!v && plate) v=vehicles.find(function(x){ return (x.plate||'').replace(/[^0-9]/g,'')===plate.replace(/[^0-9]/g,''); });
+  if(v) openDet(v.id);
+}
+
 function openDet(vid){
   const v=vehicles.find(x=>x.id===vid);if(!v)return;
   _currentVid=vid;
@@ -11643,28 +11650,29 @@ function checkKmSelfReport(){
     if(drop && inp && !inp.contains(e.target) && !drop.contains(e.target)) drop.style.display='none';
   });
   // טען רשימת נהגים (anonymous auth)
-  // ניסיון 1: publicDrivers — ללא auth
-  db.collection('publicDrivers').get().then(function(snap){
-    _kmrDriversList=[];
-    snap.forEach(function(doc){
-      var d=doc.data();
-      if(d.name) _kmrDriversList.push({name:d.name, plate:d.plate||'', id:doc.id});
-    });
-    // ניסיון 2: אם publicDrivers ריק — נסה vehicles (דורש auth)
-    if(!_kmrDriversList.length){
-      var tryWithAuth=function(){
-        db.collection('vehicles').get().then(function(snap2){
-          snap2.forEach(function(doc){
-            var d=doc.data();
-            var name=(d.driverName||'').trim();
-            if(name) _kmrDriversList.push({name:name, plate:d.plate||'', id:doc.id});
-          });
-        }).catch(function(){});
-      };
-      if(auth && !auth.currentUser){ auth.signInAnonymously().then(tryWithAuth).catch(function(){}); }
-      else tryWithAuth();
-    }
-  }).catch(function(){});
+  // ניסיון 1: קרא מה-URL (?d=BASE64) — עובד ללא Firebase
+  var urlParams=new URLSearchParams(location.search);
+  var encoded=urlParams.get('d');
+  if(encoded){
+    try{
+      var decoded=decodeURIComponent(escape(atob(encoded)));
+      decoded.split('~').forEach(function(entry){
+        var parts=entry.split('|');
+        var name=(parts[0]||'').trim();
+        var plate=(parts[1]||'').trim();
+        if(name) _kmrDriversList.push({name:name, plate:plate});
+      });
+    }catch(e){}
+  }
+  // ניסיון 2: Firebase (אם אין ב-URL)
+  if(!_kmrDriversList.length && db){
+    db.collection('publicDrivers').get().then(function(snap){
+      snap.forEach(function(doc){
+        var d=doc.data();
+        if(d.name) _kmrDriversList.push({name:d.name, plate:d.plate||''});
+      });
+    }).catch(function(){});
+  }
   setTimeout(function(){ var n=document.getElementById('kmsr-name'); if(n)n.focus(); },300);
   return true;
 }
@@ -11877,9 +11885,18 @@ function renderKmReports(){
 }
 
 function copyKmLink(){
-  var link=location.origin+location.pathname+'?km';
-  if(navigator.clipboard){ navigator.clipboard.writeText(link).then(function(){ showToast('הקישור הועתק ✓'); }); }
+  // קודד רשימת נהגים ב-URL כדי שהאוטוקומפליט יעבוד ללא Firebase
+  var drivers=vehicles.filter(function(v){ return v.driverName; }).map(function(v){
+    return (v.driverName||'')+'|'+(v.plate||'');
+  });
+  var encoded='';
+  try{ encoded=btoa(unescape(encodeURIComponent(drivers.join('~')))); }catch(e){}
+  var link=location.origin+location.pathname+'?km'+(encoded?'&d='+encoded:'');
+  if(navigator.clipboard){ navigator.clipboard.writeText(link).then(function(){ showToast('הקישור הועתק ✓ (כולל '+drivers.length+' נהגים)'); }); }
   else { var ta=document.createElement('textarea'); ta.value=link; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('הקישור הועתק ✓'); }
+  // עדכן תצוגה בדף
+  var linkEl=document.getElementById('kmr-link-display');
+  if(linkEl) linkEl.textContent=link;
 }
 
 function kmrManualMatch(reportId){
@@ -22315,7 +22332,7 @@ function getTreatmentNotifications() {
       detail: (n.plate || '') + ' · ' + (n.km ? n.km.toLocaleString('he-IL') : '') + ' ק"מ',
       actionText: 'פתח רכב',
       actionClass: '',
-      actionFn: "openDet(" + n.vid + ")",
+      actionFn: "openVehicleFromNotif('" + (n.vid||'') + "','" + (n.plate||'').replace(/'/g,'') + "')",
       time: n.time
     });
   });
