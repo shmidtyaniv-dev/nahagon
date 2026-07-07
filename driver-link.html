@@ -7,6 +7,7 @@
 
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -396,6 +397,7 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
     let TREATMENT = null;
     let SETTINGS = null;
@@ -404,6 +406,10 @@
     let CURRENT_MONTH = new Date();
 
     async function init() {
+      // כניסה אנונימית — נדרשת לגישה ל-Firestore (Rules: auth != null)
+      try {
+        if (!auth.currentUser) await auth.signInAnonymously();
+      } catch(e) { console.warn('anon auth failed', e); }
       const params = new URLSearchParams(window.location.search);
       const treatmentId = params.get('id');
 
