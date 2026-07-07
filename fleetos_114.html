@@ -2385,12 +2385,12 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div class="km-filter-panel" id="lic-filter-panel" style="width:290px">
           <!-- כותרת + ניווט שנה -->
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <button onclick="licCalYear(-1)" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">‹</button>
+            <button onclick="licCalYear(-1);event.stopPropagation()" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">‹</button>
             <div style="display:flex;align-items:center;gap:8px">
               <span id="lic-cal-year" style="font-size:16px;font-weight:700;color:var(--t1)">2026</span>
               <div id="lic-selected-count" style="font-size:11px;font-weight:600;color:var(--gd);background:var(--gbg);padding:2px 7px;border-radius:10px;display:none"></div>
             </div>
-            <button onclick="licCalYear(+1)" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">›</button>
+            <button onclick="licCalYear(+1);event.stopPropagation()" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">›</button>
           </div>
           <!-- גריד 12 חודשים -->
           <div id="lic-cal-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:14px"></div>
@@ -10184,7 +10184,7 @@ function _renderLicCalGrid(){
     var lbl = _LIC_M[m-1];
     var sel = _vLicMonths.has(ym);
     var isCur = (ym===curYM);
-    html += '<button onclick="licToggleMonth(\''+ym+'\')" style="'+
+    html += '<button onclick="licToggleMonth(\''+ym+'\',event)" style="'+
       'padding:7px 2px;border-radius:7px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid;transition:all .12s;'+
       (sel   ? 'background:var(--gd);color:#fff;border-color:var(--gd);box-shadow:0 1px 4px rgba(29,158,117,.3);' :
        isCur ? 'background:#fff8f0;color:#d97706;border-color:#f59e0b;' :
@@ -10205,7 +10205,8 @@ function licCalYear(delta){
   _renderLicCalGrid();
 }
 
-function licToggleMonth(ym){
+function licToggleMonth(ym, ev){
+  if(ev) ev.stopPropagation();
   if(_vLicMonths.has(ym)) _vLicMonths.delete(ym);
   else _vLicMonths.add(ym);
   _renderLicCalGrid();
