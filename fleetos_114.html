@@ -16037,6 +16037,7 @@ function startAuthedApp(){
         function(){
           if(typeof renderViolations==='function'){try{renderViolations();}catch(e){}}
           if(_currentVid && typeof renderVcViolations==='function'){try{renderVcViolations(_currentVid);}catch(e){}}
+          if(typeof renderDash==='function'){try{renderDash();}catch(e){}}
         }
       );
       // Accidents
@@ -16046,6 +16047,7 @@ function startAuthedApp(){
         function(){
           if(typeof renderAccidents==='function'){try{renderAccidents();}catch(e){}}
           if(_currentVid && typeof renderVcAccidents==='function'){try{renderVcAccidents(_currentVid);}catch(e){}}
+          if(typeof renderDash==='function'){try{renderDash();}catch(e){}}
         }
       );
       // Service bookings (לוח טיפולים)
