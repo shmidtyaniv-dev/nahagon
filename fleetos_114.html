@@ -2513,7 +2513,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
 
       <!-- metrics -->
-      <div class="metrics" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+      <div class="metrics" style="grid-template-columns:repeat(5,minmax(0,1fr))">
         <div class="mc" onclick="go('accidents',q('[dp=accidents]'))">
           <div class="stat-row">
             <div class="stat-text">
@@ -2562,6 +2562,19 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             </div>
             <div class="stat-circle" style="background:#1D9E75">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="mc" onclick="showNoKmUpdateModal()" id="mc-no-km">
+          <div class="stat-row">
+            <div class="stat-text">
+              <div class="mc-lbl">לא עדכנו ק"מ</div>
+              <div class="mc-val" style="color:#7c3aed" id="mv-no-km">0</div>
+              <div class="mc-sub" id="mv-no-km-sub">נהגים החודש</div>
+              <div class="stat-value-empty" id="mv-no-km-empty" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>✓ כולם עדכנו</div>
+            </div>
+            <div class="stat-circle" style="background:#7c3aed">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
           </div>
         </div>
@@ -2786,7 +2799,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div class="kmr-stat"><div class="kmr-stat-val" id="kmr-unmatched" style="color:#dc2626">0</div><div class="kmr-stat-lbl">ממתינים לשיוך</div></div>
       </div>
       <!-- רשימת דיווחים -->
-      <div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:8px" id="kmr-list-title">דיווחים אחרונים</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600;color:var(--t2)" id="kmr-list-title">דיווחים אחרונים</div>
+        <button onclick="resetKmReports()" style="padding:5px 12px;border:1px solid #fca5a5;border-radius:7px;background:#fff5f5;font-size:12px;font-family:inherit;cursor:pointer;color:#dc2626">איפוס דיווחים</button>
+      </div>
       <div id="kmr-list"></div>
     </div>
 
@@ -9303,6 +9319,21 @@ function renderDash(){
     var subEl=document.getElementById('mv-expiring-docs-sub');
     if(subEl) subEl.textContent=driverCount>0?'נהגים עם מסמכים חסרים':'הכל בסדר';
   })();
+  // Update no-km-update KPI
+  (function(){
+    var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-30);
+    var cutoffStr=cutoff.toISOString().substring(0,10);
+    var noKm=(vehicles||[]).filter(function(v){
+      var dn=v.driverName||(v.driver&&v.driver.name)||'';
+      if(!dn) return false; // רק רכבים עם נהג
+      var last=v.lastKmUpdate||'';
+      return !last || last < cutoffStr;
+    });
+    var cnt=noKm.length;
+    updateStatCard('mv-no-km','mv-no-km-sub','mv-no-km-empty','mc-no-km',cnt);
+    var sub=document.getElementById('mv-no-km-sub');
+    if(sub) sub.textContent=cnt>0?'לא עדכנו 30 יום אחרון':'כולם עדכנו';
+  })();
   // Update greeting header
   updateDashGreeting();
   // Render service & test section
@@ -9828,6 +9859,53 @@ function updateDashGreeting(){
   var pillEl=document.getElementById('dash-vehicle-count-val');
   if(pillEl) pillEl.textContent=pct+'% מהציר תקין \u00B7 '+total+' רכבים פעילים';
 }
+function showNoKmUpdateModal(){
+  var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-30);
+  var cutoffStr=cutoff.toISOString().substring(0,10);
+  var noKm=(vehicles||[]).filter(function(v){
+    var dn=v.driverName||(v.driver&&v.driver.name)||'';
+    if(!dn) return false;
+    var last=v.lastKmUpdate||'';
+    return !last || last < cutoffStr;
+  }).sort(function(a,b){
+    var an=a.driverName||(a.driver&&a.driver.name)||'';
+    var bn=b.driverName||(b.driver&&b.driver.name)||'';
+    return an.localeCompare(bn,'he');
+  });
+  var existing=document.getElementById('no-km-modal');
+  if(existing) existing.remove();
+  var ov=document.createElement('div');
+  ov.id='no-km-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  var rows=noKm.length===0
+    ? '<div style="text-align:center;padding:24px;color:var(--t3)">כל הנהגים עדכנו ק"מ ב-30 הימים האחרונים ✓</div>'
+    : noKm.map(function(v){
+        var dn=v.driverName||(v.driver&&v.driver.name)||'';
+        var last=v.lastKmUpdate ? new Date(v.lastKmUpdate).toLocaleDateString('he-IL') : 'מעולם לא';
+        var km=v.currentKm ? Number(v.currentKm).toLocaleString('he-IL')+' ק"מ' : '—';
+        return '<div onclick="ov.remove();openVehicleFromNotif(\''+String(v.id)+'\',\'\')" style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--bdr);cursor:pointer" onmouseover="this.style.background=\'#f9fafb\'" onmouseout="this.style.background=\'\'">'+
+          '<div>'+
+            '<div style="font-size:14px;font-weight:600;color:var(--t1)">'+_esc(dn)+'</div>'+
+            '<div style="font-size:12px;color:var(--t3)">'+_esc(v.plate||'')+(km?' · '+km:'')+'</div>'+
+          '</div>'+
+          '<div style="font-size:11px;color:#dc2626;background:#fff5f5;padding:3px 8px;border-radius:99px;white-space:nowrap">עדכון אחרון: '+last+'</div>'+
+        '</div>';
+      }).join('');
+  ov.innerHTML=
+    '<div style="background:#fff;border-radius:16px;width:100%;max-width:440px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">'+
+        '<div>'+
+          '<div style="font-size:16px;font-weight:700;color:var(--t1)">נהגים שלא עדכנו ק"מ</div>'+
+          '<div style="font-size:12px;color:var(--t3);margin-top:2px">30 הימים האחרונים · '+noKm.length+' נהגים</div>'+
+        '</div>'+
+        '<button onclick="document.getElementById(\'no-km-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3);padding:4px">✕</button>'+
+      '</div>'+
+      '<div style="overflow-y:auto;flex:1">'+rows+'</div>'+
+    '</div>';
+  document.body.appendChild(ov);
+}
+
 function showAltDriversModal(){
   const forms = JSON.parse(localStorage.getItem('hoForms2')||'[]');
   const open = forms.filter(f=>(f.type==='loaner'||f.type==='bridge')&&f.mode==='take'&&!f.closed);
@@ -10844,6 +10922,10 @@ function openVehicleFromNotif(vid, plate, driverName){
   }
   if(v) openDet(v.id);
 }
+function openVehicleFromNotifId(notifId){
+  var data=_kmNotifMap[notifId]||{};
+  openVehicleFromNotif(data.vid||'', data.plate||'', data.driverName||'');
+}
 
 function openDet(vid){
   const v=vehicles.find(x=>x.id===vid);if(!v)return;
@@ -11806,6 +11888,7 @@ function submitKmSelfReport(){
 /* ── Admin: טעינה ורינדור ── */
 var _kmReportsCache=[];
 var _kmReportsListenerActive=false;
+var _kmNotifMap={}; // id → {vid,plate,driverName}
 var _kmReportsIsInit=true; // flag נפרד — לא על boolean
 
 function startKmReportsListener(){
@@ -11896,6 +11979,23 @@ function renderKmReports(){
   list.querySelectorAll('.kmr-manual-btn').forEach(function(btn){
     btn.addEventListener('click',function(){ kmrManualMatch(btn.dataset.rid); });
   });
+}
+
+function resetKmReports(){
+  if(!db) return;
+  if(!confirm('למחוק את כל הדיווחים ולהתחיל מחדש?')) return;
+  var batch=db.batch();
+  _kmReportsCache.forEach(function(r){
+    batch.delete(db.collection('kmReports').doc(r.id));
+  });
+  batch.commit().then(function(){
+    // נקה גם התראות ק"מ מ-localStorage
+    var kmNotifs=JSON.parse(localStorage.getItem('km_update_notifications')||'[]');
+    kmNotifs=kmNotifs.filter(function(n){ return n.id.indexOf('kmr-')<0; });
+    localStorage.setItem('km_update_notifications',JSON.stringify(kmNotifs));
+    try{ updateBellBadge(); }catch(e){}
+    showToast('הדיווחים אופסו ✓');
+  }).catch(function(){ showToast('שגיאה באיפוס — נסה שוב'); });
 }
 
 function copyKmLink(){
@@ -22347,15 +22447,17 @@ function getTreatmentNotifications() {
       var cached = (typeof _kmReportsCache!=='undefined'?_kmReportsCache:[]).find(function(r){return r.id===reportId;});
       if(cached){ vid=cached.matchedVehicleId||''; plate=cached.matchedPlate||cached.vehicleNum||''; }
     }
+    // שמור ב-map גלובלי כדי להימנע משימוש ב-strings בתוך onclick
+    _kmNotifMap[n.id] = {vid:vid, plate:plate, driverName:n.driverName||''};
     notifications.push({
       id: n.id,
       type: 'km_update',
       dotClass: 'trt-notif-dot-blue',
-      title: (n.driverName || 'נהג') + ' עדכן ק"מ',
-      detail: (plate || '') + ' · ' + (n.km ? n.km.toLocaleString('he-IL') : '') + ' ק"מ',
+      title: (n.driverName || 'נהג') + ' עדכן ק&quot;מ',
+      detail: (plate || '') + ' · ' + (n.km ? n.km.toLocaleString('he-IL') : '') + ' ק&quot;מ',
       actionText: 'פתח רכב',
       actionClass: '',
-      actionFn: "openVehicleFromNotif('" + (vid||'').replace(/'/g,'') + "','" + (plate||'').replace(/'/g,'') + "','" + (n.driverName||'').replace(/'/g,'') + "')",
+      actionFn: "openVehicleFromNotifId(" + JSON.stringify(n.id) + ")",
       time: n.time
     });
   });
