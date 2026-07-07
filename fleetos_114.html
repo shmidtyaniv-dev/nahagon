@@ -442,7 +442,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   /* כפתור תפריט - גדול יותר */
   .mobile-menu-btn{width:44px!important;height:44px!important;border-radius:10px}
   /* הסתר כפתורי ק"מ ורישיון בטופבר מובייל */
-  #km-filter-wrap,#lic-filter-wrap{display:none!important}
+  #unified-filter-wrap{display:none!important}
   .mobile-menu-btn svg{width:24px!important;height:24px!important}
   /* "הוסף רכב" - רק אייקון + */
   .topbar > button[onclick*="openAdd"] { font-size:0!important;gap:0!important;padding:0!important;width:36px!important;height:36px!important;justify-content:center }
@@ -2339,64 +2339,64 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
       </div>
       <!-- כפתור פילטר ק"מ -->
-      <div style="position:relative;flex-shrink:0" id="km-filter-wrap">
-        <button class="km-filter-btn" id="km-filter-btn" onclick="toggleKmFilterPanel()" title="חיפוש לפי טווח ק&quot;מ">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          טווח ק"מ
+      <!-- UNIFIED FILTER BUTTON -->
+      <div style="position:relative;flex-shrink:0" id="unified-filter-wrap">
+        <button class="km-filter-btn" id="unified-filter-btn" onclick="toggleUnifiedFilter()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+          סינון
+          <span id="unified-filter-badge" style="display:none;background:#fff;color:var(--gd);font-size:10px;font-weight:700;padding:1px 5px;border-radius:8px;margin-right:2px"></span>
         </button>
-        <div class="km-filter-panel" id="km-filter-panel">
-          <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px">חיפוש לפי ק"מ נוכחי</div>
-          <div style="font-size:11px;color:var(--t3);margin-bottom:14px">גרור את הנקודות לבחירת טווח</div>
-          <!-- תצוגת מינ/מקס -->
-          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2px">
-            <div style="text-align:right">
-              <div style="font-size:10px;color:var(--t3);margin-bottom:2px">מ-</div>
-              <div id="km-min-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">0</div>
+        <div class="km-filter-panel" id="unified-filter-panel" style="width:310px">
+          <!-- טאבים -->
+          <div style="display:flex;gap:0;border-bottom:1px solid var(--bdr);margin-bottom:14px">
+            <button id="uft-km-tab" onclick="switchFilterTab('km');event.stopPropagation()" style="flex:1;padding:7px 4px;border:none;border-bottom:2px solid var(--gd);background:none;font-size:12px;font-weight:600;color:var(--gd);cursor:pointer;font-family:inherit">טווח ק"מ</button>
+            <button id="uft-lic-tab" onclick="switchFilterTab('lic');event.stopPropagation()" style="flex:1;padding:7px 4px;border:none;border-bottom:2px solid transparent;background:none;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;font-family:inherit">פקיעת רישיון</button>
+          </div>
+
+          <!-- טאב ק"מ -->
+          <div id="uft-km-body">
+            <div style="font-size:11px;color:var(--t3);margin-bottom:14px">גרור את הנקודות לבחירת טווח</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2px">
+              <div style="text-align:right">
+                <div style="font-size:10px;color:var(--t3);margin-bottom:2px">מ-</div>
+                <div id="km-min-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">0</div>
+              </div>
+              <div style="font-size:12px;color:var(--t3);padding-bottom:4px">—</div>
+              <div style="text-align:left">
+                <div style="font-size:10px;color:var(--t3);margin-bottom:2px">עד</div>
+                <div id="km-max-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">200,000</div>
+              </div>
             </div>
-            <div style="font-size:12px;color:var(--t3);padding-bottom:4px">—</div>
-            <div style="text-align:left">
-              <div style="font-size:10px;color:var(--t3);margin-bottom:2px">עד</div>
-              <div id="km-max-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">200,000</div>
+            <div class="km-dual-wrap">
+              <div class="km-track"></div>
+              <div class="km-fill" id="km-fill"></div>
+              <input type="range" id="km-min-slider" min="0" max="200000" step="1000" value="0" oninput="kmRangeUpdate('min')">
+              <input type="range" id="km-max-slider" min="0" max="200000" step="1000" value="200000" oninput="kmRangeUpdate('max')">
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:14px;direction:ltr">
+              <span>0</span><span>50,000</span><span>100,000</span><span>150,000</span><span>200,000</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onclick="kmRangeReset();event.stopPropagation()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
+              <button onclick="kmRangeApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">סנן</button>
             </div>
           </div>
-          <!-- סליידר כפול -->
-          <div class="km-dual-wrap">
-            <div class="km-track"></div>
-            <div class="km-fill" id="km-fill"></div>
-            <input type="range" id="km-min-slider" min="0" max="200000" step="1000" value="0" oninput="kmRangeUpdate('min')">
-            <input type="range" id="km-max-slider" min="0" max="200000" step="1000" value="200000" oninput="kmRangeUpdate('max')">
-          </div>
-          <!-- סימוני ציר -->
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:14px;direction:ltr">
-            <span>0</span><span>50,000</span><span>100,000</span><span>150,000</span><span>200,000</span>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button onclick="kmRangeReset()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
-            <button onclick="kmRangeApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">חפש</button>
-          </div>
-        </div>
-      </div>
-      <!-- LICENSE EXPIRY MONTH FILTER -->
-      <div style="position:relative;flex-shrink:0" id="lic-filter-wrap">
-        <button class="km-filter-btn" id="lic-filter-btn" onclick="toggleLicFilterPanel()" title="סינון לפי פקיעת רישיון רכב">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          פקיעת רישיון
-        </button>
-        <div class="km-filter-panel" id="lic-filter-panel" style="width:290px">
-          <!-- כותרת + ניווט שנה -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <button onclick="licCalYear(-1);event.stopPropagation()" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">‹</button>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span id="lic-cal-year" style="font-size:16px;font-weight:700;color:var(--t1)">2026</span>
-              <div id="lic-selected-count" style="font-size:11px;font-weight:600;color:var(--gd);background:var(--gbg);padding:2px 7px;border-radius:10px;display:none"></div>
+
+          <!-- טאב רישיון -->
+          <div id="uft-lic-body" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <button onclick="licCalYear(-1);event.stopPropagation()" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">‹</button>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span id="lic-cal-year" style="font-size:16px;font-weight:700;color:var(--t1)">2026</span>
+                <div id="lic-selected-count" style="font-size:11px;font-weight:600;color:var(--gd);background:var(--gbg);padding:2px 7px;border-radius:10px;display:none"></div>
+              </div>
+              <button onclick="licCalYear(+1);event.stopPropagation()" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">›</button>
             </div>
-            <button onclick="licCalYear(+1);event.stopPropagation()" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">›</button>
-          </div>
-          <!-- גריד 12 חודשים -->
-          <div id="lic-cal-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:14px"></div>
-          <div style="display:flex;gap:8px">
-            <button onclick="licFilterReset()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
-            <button onclick="licFilterApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">סנן</button>
+            <div id="lic-cal-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:14px"></div>
+            <div style="display:flex;gap:8px">
+              <button onclick="licFilterReset();event.stopPropagation()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
+              <button onclick="licFilterApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">סנן</button>
+            </div>
           </div>
         </div>
       </div>
@@ -10150,8 +10150,9 @@ function kmRangeApply(){
   if(inp){ inp.value = q; }
   globalSearch(q);
   // סגור פאנל
-  document.getElementById('km-filter-panel').style.display = 'none';
-  document.getElementById('km-filter-btn').classList.add('active');
+  var up = document.getElementById('unified-filter-panel');
+  if(up) up.style.display = 'none';
+  _updateUnifiedBadge();
 }
 function kmRangeReset(){
   document.getElementById('km-min-slider').value = 0;
@@ -10160,11 +10161,12 @@ function kmRangeReset(){
   var inp = document.getElementById('srch-inp');
   if(inp) inp.value = '';
   closeGlobalSearch();
-  document.getElementById('km-filter-panel').style.display = 'none';
-  document.getElementById('km-filter-btn').classList.remove('active');
+  var up = document.getElementById('unified-filter-panel');
+  if(up) up.style.display = 'none';
   _vKmRange = null;
   filterV('');
   if(typeof renderV==='function') renderV();
+  _updateUnifiedBadge();
 }
 /* ── LICENSE EXPIRY MONTH FILTER ── */
 var _vLicMonths = new Set(); // Set של "YYYY-MM"
@@ -10224,8 +10226,9 @@ function toggleLicFilterPanel(){
 }
 
 function licFilterApply(){
-  document.getElementById('lic-filter-panel').style.display = 'none';
-  document.getElementById('lic-filter-btn').classList.toggle('active', _vLicMonths.size>0);
+  var up = document.getElementById('unified-filter-panel');
+  if(up) up.style.display = 'none';
+  _updateUnifiedBadge();
   if(typeof go==='function') go('vehicles', document.querySelector('[dp=vehicles]'));
   if(typeof renderV==='function') renderV();
 }
@@ -10233,8 +10236,9 @@ function licFilterApply(){
 function licFilterReset(){
   _vLicMonths.clear();
   _licCalYear = new Date().getFullYear();
-  document.getElementById('lic-filter-panel').style.display = 'none';
-  document.getElementById('lic-filter-btn').classList.remove('active');
+  var up = document.getElementById('unified-filter-panel');
+  if(up) up.style.display = 'none';
+  _updateUnifiedBadge();
   if(typeof renderV==='function') renderV();
 }
 
@@ -10294,20 +10298,38 @@ function mkmReset(){
 }
 // סגירה בלחיצה מחוץ לפאנל
 document.addEventListener('click', function(e){
-  var wrap = document.getElementById('km-filter-wrap');
-  var panel = document.getElementById('km-filter-panel');
-  if(panel && panel.style.display==='block' && wrap && !wrap.contains(e.target)){
-    panel.style.display = 'none';
-    var inp = document.getElementById('srch-inp');
-    if(!inp || !inp.value) document.getElementById('km-filter-btn')?.classList.remove('active');
-  }
-  var licWrap = document.getElementById('lic-filter-wrap');
-  var licPanel = document.getElementById('lic-filter-panel');
-  if(licPanel && licPanel.style.display==='block' && licWrap && !licWrap.contains(e.target)){
-    licPanel.style.display = 'none';
-    if(!_vLicMonths || _vLicMonths.size===0) document.getElementById('lic-filter-btn')?.classList.remove('active');
+  var uWrap = document.getElementById('unified-filter-wrap');
+  var uPanel = document.getElementById('unified-filter-panel');
+  if(uPanel && uPanel.style.display==='block' && uWrap && !uWrap.contains(e.target)){
+    uPanel.style.display = 'none';
   }
 });
+
+/* ── UNIFIED FILTER ── */
+var _activeFilterTab = 'km';
+function toggleUnifiedFilter(){
+  var panel = document.getElementById('unified-filter-panel');
+  var open = panel.style.display === 'block';
+  panel.style.display = open ? 'none' : 'block';
+  if(!open){ switchFilterTab(_activeFilterTab); kmRangeUpdate('max'); }
+}
+function switchFilterTab(tab){
+  _activeFilterTab = tab;
+  document.getElementById('uft-km-body').style.display  = tab==='km'  ? 'block' : 'none';
+  document.getElementById('uft-lic-body').style.display = tab==='lic' ? 'block' : 'none';
+  var kmTab  = document.getElementById('uft-km-tab');
+  var licTab = document.getElementById('uft-lic-tab');
+  if(kmTab){  kmTab.style.borderBottomColor  = tab==='km'  ? 'var(--gd)' : 'transparent'; kmTab.style.color  = tab==='km'  ? 'var(--gd)' : 'var(--t2)'; }
+  if(licTab){ licTab.style.borderBottomColor = tab==='lic' ? 'var(--gd)' : 'transparent'; licTab.style.color = tab==='lic' ? 'var(--gd)' : 'var(--t2)'; }
+  if(tab==='lic') _renderLicCalGrid();
+}
+function _updateUnifiedBadge(){
+  var count = (_vKmRange ? 1 : 0) + (_vLicMonths && _vLicMonths.size > 0 ? 1 : 0);
+  var badge = document.getElementById('unified-filter-badge');
+  var btn   = document.getElementById('unified-filter-btn');
+  if(badge){ badge.style.display = count > 0 ? 'inline-block' : 'none'; badge.textContent = count; }
+  if(btn)   btn.classList.toggle('active', count > 0);
+}
 function switchTab(f,el){vFilter=f;document.querySelectorAll('#page-vehicles .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderV()}
 
 /* ── VEHICLE CARD PAGE ── */
