@@ -18742,7 +18742,7 @@ function openCalEventEditModal(info){
 }
 
 function sendCalEventWaReminder(vehicleId, fieldKey, currentVal){
-  var v = vehicles.find(function(x){return x.id===vehicleId;});
+  var v = vehicles.find(function(x){return String(x.id)===String(vehicleId);});
   if(!v){ showToast('רכב לא נמצא'); return; }
   var driverName = v.driver&&v.driver.name||'';
   var phone = (v.driver&&v.driver.phone||v.driverPhone||'').replace(/\D/g,'').replace(/^0/,'972');
