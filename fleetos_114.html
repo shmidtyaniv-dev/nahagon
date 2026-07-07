@@ -9919,7 +9919,7 @@ function showNoKmUpdateModal(){
 }
 
 function showOpenAccidentsModal(){
-  var open=(accidentsList||[]).filter(function(a){ return a.status!=='done'&&a.status!=='closed'; })
+  var open=(accidentsList||[]).filter(function(a){ return isAccidentOpen(a); })
     .sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
   var existing=document.getElementById('open-acc-modal');
   if(existing) existing.remove();
@@ -9930,22 +9930,23 @@ function showOpenAccidentsModal(){
   var rows=open.length===0
     ? '<div style="text-align:center;padding:24px;color:var(--t3)">אין תאונות פתוחות ✓</div>'
     : open.map(function(a){
-        var dn=a.driverName||'';
-        var plate=a.plate||'';
-        // find vehicle for navigation
-        var v=vehicles.find(function(x){ return (x.plate||'')===(plate||(x.driverName===dn?x.plate:'')); });
-        if(!v && dn) v=vehicles.find(function(x){ return (x.driverName||'')===(dn)||(x.driver&&x.driver.name===dn); });
+        // חפש רכב לפי vehicleId
+        var v=(vehicles||[]).find(function(x){ return String(x.id)===String(a.vehicleId); });
+        var dn=(v ? (v.driverName||(v.driver&&v.driver.name)||'') : '') || a.driverName || '';
+        var plate=(v ? v.plate : '') || a.plate || '';
         var vid=v?String(v.id):'';
-        var statusLabel=a.status==='open'?'פתוח':a.status==='inprogress'?'בטיפול':a.status||'פתוח';
-        var statusColor=a.status==='inprogress'?'#d97706':'#dc2626';
+        var statusHtml=getAccidentStatusLabel(a);
         var dateStr=a.date?new Date(a.date).toLocaleDateString('he-IL'):'';
-        return '<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bdr)"'+
-          (vid?' onclick="document.getElementById(\'open-acc-modal\').remove();openDet('+vid+')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bdr);cursor:pointer" onmouseover="this.style.background=\'#fef2f2\'" onmouseout="this.style.background=\'\'"':'')+'>' +
+        var descShort=a.desc?_esc(a.desc.substring(0,45)):'';
+        var clickAttr=vid?'onclick="document.getElementById(\'open-acc-modal\').remove();openDet('+vid+')" style="cursor:pointer" onmouseover="this.style.background=\'#fef2f2\'" onmouseout="this.style.background=\'\'"':'';
+        return '<div '+clickAttr+' style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bdr)">'+
           '<div style="flex:1;min-width:0">'+
             '<div style="font-size:14px;font-weight:600;color:var(--t1)">'+_esc(dn||'נהג לא ידוע')+'</div>'+
-            '<div style="font-size:12px;color:var(--t3);margin-top:1px">'+_esc(plate)+(dateStr?' · '+dateStr:'')+(a.desc?' · '+_esc(a.desc.substring(0,40)):'')+'</div>'+
+            '<div style="font-size:12px;color:var(--t3);margin-top:2px">'+
+              (plate?_esc(plate):'')+(dateStr?' · '+dateStr:'')+(descShort?' · '+descShort:'')+
+            '</div>'+
           '</div>'+
-          '<span style="flex-shrink:0;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:'+statusColor+'22;color:'+statusColor+'">'+statusLabel+'</span>'+
+          '<div style="flex-shrink:0">'+statusHtml+'</div>'+
         '</div>';
       }).join('');
   ov.innerHTML=
