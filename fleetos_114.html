@@ -11171,7 +11171,9 @@ function openDet(vid){
   // insurance expiry from uploaded doc (stored in vd)
   const insuranceExp=vd['insurance_exp']||null;
   const insColor=insuranceExp&&dys(insuranceExp)<60?'#d97706':null;
-  const insTxt=insuranceExp?fd(insuranceExp):'<button class="vc-add-btn" onclick="event.stopPropagation();vcTab(\'docs\',document.querySelector(\'.vc-tab-btn[onclick*=docs]\')">+ העלה ביטוח</button>';
+  const insTxt=insuranceExp
+    ?`${fd(insuranceExp)} <button class="vc-add-btn" style="font-size:11px;padding:2px 8px;margin-right:6px" onclick="event.stopPropagation();openInsuranceDateModal(${vid})">עדכון תאריך</button>`
+    :'<button class="vc-add-btn" onclick="event.stopPropagation();openInsuranceDateModal('+vid+')">+ עדכון תאריך</button>';
 
   // next service - auto-calculated from lastService + serviceKm (or from delivery for new vehicles)
   const svcType=nxtSvc.type||'—';
@@ -20182,6 +20184,35 @@ var incomingTasks=[]; // kept empty, no longer used
 
 /* ── SCAN INSURANCE ONLY ── */
 // Note: second definition removed - using the one above (line ~4942) with API key support.
+
+function openInsuranceDateModal(vid){
+  const vd=vehicleDocs[vid]||{};
+  const cur=vd['insurance_exp']||'';
+  const m=document.createElement('div');
+  m.id='ins-date-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.innerHTML=`<div style="background:var(--bg);border-radius:16px;padding:24px;width:100%;max-width:320px;direction:rtl;font-family:inherit">
+    <div style="font-weight:700;font-size:17px;margin-bottom:16px">עדכון תוקף ביטוח</div>
+    <input type="date" id="ins-date-inp" value="${cur}" style="width:100%;border:1.5px solid var(--bdr2);border-radius:10px;padding:10px 12px;font-size:16px;font-family:inherit;background:var(--bg);color:var(--t1);box-sizing:border-box;margin-bottom:16px">
+    <div style="display:flex;gap:10px">
+      <button onclick="document.getElementById('ins-date-modal').remove()" style="flex:1;padding:11px;border:1.5px solid var(--bdr2);border-radius:10px;background:none;font-size:15px;font-family:inherit;cursor:pointer;color:var(--t1)">ביטול</button>
+      <button onclick="saveInsuranceDate(${vid})" style="flex:1;padding:11px;border:none;border-radius:10px;background:#0C2E5A;color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer">שמור</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',function(e){if(e.target===m)m.remove();});
+}
+
+function saveInsuranceDate(vid){
+  const val=document.getElementById('ins-date-inp')?.value;
+  if(!val){showToast('יש לבחור תאריך');return;}
+  if(!vehicleDocs[vid])vehicleDocs[vid]={};
+  vehicleDocs[vid]['insurance_exp']=val;
+  persistVehicleDocsDebounced(vid);
+  document.getElementById('ins-date-modal')?.remove();
+  showToast('תוקף ביטוח עודכן ✅');
+  openDet(vid);
+}
 
 async function scanInsuranceDoc(vid,file){
   const toast=document.createElement('div');toast.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1A4A3A;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;z-index:9999;direction:rtl';toast.textContent='🔍 סורק מסמך ביטוח...';document.body.appendChild(toast);
