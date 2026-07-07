@@ -4368,6 +4368,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div id="ho-reset-row" style="display:none;margin-top:4px;text-align:center">
               <button onclick="hoResetOpenForms()" style="background:none;border:none;font-size:11px;color:var(--t3);cursor:pointer;font-family:inherit;text-decoration:underline;padding:4px 8px">אפס מצב לקיחות פתוחות</button>
             </div>
+            <!-- תיעוד טפסים -->
+            <div id="ho-log-section" style="margin-top:16px;border-top:1px solid var(--bdr);padding-top:14px;display:none">
+              <div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:10px">📋 תיעוד פעילות</div>
+              <div id="ho-log-list"></div>
+            </div>
           </div>
         </div>
 
@@ -7535,6 +7540,33 @@ function hoRenderList(vid){
       </div>
     </div>`;
   }).join('');
+
+  // תיעוד פעילות — ציר זמן מתחת לרשימה
+  const logSec = document.getElementById('ho-log-section');
+  const logList = document.getElementById('ho-log-list');
+  if(logSec && logList && vForms.length){
+    const sorted = vForms.slice().sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+    logList.innerHTML = sorted.map(f=>{
+      const icon = f.type==='mission'?'🚗':(f.type==='bridge'?'🌉':'🔄');
+      const typeLabel = f.type==='mission'?'משימה':(f.type==='bridge'?'רכב גישור':'רכב חלופי');
+      const modeLabel = f.mode==='take'?'מסירה לנהג':'החזרה מנהג';
+      const dt = new Date(f.createdAt);
+      const dateStr = dt.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const timeStr = dt.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+      const altInfo = f.altPlate?`<span style="font-size:11px;background:#fef3c7;color:#854d0e;padding:2px 7px;border-radius:999px;font-weight:600;margin-right:4px">לוחית: ${f.altPlate}</span>`:'';
+      return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr)">
+        <div style="font-size:18px;line-height:1.4">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--t1)">${typeLabel} — ${modeLabel} ${altInfo}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">${dateStr} · ${timeStr}${f.driverName?' · '+f.driverName:''}</div>
+        </div>
+        <button onclick="event.stopPropagation();hoViewForm(${f.id})" style="flex-shrink:0;padding:4px 10px;border:1px solid var(--bdr2);border-radius:6px;background:var(--bg);font-size:11px;cursor:pointer;font-family:inherit;color:var(--t2)">צפה</button>
+      </div>`;
+    }).join('');
+    logSec.style.display='block';
+  } else if(logSec){
+    logSec.style.display='none';
+  }
 }
 
 async function hoOpenForm(type, mode){
@@ -9063,9 +9095,9 @@ function altBadge(vid){
   const isBridge = s.type==='bridge';
   const bg = isBridge?'#dbeafe':'#fef3c7';
   const clr = isBridge?'#1e40af':'#854d0e';
-  const txt = isBridge?'🌉 גישור':'🔄 חלופי';
-  const tip = (isBridge?'רכב גישור':'רכב חלופי')+(s.plate?' · '+s.plate:'');
-  return `<span title="${tip}" style="display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;background:${bg};color:${clr};margin-right:6px;vertical-align:middle">${txt}</span>`;
+  const lbl = isBridge?'🌉 גישור':'🔄 חלופי';
+  const txt = lbl+(s.plate?' · '+s.plate:'');
+  return `<span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;background:${bg};color:${clr};margin-right:6px;vertical-align:middle">${txt}</span>`;
 }
 function avatarColor(name){var colors=['#16a34a','#3b82f6','#f59e0b','#ec4899','#06b6d4','#8b5cf6','#ef4444','#14b8a6','#f97316','#6366f1'];var h=0;for(var i=0;i<(name||'').length;i++)h=((h<<5)-h)+(name||'').charCodeAt(i);return colors[Math.abs(h)%colors.length];}
 function driverCell(v){return`<div class="dc"><div class="av" style="background:${avatarColor(v.driver.name)}">${inits(v.driver.name)}</div><div><div style="font-weight:600;font-size:13px;color:var(--t1)">${esc(v.driver.name)}</div></div>${altBadge(v.id)}</div>`;}
@@ -10213,6 +10245,34 @@ function globalSearch(query){
       '</div>';
     });
   }
+  // Loaner plate search
+  var loanerMatches = [];
+  var _seenLoanerVids = new Set();
+  (hoForms2||JSON.parse(localStorage.getItem('hoForms2')||'[]')).forEach(function(f){
+    if(!(f.altPlate||'').replace(/[^0-9]/g,'').includes(q.replace(/[^0-9]/g,'')) && !(f.altPlate||'').toLowerCase().includes(q)) return;
+    if(!q || !f.altPlate) return;
+    var v = (vehicles||[]).find(function(x){ return x.id===f.vehicleId; });
+    if(!v || _seenLoanerVids.has(v.id+'_'+f.altPlate)) return;
+    _seenLoanerVids.add(v.id+'_'+f.altPlate);
+    loanerMatches.push({v:v, f:f});
+  });
+  if(loanerMatches.length){
+    html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:#854d0e;border-bottom:1px solid var(--bdr);background:#fefce8">🔄 רכב חלופי/גישור — לפי לוחית ('+loanerMatches.length+')</div>';
+    loanerMatches.slice(0,6).forEach(function(m){
+      var dn = m.v.driverName||(m.v.driver&&m.v.driver.name)||'';
+      var typeLabel = m.f.type==='bridge'?'גישור':'חלופי';
+      var modeLabel = m.f.mode==='take'?'נמסר':'הוחזר';
+      var dateStr = m.f.createdAt?new Date(m.f.createdAt).toLocaleDateString('he-IL'):'';
+      html += '<div onclick="openDet('+m.v.id+');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
+        '<div style="font-size:18px">🔄</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-size:13px;font-weight:600;color:var(--t1)">'+_esc(m.v.plate||'')+(dn?' · '+_esc(dn):'')+'</div>'+
+          '<div style="font-size:11px;color:var(--t3)">רכב '+typeLabel+': <strong>'+_esc(m.f.altPlate)+'</strong> · '+modeLabel+(dateStr?' · '+dateStr:'')+'</div>'+
+        '</div>'+
+      '</div>';
+    });
+  }
+
   // Vehicles
   if(vehicleMatches.length){
     html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:var(--gd);border-bottom:1px solid var(--bdr);background:var(--bg)">🚗 רכבים ('+vehicleMatches.length+')</div>';
@@ -11259,8 +11319,8 @@ function openDet(vid){
         <div style="display:flex;align-items:center;gap:10px">
           <div style="font-size:22px">${icn}</div>
           <div style="flex:1">
-            <div style="font-size:12px;font-weight:700;color:${clr}">${ttl}</div>
-            <div style="font-size:11px;color:${clr};opacity:.8;margin-top:2px">${altStatus.plate?('רישוי: '+altStatus.plate+' · '):''}נמסר ב-${since}</div>
+            <div style="font-size:12px;font-weight:700;color:${clr}">${ttl}${altStatus.plate?' · <span style="font-size:13px;font-weight:800;letter-spacing:.5px">'+altStatus.plate+'</span>':''}</div>
+            <div style="font-size:11px;color:${clr};opacity:.8;margin-top:2px">נמסר ב-${since}</div>
           </div>
         </div>
       </div>`;
