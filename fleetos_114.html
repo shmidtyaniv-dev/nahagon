@@ -9898,8 +9898,9 @@ function globalSearch(query){
 
   // Search vehicles (by plate, driver, make, model, code)
   const vehicleMatches = (vehicles||[]).filter(function(v){
+    var dName = (v.driverName||v.driver?.name||'').toLowerCase();
     return (v.plate||'').toLowerCase().includes(q) ||
-           (v.driver?.name||'').toLowerCase().includes(q) ||
+           dName.includes(q) ||
            (v.make||'').toLowerCase().includes(q) ||
            (v.model||'').toLowerCase().includes(q) ||
            (v.code||'').toLowerCase().includes(q);
@@ -9919,7 +9920,7 @@ function globalSearch(query){
   const driverMatches = [];
   const seenDrivers = new Set();
   (vehicles||[]).forEach(function(v){
-    const name = v.driver?.name||'';
+    const name = v.driverName || v.driver?.name || '';
     if(name && name.toLowerCase().includes(q) && !seenDrivers.has(name)){
       seenDrivers.add(name);
       driverMatches.push({name, vid:v.id, plate:v.plate});
@@ -10083,7 +10084,7 @@ function globalSearch(query){
     vehicleMatches.slice(0,8).forEach(function(v){
       html += '<div onclick="openDet('+v.id+');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
         '<div style="font-size:18px">🚗</div>'+
-        '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+v.plate+' · '+v.make+' '+v.model+'</div><div style="font-size:11px;color:var(--t3)">'+(v.driver?.name||'')+'</div></div>'+
+        '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+v.plate+' · '+v.make+' '+v.model+'</div><div style="font-size:11px;color:var(--t3)">'+(v.driverName||v.driver?.name||'')+'</div></div>'+
       '</div>';
     });
   }
