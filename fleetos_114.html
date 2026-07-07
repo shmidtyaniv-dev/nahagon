@@ -2514,7 +2514,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
       <!-- metrics -->
       <div class="metrics" style="grid-template-columns:repeat(5,minmax(0,1fr))">
-        <div class="mc" onclick="go('accidents',q('[dp=accidents]'))">
+        <div class="mc" onclick="showOpenAccidentsModal()">
           <div class="stat-row">
             <div class="stat-text">
               <div class="mc-lbl">תאונות פתוחות</div>
@@ -9914,6 +9914,53 @@ function showNoKmUpdateModal(){
         '<button onclick="document.getElementById(\'no-km-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3);padding:4px">✕</button>'+
       '</div>'+
       '<div style="overflow-y:auto;flex:1">'+rows+'</div>'+
+    '</div>';
+  document.body.appendChild(ov);
+}
+
+function showOpenAccidentsModal(){
+  var open=(accidentsList||[]).filter(function(a){ return a.status!=='done'&&a.status!=='closed'; })
+    .sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+  var existing=document.getElementById('open-acc-modal');
+  if(existing) existing.remove();
+  var ov=document.createElement('div');
+  ov.id='open-acc-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  var rows=open.length===0
+    ? '<div style="text-align:center;padding:24px;color:var(--t3)">אין תאונות פתוחות ✓</div>'
+    : open.map(function(a){
+        var dn=a.driverName||'';
+        var plate=a.plate||'';
+        // find vehicle for navigation
+        var v=vehicles.find(function(x){ return (x.plate||'')===(plate||(x.driverName===dn?x.plate:'')); });
+        if(!v && dn) v=vehicles.find(function(x){ return (x.driverName||'')===(dn)||(x.driver&&x.driver.name===dn); });
+        var vid=v?String(v.id):'';
+        var statusLabel=a.status==='open'?'פתוח':a.status==='inprogress'?'בטיפול':a.status||'פתוח';
+        var statusColor=a.status==='inprogress'?'#d97706':'#dc2626';
+        var dateStr=a.date?new Date(a.date).toLocaleDateString('he-IL'):'';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bdr)"'+
+          (vid?' onclick="document.getElementById(\'open-acc-modal\').remove();openDet('+vid+')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bdr);cursor:pointer" onmouseover="this.style.background=\'#fef2f2\'" onmouseout="this.style.background=\'\'"':'')+'>' +
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-size:14px;font-weight:600;color:var(--t1)">'+_esc(dn||'נהג לא ידוע')+'</div>'+
+            '<div style="font-size:12px;color:var(--t3);margin-top:1px">'+_esc(plate)+(dateStr?' · '+dateStr:'')+(a.desc?' · '+_esc(a.desc.substring(0,40)):'')+'</div>'+
+          '</div>'+
+          '<span style="flex-shrink:0;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:'+statusColor+'22;color:'+statusColor+'">'+statusLabel+'</span>'+
+        '</div>';
+      }).join('');
+  ov.innerHTML=
+    '<div style="background:#fff;border-radius:16px;width:100%;max-width:440px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">'+
+        '<div>'+
+          '<div style="font-size:16px;font-weight:700;color:#dc2626">תאונות פתוחות</div>'+
+          '<div style="font-size:12px;color:var(--t3);margin-top:2px">'+open.length+' תאונות מצריכות מעקב</div>'+
+        '</div>'+
+        '<button onclick="document.getElementById(\'open-acc-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3);padding:4px">✕</button>'+
+      '</div>'+
+      '<div style="overflow-y:auto;flex:1">'+rows+'</div>'+
+      '<div style="padding:12px 16px;border-top:1px solid var(--bdr)">'+
+        '<button onclick="document.getElementById(\'open-acc-modal\').remove();go(\'accidents\',q(\'[dp=accidents]\'))" style="width:100%;padding:10px;background:var(--bg2);color:var(--t2);border:1px solid var(--bdr2);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">ראה את כל התאונות ←</button>'+
+      '</div>'+
     '</div>';
   document.body.appendChild(ov);
 }
