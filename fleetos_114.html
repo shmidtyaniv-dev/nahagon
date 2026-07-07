@@ -10337,7 +10337,7 @@ function globalSearch(query){
     });
   }
 
-  const totalCount = (_kmRange?1:0) + svcKeys.length + mfrKeys.length + vehicleMatches.length + driverMatches.length + violMatches.length + accMatches.length + reminderMatches.length + eventMatches.length;
+  const totalCount = (_kmRange?1:0) + svcKeys.length + mfrKeys.length + vehicleMatches.length + driverMatches.length + violMatches.length + accMatches.length + reminderMatches.length + eventMatches.length + loanerMatches.length;
   if(!totalCount){
     html = '<div style="padding:28px 16px;text-align:center;color:var(--t3);font-size:13px"><div style="font-size:32px;margin-bottom:6px">🔍</div>לא נמצאו תוצאות עבור "'+query+'"</div>';
   }
