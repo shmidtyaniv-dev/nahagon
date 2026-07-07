@@ -13719,15 +13719,16 @@ function saveTask(){
   };
   let savedId;
   if(editId){Object.assign(tasks.find(t=>t.id===editId),data); savedId=editId;}
-  else{savedId = ++taskIdSeq; tasks.unshift({id:savedId,...data});}
+  else{savedId = Date.now(); tasks.unshift({id:savedId,...data});}
   closeModal('task-ov');
   if(typeof renderTasks==='function'){try{renderTasks();}catch(e){}}
   if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
   // update dashboard metric
   var _taskCount = tasks.filter(t=>getTaskStatus(t)!=='done'&&getTaskStatus(t)!=='cancelled').length;
   if(typeof updateStatCard==='function') updateStatCard('mv-tasks','mv-tasks-sub','mv-tasks-empty',null,_taskCount);
-  // Offer to send reminder message if task has scheduledDate + vehicle + is service/test
+  // sync to Firestore
   const savedTask = tasks.find(t=>t.id===savedId);
+  if(savedTask) try{ syncPersistItem('tasks', savedTask); }catch(e){}
   const isServiceTask = savedTask && (savedTask.type==='טיפולים ושירות' || savedTask.type==='טסט רכב');
   if(scheduledDateChanged && savedTask?.vehicleId && isServiceTask){
     setTimeout(function(){ openSendSchedMessageModal(savedId); }, 300);
@@ -13737,6 +13738,7 @@ function saveTask(){
 function deleteTask(tid){
   if(!confirm('למחוק את המשימה?')) return;
   tasks=tasks.filter(t=>t.id!==tid);
+  try{ syncRemoveItem('tasks', tid); }catch(e){}
   renderTasks();
   document.querySelector('[dp=tasks] .nb') && (document.querySelector('[dp=tasks] .nb').textContent=tasks.filter(t=>getTaskStatus(t)!=='done'&&getTaskStatus(t)!=='cancelled').length);
   showToast('המשימה נמחקה');
@@ -13764,6 +13766,7 @@ function quickDoneTask(tid){
   }
   t.status='done';
   t.completedAt = new Date().toISOString();
+  try{ syncPersistItem('tasks', t); }catch(e){}
   if(typeof renderTasks==='function'){try{renderTasks();}catch(e){}}
   if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
 }
@@ -13810,6 +13813,7 @@ function saveSchedDate(tid){
   t.scheduledDate = date;
   // Move status to inprogress if still open
   if(t.status==='open') t.status='inprogress';
+  try{ syncPersistItem('tasks', t); }catch(e){}
   document.getElementById('sched-modal').remove();
   if(typeof renderTasks==='function'){try{renderTasks();}catch(e){}}
   if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
@@ -13993,6 +13997,7 @@ function confirmTaskDone(tid){
   t.status = 'done';
   t.completedAt = new Date().toISOString();
   t.completedServiceType = serviceType;
+  try{ syncPersistItem('tasks', t); }catch(e){}
   document.getElementById('task-done-modal').remove();
   if(typeof renderTasks==='function'){try{renderTasks();}catch(e){}}
   if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
@@ -16026,6 +16031,31 @@ function startAuthedApp(){
           try{localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));}catch(e){}
         },
         function(){ if(typeof renderArchivePage==='function'){try{renderArchivePage();}catch(e){}} }
+      );
+      // Tasks — were in-memory only, now synced cross-device
+      registerSyncCollection('tasks',
+        function(){ return tasks; },
+        function(arr){
+          tasks.length=0;
+          (arr||[]).forEach(function(t){ tasks.push(t); });
+          // Update taskIdSeq to avoid collisions with legacy sequential IDs
+          tasks.forEach(function(t){ if(typeof t.id==='number' && t.id > 1e12) return; /* timestamp id — skip */ if(Number(t.id)>taskIdSeq) taskIdSeq=Number(t.id); });
+        },
+        function(){
+          if(typeof renderTasks==='function'){try{renderTasks();}catch(e){}}
+          var _tc=tasks.filter(function(t){return getTaskStatus(t)!=='done'&&getTaskStatus(t)!=='cancelled';}).length;
+          if(typeof updateStatCard==='function') updateStatCard('mv-tasks','mv-tasks-sub','mv-tasks-empty',null,_tc);
+        }
+      );
+      // Orders (הזמנות חדשות) — were localStorage-only, now synced cross-device
+      registerSyncCollection('vehicle_orders',
+        function(){ return _orders; },
+        function(arr){
+          _orders.length=0;
+          (arr||[]).forEach(function(o){ if(!o.id) o.id=Date.now(); _orders.push(o); });
+          try{localStorage.setItem('vehicle_orders',JSON.stringify(_orders));}catch(e){}
+        },
+        function(){ if(typeof renderOrders==='function'){try{renderOrders();}catch(e){}} }
       );
       // Start listeners on all registered collections
       if(typeof startAllSyncListeners==='function'){ startAllSyncListeners(); }
@@ -23674,7 +23704,8 @@ function ordersLoad(){
 
 function ordersSave(){
   try { localStorage.setItem('vehicle_orders',JSON.stringify(_orders)); } catch(e){}
-  try { syncPersistItem('vehicle_orders_list', {items:_orders}); } catch(e){}
+  // sync each order as separate Firestore doc
+  _orders.forEach(function(o){ try{ syncPersistItem('vehicle_orders', o); }catch(e){} });
 }
 
 function renderOrders(){
@@ -23840,7 +23871,8 @@ function ordersViewFile(idx){
 function ordersDelete(idx){
   if(!confirm('למחוק הזמנה זו?')) return;
   ordersLoad();
-  _orders.splice(idx,1);
+  var removed = _orders.splice(idx,1);
+  if(removed[0] && removed[0].id) try{ syncRemoveItem('vehicle_orders', removed[0].id); }catch(e){}
   ordersSave();
   renderOrders();
 }
