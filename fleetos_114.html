@@ -10279,12 +10279,19 @@ function mkmReset(){
 }
 // סגירה בלחיצה מחוץ לפאנל
 document.addEventListener('click', function(e){
-  var uWrap = document.getElementById('unified-filter-wrap');
   var uPanel = document.getElementById('unified-filter-panel');
   var uOverlay = document.getElementById('unified-filter-overlay');
-  if(uPanel && uPanel.style.display==='block' && uWrap && !uWrap.contains(e.target) && e.target !== uOverlay){
-    uPanel.style.display = 'none';
-    if(uOverlay) uOverlay.style.display = 'none';
+  if(uPanel && uPanel.style.display==='block'){
+    var uWrap = document.getElementById('unified-filter-wrap');
+    var mWrap = document.getElementById('mobile-unified-filter-wrap');
+    var insideDesktop = uWrap && uWrap.contains(e.target);
+    var insideMobile  = mWrap && mWrap.contains(e.target);
+    var insidePanel   = uPanel.contains(e.target);
+    var isOverlay     = e.target === uOverlay;
+    if(!insideDesktop && !insideMobile && !insidePanel && !isOverlay){
+      uPanel.style.display = 'none';
+      if(uOverlay) uOverlay.style.display = 'none';
+    }
   }
 });
 
