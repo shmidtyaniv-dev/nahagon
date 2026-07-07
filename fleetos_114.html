@@ -2382,10 +2382,30 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           פקיעת רישיון
         </button>
-        <div class="km-filter-panel" id="lic-filter-panel" style="width:320px">
-          <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px">סינון לפי חודש פקיעת רישיון רכב</div>
-          <div style="font-size:11px;color:var(--t3);margin-bottom:12px">בחר חודש אחד או יותר</div>
-          <div id="lic-months-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:14px"></div>
+        <div class="km-filter-panel" id="lic-filter-panel">
+          <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px">סינון לפי פקיעת רישיון רכב</div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:14px">גרור את הנקודות לבחירת טווח חודשים</div>
+          <!-- תצוגת מינ/מקס -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2px">
+            <div style="text-align:right">
+              <div style="font-size:10px;color:var(--t3);margin-bottom:2px">מ-</div>
+              <div id="lic-min-lbl" style="font-size:17px;font-weight:700;color:var(--gd)">—</div>
+            </div>
+            <div style="font-size:12px;color:var(--t3);padding-bottom:4px">—</div>
+            <div style="text-align:left">
+              <div style="font-size:10px;color:var(--t3);margin-bottom:2px">עד</div>
+              <div id="lic-max-lbl" style="font-size:17px;font-weight:700;color:var(--gd)">—</div>
+            </div>
+          </div>
+          <!-- סליידר כפול -->
+          <div class="km-dual-wrap">
+            <div class="km-track"></div>
+            <div class="km-fill" id="lic-fill"></div>
+            <input type="range" id="lic-min-slider" min="0" max="23" step="1" value="0" oninput="licRangeUpdate('min')">
+            <input type="range" id="lic-max-slider" min="0" max="23" step="1" value="11" oninput="licRangeUpdate('max')">
+          </div>
+          <!-- סימוני ציר -->
+          <div id="lic-ticks" style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:14px"></div>
           <div style="display:flex;gap:8px">
             <button onclick="licFilterReset()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
             <button onclick="licFilterApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">סנן</button>
@@ -9103,10 +9123,10 @@ function fil(){
     var km=raw?parseInt(String(raw).replace(/[^0-9]/g,''))||0:0;
     return km>=_vKmRange.min && km<=_vKmRange.max;
   });
-  if(_vLicMonths && _vLicMonths.length>0) r=r.filter(function(v){
+  if(_vLicRange) r=r.filter(function(v){
     if(!v.licenseExp) return false;
     var ym=v.licenseExp.substring(0,7); // "YYYY-MM"
-    return _vLicMonths.indexOf(ym)!==-1;
+    return ym>=_vLicRange.minYM && ym<=_vLicRange.maxYM;
   });
   var statusOrder={danger:0,warn:1,success:2};
   r.sort(function(a,b){var aS=getVehicleStatus(a).cls;var bS=getVehicleStatus(b).cls;return(statusOrder[aS]||2)-(statusOrder[bS]||2);});
@@ -10160,61 +10180,77 @@ function kmRangeReset(){
   if(typeof renderV==='function') renderV();
 }
 /* ── LICENSE EXPIRY MONTH FILTER ── */
-var _vLicMonths = []; // מערך חודשים שנבחרו: ["2026-07","2026-08",...]
+var _vLicRange = null; // {minYM:"2026-07", maxYM:"2026-12"}
+var _LIC_MONTHS = ['ינו׳','פבר׳','מרס','אפר׳','מאי','יוני','יולי','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'];
+var _LIC_MAX = 23; // 24 חודשים קדימה (0–23)
 
-var _HEB_MONTHS = ['ינו׳','פבר׳','מרס','אפר׳','מאי','יוני','יולי','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'];
-
-function _buildLicMonthsGrid(){
-  var grid = document.getElementById('lic-months-grid');
-  if(!grid) return;
+function _licOffsetToYM(offset){
   var now = new Date();
-  var html = '';
-  for(var i = 0; i < 18; i++){
-    var d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    var label = _HEB_MONTHS[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2);
-    var isSelected = _vLicMonths.indexOf(key) !== -1;
-    var isNow = (i === 0);
-    html += '<button onclick="licToggleMonth(\''+key+'\')" id="licm-'+key+'" style="'+
-      'padding:6px 4px;border-radius:7px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid;transition:all .15s;'+
-      (isSelected ? 'background:var(--gd);color:#fff;border-color:var(--gd)' :
-       isNow ? 'background:#fff8f0;color:#d97706;border-color:#d97706' :
-       'background:var(--bg);color:var(--t2);border-color:var(--bdr)')+'">'+
-      label+'</button>';
-  }
-  grid.innerHTML = html;
+  var d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function _licOffsetToLabel(offset){
+  var now = new Date();
+  var d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  return _LIC_MONTHS[d.getMonth()] + ' \'' + String(d.getFullYear()).slice(2);
 }
 
-function licToggleMonth(key){
-  var idx = _vLicMonths.indexOf(key);
-  if(idx === -1){ _vLicMonths.push(key); }
-  else { _vLicMonths.splice(idx, 1); }
-  _buildLicMonthsGrid();
+function licRangeUpdate(changed){
+  var minEl = document.getElementById('lic-min-slider');
+  var maxEl = document.getElementById('lic-max-slider');
+  var min = parseInt(minEl.value);
+  var max = parseInt(maxEl.value);
+  if(changed==='min' && min>=max){ min=max-1; if(min<0)min=0; minEl.value=min; }
+  if(changed==='max' && max<=min){ max=min+1; if(max>_LIC_MAX)max=_LIC_MAX; maxEl.value=max; }
+  document.getElementById('lic-min-lbl').textContent = _licOffsetToLabel(min);
+  document.getElementById('lic-max-lbl').textContent = _licOffsetToLabel(max);
+  var pctMin = (min / _LIC_MAX) * 100;
+  var pctMax = (max / _LIC_MAX) * 100;
+  var fill = document.getElementById('lic-fill');
+  if(fill){ fill.style.left=pctMin+'%'; fill.style.width=(pctMax-pctMin)+'%'; }
+  minEl.style.zIndex = min > _LIC_MAX*0.75 ? 5 : 3;
+  maxEl.style.zIndex = min > _LIC_MAX*0.75 ? 3 : 5;
+}
+
+function _buildLicTicks(){
+  var ticks = document.getElementById('lic-ticks');
+  if(!ticks) return;
+  // הצג 5 סימונים: 0, 6, 12, 18, 23
+  var marks = [0,6,12,18,23];
+  ticks.innerHTML = marks.map(function(i){
+    return '<span>'+_licOffsetToLabel(i)+'</span>';
+  }).join('');
 }
 
 function toggleLicFilterPanel(){
   var panel = document.getElementById('lic-filter-panel');
   var btn   = document.getElementById('lic-filter-btn');
   var open  = panel.style.display === 'block';
-  if(!open) _buildLicMonthsGrid();
   panel.style.display = open ? 'none' : 'block';
   btn.classList.toggle('active', !open);
-  // סגור km panel אם פתוח
+  if(!open){
+    licRangeUpdate('max');
+    _buildLicTicks();
+  }
   var kp = document.getElementById('km-filter-panel');
-  if(kp && kp.style.display === 'block'){ kp.style.display='none'; document.getElementById('km-filter-btn').classList.remove('active'); }
+  if(kp && kp.style.display==='block'){ kp.style.display='none'; document.getElementById('km-filter-btn').classList.remove('active'); }
 }
 
 function licFilterApply(){
+  var min = parseInt(document.getElementById('lic-min-slider').value);
+  var max = parseInt(document.getElementById('lic-max-slider').value);
+  _vLicRange = { minYM: _licOffsetToYM(min), maxYM: _licOffsetToYM(max) };
   document.getElementById('lic-filter-panel').style.display = 'none';
-  var btn = document.getElementById('lic-filter-btn');
-  btn.classList.toggle('active', _vLicMonths.length > 0);
-  // עבור לעמוד הרכבים
+  document.getElementById('lic-filter-btn').classList.add('active');
   if(typeof go==='function') go('vehicles', document.querySelector('[dp=vehicles]'));
   if(typeof renderV==='function') renderV();
 }
 
 function licFilterReset(){
-  _vLicMonths = [];
+  _vLicRange = null;
+  document.getElementById('lic-min-slider').value = 0;
+  document.getElementById('lic-max-slider').value = 11;
+  licRangeUpdate('max');
   document.getElementById('lic-filter-panel').style.display = 'none';
   document.getElementById('lic-filter-btn').classList.remove('active');
   if(typeof renderV==='function') renderV();
@@ -10287,7 +10323,7 @@ document.addEventListener('click', function(e){
   var licPanel = document.getElementById('lic-filter-panel');
   if(licPanel && licPanel.style.display==='block' && licWrap && !licWrap.contains(e.target)){
     licPanel.style.display = 'none';
-    if(!_vLicMonths || _vLicMonths.length===0) document.getElementById('lic-filter-btn')?.classList.remove('active');
+    if(!_vLicRange) document.getElementById('lic-filter-btn')?.classList.remove('active');
   }
 });
 function switchTab(f,el){vFilter=f;document.querySelectorAll('#page-vehicles .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderV()}
