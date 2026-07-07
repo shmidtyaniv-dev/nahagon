@@ -3761,8 +3761,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div class="sched-field">
               <span class="sched-field-label">שעת איסוף הרכב</span>
               <div style="display:flex;align-items:center;gap:2px;direction:ltr">
-                <input type="number" id="sched-appointment-hour" min="6" max="20" value="9">
-                <span class="sched-field-unit" style="min-width:auto">:00</span>
+                <input type="time" id="sched-appointment-time" value="09:00" style="font-size:15px;border:1px solid var(--border);border-radius:8px;padding:4px 8px;background:var(--bg);color:var(--text)">
               </div>
             </div>
             <div class="sched-field">
@@ -20696,8 +20695,8 @@ function saveSchedulingSettings(){
   // שדות חדשים
   var scanEl=document.getElementById('sched-scan-range');
   if(scanEl) s.schedScanRange=parseInt(scanEl.value)||30;
-  var hourEl=document.getElementById('sched-appointment-hour');
-  if(hourEl) s.schedAppointmentHour=parseInt(hourEl.value)||9;
+  var hourEl=document.getElementById('sched-appointment-time');
+  if(hourEl&&hourEl.value) s.schedAppointmentTime=hourEl.value; else s.schedAppointmentTime=s.schedAppointmentTime||'09:00';
   var drvRemEl=document.getElementById('sched-driver-reminder');
   if(drvRemEl) s.schedDriverReminder=parseInt(drvRemEl.value)||5;
   var slaEl=document.getElementById('sched-approval-sla');
@@ -20714,7 +20713,7 @@ function saveSchedulingSettings(){
       reminderIntervalDays:s.schedDriverReminder||5,
       maxTreatmentsPerDay:s.schedDailyCapacity||2,
       openDays:s.schedOpenDays||[0,1,2,3,4],
-      appointmentHour:s.schedAppointmentHour||9,
+      appointmentTime:s.schedAppointmentTime||'09:00',
       approvalSlaDays:s.schedApprovalSla||3,
       postTreatmentReminderDays:s.schedPostReminder||5
     },{merge:true}).catch(function(e){console.error('שגיאה בשמירת הגדרות טיפולים:',e);});
@@ -20742,7 +20741,7 @@ function initSchedulingSettings(){
     var ts=TREATMENT_STATE.settings;
     var el;
     el=document.getElementById('sched-scan-range');if(el)el.value=ts.scanRangeDays||30;
-    el=document.getElementById('sched-appointment-hour');if(el)el.value=ts.appointmentHour||9;
+    el=document.getElementById('sched-appointment-time');if(el)el.value=ts.appointmentTime||(String(ts.appointmentHour||9).padStart(2,'0')+':00');
     el=document.getElementById('sched-driver-reminder');if(el)el.value=ts.reminderIntervalDays||5;
     el=document.getElementById('sched-approval-sla');if(el)el.value=ts.approvalSlaDays||3;
     el=document.getElementById('sched-post-reminder');if(el)el.value=ts.postTreatmentReminderDays||5;
@@ -20752,7 +20751,7 @@ function initSchedulingSettings(){
     var ls=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
     var el;
     el=document.getElementById('sched-scan-range');if(el)el.value=ls.schedScanRange||30;
-    el=document.getElementById('sched-appointment-hour');if(el)el.value=ls.schedAppointmentHour||9;
+    el=document.getElementById('sched-appointment-time');if(el)el.value=ls.schedAppointmentTime||'09:00';
     el=document.getElementById('sched-driver-reminder');if(el)el.value=ls.schedDriverReminder||5;
     el=document.getElementById('sched-approval-sla');if(el)el.value=ls.schedApprovalSla||3;
     el=document.getElementById('sched-post-reminder');if(el)el.value=ls.schedPostReminder||5;
@@ -21707,7 +21706,7 @@ var TREATMENT_SETTINGS_DEFAULTS = {
   reminderIntervalDays: 5,
   maxTreatmentsPerDay: 2,
   openDays: [0, 1, 2, 3, 4],
-  appointmentHour: 9,
+  appointmentTime: '09:00',
   approvalSlaDays: 3,
   postTreatmentReminderDays: 5,
   scanTime: '06:00'
@@ -22216,7 +22215,6 @@ function renderPendingRow(t) {
 
   var avatarClass = days >= 3 ? 'trt-driver-avatar-red' : (days === 2 ? 'trt-driver-avatar-amber' : 'trt-driver-avatar-green');
   var noteTag = t.driverNote ? '<span class="trt-driver-tag trt-driver-tag-note">📝 הערה</span>' : '';
-  var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
 
   return '<div class="trt-driver-row ' + urgencyClass + '" data-treatment-id="' + t.id + '" onclick="openVehicleCard(\'' + t.vehicleId + '\')">'
     + '<div class="trt-driver-avatar ' + avatarClass + '">' + getInitials(t.driverName) + '</div>'
@@ -22227,7 +22225,7 @@ function renderPendingRow(t) {
     + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + '</span>'
     + noteTag
     + '</div>'
-    + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · בחר: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + hour + ':00</div>'
+    + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · בחר: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
     + '<button class="trt-btn-action trt-btn-action-danger" onclick="rejectDate(\'' + t.id + '\')">דחה</button>'
@@ -22365,13 +22363,12 @@ function renderScheduledRow(t) {
   var dateBoxUrgent = isWithinWeek ? 'urgent' : '';
   var noteTag = t.driverNote ? '<span class="trt-driver-tag trt-driver-tag-note">📝 הערה</span>' : '';
   var rowClass = isWithinWeek ? 'trt-scheduled-row' : 'trt-scheduled-row future';
-  var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
 
   return '<div class="trt-driver-row ' + rowClass + '" onclick="openVehicleCard(\'' + t.vehicleId + '\')">'
     + '<div class="trt-driver-date-box ' + dateBoxUrgent + '">'
     + '<span class="trt-driver-date-day ' + dateBoxUrgent + '">' + getHebrewDayName(t.selectedDate) + '</span>'
     + '<span class="trt-driver-date-num ' + dateBoxUrgent + '">' + formatTreatmentDateShort(t.selectedDate) + '</span>'
-    + '<span class="trt-driver-date-time ' + dateBoxUrgent + '">' + hour + ':00</span>'
+    + '<span class="trt-driver-date-time ' + dateBoxUrgent + '">' + getAppointmentTime() + '</span>'
     + '</div>'
     + '<div class="trt-driver-info">'
     + '<div class="trt-driver-info-row">'
@@ -22427,11 +22424,10 @@ function openApproveModal(treatmentId) {
   TREATMENT_STATE.currentApproveContext = t;
   TREATMENT_STATE.selectedChannel = 'whatsapp';
 
-  var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
   var el;
   el = document.getElementById('approve-driver-name'); if (el) el.textContent = t.driverName;
   el = document.getElementById('approve-selected-date');
-  if (el) el.textContent = getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + hour + ':00';
+  if (el) el.textContent = getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + getAppointmentTime();
   el = document.getElementById('approve-vehicle'); if (el) el.textContent = t.licensePlate + ' · ' + t.vehicleModel;
   el = document.getElementById('approve-type'); if (el) el.textContent = t.treatmentType || (t.kind === 'treatment' ? 'טיפול שנתי' : 'טסט רישוי');
 
@@ -22480,8 +22476,6 @@ function togglePersonalNote() {
 function updateApprovePreview() {
   var t = TREATMENT_STATE.currentApproveContext;
   if (!t) return;
-  var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
-  var dateStr = getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + hour + ':00';
   var el = document.getElementById('approve-message-text'); if (el) el.value = buildTrtMessage('approval', t);
 }
 
@@ -22551,7 +22545,7 @@ async function addTreatmentToCalendar(treatment) {
       title: (treatment.kind === 'treatment' ? 'טיפול' : 'טסט') + ' - ' + treatment.driverName,
       vehicleId: parseInt(treatment.vehicleId) || null,
       date: localDateStr(parseTreatmentDate(treatment.selectedDate)),
-      time: String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0') + ':00',
+      time: getAppointmentTime(),
       desc: treatment.licensePlate + ' · ' + treatment.vehicleModel,
       status: 'planned',
       treatmentId: treatment.id,
@@ -23031,10 +23025,15 @@ function getTrtTemplates() {
   };
 }
 
+function getAppointmentTime() {
+  var s = TREATMENT_STATE.settings;
+  if (s.appointmentTime) return s.appointmentTime;
+  return String(s.appointmentHour || 9).padStart(2, '0') + ':00';
+}
+
 function buildTrtMessage(templateKey, t) {
   var tpl = getTrtTemplates()[templateKey];
-  var hour = String(TREATMENT_STATE.settings.appointmentHour).padStart(2, '0');
-  var dateStr = t.selectedDate ? getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + hour + ':00' : '';
+  var dateStr = t.selectedDate ? getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + getAppointmentTime() : '';
   var link = window.location.origin + '/driver-link.html?id=' + t.id;
   return tpl
     .replace(/\{נהג\}/g, (t.driverName || '').split(' ')[0])
