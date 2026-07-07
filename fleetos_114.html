@@ -9939,14 +9939,14 @@ function showOpenAccidentsModal(){
         var dateStr=a.date?new Date(a.date).toLocaleDateString('he-IL'):'';
         var descShort=a.desc?_esc(a.desc.substring(0,45)):'';
         var clickAttr=vid?'onclick="document.getElementById(\'open-acc-modal\').remove();openDet('+vid+')" style="cursor:pointer" onmouseover="this.style.background=\'#fef2f2\'" onmouseout="this.style.background=\'\'"':'';
-        return '<div '+clickAttr+' style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bdr)">'+
-          '<div style="flex:1;min-width:0">'+
-            '<div style="font-size:14px;font-weight:600;color:var(--t1)">'+_esc(dn||'נהג לא ידוע')+'</div>'+
-            '<div style="font-size:12px;color:var(--t3);margin-top:2px">'+
+        return '<div '+clickAttr+' style="display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--bdr);overflow:hidden">'+
+          '<div style="flex:1;min-width:0;overflow:hidden">'+
+            '<div style="font-size:14px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_esc(dn||'נהג לא ידוע')+'</div>'+
+            '<div style="font-size:12px;color:var(--t3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+
               (plate?_esc(plate):'')+(dateStr?' · '+dateStr:'')+(descShort?' · '+descShort:'')+
             '</div>'+
           '</div>'+
-          '<div style="flex-shrink:0">'+statusHtml+'</div>'+
+          '<div style="flex-shrink:0;max-width:120px">'+statusHtml+'</div>'+
         '</div>';
       }).join('');
   ov.innerHTML=
