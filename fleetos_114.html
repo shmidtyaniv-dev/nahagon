@@ -10270,8 +10270,11 @@ function globalSearch(query){
   var loanerMatches = [];
   var _seenLoanerVids = new Set();
   (hoForms2||JSON.parse(localStorage.getItem('hoForms2')||'[]')).forEach(function(f){
-    if(!(f.altPlate||'').replace(/[^0-9]/g,'').includes(q.replace(/[^0-9]/g,'')) && !(f.altPlate||'').toLowerCase().includes(q)) return;
     if(!q || !f.altPlate) return;
+    var qDigits=q.replace(/[^0-9]/g,'');
+    var plateMatch=(qDigits.length>=2 && (f.altPlate||'').replace(/[^0-9]/g,'').includes(qDigits));
+    var textMatch=(f.altPlate||'').toLowerCase().includes(q);
+    if(!plateMatch && !textMatch) return;
     var v = (vehicles||[]).find(function(x){ return x.id===f.vehicleId; });
     if(!v || _seenLoanerVids.has(v.id+'_'+f.altPlate)) return;
     _seenLoanerVids.add(v.id+'_'+f.altPlate);
