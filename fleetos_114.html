@@ -11643,36 +11643,28 @@ function checkKmSelfReport(){
     if(drop && inp && !inp.contains(e.target) && !drop.contains(e.target)) drop.style.display='none';
   });
   // טען רשימת נהגים (anonymous auth)
-  function _loadDrivers(){
-    if(!db) return;
-    // קריאה מ-publicDrivers (ללא צורך ב-auth) — אם לא קיים, נסה vehicles
-    db.collection('publicDrivers').get().then(function(snap){
-      _kmrDriversList=[];
-      snap.forEach(function(doc){
-        var d=doc.data();
-        if(d.name) _kmrDriversList.push({name:d.name, plate:d.plate||'', id:doc.id});
-      });
-      // fallback: אם אין publicDrivers, נסה vehicles עם auth אנונימי
-      if(!_kmrDriversList.length) _loadDriversFallback();
-    }).catch(function(){ _loadDriversFallback(); });
-  }
-  function _loadDriversFallback(){
-    if(!db) return;
-    db.collection('vehicles').get().then(function(snap){
-      _kmrDriversList=[];
-      snap.forEach(function(doc){
-        var d=doc.data();
-        var name=(d.driverName||'').trim();
-        var plate=(d.plate||'').trim();
-        if(name) _kmrDriversList.push({name:name, plate:plate, id:doc.id});
-      });
-    }).catch(function(){});
-  }
-  if(auth && !auth.currentUser){
-    auth.signInAnonymously().then(_loadDrivers).catch(_loadDrivers);
-  } else {
-    _loadDrivers();
-  }
+  // ניסיון 1: publicDrivers — ללא auth
+  db.collection('publicDrivers').get().then(function(snap){
+    _kmrDriversList=[];
+    snap.forEach(function(doc){
+      var d=doc.data();
+      if(d.name) _kmrDriversList.push({name:d.name, plate:d.plate||'', id:doc.id});
+    });
+    // ניסיון 2: אם publicDrivers ריק — נסה vehicles (דורש auth)
+    if(!_kmrDriversList.length){
+      var tryWithAuth=function(){
+        db.collection('vehicles').get().then(function(snap2){
+          snap2.forEach(function(doc){
+            var d=doc.data();
+            var name=(d.driverName||'').trim();
+            if(name) _kmrDriversList.push({name:name, plate:d.plate||'', id:doc.id});
+          });
+        }).catch(function(){});
+      };
+      if(auth && !auth.currentUser){ auth.signInAnonymously().then(tryWithAuth).catch(function(){}); }
+      else tryWithAuth();
+    }
+  }).catch(function(){});
   setTimeout(function(){ var n=document.getElementById('kmsr-name'); if(n)n.focus(); },300);
   return true;
 }
@@ -11838,6 +11830,12 @@ function _updateKmReportsBadge(){
 function renderKmReports(){
   if(!db){ startKmReportsListener(); return; }
   startKmReportsListener();
+  // נסה שיוך אוטומטי לדיווחים ממתינים
+  if(vehicles.length){
+    _kmReportsCache.filter(function(r){ return r.status==='pending'; }).forEach(function(r){
+      _autoMatchKmReport(r);
+    });
+  }
   // קישור
   var link=location.origin+location.pathname+'?km';
   var linkEl=document.getElementById('kmr-link-display');
@@ -11860,20 +11858,22 @@ function renderKmReports(){
     var date=r.submittedAt ? new Date(r.submittedAt).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
     var matchInfo=r.matchedPlate ? ' · <span style="color:var(--gd)">'+r.matchedPlate+'</span>' : '';
     var plateInfo=r.vehicleNum ? ' · רכב: '+r.vehicleNum : '';
-    html+='<div class="kmr-row">'+
+    var kmStr=r.km ? '<strong>'+Number(r.km).toLocaleString('he-IL')+' ק"מ</strong>' : '';
+    html+='<div class="kmr-row" id="kmr-row-'+r.id+'">'+
       '<div class="kmr-row-info">'+
         '<div class="kmr-row-name">'+_esc(r.driverName||'')+'</div>'+
-        '<div class="kmr-row-meta">'+
-          (r.km ? '<strong>'+r.km.toLocaleString('he-IL')+' ק"מ</strong>' : '')+
-          plateInfo+matchInfo+
-          (date ? ' · '+date : '')+
+        '<div class="kmr-row-meta">'+kmStr+plateInfo+matchInfo+(date?' · '+date:'')+
         '</div>'+
       '</div>'+
       '<span class="kmr-badge '+badgeCls+'">'+badgeTxt+'</span>'+
-      (r.status!=='matched' ? '<button onclick="kmrManualMatch(\''+r.id+'\')" style="padding:6px 10px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);font-size:12px;font-family:inherit;cursor:pointer;color:var(--t2);white-space:nowrap">שייך ידנית</button>' : '')+
+      (r.status!=='matched'?'<button data-rid="'+r.id+'" class="kmr-manual-btn" style="padding:6px 10px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);font-size:12px;font-family:inherit;cursor:pointer;color:var(--t2);white-space:nowrap">שייך ידנית</button>':'')+
     '</div>';
   });
   list.innerHTML=html;
+  // אירועי לחיצה בלי inline onclick
+  list.querySelectorAll('.kmr-manual-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){ kmrManualMatch(btn.dataset.rid); });
+  });
 }
 
 function copyKmLink(){
@@ -11883,28 +11883,31 @@ function copyKmLink(){
 }
 
 function kmrManualMatch(reportId){
-  // בונה modal לבחירת רכב מהרשימה
   var existing=document.getElementById('kmr-match-modal');
   if(existing) existing.remove();
   var report=_kmReportsCache.find(function(r){return r.id===reportId;});
   if(!report) return;
+  var kmStr=report.km ? Number(report.km).toLocaleString('he-IL')+' ק"מ' : '';
   var opts=vehicles.map(function(v,i){
     return '<option value="'+i+'">'+(v.plate||'ללא לוחית')+' — '+(v.driverName||'ללא נהג')+'</option>';
   }).join('');
-  var modal=document.createElement('div');
-  modal.id='kmr-match-modal';
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center;direction:rtl';
-  modal.innerHTML=
-    '<div style="background:var(--card);border-radius:16px;padding:24px;width:340px;max-width:90vw">'+
-      '<div style="font-size:16px;font-weight:700;margin-bottom:4px">שיוך ידני</div>'+
-      '<div style="font-size:13px;color:var(--t3);margin-bottom:16px">'+_esc(report.driverName||'')+' — '+(report.km||'').toLocaleString ? (report.km||0).toLocaleString('he-IL')+' ק"מ' : ''+'</div>'+
-      '<select id="kmr-match-sel" style="width:100%;padding:10px;border:1px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:16px">'+opts+'</select>'+
-      '<div style="display:flex;gap:8px">'+
-        '<button onclick="document.getElementById(\'kmr-match-modal\').remove()" style="flex:1;padding:10px;border:1px solid var(--bdr2);border-radius:8px;background:var(--bg);font-family:inherit;cursor:pointer">ביטול</button>'+
-        '<button onclick="kmrConfirmMatch(\''+reportId+'\')" style="flex:2;padding:10px;border:none;border-radius:8px;background:var(--gd);color:#fff;font-weight:600;font-family:inherit;cursor:pointer">אשר שיוך</button>'+
-      '</div>'+
+  var ov=document.createElement('div');
+  ov.id='kmr-match-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center;direction:rtl;padding:16px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#fff;border-radius:16px;padding:24px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3)';
+  card.innerHTML=
+    '<div style="font-size:16px;font-weight:700;color:#111;margin-bottom:4px">שיוך ידני</div>'+
+    '<div style="font-size:13px;color:#666;margin-bottom:16px">'+_esc(report.driverName||'')+(kmStr?' — '+kmStr:'')+'</div>'+
+    '<select id="kmr-match-sel" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:16px;direction:rtl">'+opts+'</select>'+
+    '<div style="display:flex;gap:8px">'+
+      '<button id="kmr-cancel-btn" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;background:#f9f9f9;font-family:inherit;cursor:pointer;font-size:14px">ביטול</button>'+
+      '<button id="kmr-confirm-btn" style="flex:2;padding:10px;border:none;border-radius:8px;background:#1D9E75;color:#fff;font-weight:600;font-family:inherit;cursor:pointer;font-size:14px">אשר שיוך</button>'+
     '</div>';
-  document.body.appendChild(modal);
+  ov.appendChild(card);
+  document.body.appendChild(ov);
+  card.querySelector('#kmr-cancel-btn').addEventListener('click',function(){ ov.remove(); });
+  card.querySelector('#kmr-confirm-btn').addEventListener('click',function(){ kmrConfirmMatch(reportId); ov.remove(); });
 }
 
 function kmrConfirmMatch(reportId){
@@ -11915,8 +11918,6 @@ function kmrConfirmMatch(reportId){
   var report=_kmReportsCache.find(function(r){return r.id===reportId;});
   if(!report) return;
   _applyKmReportToVehicle(reportId, v, report.km);
-  var modal=document.getElementById('kmr-match-modal');
-  if(modal) modal.remove();
 }
 
 function _applyKmReportToVehicle(reportId, vehicle, km){
