@@ -6868,8 +6868,8 @@ function sendKmRequest(vid){
     '</div>';
   document.body.appendChild(m);
 }
-function kmReqSendWA(){window.open(_kmReqData.waUrl,'_blank');document.getElementById('km-req-modal')?.remove();}
-function kmReqSendEmail(){window.open(_kmReqData.mailUrl,'_blank');document.getElementById('km-req-modal')?.remove();}
+function kmReqSendWA(){document.getElementById('km-req-modal')?.remove();location.href=_kmReqData.waUrl;}
+function kmReqSendEmail(){document.getElementById('km-req-modal')?.remove();location.href=_kmReqData.mailUrl;}
 function kmReqCopy(){navigator.clipboard.writeText(_kmReqData.copyUrl);showToast('✓ קישור הועתק');document.getElementById('km-req-modal')?.remove();}
 
 function sendQuickMsg(vid,tpl){
@@ -12159,7 +12159,7 @@ function openShareKmLinkModal(){
         'היי,\nנא לעדכן ק"מ נוכחי לרכב שברשותך.\n<a href="'+link+'" style="color:#1D9E75;font-weight:600">לעדכון ק"מ, לחץ כאן</a>'+
       '</div>'+
       '<div style="display:flex;gap:10px;margin-bottom:10px">'+
-        '<button onclick="window.open(\''+waUrl+'\',\'_blank\');document.getElementById(\'share-km-modal\').remove()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">💬</span> וואצאפ</button>'+
+        '<button onclick="document.getElementById(\'share-km-modal\').remove();location.href=\''+waUrl.replace(/'/g,"\\'")+'\';" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">💬</span> וואצאפ</button>'+
       '</div>'+
       '<button onclick="navigator.clipboard?navigator.clipboard.writeText(\''+link.replace(/'/g,"\\'")+'\'): (function(){var t=document.createElement(\'textarea\');t.value=\''+link.replace(/'/g,"\\'")+'\';document.body.appendChild(t);t.select();document.execCommand(\'copy\');document.body.removeChild(t);})();showToast(\'✓ קישור הועתק\');document.getElementById(\'share-km-modal\').remove()" style="width:100%;background:#f5f5f5;border:1px solid #ddd;border-radius:10px;padding:11px;font-size:13px;cursor:pointer;font-family:inherit;color:#555;display:flex;align-items:center;justify-content:center;gap:6px">📋 העתק קישור</button>'+
     '</div>';
