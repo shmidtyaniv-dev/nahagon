@@ -13706,7 +13706,10 @@ function openEditVehicle(vid){
 function saveEditVehicle(){
   const vid=_currentVid;
   const v=vehicles.find(x=>x.id===vid);if(!v)return;
-  v.plate=id('ev-plate').value.trim()||v.plate;
+  var newPlateVal=id('ev-plate').value.trim();
+  if(newPlateVal) v.plate=newPlateVal;
+  // אם הוזנה לוחית חדשה ואמיתית - נקה סטטוס "ממתין לרכב"
+  if(newPlateVal && newPlateVal!=='ממתין לעדכון רכב חדש' && v.status==='waiting_vehicle') v.status='';
   v.code=id('ev-code').value.trim();
   v.make=id('ev-make').value.trim();
   v.model=id('ev-model').value.trim();
