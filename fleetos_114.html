@@ -9327,7 +9327,12 @@ function renderDash(){
       var dn=v.driverName||(v.driver&&v.driver.name)||'';
       if(!dn) return false; // רק רכבים עם נהג
       var last=v.lastKmUpdate||'';
-      return !last || last < cutoffStr;
+      if(last) return last < cutoffStr; // עדכן בעבר — בדוק אם מעל 30 יום
+      // מעולם לא עדכן — בדוק תאריך כניסה למערכת (מסירה או id)
+      var entryStr=v.delivery||'';
+      if(!entryStr && v.id){ try{ entryStr=new Date(Number(v.id)).toISOString().substring(0,10); }catch(e){} }
+      if(!entryStr) return true; // אין מידע → תמיד ספור
+      return entryStr < cutoffStr; // ספור רק אם עברו 30+ יום מהכניסה
     });
     var cnt=noKm.length;
     updateStatCard('mv-no-km','mv-no-km-sub','mv-no-km-empty','mc-no-km',cnt);
@@ -9866,7 +9871,12 @@ function showNoKmUpdateModal(){
     var dn=v.driverName||(v.driver&&v.driver.name)||'';
     if(!dn) return false;
     var last=v.lastKmUpdate||'';
-    return !last || last < cutoffStr;
+    if(last) return last < cutoffStr;
+    // מעולם לא עדכן — בדוק תאריך כניסה למערכת
+    var entryStr=v.delivery||'';
+    if(!entryStr && v.id){ try{ entryStr=new Date(Number(v.id)).toISOString().substring(0,10); }catch(e){} }
+    if(!entryStr) return true;
+    return entryStr < cutoffStr;
   }).sort(function(a,b){
     var an=a.driverName||(a.driver&&a.driver.name)||'';
     var bn=b.driverName||(b.driver&&b.driver.name)||'';
