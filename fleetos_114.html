@@ -916,6 +916,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 /* Responsive updates */
 @media(max-width:1200px){.metrics{grid-template-columns:repeat(2,1fr)!important}}
 @media(max-width:900px){.v-table-row.header{display:none}}
+.mob-svc-label{display:none}
+@media(max-width:900px){.mob-svc-label{display:inline;font-size:11px;color:var(--t3)}}
 
 /* === Mobile: כרטיס רכב מעוצב מחדש ===
    חשוב: השתמשנו ב-nth-child כי החלוקה ל-divs קבועה ב-JS (dRow/fRow).
@@ -9198,7 +9200,7 @@ function fRow(v){
     +'<div>'+renderPlate(v.plate)+'</div>'
     +'<div class="muted">'+v.make+' '+v.model+'</div>'
     +'<div>'+st.html+'</div>'
-    +'<div>'+nextSvcCell(v)+'</div>'
+    +'<div><span class="mob-svc-label">טיפול הבא: </span>'+nextSvcCell(v)+'</div>'
     +'<div class="docs-cell">'+docsIcon(v.id)+'</div>'
     +'</div>';
 }
