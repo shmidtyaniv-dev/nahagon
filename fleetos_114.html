@@ -3807,40 +3807,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
       </div>
 
-      <!-- EmailJS -->
-      <div class="settings-section">
-        <div class="settings-section-header">
-          <div class="settings-section-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          </div>
-          <div class="settings-section-title-wrapper">
-            <div class="settings-section-title">שליחת מייל אוטומטית (EmailJS)</div>
-            <div class="settings-section-desc">שלח תזכורות מייל אוטומטית בלי לפתוח תוכנת מייל. עד 200 מיילים/חודש בחינם.</div>
-          </div>
-        </div>
-        <div class="settings-section-body">
-          <div class="settings-form-field">
-            <label>Public Key (מפתח ציבורי)</label>
-            <input id="emailjs-public-key" type="text" dir="ltr" placeholder="YLyGgocolnxCkPllb" style="font-family:monospace">
-          </div>
-          <div class="settings-form-field">
-            <label>Service ID (מזהה שירות)</label>
-            <input id="emailjs-service-id" type="text" dir="ltr" placeholder="service_xxxxxxx" style="font-family:monospace">
-          </div>
-          <div class="settings-form-field">
-            <label>Template ID (מזהה תבנית)</label>
-            <input id="emailjs-template-id" type="text" dir="ltr" placeholder="template_xxxxxxx" style="font-family:monospace">
-            <span class="settings-form-field-hint"><a href="https://dashboard.emailjs.com/" target="_blank" style="color:#185FA5">לוח הבקרה של EmailJS →</a></span>
-          </div>
-
-          <div id="emailjs-status" style="margin-top:8px;min-height:14px;font-size:11px"></div>
-
-          <div class="settings-btn-row">
-            <button class="settings-btn settings-btn-secondary" onclick="testEmailJS()">שלח מייל ניסיון</button>
-            <button class="settings-btn settings-btn-primary" onclick="saveEmailJSSettings()">שמור</button>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- TAB 5: EXPORT -->
@@ -5594,7 +5560,6 @@ html,body{overflow-x:hidden!important;max-width:100vw!important}
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" defer></script>
 <!-- SheetJS for Excel export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
 
 <script>
 // ── Firebase Initialization ──
@@ -6229,82 +6194,6 @@ function removeSubscriptionType(idx){
 }
 
 
-// ── EmailJS ──
-function isEmailJSConfigured(){
-  var s=getSettings();
-  return !!(s.emailjsPublicKey && s.emailjsServiceId && s.emailjsTemplateId);
-}
-
-function saveEmailJSSettings(){
-  var pk=document.getElementById('emailjs-public-key');
-  var si=document.getElementById('emailjs-service-id');
-  var ti=document.getElementById('emailjs-template-id');
-  if(!pk||!si||!ti)return;
-  var pkv=pk.value.trim(), siv=si.value.trim(), tiv=ti.value.trim();
-  try{
-    // Clean old logo data from fleetSettings to free space
-    var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-    delete s.moreB64; delete s.colB64;
-    s.emailjsPublicKey=pkv;
-    s.emailjsServiceId=siv;
-    s.emailjsTemplateId=tiv;
-    localStorage.setItem('fleetSettings',JSON.stringify(s));
-  }catch(e){
-    alert('שגיאה בשמירה: '+e.message);
-    return;
-  }
-  var st=document.getElementById('emailjs-status');
-  if(st) st.innerHTML=pkv?'<span style="color:#16a34a">✓ הגדרות נשמרו</span>':'<span style="color:var(--t3)">לא מוגדר</span>';
-  showToast('✓ הגדרות EmailJS נשמרו');
-}
-
-function loadEmailJSSettings(){
-  var s=getSettings();
-  var pk=document.getElementById('emailjs-public-key');if(pk)pk.value=s.emailjsPublicKey||'';
-  var si=document.getElementById('emailjs-service-id');if(si)si.value=s.emailjsServiceId||'';
-  var ti=document.getElementById('emailjs-template-id');if(ti)ti.value=s.emailjsTemplateId||'';
-  var st=document.getElementById('emailjs-status');
-  if(st) st.innerHTML=s.emailjsPublicKey?'<span style="color:#16a34a">✓ מוגדר</span>':'<span style="color:var(--t3)">לא מוגדר - מיילים יישלחו דרך תוכנת המייל</span>';
-}
-
-function sendViaEmailJS(toEmail, subject, bodyText){
-  return new Promise(function(resolve, reject){
-    var s=getSettings();
-    if(!s.emailjsPublicKey||!s.emailjsServiceId||!s.emailjsTemplateId){
-      reject(new Error('EmailJS not configured'));
-      return;
-    }
-    if(typeof emailjs==='undefined'){
-      reject(new Error('EmailJS SDK not loaded'));
-      return;
-    }
-    emailjs.send(s.emailjsServiceId, s.emailjsTemplateId, {
-      to_email: toEmail,
-      subject: subject,
-      message: bodyText,
-      from_name: s.repName||'מרכז הרכב של מור בית השקעות'
-    }, s.emailjsPublicKey).then(resolve).catch(function(err){
-      var msg = (err && err.text) || (err && err.message) || JSON.stringify(err) || 'שגיאה לא ידועה';
-      reject(new Error(msg));
-    });
-  });
-}
-
-function testEmailJS(){
-  var s=getSettings();
-  var to=s.repEmail||'';
-  if(!to){showToast('הגדר קודם כתובת מייל בפרופיל');return;}
-  if(!isEmailJSConfigured()){showToast('מלא את כל שדות EmailJS');return;}
-  var st=document.getElementById('emailjs-status');
-  if(st) st.innerHTML='<span style="color:var(--t2)">שולח מייל ניסיון...</span>';
-  sendViaEmailJS(to,'מייל ניסיון - מרכז הרכב של מור','זהו מייל ניסיון מהמערכת.\nאם קיבלת אותו - EmailJS מוגדר ועובד!').then(function(){
-    if(st) st.innerHTML='<span style="color:#16a34a">✓ מייל ניסיון נשלח בהצלחה ל-'+to+'</span>';
-    showToast('✓ מייל ניסיון נשלח!');
-  }).catch(function(e){
-    if(st) st.innerHTML='<span style="color:#dc2626">✗ שגיאה: '+e.message+'</span>';
-    showToast('שגיאה בשליחה: '+e.message);
-  });
-}
 
 // Toggle sidebar user menu
 function toggleSbUserMenu(){
@@ -6457,7 +6346,6 @@ function initSettingsPage(){
   if(typeof updateRepPreview==='function') try{updateRepPreview();}catch(e){}
   if(typeof initSchedulingSettings==='function') initSchedulingSettings();
   if(typeof initRequestTemplates==='function') initRequestTemplates();
-  if(typeof loadEmailJSSettings==='function') loadEmailJSSettings();
 }
 
 function applyLogoSettings(){
@@ -19102,129 +18990,10 @@ function checkPendingReminders(){
     return dt <= now;
   });
 
-  // 3. Service/test reminders - vehicles with upcoming service/test within threshold
-  var pendingSvc=[];
-  if(typeof isEmailJSConfigured==='function' && isEmailJSConfigured()){
-    var _ss=typeof getSchedulingSettings==='function'?getSchedulingSettings():{};
-    var svcThreshold=_ss.reminderDays||20;
-    var testThreshold=_ss.testReminderDays||30;
-    var sentKey='_svcRemindersSent';
-    var sentMap=JSON.parse(localStorage.getItem(sentKey)||'{}');
-    var today=new Date();today.setHours(0,0,0,0);
-    var todayStr=localDateStr(today);
-    (vehicles||[]).forEach(function(v){
-      if(!v.driver||!v.driver.email||v.status==='waiting_vehicle')return;
-      // Check service
-      if(typeof calcNextSvc==='function'){
-        var nxt=calcNextSvc(v);
-        if(nxt.date){
-          var svcDiff=Math.round((new Date(nxt.date)-today)/86400000);
-          if(svcDiff>=0 && svcDiff<=svcThreshold){
-            var svcKey=v.id+'-svc-'+nxt.date;
-            if(!sentMap[svcKey]){
-              pendingSvc.push({vid:v.id,email:v.driver.email,name:v.driver.name||'',plate:v.plate,type:'טיפול',date:nxt.date,key:svcKey});
-            }
-          }
-        }
-      }
-      // Check test (vehicle license expiry)
-      if(v.licenseExp){
-        var testDiff=Math.round((new Date(v.licenseExp)-today)/86400000);
-        if(testDiff>=0 && testDiff<=testThreshold){
-          var testKey=v.id+'-test-'+v.licenseExp;
-          if(!sentMap[testKey]){
-            pendingSvc.push({vid:v.id,email:v.driver.email,name:v.driver.name||'',plate:v.plate,type:'טסט רישוי',date:v.licenseExp,key:testKey});
-          }
-        }
-      }
-      // Check driver license expiry → alert to rep (admin)
-      if(v.driver.licenseExp && myEmail){
-        var drvLicDiff=Math.round((new Date(v.driver.licenseExp)-today)/86400000);
-        if(drvLicDiff>=0 && drvLicDiff<=20){
-          var drvLicKey=v.id+'-drvlic-'+v.driver.licenseExp;
-          if(!sentMap[drvLicKey]){
-            pendingSvc.push({vid:v.id,email:myEmail,name:v.driver.name||'',plate:v.plate,type:'רישיון נהיגה עומד לפקוע',date:v.driver.licenseExp,key:drvLicKey});
-          }
-        }
-      }
-      // Check vehicle license (רישיון רכב) expiry → alert to rep
-      if(v.licenseExp && myEmail){
-        var vehLicDiff=Math.round((new Date(v.licenseExp)-today)/86400000);
-        if(vehLicDiff>=0 && vehLicDiff<=20){
-          var vehLicKey=v.id+'-vehlic-'+v.licenseExp;
-          if(!sentMap[vehLicKey]){
-            pendingSvc.push({vid:v.id,email:myEmail,name:v.driver.name||'',plate:v.plate,type:'רישיון רכב עומד לפקוע',date:v.licenseExp,key:vehLicKey});
-          }
-        }
-      }
-      // Check family member license expiry → alert to rep
-      if(v.familyDrivers && v.familyDrivers.length && myEmail){
-        v.familyDrivers.forEach(function(fm){
-          if(fm.licenseExp){
-            var fmDiff=Math.round((new Date(fm.licenseExp)-today)/86400000);
-            if(fmDiff>=0 && fmDiff<=20){
-              var fmKey=v.id+'-fmlic-'+(fm.id||fm.name)+'-'+fm.licenseExp;
-              if(!sentMap[fmKey]){
-                pendingSvc.push({vid:v.id,email:myEmail,name:(fm.name||'בן משפחה')+' ('+v.driver.name+')',plate:v.plate,type:'רישיון נהיגה בן משפחה עומד לפקוע',date:fm.licenseExp,key:fmKey});
-              }
-            }
-          }
-        });
-      }
-    });
-  }
-
-  const total = pendingSelf.length + pendingPre.length + pendingSvc.length;
+  const total = pendingSelf.length + pendingPre.length;
   if(total===0) return;
 
-  // AUTO-SEND via EmailJS if configured
-  if(typeof isEmailJSConfigured==='function' && isEmailJSConfigured()){
-    var promises=[];
-    pendingSelf.forEach(function(r){
-      if(!myEmail) return;
-      var subj='תזכורת: '+r.title;
-      var body='תזכורת אישית:\n'+r.title+'\n\nנקבעה ל: '+(typeof fd==='function'?fd(r.date):r.date)+' '+r.time+'\n\n'+(r.note||'')+'\n\n---\nמרכז הרכב של מור בית השקעות';
-      promises.push(sendViaEmailJS(myEmail,subj,body).then(function(){
-        r.sent=true;r.sentAt=new Date().toISOString();
-        return {ok:true,type:'self',title:r.title};
-      }).catch(function(e){return {ok:false,type:'self',title:r.title,err:e.message};}));
-    });
-    var evts=getFleetEvents();
-    pendingPre.forEach(function(e){
-      var v=vehicles.find(function(x){return x.id===e.vehicleId;});
-      if(!v||!v.driver||!v.driver.email) return;
-      var subj='תזכורת: '+e.title+' - '+v.plate;
-      var body='שלום '+(v.driver.name||'')+',\n\nתזכורת: נקבע '+e.title+' לרכב '+v.plate+' בתאריך '+(typeof fd==='function'?fd(e.date):e.date)+(e.time?' בשעה '+e.time:'')+'.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
-      promises.push(sendViaEmailJS(v.driver.email,subj,body).then(function(){
-        e.preReminderSent=true;e.preReminderSentAt=new Date().toISOString();
-        return {ok:true,type:'pre',title:e.title};
-      }).catch(function(err){return {ok:false,type:'pre',title:e.title,err:err.message};}));
-    });
-    // Service/test reminders to drivers
-    var svcSentMap=JSON.parse(localStorage.getItem('_svcRemindersSent')||'{}');
-    pendingSvc.forEach(function(item){
-      var subj='תזכורת '+item.type+' - רכב '+item.plate;
-      var body='שלום '+item.name+',\n\nרכב '+item.plate+' צריך '+item.type+' בתאריך '+(typeof fd==='function'?fd(item.date):item.date)+'.\n\nנא ליצור קשר לתיאום מועד.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
-      promises.push(sendViaEmailJS(item.email,subj,body).then(function(){
-        svcSentMap[item.key]=new Date().toISOString();
-        return {ok:true,type:'svc',title:item.type+' '+item.plate};
-      }).catch(function(err){return {ok:false,type:'svc',title:item.type+' '+item.plate,err:err.message};}));
-    });
-
-    Promise.allSettled(promises).then(function(results){
-      if(typeof persistSelfReminders==='function') persistSelfReminders();
-      if(typeof saveFleetEvents==='function') saveFleetEvents(evts);
-      // Save service reminder sent map
-      try{localStorage.setItem('_svcRemindersSent',JSON.stringify(svcSentMap));}catch(e){}
-      var sent=results.filter(function(r){return r.value&&r.value.ok;}).length;
-      var failed=results.filter(function(r){return r.value&&!r.value.ok;}).length;
-      if(sent>0) showToast('✓ '+sent+' תזכורות נשלחו אוטומטית במייל');
-      if(failed>0) showToast('⚠ '+failed+' תזכורות נכשלו בשליחה');
-    });
-    return;
-  }
-
-  // FALLBACK: Show banner (only if banner setting enabled)
+  // Show banner (only if banner setting enabled)
   if(!bannerEnabled) return;
   const ex = document.getElementById('pending-reminders-banner');
   if(ex) ex.remove();
@@ -19302,13 +19071,7 @@ function fireSelfReminderMail(id){
   var subjRaw='תזכורת: '+r.title;
   var bodyRaw='תזכורת אישית:\n'+r.title+'\n\nנקבעה ל: '+fd(r.date)+' '+r.time+'\n\n'+(r.note||'')+'\n\n---\nמרכז הרכב של מור בית השקעות';
   function _markSent(){r.sent=true;r.sentAt=new Date().toISOString();persistSelfReminders();renderSelfReminders();}
-  if(isEmailJSConfigured()){
-    sendViaEmailJS(email,subjRaw,bodyRaw).then(function(){_markSent();showToast('✓ תזכורת נשלחה במייל');}).catch(function(){
-      window.open('mailto:'+email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
-    });
-  } else {
-    window.open('mailto:'+email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
-  }
+  window.open('mailto:'+email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
 }
 
 function firePreReminderMail(evId){
@@ -19320,13 +19083,7 @@ function firePreReminderMail(evId){
   var subjRaw='תזכורת: '+e.title+' - '+v.plate;
   var bodyRaw='שלום '+(v.driver.name||'')+',\n\nתזכורת: נקבע '+e.title+' לרכב '+v.plate+' בתאריך '+fd(e.date)+(e.time?' בשעה '+e.time:'')+'.\n\nנא לדאוג להביא את הרכב במועד שנקבע.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
   function _markSent(){e.preReminderSent=true;e.preReminderSentAt=new Date().toISOString();saveFleetEvents(events);}
-  if(isEmailJSConfigured()){
-    sendViaEmailJS(v.driver.email,subjRaw,bodyRaw).then(function(){_markSent();showToast('✓ תזכורת נשלחה לנהג');}).catch(function(){
-      window.open('mailto:'+v.driver.email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
-    });
-  } else {
-    window.open('mailto:'+v.driver.email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
-  }
+  window.open('mailto:'+v.driver.email+'?subject='+encodeURIComponent(subjRaw)+'&body='+encodeURIComponent(bodyRaw));_markSent();
 }
 
 function openCustomReminderModalForDate(iso){
@@ -22007,29 +21764,8 @@ async function sendDriverEmail(vehicle, kind, treatmentId) {
   var licensePlate = vehicle.plate || vehicle.licensePlate || '';
   var vehicleModel = ((vehicle.make || '') + ' ' + (vehicle.model || '')).trim() || vehicle.vehicleModel || '';
 
-  console.log('[Treatments] sendDriverEmail:', {emailjs: typeof emailjs, configured: typeof isEmailJSConfigured === 'function' ? isEmailJSConfigured() : 'N/A', driverEmail: driverEmail});
-  if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured()) {
-    if (!driverEmail) { console.warn('[Treatments] אין מייל לנהג'); return 'no_email'; }
-    try {
-      var settings = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
-      await emailjs.send(settings.emailjsServiceId, settings.emailjsTemplateId, {
-        to_email: driverEmail,
-        to_name: driverName,
-        license_plate: licensePlate,
-        vehicle_model: vehicleModel,
-        link: driverLinkUrl,
-        kind: kind === 'treatment' ? 'טיפול' : 'טסט'
-      });
-      console.log('[Treatments] מייל נשלח ל', driverEmail);
-      return 'sent';
-    } catch (err) {
-      console.error('[Treatments] שגיאה בשליחת מייל:', err);
-      return 'error';
-    }
-  } else {
-    console.log('[Treatments] EmailJS לא מוגדר. קישור:', driverLinkUrl);
-    return 'not_configured';
-  }
+  console.log('[Treatments] sendDriverEmail - קישור:', driverLinkUrl);
+  return 'not_configured';
 }
 
 // ============================================================
@@ -22518,19 +22254,6 @@ async function sendApprovalMessage(treatment, channel, customMessage) {
     var phone = (treatment.driverPhone || '').replace(/\D/g, '');
     var text = encodeURIComponent(customMessage);
     window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
-  } else if (typeof emailjs !== 'undefined' && typeof isEmailJSConfigured === 'function' && isEmailJSConfigured()) {
-    var settings = JSON.parse(localStorage.getItem('fleetSettings') || '{}');
-    try {
-      await emailjs.send(settings.emailjsServiceId, settings.emailjsTemplateId, {
-        to_email: treatment.driverEmail,
-        to_name: treatment.driverName,
-        date: formatTreatmentDate(treatment.selectedDate),
-        day_name: getHebrewDayName(treatment.selectedDate),
-        personal_note: personalNote
-      });
-    } catch (err) {
-      console.error('[Treatments] שגיאה בשליחת אישור:', err);
-    }
   }
 }
 
