@@ -441,8 +441,12 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .topbar > div[style*="gap:10px"] { flex:1!important;min-width:0!important;overflow:hidden!important;justify-content:center!important }
   /* כפתור תפריט - גדול יותר */
   .mobile-menu-btn{width:44px!important;height:44px!important;border-radius:10px}
-  /* הסתר כפתורי ק"מ ורישיון בטופבר מובייל */
+  /* הסתר כפתור סינון בטופבר מובייל — מוצג בשורת החיפוש */
   #unified-filter-wrap{display:none!important}
+  /* הסתר כפתור ק"מ ישן בנייד */
+  #mobile-km-filter-wrap{display:none!important}
+  /* פאנל סינון מאוחד — מרכז המסך בנייד */
+  #unified-filter-panel{position:fixed!important;top:50%!important;left:50%!important;transform:translate(-50%,-50%)!important;width:calc(100vw - 32px)!important;max-width:340px!important;z-index:502!important;bottom:auto!important}
   .mobile-menu-btn svg{width:24px!important;height:24px!important}
   /* "הוסף רכב" - רק אייקון + */
   .topbar > button[onclick*="openAdd"] { font-size:0!important;gap:0!important;padding:0!important;width:36px!important;height:36px!important;justify-content:center }
@@ -2428,37 +2432,16 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   <div class="mobile-search-bar" id="mobile-search-bar">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input type="text" id="mobile-srch-inp" placeholder="חיפוש: רכב, נהג, יצרן..." oninput="document.getElementById('srch-inp').value=this.value;globalSearch(this.value)" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off">
-    <!-- כפתור טווח ק"מ מובייל -->
-    <div style="position:relative;flex-shrink:0" id="mobile-km-filter-wrap">
-      <button id="mobile-km-filter-btn" onclick="toggleMobileKmPanel()" style="height:32px;padding:0 10px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:12px;font-family:inherit;color:#1A1A1A;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s" title="טווח ק&quot;מ">
+    <!-- כפתור סינון מאוחד מובייל -->
+    <div style="flex-shrink:0" id="mobile-km-filter-wrap">
+      <button id="mobile-unified-filter-btn" onclick="toggleUnifiedFilter()" style="height:32px;padding:0 10px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:12px;font-family:inherit;color:#1A1A1A;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s" title="סינון">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M8 12h8M11 18h2"/></svg>
-        ק"מ
+        סינון
+        <span id="mobile-unified-badge" style="display:none;background:var(--gd);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:6px"></span>
       </button>
-      <!-- פאנל טווח ק"מ מובייל -->
-      <div id="mobile-km-filter-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-radius:16px 16px 0 0;padding:20px 18px 28px;box-shadow:0 -4px 30px rgba(0,0,0,.18);z-index:502;direction:rtl">
-        <div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 16px"></div>
-        <div style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px">חיפוש לפי ק"מ נוכחי</div>
-        <div style="font-size:12px;color:var(--t3);margin-bottom:16px">גרור את הנקודות לבחירת טווח</div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <div><div style="font-size:10px;color:var(--t3)">מ-</div><div id="mkm-min-lbl" style="font-size:20px;font-weight:700;color:var(--gd);direction:ltr">0</div></div>
-          <div style="font-size:12px;color:var(--t3);align-self:flex-end;padding-bottom:4px">—</div>
-          <div><div style="font-size:10px;color:var(--t3)">עד</div><div id="mkm-max-lbl" style="font-size:20px;font-weight:700;color:var(--gd);direction:ltr">200,000</div></div>
-        </div>
-        <div class="km-dual-wrap" style="margin-bottom:8px">
-          <div class="km-track"></div>
-          <div class="km-fill" id="mkm-fill"></div>
-          <input type="range" id="mkm-min-slider" min="0" max="200000" step="1000" value="0" oninput="mkmUpdate('min')">
-          <input type="range" id="mkm-max-slider" min="0" max="200000" step="1000" value="200000" oninput="mkmUpdate('max')">
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:18px;direction:ltr"><span>0</span><span>50k</span><span>100k</span><span>150k</span><span>200k</span></div>
-        <div style="display:flex;gap:10px">
-          <button onclick="mkmReset()" style="flex:1;padding:10px;border:1px solid var(--bdr2);border-radius:10px;background:var(--bg);color:var(--t2);font-size:13px;font-family:inherit;cursor:pointer">איפוס</button>
-          <button onclick="mkmApply()" style="flex:2;padding:10px;border:none;border-radius:10px;background:var(--gd);color:#fff;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer">חפש</button>
-        </div>
-      </div>
-      <!-- overlay לסגירה -->
-      <div id="mobile-km-overlay" onclick="closeMobileKmPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:501"></div>
     </div>
+    <!-- overlay גלובלי לסגירת פאנל סינון -->
+    <div id="unified-filter-overlay" onclick="toggleUnifiedFilter()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:501"></div>
     <!-- כפתור רענון -->
     <button onclick="location.reload()" style="height:32px;width:32px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="רענון">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
@@ -10300,8 +10283,10 @@ function mkmReset(){
 document.addEventListener('click', function(e){
   var uWrap = document.getElementById('unified-filter-wrap');
   var uPanel = document.getElementById('unified-filter-panel');
-  if(uPanel && uPanel.style.display==='block' && uWrap && !uWrap.contains(e.target)){
+  var uOverlay = document.getElementById('unified-filter-overlay');
+  if(uPanel && uPanel.style.display==='block' && uWrap && !uWrap.contains(e.target) && e.target !== uOverlay){
     uPanel.style.display = 'none';
+    if(uOverlay) uOverlay.style.display = 'none';
   }
 });
 
@@ -10309,8 +10294,10 @@ document.addEventListener('click', function(e){
 var _activeFilterTab = 'km';
 function toggleUnifiedFilter(){
   var panel = document.getElementById('unified-filter-panel');
+  var overlay = document.getElementById('unified-filter-overlay');
   var open = panel.style.display === 'block';
   panel.style.display = open ? 'none' : 'block';
+  if(overlay) overlay.style.display = open ? 'none' : 'block';
   if(!open){ switchFilterTab(_activeFilterTab); kmRangeUpdate('max'); }
 }
 function switchFilterTab(tab){
@@ -10325,10 +10312,20 @@ function switchFilterTab(tab){
 }
 function _updateUnifiedBadge(){
   var count = (_vKmRange ? 1 : 0) + (_vLicMonths && _vLicMonths.size > 0 ? 1 : 0);
+  // badge בטופבר (דסקטופ)
   var badge = document.getElementById('unified-filter-badge');
   var btn   = document.getElementById('unified-filter-btn');
   if(badge){ badge.style.display = count > 0 ? 'inline-block' : 'none'; badge.textContent = count; }
   if(btn)   btn.classList.toggle('active', count > 0);
+  // badge במובייל
+  var mbadge = document.getElementById('mobile-unified-badge');
+  var mbtn   = document.getElementById('mobile-unified-filter-btn');
+  if(mbadge){ mbadge.style.display = count > 0 ? 'inline-block' : 'none'; mbadge.textContent = count; }
+  if(mbtn){ mbtn.style.background = count > 0 ? 'var(--gd)' : ''; mbtn.style.color = count > 0 ? '#fff' : ''; mbtn.style.borderColor = count > 0 ? 'var(--gd)' : ''; }
+  // סגור overlay אם אין פאנל פתוח
+  var panel = document.getElementById('unified-filter-panel');
+  var overlay = document.getElementById('unified-filter-overlay');
+  if(overlay && panel && panel.style.display !== 'block') overlay.style.display = 'none';
 }
 function switchTab(f,el){vFilter=f;document.querySelectorAll('#page-vehicles .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderV()}
 
