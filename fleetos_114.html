@@ -2440,64 +2440,64 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <span id="mobile-unified-badge" style="display:none;background:var(--gd);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:6px"></span>
       </button>
     </div>
-    <!-- overlay גלובלי לסגירת פאנל סינון -->
-    <div id="unified-filter-overlay" onclick="toggleUnifiedFilter()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:501"></div>
-    <!-- פאנל סינון מאוחד — גלובלי, מחוץ לכל wrapper -->
-    <div class="km-filter-panel" id="unified-filter-panel" style="width:310px;z-index:502">
-      <!-- טאבים -->
-      <div style="display:flex;gap:0;border-bottom:1px solid var(--bdr);margin-bottom:14px">
-        <button id="uft-km-tab" onclick="switchFilterTab('km');event.stopPropagation()" style="flex:1;padding:7px 4px;border:none;border-bottom:2px solid var(--gd);background:none;font-size:12px;font-weight:600;color:var(--gd);cursor:pointer;font-family:inherit">טווח ק"מ</button>
-        <button id="uft-lic-tab" onclick="switchFilterTab('lic');event.stopPropagation()" style="flex:1;padding:7px 4px;border:none;border-bottom:2px solid transparent;background:none;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;font-family:inherit">פקיעת רישיון</button>
-      </div>
-      <!-- טאב ק"מ -->
-      <div id="uft-km-body">
-        <div style="font-size:11px;color:var(--t3);margin-bottom:14px">גרור את הנקודות לבחירת טווח</div>
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2px">
-          <div style="text-align:right">
-            <div style="font-size:10px;color:var(--t3);margin-bottom:2px">מ-</div>
-            <div id="km-min-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">0</div>
-          </div>
-          <div style="font-size:12px;color:var(--t3);padding-bottom:4px">—</div>
-          <div style="text-align:left">
-            <div style="font-size:10px;color:var(--t3);margin-bottom:2px">עד</div>
-            <div id="km-max-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">200,000</div>
-          </div>
-        </div>
-        <div class="km-dual-wrap">
-          <div class="km-track"></div>
-          <div class="km-fill" id="km-fill"></div>
-          <input type="range" id="km-min-slider" min="0" max="200000" step="1000" value="0" oninput="kmRangeUpdate('min')">
-          <input type="range" id="km-max-slider" min="0" max="200000" step="1000" value="200000" oninput="kmRangeUpdate('max')">
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:14px;direction:ltr">
-          <span>0</span><span>50,000</span><span>100,000</span><span>150,000</span><span>200,000</span>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button onclick="kmRangeReset();event.stopPropagation()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
-          <button onclick="kmRangeApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">סנן</button>
-        </div>
-      </div>
-      <!-- טאב רישיון -->
-      <div id="uft-lic-body" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <button onclick="licCalYear(-1);event.stopPropagation()" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">‹</button>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span id="lic-cal-year" style="font-size:16px;font-weight:700;color:var(--t1)">2026</span>
-            <div id="lic-selected-count" style="font-size:11px;font-weight:600;color:var(--gd);background:var(--gbg);padding:2px 7px;border-radius:10px;display:none"></div>
-          </div>
-          <button onclick="licCalYear(+1);event.stopPropagation()" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">›</button>
-        </div>
-        <div id="lic-cal-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:14px"></div>
-        <div style="display:flex;gap:8px">
-          <button onclick="licFilterReset();event.stopPropagation()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
-          <button onclick="licFilterApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">סנן</button>
-        </div>
-      </div>
-    </div>
     <!-- כפתור רענון -->
     <button onclick="location.reload()" style="height:32px;width:32px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="רענון">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
     </button>
+  </div>
+
+  <!-- overlay + פאנל סינון — גלובלי, מחוץ ל-mobile-search-bar כדי לעבוד גם בדסקטופ -->
+  <div id="unified-filter-overlay" onclick="toggleUnifiedFilter()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:501"></div>
+  <div class="km-filter-panel" id="unified-filter-panel" style="width:310px;z-index:502">
+    <!-- טאבים -->
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--bdr);margin-bottom:14px">
+      <button id="uft-km-tab" onclick="switchFilterTab('km');event.stopPropagation()" style="flex:1;padding:7px 4px;border:none;border-bottom:2px solid var(--gd);background:none;font-size:12px;font-weight:600;color:var(--gd);cursor:pointer;font-family:inherit">טווח ק"מ</button>
+      <button id="uft-lic-tab" onclick="switchFilterTab('lic');event.stopPropagation()" style="flex:1;padding:7px 4px;border:none;border-bottom:2px solid transparent;background:none;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;font-family:inherit">פקיעת רישיון</button>
+    </div>
+    <!-- טאב ק"מ -->
+    <div id="uft-km-body">
+      <div style="font-size:11px;color:var(--t3);margin-bottom:14px">גרור את הנקודות לבחירת טווח</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2px">
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:2px">מ-</div>
+          <div id="km-min-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">0</div>
+        </div>
+        <div style="font-size:12px;color:var(--t3);padding-bottom:4px">—</div>
+        <div style="text-align:left">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:2px">עד</div>
+          <div id="km-max-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">200,000</div>
+        </div>
+      </div>
+      <div class="km-dual-wrap">
+        <div class="km-track"></div>
+        <div class="km-fill" id="km-fill"></div>
+        <input type="range" id="km-min-slider" min="0" max="200000" step="1000" value="0" oninput="kmRangeUpdate('min')">
+        <input type="range" id="km-max-slider" min="0" max="200000" step="1000" value="200000" oninput="kmRangeUpdate('max')">
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:14px;direction:ltr">
+        <span>0</span><span>50,000</span><span>100,000</span><span>150,000</span><span>200,000</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="kmRangeReset();event.stopPropagation()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
+        <button onclick="kmRangeApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">סנן</button>
+      </div>
+    </div>
+    <!-- טאב רישיון -->
+    <div id="uft-lic-body" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <button onclick="licCalYear(-1);event.stopPropagation()" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">‹</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="lic-cal-year" style="font-size:16px;font-weight:700;color:var(--t1)">2026</span>
+          <div id="lic-selected-count" style="font-size:11px;font-weight:600;color:var(--gd);background:var(--gbg);padding:2px 7px;border-radius:10px;display:none"></div>
+        </div>
+        <button onclick="licCalYear(+1);event.stopPropagation()" style="width:28px;height:28px;border:1px solid var(--bdr);border-radius:6px;background:var(--bg);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--t1)">›</button>
+      </div>
+      <div id="lic-cal-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:14px"></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="licFilterReset();event.stopPropagation()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
+        <button onclick="licFilterApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">סנן</button>
+      </div>
+    </div>
   </div>
 
   <div class="content">
@@ -12585,22 +12585,11 @@ function saveExtDoc(vid){
         uploadFileToStorage(path,dataUrl)
           .then(doSave)
           .catch(function(err){
-            console.error('Storage upload failed:',err);
-            // Fallback: save base64 only if file is small enough for Firestore (<400KB)
-            if(file.size < 400*1024){
-              doSave(dataUrl);
-            }else{
-              showToast('שגיאת העלאה — הקובץ גדול מדי לשמירה מקומית. בדוק הרשאות Storage ב-Firebase.');
-              if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='שמור';}
-            }
+            console.error('Storage upload failed, using base64 fallback:',err);
+            doSave(dataUrl);
           });
       }else{
-        if(file.size < 400*1024){
-          doSave(dataUrl);
-        }else{
-          showToast('Storage לא זמין — קובץ גדול מדי לשמירה מקומית');
-          if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='שמור';}
-        }
+        doSave(dataUrl);
       }
     };
     reader.readAsDataURL(file);
