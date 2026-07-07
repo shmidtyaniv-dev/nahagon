@@ -1940,6 +1940,40 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 @media (max-width: 768px) {
   .sched-grid-2col { grid-template-columns: 1fr; }
 }
+/* ── KM SELF REPORT — public form ── */
+.kmr-pub-wrap{min-height:100vh;background:linear-gradient(135deg,#0f2d20 0%,#1a4a35 100%);display:flex;align-items:center;justify-content:center;direction:rtl;font-family:Heebo,Arial,sans-serif;padding:16px}
+.kmr-pub-card{background:#fff;border-radius:20px;overflow:hidden;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.kmr-pub-header{background:linear-gradient(135deg,#1a4a35,#1D9E75);padding:28px 24px;text-align:center}
+.kmr-pub-header h1{color:#fff;font-size:20px;font-weight:700;margin:0 0 4px}
+.kmr-pub-header p{color:rgba(255,255,255,.75);font-size:13px;margin:0}
+.kmr-pub-body{padding:28px 24px}
+.kmr-field{margin-bottom:18px}
+.kmr-field label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+.kmr-field label span{color:#dc2626;margin-right:2px}
+.kmr-field input{width:100%;padding:13px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;font-family:inherit;color:#111;outline:none;box-sizing:border-box;transition:border-color .15s}
+.kmr-field input:focus{border-color:#1D9E75}
+.kmr-field input.err{border-color:#dc2626}
+.kmr-field .hint{font-size:11px;color:#9ca3af;margin-top:4px}
+.kmr-submit-btn{width:100%;padding:15px;background:#1D9E75;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;transition:background .15s}
+.kmr-submit-btn:hover{background:#17895f}
+.kmr-submit-btn:disabled{background:#9ca3af;cursor:not-allowed}
+.kmr-status{text-align:center;margin-top:12px;font-size:13px;min-height:20px}
+.kmr-success{text-align:center;padding:20px 0}
+/* ── KM REPORTS — admin page ── */
+.kmr-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.kmr-stat{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:16px;text-align:center}
+.kmr-stat-val{font-size:28px;font-weight:700;color:var(--gd)}
+.kmr-stat-lbl{font-size:12px;color:var(--t3);margin-top:2px}
+.kmr-row{background:var(--card);border:1px solid var(--bdr);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.kmr-row-info{flex:1;min-width:0}
+.kmr-row-name{font-size:14px;font-weight:600;color:var(--t1)}
+.kmr-row-meta{font-size:12px;color:var(--t3);margin-top:2px}
+.kmr-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.kmr-badge.matched{background:#dcfce7;color:#166534}
+.kmr-badge.unmatched{background:#fee2e2;color:#991b1b}
+.kmr-badge.pending{background:#fef9c3;color:#854d0e}
+.kmr-link-box{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:16px;display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.kmr-link-url{flex:1;font-size:13px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr}
 </style>
 <script>
 (function(){var p=new URLSearchParams(window.location.search);if(p.get('a')||p.get('approve')||p.get('du')||p.get('docupload')||p.get('book')||p.get('km')){document.documentElement.style.visibility='hidden';}})();
@@ -2285,6 +2319,12 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
       <span>הזמנות חדשות</span>
       <span class="sb-badge" id="nb-orders" style="display:none"></span>
+    </div>
+
+    <div class="ni" dp="km-reports" onclick="go('km-reports',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      <span>עדכוני ק"מ</span>
+      <span class="sb-badge warning" id="nb-km-reports" style="display:none"></span>
     </div>
 
     <div class="sb-nav-group-title">כלים</div>
@@ -2713,6 +2753,33 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </button>
       </div>
       <div id="orders-list" style="display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+
+    <!-- KM REPORTS PAGE -->
+    <div class="page" id="page-km-reports">
+      <div class="sh" style="margin-bottom:16px">
+        <h2>עדכוני ק"מ</h2>
+        <span class="sp"></span>
+        <button class="btn" onclick="copyKmLink()" style="gap:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          העתק קישור
+        </button>
+      </div>
+      <!-- לינק קופי -->
+      <div class="kmr-link-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2" width="16" height="16" style="flex-shrink:0"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        <span class="kmr-link-url" id="kmr-link-display"></span>
+        <button onclick="copyKmLink()" style="flex-shrink:0;padding:6px 12px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);font-size:12px;font-family:inherit;cursor:pointer;color:var(--t2)">העתק</button>
+      </div>
+      <!-- סיכום -->
+      <div class="kmr-summary" id="kmr-summary">
+        <div class="kmr-stat"><div class="kmr-stat-val" id="kmr-total">0</div><div class="kmr-stat-lbl">דיווחים שהתקבלו</div></div>
+        <div class="kmr-stat"><div class="kmr-stat-val" id="kmr-matched" style="color:#16a34a">0</div><div class="kmr-stat-lbl">שויכו לרכב</div></div>
+        <div class="kmr-stat"><div class="kmr-stat-val" id="kmr-unmatched" style="color:#dc2626">0</div><div class="kmr-stat-lbl">ממתינים לשיוך</div></div>
+      </div>
+      <!-- רשימת דיווחים -->
+      <div style="font-size:13px;font-weight:600;color:var(--t2);margin-bottom:8px" id="kmr-list-title">דיווחים אחרונים</div>
+      <div id="kmr-list"></div>
     </div>
 
     <!-- FORMS PAGE -->
@@ -11515,9 +11582,281 @@ function startKmUpdatesListener(){
   });
 }
 
+/* ══════════════════════════════════════════
+   KM SELF-REPORT — טופס ציבורי + לוח ניהול
+   ══════════════════════════════════════════ */
+
+function checkKmSelfReport(){
+  // הסתר את האפליקציה, הצג טופס עצמאי
+  document.querySelector('.app').style.display='none';
+  document.documentElement.style.visibility='visible';
+  var wrap=document.createElement('div');
+  wrap.id='km-self-report-page';
+  wrap.className='kmr-pub-wrap';
+  wrap.innerHTML=
+    '<div class="kmr-pub-card">'+
+      '<div class="kmr-pub-header">'+
+        '<h1>מרכז הרכב של מור</h1>'+
+        '<p>עדכון ק"מ חודשי</p>'+
+      '</div>'+
+      '<div class="kmr-pub-body">'+
+        '<div class="kmr-field">'+
+          '<label><span>*</span>שם מלא</label>'+
+          '<input type="text" id="kmsr-name" placeholder="שם פרטי + שם משפחה" autocomplete="name">'+
+        '</div>'+
+        '<div class="kmr-field">'+
+          '<label>מספר רכב <span style="color:#9ca3af;font-weight:400">(אופציונלי)</span></label>'+
+          '<input type="text" id="kmsr-plate" placeholder="לדוגמה: 123-45-678" dir="ltr">'+
+          '<div class="hint">מספר הרכב יעזור לשיוך מדויק</div>'+
+        '</div>'+
+        '<div class="kmr-field">'+
+          '<label><span>*</span>ק"מ נוכחי במד המרחק</label>'+
+          '<input type="text" id="kmsr-km" inputmode="numeric" placeholder="לדוגמה: 85,000" dir="ltr" oninput="fmtKmInput(this)">'+
+        '</div>'+
+        '<button class="kmr-submit-btn" id="kmsr-btn" onclick="submitKmSelfReport()">שלח עדכון ק"מ</button>'+
+        '<div class="kmr-status" id="kmsr-status"></div>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(wrap);
+  // focus
+  setTimeout(function(){ var n=document.getElementById('kmsr-name'); if(n)n.focus(); },300);
+  return true;
+}
+
+function submitKmSelfReport(){
+  var nameEl=document.getElementById('kmsr-name');
+  var plateEl=document.getElementById('kmsr-plate');
+  var kmEl=document.getElementById('kmsr-km');
+  var btn=document.getElementById('kmsr-btn');
+  var statusEl=document.getElementById('kmsr-status');
+  // ולידציה
+  var name=(nameEl.value||'').trim();
+  var plate=(plateEl.value||'').trim();
+  var kmRaw=(kmEl.value||'').replace(/[^0-9]/g,'');
+  var km=parseInt(kmRaw);
+  nameEl.classList.remove('err'); kmEl.classList.remove('err');
+  if(!name || name.split(' ').filter(Boolean).length < 2){
+    nameEl.classList.add('err');
+    statusEl.innerHTML='<span style="color:#dc2626">נא להזין שם מלא (שם פרטי + משפחה)</span>';
+    nameEl.focus(); return;
+  }
+  if(!km || km < 100){
+    kmEl.classList.add('err');
+    statusEl.innerHTML='<span style="color:#dc2626">נא להזין ק"מ תקין</span>';
+    kmEl.focus(); return;
+  }
+  btn.disabled=true; btn.textContent='שולח...';
+  statusEl.innerHTML='';
+  function _doSubmit(){
+    if(!db){ statusEl.innerHTML='<span style="color:#dc2626">שגיאה בחיבור, נסה שוב</span>'; btn.disabled=false; btn.textContent='שלח עדכון ק"מ'; return; }
+    db.collection('kmReports').add({
+      driverName: name,
+      vehicleNum: plate || null,
+      km: km,
+      submittedAt: new Date().toISOString(),
+      status: 'pending'
+    }).then(function(){
+      var wrap=document.getElementById('km-self-report-page');
+      if(wrap) wrap.innerHTML=
+        '<div class="kmr-pub-card">'+
+          '<div class="kmr-pub-header"><h1>מרכז הרכב של מור</h1></div>'+
+          '<div class="kmr-pub-body kmr-success">'+
+            '<div style="font-size:56px;margin-bottom:12px">✅</div>'+
+            '<div style="font-size:20px;font-weight:700;color:#166534;margin-bottom:6px">תודה, '+name+'!</div>'+
+            '<div style="font-size:15px;color:#374151">ק"מ עודכן: <strong>'+km.toLocaleString('he-IL')+'</strong></div>'+
+            '<div style="font-size:12px;color:#9ca3af;margin-top:20px">מרכז הרכב של מור בית השקעות</div>'+
+          '</div>'+
+        '</div>';
+    }).catch(function(e){
+      btn.disabled=false; btn.textContent='שלח עדכון ק"מ';
+      statusEl.innerHTML='<span style="color:#dc2626">שגיאה, נסה שוב</span>';
+    });
+  }
+  if(auth && !auth.currentUser){ auth.signInAnonymously().then(_doSubmit).catch(_doSubmit); }
+  else _doSubmit();
+}
+
+/* ── Admin: טעינה ורינדור ── */
+var _kmReportsCache=[];
+var _kmReportsListenerActive=false;
+
+function startKmReportsListener(){
+  if(!db||_kmReportsListenerActive) return;
+  _kmReportsListenerActive=true;
+  db.collection('kmReports').orderBy('submittedAt','desc').onSnapshot(function(snap){
+    _kmReportsCache=snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+    _updateKmReportsBadge();
+    // רינדור אם הדף פתוח
+    if(document.getElementById('page-km-reports').classList.contains('active')) renderKmReports();
+    // פעמון — הודעה על דיווחים חדשים
+    snap.docChanges().forEach(function(ch){
+      if(ch.type==='added' && !_kmReportsListenerActive._init){
+        var d=Object.assign({id:ch.doc.id},ch.doc.data());
+        // פעמון — הוסף ל-km_update_notifications
+        (function(){
+          var notifId='kmr-'+d.id;
+          var existing=JSON.parse(localStorage.getItem('km_update_notifications')||'[]');
+          if(!existing.find(function(n){return n.id===notifId;})){
+            existing.unshift({id:notifId,driverName:d.driverName||'נהג',plate:d.vehicleNum||d.matchedPlate||'',km:d.km||0,vid:d.matchedVehicleId||null,time:d.submittedAt||new Date().toISOString()});
+            localStorage.setItem('km_update_notifications',JSON.stringify(existing));
+            if(typeof updateBellBadge==='function') updateBellBadge();
+          }
+        })();
+        // ניסיון שיוך אוטומטי — רק לדיווחים חדשים ב-pending
+        if(d.status==='pending' && vehicles.length) _autoMatchKmReport(d);
+      }
+    });
+    _kmReportsListenerActive._init=false;
+  });
+  _kmReportsListenerActive._init=true;
+}
+
+function _updateKmReportsBadge(){
+  var pending=_kmReportsCache.filter(function(r){ return r.status==='pending'||r.status==='unmatched'||r.status==='multi'; }).length;
+  var el=document.getElementById('nb-km-reports');
+  if(el){ el.textContent=pending; el.style.display=pending>0?'':'none'; }
+}
+
+function renderKmReports(){
+  if(!db){ startKmReportsListener(); return; }
+  startKmReportsListener();
+  // קישור
+  var link=location.origin+location.pathname+'?km';
+  var linkEl=document.getElementById('kmr-link-display');
+  if(linkEl) linkEl.textContent=link;
+  // ספירות
+  var total=_kmReportsCache.length;
+  var matched=_kmReportsCache.filter(function(r){return r.status==='matched';}).length;
+  var unmatched=total-matched;
+  var tEl=document.getElementById('kmr-total'); if(tEl)tEl.textContent=total;
+  var mEl=document.getElementById('kmr-matched'); if(mEl)mEl.textContent=matched;
+  var uEl=document.getElementById('kmr-unmatched'); if(uEl)uEl.textContent=unmatched;
+  // רשימה
+  var list=document.getElementById('kmr-list');
+  if(!list) return;
+  if(!_kmReportsCache.length){ list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);font-size:14px">אין דיווחים עדיין</div>'; return; }
+  var html='';
+  _kmReportsCache.forEach(function(r){
+    var badgeCls=r.status==='matched'?'matched':(r.status==='multi'?'pending':'unmatched');
+    var badgeTxt=r.status==='matched'?'שויך ✓':(r.status==='multi'?'כמה התאמות':'לא שויך');
+    var date=r.submittedAt ? new Date(r.submittedAt).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    var matchInfo=r.matchedPlate ? ' · <span style="color:var(--gd)">'+r.matchedPlate+'</span>' : '';
+    var plateInfo=r.vehicleNum ? ' · רכב: '+r.vehicleNum : '';
+    html+='<div class="kmr-row">'+
+      '<div class="kmr-row-info">'+
+        '<div class="kmr-row-name">'+_esc(r.driverName||'')+'</div>'+
+        '<div class="kmr-row-meta">'+
+          (r.km ? '<strong>'+r.km.toLocaleString('he-IL')+' ק"מ</strong>' : '')+
+          plateInfo+matchInfo+
+          (date ? ' · '+date : '')+
+        '</div>'+
+      '</div>'+
+      '<span class="kmr-badge '+badgeCls+'">'+badgeTxt+'</span>'+
+      (r.status!=='matched' ? '<button onclick="kmrManualMatch(\''+r.id+'\')" style="padding:6px 10px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);font-size:12px;font-family:inherit;cursor:pointer;color:var(--t2);white-space:nowrap">שייך ידנית</button>' : '')+
+    '</div>';
+  });
+  list.innerHTML=html;
+}
+
+function copyKmLink(){
+  var link=location.origin+location.pathname+'?km';
+  if(navigator.clipboard){ navigator.clipboard.writeText(link).then(function(){ showToast('הקישור הועתק ✓'); }); }
+  else { var ta=document.createElement('textarea'); ta.value=link; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('הקישור הועתק ✓'); }
+}
+
+function kmrManualMatch(reportId){
+  // בונה modal לבחירת רכב מהרשימה
+  var existing=document.getElementById('kmr-match-modal');
+  if(existing) existing.remove();
+  var report=_kmReportsCache.find(function(r){return r.id===reportId;});
+  if(!report) return;
+  var opts=vehicles.map(function(v,i){
+    return '<option value="'+i+'">'+(v.plate||'ללא לוחית')+' — '+(v.driverName||'ללא נהג')+'</option>';
+  }).join('');
+  var modal=document.createElement('div');
+  modal.id='kmr-match-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:center;justify-content:center;direction:rtl';
+  modal.innerHTML=
+    '<div style="background:var(--card);border-radius:16px;padding:24px;width:340px;max-width:90vw">'+
+      '<div style="font-size:16px;font-weight:700;margin-bottom:4px">שיוך ידני</div>'+
+      '<div style="font-size:13px;color:var(--t3);margin-bottom:16px">'+_esc(report.driverName||'')+' — '+(report.km||'').toLocaleString ? (report.km||0).toLocaleString('he-IL')+' ק"מ' : ''+'</div>'+
+      '<select id="kmr-match-sel" style="width:100%;padding:10px;border:1px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:16px">'+opts+'</select>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="document.getElementById(\'kmr-match-modal\').remove()" style="flex:1;padding:10px;border:1px solid var(--bdr2);border-radius:8px;background:var(--bg);font-family:inherit;cursor:pointer">ביטול</button>'+
+        '<button onclick="kmrConfirmMatch(\''+reportId+'\')" style="flex:2;padding:10px;border:none;border-radius:8px;background:var(--gd);color:#fff;font-weight:600;font-family:inherit;cursor:pointer">אשר שיוך</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(modal);
+}
+
+function kmrConfirmMatch(reportId){
+  var sel=document.getElementById('kmr-match-sel');
+  if(!sel) return;
+  var v=vehicles[parseInt(sel.value)];
+  if(!v||!v.id) return;
+  var report=_kmReportsCache.find(function(r){return r.id===reportId;});
+  if(!report) return;
+  _applyKmReportToVehicle(reportId, v, report.km);
+  var modal=document.getElementById('kmr-match-modal');
+  if(modal) modal.remove();
+}
+
+function _applyKmReportToVehicle(reportId, vehicle, km){
+  if(!db||!vehicle||!vehicle.id||!km) return;
+  var now=new Date().toISOString();
+  // 1. עדכן כרטיס רכב — currentKm + ציר זמן
+  var timeline=vehicle.timeline||[];
+  timeline.unshift({type:'km-update',km:km,date:now.substring(0,10),note:'עדכון ק"מ עצמי'});
+  db.collection('vehicles').doc(vehicle.id).update({
+    currentKm: km,
+    timeline: timeline
+  }).then(function(){
+    // עדכן cache מקומי
+    var vi=vehicles.findIndex(function(v){return v.id===vehicle.id;});
+    if(vi>=0){ vehicles[vi].currentKm=km; vehicles[vi].timeline=timeline; }
+    showToast('ק"מ עודכן בכרטיס '+(vehicle.plate||'')+ ' ✓');
+  });
+  // 2. עדכן סטטוס הדיווח
+  db.collection('kmReports').doc(reportId).update({
+    status:'matched',
+    matchedVehicleId: vehicle.id,
+    matchedPlate: vehicle.plate||'',
+    matchedAt: now
+  });
+}
+
+function _autoMatchKmReport(report){
+  if(!vehicles.length) return;
+  var name=(report.driverName||'').trim().toLowerCase();
+  var plate=(report.vehicleNum||'').replace(/[^0-9]/g,'');
+  var matched=null;
+  // חיפוש לפי מספר רכב קודם (מדויק יותר)
+  if(plate){
+    matched=vehicles.find(function(v){ return (v.plate||'').replace(/[^0-9]/g,'')=== plate; });
+  }
+  // חיפוש לפי שם נהג
+  if(!matched){
+    var byName=vehicles.filter(function(v){
+      var vn=(v.driverName||'').trim().toLowerCase();
+      return vn && (vn.includes(name)||name.includes(vn));
+    });
+    if(byName.length===1) matched=byName[0];
+    else if(byName.length>1){
+      db.collection('kmReports').doc(report.id).update({status:'multi'});
+      return;
+    }
+  }
+  if(matched){ _applyKmReportToVehicle(report.id, matched, report.km); }
+  else { db.collection('kmReports').doc(report.id).update({status:'unmatched'}); }
+}
+
+function _esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 function checkKmRequest(){
   var params=new URLSearchParams(location.search);
   var token=params.get('km');
+  // ?km בלי ערך — טופס עצמאי לנהגים
+  if(params.has('km') && token==='') return checkKmSelfReport();
   if(!token) return false;
   // Hide app, show km update page
   document.querySelector('.app').style.display='none';
@@ -15218,7 +15557,7 @@ document.addEventListener('click',e=>{
 });
 
 /* ── NAV ── */
-const PT={dashboard:'דשבורד',vehicles:'רכבים ונהגים','vehicle-card':'כרטיס רכב',tasks:'משימות',violations:'דוחות תנועה',accidents:'תאונות',orders:'הזמנות חדשות',archive:'ארכיון',calendar:'יומן',scheduling:'לוח טיפולים',forms:'טפסים דיגיטליים',reminders:'תזכורות',settings:'הגדרות'};
+const PT={dashboard:'דשבורד',vehicles:'רכבים ונהגים','vehicle-card':'כרטיס רכב',tasks:'משימות',violations:'דוחות תנועה',accidents:'תאונות',orders:'הזמנות חדשות',archive:'ארכיון',calendar:'יומן',scheduling:'לוח טיפולים',forms:'טפסים דיגיטליים',reminders:'תזכורות',settings:'הגדרות','km-reports':'עדכוני ק"מ'};
 function go(name,el){
   // Reset ALL vc-tab-panels when navigating away from vehicle card
   document.querySelectorAll('.vc-tab-panel').forEach(function(p){p.style.display='none';});
@@ -15244,6 +15583,7 @@ function go(name,el){
   if(name==='violations')renderViolations();
   if(name==='accidents')renderAccidents();
   if(name==='orders')renderOrders();
+  if(name==='km-reports')renderKmReports();
   if(name==='calendar')renderCalendar();
   if(name==='forms')renderForms();
   if(name==='reminders')renderReminders();
@@ -15312,6 +15652,7 @@ function startAuthedApp(){
   syncViolApprovals();
   startViolApprovalsListener();
   if(typeof startFormSubmissionsListener==='function')startFormSubmissionsListener();
+  if(typeof startKmReportsListener==='function')startKmReportsListener();
   // Start vehicles real-time sync with Firestore
   if(typeof startVehiclesListener==='function')startVehiclesListener();
   // Register and start sync for all other data collections (cross-device sync)
