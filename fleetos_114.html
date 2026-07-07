@@ -11431,13 +11431,18 @@ function persistVehicleDocsDebounced(vid){
   if(!db||vid==null)return;
   clearTimeout(_vdPersistTimers[vid]);
   _vdPersistTimers[vid]=setTimeout(function(){
-    var payload={vid:vid,docs:vehicleDocs[vid]||{},extra:extraDocs[vid]||[]};
+    // שמור metadata בלבד — ללא base64 גדול (קבצים נשמרים ב-vehicleExtraFiles)
+    var extraMeta=(extraDocs[vid]||[]).map(function(e){
+      var m=Object.assign({},e);delete m.url;delete m.data;return m;
+    });
+    var payload={vid:vid,docs:vehicleDocs[vid]||{},extra:extraMeta};
     db.collection('vehicleDocsStore').doc(String(vid)).set(payload)
       .catch(function(e){console.error('vehicleDocsStore write error:',e);});
   },800);
 }
 function loadVehicleDocsStore(){
   if(!db)return;
+  // טען metadata מ-vehicleDocsStore
   db.collection('vehicleDocsStore').get().then(function(snap){
     snap.forEach(function(doc){
       var d=doc.data();
@@ -11445,7 +11450,22 @@ function loadVehicleDocsStore(){
       if(d.docs&&typeof d.docs==='object') vehicleDocs[d.vid]=d.docs;
       if(Array.isArray(d.extra)) extraDocs[d.vid]=d.extra;
     });
-    if(_currentVid&&typeof openDet==='function'){try{openDet(_currentVid);}catch(e){}}
+    // טען קבצים מ-vehicleExtraFiles ומלא url בזיכרון
+    db.collection('vehicleExtraFiles').get().then(function(fsnap){
+      fsnap.forEach(function(fdoc){
+        var f=fdoc.data();
+        if(!f.vid||!f.data)return;
+        if(!extraDocs[f.vid])extraDocs[f.vid]=[];
+        // בדוק אם כבר קיים (לפי ts)
+        var exists=extraDocs[f.vid].find(function(e){return e.id===f.ts||e.id===f.id;});
+        if(exists){exists.url=f.data;}
+        else{extraDocs[f.vid].push({id:f.ts||f.id,name:f.name,cat:f.cat,exp:f.exp,date:f.date,fileType:f.fileType,fileName:f.fileName,url:f.data});}
+      });
+      if(_currentVid&&typeof openDet==='function'){try{openDet(_currentVid);}catch(e){}}
+    }).catch(function(e){
+      console.error('vehicleExtraFiles load error:',e);
+      if(_currentVid&&typeof openDet==='function'){try{openDet(_currentVid);}catch(e){}}
+    });
   }).catch(function(e){console.error('vehicleDocsStore load error:',e);});
 }
 
@@ -12551,50 +12571,42 @@ function saveExtDoc(vid){
   const fileInput=document.getElementById('edoc-file');
   const file=fileInput.files[0];
   const isMandatory=document.getElementById('edoc-mandatory').checked;
-  // Check file size (max 4MB)
-  if(file && file.size > 4*1024*1024){showToast('הקובץ גדול מדי (מקסימום 4MB)');return;}
+  if(file && file.size > 5*1024*1024){showToast('הקובץ גדול מדי (מקסימום 5MB)');return;}
   const saveBtn=document.querySelector('#ext-doc-modal button[onclick*="saveExtDoc"]');
   if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='שומר...';}
-  const doSave=function(url){
+  function finish(dataUrl){
+    const ts=Date.now();
+    const docEntry={id:ts,name,cat,exp,date:localDateStr(),fileType:file?file.type:null,fileName:file?file.name:null};
     if(isMandatory){
-      const key='custom_'+Date.now();
+      const key='custom_'+ts;
       MANDATORY_DOCS.push({key,label:name,custom:true});
       if(!vehicleDocs[vid])vehicleDocs[vid]={};
-      vehicleDocs[vid][key]={name:file?file.name:name,type:file?.type||'',url:url||null};
+      vehicleDocs[vid][key]={name:file?file.name:name,type:file?file.type:'',url:null,fsDocId:dataUrl?('vef_'+vid+'_'+ts):null};
       persistVehicleDocsDebounced(vid);
     }else{
       if(!extraDocs[vid])extraDocs[vid]=[];
-      extraDocs[vid].push({name,cat,exp,date:localDateStr(),url:url||null,fileType:file?.type||null});
-      persistVehicleDocsDebounced(vid);
+      extraDocs[vid].push({...docEntry,url:dataUrl||null});
     }
+    // שמור קובץ כ-Firestore document נפרד (עוקף מגבלת גודל ו-CORS)
+    if(dataUrl && db){
+      db.collection('vehicleExtraFiles').doc('vef_'+vid+'_'+ts).set({
+        vid:vid,ts:ts,...docEntry,data:dataUrl
+      }).catch(function(e){console.error('vehicleExtraFiles save error:',e);});
+    }
+    // שמור metadata בלבד ב-vehicleDocsStore (ללא base64)
+    if(!isMandatory) persistVehicleDocsDebounced(vid);
     document.getElementById('ext-doc-modal')?.remove();
     showToast('המסמך נשמר ✅');
     openDet(vid);
     vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]);
-  };
+  }
   if(file){
     const reader=new FileReader();
     reader.onerror=function(){showToast('שגיאה בקריאת הקובץ');if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='שמור';}};
-    reader.onload=function(e){
-      const dataUrl=e.target.result;
-      if(storage){
-        const ts=Date.now();
-        const path=isMandatory
-          ?'vehicles/'+vid+'/docs/custom_'+ts
-          :'vehicles/'+vid+'/extra/'+ts;
-        uploadFileToStorage(path,dataUrl)
-          .then(doSave)
-          .catch(function(err){
-            console.error('Storage upload failed, using base64 fallback:',err);
-            doSave(dataUrl);
-          });
-      }else{
-        doSave(dataUrl);
-      }
-    };
+    reader.onload=function(e){finish(e.target.result);};
     reader.readAsDataURL(file);
   }else{
-    doSave(null);
+    finish(null);
   }
 }
 
