@@ -11582,7 +11582,7 @@ function startKmUpdatesListener(){
               id: notifId,
               vid: d.vid,
               plate: v.plate,
-              driverName: (v.driver&&v.driver.name)||'נהג',
+              driverName: v.driverName||(v.driver&&v.driver.name)||'נהג',
               km: d.km,
               time: d.updatedAt || new Date().toISOString()
             });
@@ -11789,36 +11789,36 @@ function submitKmSelfReport(){
 /* ── Admin: טעינה ורינדור ── */
 var _kmReportsCache=[];
 var _kmReportsListenerActive=false;
+var _kmReportsIsInit=true; // flag נפרד — לא על boolean
 
 function startKmReportsListener(){
   if(!db||_kmReportsListenerActive) return;
   _kmReportsListenerActive=true;
+  _kmReportsIsInit=true;
   db.collection('kmReports').orderBy('submittedAt','desc').onSnapshot(function(snap){
     _kmReportsCache=snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
     _updateKmReportsBadge();
     // רינדור אם הדף פתוח
-    if(document.getElementById('page-km-reports').classList.contains('active')) renderKmReports();
-    // פעמון — הודעה על דיווחים חדשים
+    var pg=document.getElementById('page-km-reports');
+    if(pg && pg.classList.contains('active')) renderKmReports();
+    // פעמון + שיוך — רק לדיווחים חדשים (לא בטעינה ראשונית)
     snap.docChanges().forEach(function(ch){
-      if(ch.type==='added' && !_kmReportsListenerActive._init){
+      if(ch.type==='added' && !_kmReportsIsInit){
         var d=Object.assign({id:ch.doc.id},ch.doc.data());
-        // פעמון — הוסף ל-km_update_notifications
-        (function(){
-          var notifId='kmr-'+d.id;
-          var existing=JSON.parse(localStorage.getItem('km_update_notifications')||'[]');
-          if(!existing.find(function(n){return n.id===notifId;})){
-            existing.unshift({id:notifId,driverName:d.driverName||'נהג',plate:d.vehicleNum||d.matchedPlate||'',km:d.km||0,vid:d.matchedVehicleId||null,time:d.submittedAt||new Date().toISOString()});
-            localStorage.setItem('km_update_notifications',JSON.stringify(existing));
-            if(typeof updateBellBadge==='function') updateBellBadge();
-          }
-        })();
-        // ניסיון שיוך אוטומטי — רק לדיווחים חדשים ב-pending
+        // פעמון
+        var notifId='kmr-'+d.id;
+        var existing=JSON.parse(localStorage.getItem('km_update_notifications')||'[]');
+        if(!existing.find(function(n){return n.id===notifId;})){
+          existing.unshift({id:notifId,driverName:d.driverName||'נהג',plate:d.vehicleNum||d.matchedPlate||'',km:d.km||0,vid:d.matchedVehicleId||null,time:d.submittedAt||new Date().toISOString()});
+          localStorage.setItem('km_update_notifications',JSON.stringify(existing));
+          if(typeof updateBellBadge==='function') updateBellBadge();
+        }
+        // שיוך אוטומטי
         if(d.status==='pending' && vehicles.length) _autoMatchKmReport(d);
       }
     });
-    _kmReportsListenerActive._init=false;
+    _kmReportsIsInit=false;
   });
-  _kmReportsListenerActive._init=true;
 }
 
 function _updateKmReportsBadge(){
@@ -11923,24 +11923,30 @@ function kmrConfirmMatch(reportId){
 function _applyKmReportToVehicle(reportId, vehicle, km){
   if(!db||!vehicle||!vehicle.id||!km) return;
   var now=new Date().toISOString();
+  var vid=String(vehicle.id); // תמיד string לFirestore
   // 1. עדכן כרטיס רכב — currentKm + ציר זמן
-  var timeline=vehicle.timeline||[];
+  var timeline=(vehicle.timeline||[]).slice(); // copy
   timeline.unshift({type:'km-update',km:km,date:now.substring(0,10),note:'עדכון ק"מ עצמי'});
-  db.collection('vehicles').doc(vehicle.id).update({
+  db.collection('vehicles').doc(vid).update({
     currentKm: km,
     timeline: timeline
   }).then(function(){
     // עדכן cache מקומי
-    var vi=vehicles.findIndex(function(v){return v.id===vehicle.id;});
+    var vi=vehicles.findIndex(function(v){return String(v.id)===vid;});
     if(vi>=0){ vehicles[vi].currentKm=km; vehicles[vi].timeline=timeline; }
-    showToast('ק"מ עודכן בכרטיס '+(vehicle.plate||'')+ ' ✓');
-  });
-  // 2. עדכן סטטוס הדיווח
-  db.collection('kmReports').doc(reportId).update({
-    status:'matched',
-    matchedVehicleId: vehicle.id,
-    matchedPlate: vehicle.plate||'',
-    matchedAt: now
+    if(typeof renderV==='function') try{renderV();}catch(e){}
+    if(typeof openDet==='function' && typeof _currentVid!=='undefined' && String(_currentVid)===vid) try{openDet(vehicle.id);}catch(e){}
+    showToast('ק"מ עודכן בכרטיס '+(vehicle.plate||'')+' ✓');
+    // 2. עדכן סטטוס הדיווח רק אחרי הצלחה
+    return db.collection('kmReports').doc(reportId).update({
+      status:'matched',
+      matchedVehicleId: vid,
+      matchedPlate: vehicle.plate||'',
+      matchedAt: now
+    });
+  }).catch(function(e){
+    console.error('_applyKmReportToVehicle error:',e);
+    showToast('שגיאה בעדכון ק"מ — בדוק חיבור');
   });
 }
 
@@ -11953,10 +11959,10 @@ function _autoMatchKmReport(report){
   if(plate){
     matched=vehicles.find(function(v){ return (v.plate||'').replace(/[^0-9]/g,'')=== plate; });
   }
-  // חיפוש לפי שם נהג
+  // חיפוש לפי שם נהג — בודק גם v.driverName וגם v.driver.name
   if(!matched){
     var byName=vehicles.filter(function(v){
-      var vn=(v.driverName||'').trim().toLowerCase();
+      var vn=((v.driverName)||(v.driver&&v.driver.name)||'').trim().toLowerCase();
       return vn && (vn.includes(name)||name.includes(vn));
     });
     if(byName.length===1) matched=byName[0];
