@@ -21346,6 +21346,35 @@ function subscribeToTreatments() {
 var _scanInProgress = false;
 
 // סגירה אוטומטית של טיפול פתוח כשהרכב כבר טופל (הטיפול הבא רחוק)
+async function autoCloseRenewedTestTreatments(vehicle, newDueDate) {
+  try {
+    var snap = await db.collection('treatments')
+      .where('vehicleId', '==', String(vehicle.id))
+      .where('kind', '==', 'test')
+      .get();
+    var newDateDay = newDueDate.toISOString().slice(0, 10);
+    snap.forEach(async function(doc) {
+      var d = doc.data();
+      if (d.status === 'closed') return;
+      var storedDateDay = (d.dueDate || '').slice(0, 10);
+      // תאריך שונה → הרישיון חודש, סגור את הטיפול הישן
+      if (storedDateDay !== newDateDay) {
+        await db.collection('treatments').doc(doc.id).update({
+          status: 'closed',
+          closedReason: 'auto_renewed',
+          closedAt: new Date().toISOString()
+        });
+        // עדכן local state
+        var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === doc.id; });
+        if (local) local.status = 'closed';
+        console.log('[Treatments] סגירה אוטומטית — טסט חודש:', doc.id);
+      }
+    });
+  } catch(err) {
+    console.error('[Treatments] שגיאה בסגירת טסט:', err);
+  }
+}
+
 async function autoCloseServicedTreatments(vehicle, lastSvcDate) {
   try {
     var snap = await db.collection('treatments')
@@ -21414,6 +21443,9 @@ async function performLocalScan() {
         var daysUntilTest = daysBetween(today, testDueDate);
         if (daysUntilTest <= range) {
           await createTreatmentIfNotExists(vehicle, 'test', testDueDate);
+        } else {
+          // הרישיון חודש — סגור כל טסט פתוח עם תאריך ישן
+          await autoCloseRenewedTestTreatments(vehicle, testDueDate);
         }
       }
     }
