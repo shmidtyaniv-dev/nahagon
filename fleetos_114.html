@@ -456,7 +456,7 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns:1fr!important }
   /* שורת חיפוש מובייל */
   .mobile-search-bar{display:flex!important;align-items:center;gap:8px;padding:8px 14px;background:var(--card);border-bottom:0.5px solid var(--bdr);position:sticky;top:54px;z-index:99}
-  .mobile-search-bar input{border:none;background:transparent;font-size:16px;font-family:inherit;color:var(--t1);outline:none}
+  .mobile-search-bar input{flex:1;border:none;background:transparent;font-size:16px;font-family:inherit;color:var(--t1);outline:none}
   .mobile-search-bar input::placeholder{color:var(--t3)}
   /* תוצאות חיפוש - מיקום מובייל */
   #global-search-results{position:fixed!important;top:108px!important;right:10px!important;left:10px!important;width:auto!important}
@@ -12551,6 +12551,10 @@ function saveExtDoc(vid){
   const fileInput=document.getElementById('edoc-file');
   const file=fileInput.files[0];
   const isMandatory=document.getElementById('edoc-mandatory').checked;
+  // Check file size (max 4MB)
+  if(file && file.size > 4*1024*1024){showToast('הקובץ גדול מדי (מקסימום 4MB)');return;}
+  const saveBtn=document.querySelector('#ext-doc-modal button[onclick*="saveExtDoc"]');
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='שומר...';}
   const doSave=function(url){
     if(isMandatory){
       const key='custom_'+Date.now();
@@ -12563,12 +12567,14 @@ function saveExtDoc(vid){
       extraDocs[vid].push({name,cat,exp,date:localDateStr(),url:url||null,fileType:file?.type||null});
       persistVehicleDocsDebounced(vid);
     }
-    document.getElementById('ext-doc-modal').remove();
+    document.getElementById('ext-doc-modal')?.remove();
+    showToast('המסמך נשמר ✅');
     openDet(vid);
     vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]);
   };
   if(file){
     const reader=new FileReader();
+    reader.onerror=function(){showToast('שגיאה בקריאת הקובץ');if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='שמור';}};
     reader.onload=function(e){
       const dataUrl=e.target.result;
       if(storage){
@@ -12578,9 +12584,23 @@ function saveExtDoc(vid){
           :'vehicles/'+vid+'/extra/'+ts;
         uploadFileToStorage(path,dataUrl)
           .then(doSave)
-          .catch(function(err){console.error('Storage upload failed, falling back:',err);doSave(dataUrl);});
+          .catch(function(err){
+            console.error('Storage upload failed:',err);
+            // Fallback: save base64 only if file is small enough for Firestore (<400KB)
+            if(file.size < 400*1024){
+              doSave(dataUrl);
+            }else{
+              showToast('שגיאת העלאה — הקובץ גדול מדי לשמירה מקומית. בדוק הרשאות Storage ב-Firebase.');
+              if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='שמור';}
+            }
+          });
       }else{
-        doSave(dataUrl);
+        if(file.size < 400*1024){
+          doSave(dataUrl);
+        }else{
+          showToast('Storage לא זמין — קובץ גדול מדי לשמירה מקומית');
+          if(saveBtn){saveBtn.disabled=false;saveBtn.textContent='שמור';}
+        }
       }
     };
     reader.readAsDataURL(file);
