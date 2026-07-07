@@ -18725,11 +18725,42 @@ function openCalEventEditModal(info){
     +'<button onclick="saveCalEventEdit('+v.id+',\''+fieldKey+'\','+familyIdx+')" style="flex:1;padding:11px;background:'+typeColor+';color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">שמור שינויים</button>'
     +'</div>'
     +(waReminderUrl
-      ?'<button onclick="document.getElementById(\'cal-event-edit-modal\').remove();location.href=\''+waReminderUrl+'\'" style="width:100%;padding:11px;background:#25d366;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px"><span style="font-size:17px">💬</span> שלח תזכורת בוואצאפ לנהג</button>'
+      ?'<button onclick="openWaReminderPreview(\''+waReminderUrl.replace(/'/g,"\\'")+'\')" style="width:100%;padding:11px;background:#25d366;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px"><span style="font-size:17px">💬</span> שלח תזכורת בוואצאפ לנהג</button>'
       :'<div style="text-align:center;font-size:12px;color:var(--t3);padding:8px 0">אין מספר טלפון לנהג — לא ניתן לשלוח תזכורת</div>'
     )
     +'</div>';
   document.body.appendChild(modal);
+}
+
+function openWaReminderPreview(waUrl){
+  // חלץ את הטקסט מה-URL
+  var textParam = waUrl.split('?text=')[1] || '';
+  var currentText = decodeURIComponent(textParam);
+  var baseUrl = waUrl.split('?text=')[0];
+
+  var prev = document.getElementById('wa-reminder-preview-modal');
+  if(prev) prev.remove();
+
+  var m = document.createElement('div');
+  m.id = 'wa-reminder-preview-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.onclick = function(e){ if(e.target===m) m.remove(); };
+  m.innerHTML =
+    '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:420px;direction:rtl">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+    +'<div style="font-size:15px;font-weight:700;color:#1A4A3A">💬 תזכורת בוואצאפ</div>'
+    +'<button onclick="document.getElementById(\'wa-reminder-preview-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">×</button>'
+    +'</div>'
+    +'<div style="font-size:12px;color:var(--t3);margin-bottom:6px">ניתן לערוך את ההודעה לפני שליחה:</div>'
+    +'<textarea id="wa-preview-text" rows="5" style="width:100%;padding:10px 12px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;direction:rtl;resize:vertical;background:var(--bg);color:var(--t1);margin-bottom:14px;line-height:1.6">'+currentText+'</textarea>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button onclick="document.getElementById(\'wa-reminder-preview-modal\').remove()" style="flex:1;padding:11px;background:var(--bg);color:var(--t2);border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">ביטול</button>'
+    +'<button onclick="(function(){var txt=document.getElementById(\'wa-preview-text\').value;document.getElementById(\'wa-reminder-preview-modal\').remove();location.href=\''+baseUrl+'?text=\'+encodeURIComponent(txt);})()" style="flex:2;padding:11px;background:#25d366;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><span>💬</span> שלח</button>'
+    +'</div>'
+    +'</div>';
+  document.body.appendChild(m);
+  // פוקוס על הטקסט
+  setTimeout(function(){ var ta=document.getElementById('wa-preview-text'); if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);} },50);
 }
 
 function saveCalEventEdit(vehicleId, fieldKey, familyIdx){
