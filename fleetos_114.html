@@ -1959,6 +1959,14 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .kmr-submit-btn:disabled{background:#9ca3af;cursor:not-allowed}
 .kmr-status{text-align:center;margin-top:12px;font-size:13px;min-height:20px}
 .kmr-success{text-align:center;padding:20px 0}
+/* autocomplete */
+.kmr-ac-wrap{position:relative}
+.kmr-ac-drop{position:absolute;top:calc(100% + 4px);right:0;left:0;background:#fff;border:1.5px solid #1D9E75;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:99;overflow:hidden;display:none}
+.kmr-ac-item{padding:11px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f3f4f6;font-size:14px;transition:background .1s}
+.kmr-ac-item:last-child{border-bottom:none}
+.kmr-ac-item:hover,.kmr-ac-item.active{background:#f0fdf4}
+.kmr-ac-name{font-weight:600;color:#111}
+.kmr-ac-plate{font-size:12px;color:#6b7280;direction:ltr}
 /* ── KM REPORTS — admin page ── */
 .kmr-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
 .kmr-stat{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:16px;text-align:center}
@@ -11602,7 +11610,10 @@ function checkKmSelfReport(){
       '<div class="kmr-pub-body">'+
         '<div class="kmr-field">'+
           '<label><span>*</span>שם מלא</label>'+
-          '<input type="text" id="kmsr-name" placeholder="שם פרטי + שם משפחה" autocomplete="name">'+
+          '<div class="kmr-ac-wrap">'+
+            '<input type="text" id="kmsr-name" placeholder="שם פרטי + שם משפחה" autocomplete="off" oninput="kmrAcSearch(this.value)" onkeydown="kmrAcKey(event)">'+
+            '<div class="kmr-ac-drop" id="kmsr-ac-drop"></div>'+
+          '</div>'+
         '</div>'+
         '<div class="kmr-field">'+
           '<label>מספר רכב <span style="color:#9ca3af;font-weight:400">(אופציונלי)</span></label>'+
@@ -11618,9 +11629,88 @@ function checkKmSelfReport(){
       '</div>'+
     '</div>';
   document.body.appendChild(wrap);
-  // focus
+  // סגור dropdown בלחיצה מחוץ
+  document.addEventListener('click', function(e){
+    var drop=document.getElementById('kmsr-ac-drop');
+    var inp=document.getElementById('kmsr-name');
+    if(drop && inp && !inp.contains(e.target) && !drop.contains(e.target)) drop.style.display='none';
+  });
+  // טען רשימת נהגים (anonymous auth)
+  function _loadDrivers(){
+    if(!db) return;
+    db.collection('vehicles').get().then(function(snap){
+      _kmrDriversList=[];
+      snap.forEach(function(doc){
+        var d=doc.data();
+        var name=(d.driverName||'').trim();
+        var plate=(d.plate||'').trim();
+        if(name) _kmrDriversList.push({name:name, plate:plate, id:doc.id});
+      });
+    }).catch(function(){});
+  }
+  if(auth && !auth.currentUser){
+    auth.signInAnonymously().then(_loadDrivers).catch(_loadDrivers);
+  } else {
+    _loadDrivers();
+  }
   setTimeout(function(){ var n=document.getElementById('kmsr-name'); if(n)n.focus(); },300);
   return true;
+}
+
+var _kmrDriversList=[];
+var _kmrAcIndex=-1;
+
+function kmrAcSearch(val){
+  var drop=document.getElementById('kmsr-ac-drop');
+  if(!drop) return;
+  var q=(val||'').trim().toLowerCase();
+  if(!q || q.length<1){ drop.style.display='none'; return; }
+  var matches=_kmrDriversList.filter(function(d){
+    return d.name.toLowerCase().includes(q);
+  }).slice(0,6);
+  if(!matches.length){ drop.style.display='none'; return; }
+  _kmrAcIndex=-1;
+  drop.innerHTML=matches.map(function(d,i){
+    // הדגש את החלק שהתאים
+    var hi=d.name.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark style="background:#dcfce7;color:#166534;border-radius:2px">$1</mark>');
+    return '<div class="kmr-ac-item" data-i="'+i+'" onmousedown="kmrAcPick('+i+','+JSON.stringify(matches).replace(/"/g,'&quot;')+')" onmouseover="kmrAcHover(this)">'+
+      '<span class="kmr-ac-name">'+hi+'</span>'+
+      (d.plate?'<span class="kmr-ac-plate">'+d.plate+'</span>':'')+
+    '</div>';
+  }).join('');
+  drop.style.display='block';
+}
+
+function kmrAcHover(el){
+  document.querySelectorAll('.kmr-ac-item').forEach(function(e){e.classList.remove('active');});
+  el.classList.add('active');
+  _kmrAcIndex=parseInt(el.dataset.i||0);
+}
+
+function kmrAcKey(e){
+  var drop=document.getElementById('kmsr-ac-drop');
+  if(!drop||drop.style.display==='none') return;
+  var items=drop.querySelectorAll('.kmr-ac-item');
+  if(!items.length) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); _kmrAcIndex=Math.min(_kmrAcIndex+1,items.length-1); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); _kmrAcIndex=Math.max(_kmrAcIndex-1,0); }
+  else if(e.key==='Enter'&&_kmrAcIndex>=0){ e.preventDefault(); items[_kmrAcIndex].dispatchEvent(new MouseEvent('mousedown')); return; }
+  else if(e.key==='Escape'){ drop.style.display='none'; return; }
+  items.forEach(function(el,i){ el.classList.toggle('active',i===_kmrAcIndex); });
+  if(_kmrAcIndex>=0) items[_kmrAcIndex].scrollIntoView({block:'nearest'});
+}
+
+function kmrAcPick(idx, matches){
+  var d=matches[idx];
+  if(!d) return;
+  var nameEl=document.getElementById('kmsr-name');
+  var plateEl=document.getElementById('kmsr-plate');
+  var drop=document.getElementById('kmsr-ac-drop');
+  if(nameEl){ nameEl.value=d.name; nameEl.classList.remove('err'); }
+  if(plateEl && d.plate){ plateEl.value=d.plate; }
+  if(drop) drop.style.display='none';
+  // קפוץ לשדה ק"מ
+  setTimeout(function(){ var km=document.getElementById('kmsr-km'); if(km)km.focus(); },50);
 }
 
 function submitKmSelfReport(){
