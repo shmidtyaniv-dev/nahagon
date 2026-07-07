@@ -2786,12 +2786,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           שלח קישור
         </button>
       </div>
-      <!-- לינק קופי -->
-      <div class="kmr-link-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2" width="16" height="16" style="flex-shrink:0"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-        <span class="kmr-link-url" id="kmr-link-display"></span>
-        <button onclick="openShareKmLinkModal()" style="flex-shrink:0;padding:6px 12px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);font-size:12px;font-family:inherit;cursor:pointer;color:var(--t2)">שלח ↗</button>
-      </div>
+      <!-- kmr-link-display hidden (used by JS only) -->
+      <span id="kmr-link-display" style="display:none"></span>
       <!-- סיכום -->
       <div class="kmr-summary" id="kmr-summary">
         <div class="kmr-stat"><div class="kmr-stat-val" id="kmr-total">0</div><div class="kmr-stat-lbl">דיווחים שהתקבלו</div></div>
