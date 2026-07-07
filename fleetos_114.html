@@ -3624,7 +3624,22 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <!-- Sub-tab: Service/Test (מערכת טיפולים חדשה) -->
           <div class="settings-templates-content" data-templates-tab="service" style="display:none">
             <div class="settings-template-vars-info">
-              הודעות ברירת מחדל לשלבים במערכת טיפולים וטסטים. ניתן לערוך לפני כל שליחה.
+              הודעות ברירת מחדל לשלבים במערכת טיפולים וטסטים. ניתן לערוך לפני כל שליחה.<br>
+              משתנים זמינים: {נהג}, {רכב}, {תאריך}, {סוג}, {לינק}
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">תזכורת לפני טיפול</div>
+              </div>
+              <textarea id="trt-tpl-reminder-service" class="settings-template-textarea" rows="4"></textarea>
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">תזכורת לפני טסט</div>
+              </div>
+              <textarea id="trt-tpl-reminder-test" class="settings-template-textarea" rows="4"></textarea>
             </div>
 
             <div class="settings-template-item">
@@ -18679,12 +18694,6 @@ function openCalEventEditModal(info){
   var driverPhone=(v.driver&&v.driver.phone||v.driverPhone||'').replace(/\D/g,'').replace(/^0/,'972');
   var plateStr=v.plate||'';
   var familyIdx=info.familyIdx!==undefined?info.familyIdx:-1;
-  var waReminderMsg=info.type==='test-pickup'||info.alertType==='vehicle-license'
-    ?'שלום '+driverName+', תזכורת: רכב '+plateStr+' צריך טסט. תאריך פקיעת הרישיון: '+(currentVal?currentVal.split('-').reverse().join('/'):'')
-    :info.type==='svc-pickup'
-    ?'שלום '+driverName+', תזכורת: רכב '+plateStr+' צריך טיפול. תאריך הטיפול: '+(currentVal?currentVal.split('-').reverse().join('/'):'')
-    :'שלום '+driverName+', תזכורת לגבי רכב '+plateStr+': '+eventTitle;
-  var waReminderUrl=driverPhone?'https://wa.me/'+driverPhone+'?text='+encodeURIComponent(waReminderMsg):'';
 
   var modal = document.createElement('div');
   modal.id = 'cal-event-edit-modal';
@@ -18724,43 +18733,31 @@ function openCalEventEditModal(info){
     +'<button onclick="document.getElementById(\'cal-event-edit-modal\').remove()" style="padding:11px 14px;background:var(--bg);color:var(--t2);border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">ביטול</button>'
     +'<button onclick="saveCalEventEdit('+v.id+',\''+fieldKey+'\','+familyIdx+')" style="flex:1;padding:11px;background:'+typeColor+';color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">שמור שינויים</button>'
     +'</div>'
-    +(waReminderUrl
-      ?'<button onclick="openWaReminderPreview(\''+waReminderUrl.replace(/'/g,"\\'")+'\')" style="width:100%;padding:11px;background:#25d366;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px"><span style="font-size:17px">💬</span> שלח תזכורת בוואצאפ לנהג</button>'
+    +(driverPhone
+      ?'<button onclick="sendCalEventWaReminder(\''+v.id+'\',\''+fieldKey+'\',\''+currentVal+'\')" style="width:100%;padding:11px;background:#25d366;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px"><span style="font-size:17px">💬</span> שלח תזכורת בוואצאפ לנהג</button>'
       :'<div style="text-align:center;font-size:12px;color:var(--t3);padding:8px 0">אין מספר טלפון לנהג — לא ניתן לשלוח תזכורת</div>'
     )
     +'</div>';
   document.body.appendChild(modal);
 }
 
-function openWaReminderPreview(waUrl){
-  // חלץ את הטקסט מה-URL
-  var textParam = waUrl.split('?text=')[1] || '';
-  var currentText = decodeURIComponent(textParam);
-  var baseUrl = waUrl.split('?text=')[0];
-
-  var prev = document.getElementById('wa-reminder-preview-modal');
-  if(prev) prev.remove();
-
-  var m = document.createElement('div');
-  m.id = 'wa-reminder-preview-modal';
-  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
-  m.onclick = function(e){ if(e.target===m) m.remove(); };
-  m.innerHTML =
-    '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:420px;direction:rtl">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
-    +'<div style="font-size:15px;font-weight:700;color:#1A4A3A">💬 תזכורת בוואצאפ</div>'
-    +'<button onclick="document.getElementById(\'wa-reminder-preview-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">×</button>'
-    +'</div>'
-    +'<div style="font-size:12px;color:var(--t3);margin-bottom:6px">ניתן לערוך את ההודעה לפני שליחה:</div>'
-    +'<textarea id="wa-preview-text" rows="5" style="width:100%;padding:10px 12px;border:1.5px solid var(--bdr2);border-radius:8px;font-size:14px;font-family:inherit;direction:rtl;resize:vertical;background:var(--bg);color:var(--t1);margin-bottom:14px;line-height:1.6">'+currentText+'</textarea>'
-    +'<div style="display:flex;gap:8px">'
-    +'<button onclick="document.getElementById(\'wa-reminder-preview-modal\').remove()" style="flex:1;padding:11px;background:var(--bg);color:var(--t2);border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">ביטול</button>'
-    +'<button onclick="(function(){var txt=document.getElementById(\'wa-preview-text\').value;document.getElementById(\'wa-reminder-preview-modal\').remove();location.href=\''+baseUrl+'?text=\'+encodeURIComponent(txt);})()" style="flex:2;padding:11px;background:#25d366;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><span>💬</span> שלח</button>'
-    +'</div>'
-    +'</div>';
-  document.body.appendChild(m);
-  // פוקוס על הטקסט
-  setTimeout(function(){ var ta=document.getElementById('wa-preview-text'); if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);} },50);
+function sendCalEventWaReminder(vehicleId, fieldKey, currentVal){
+  var v = vehicles.find(function(x){return x.id===vehicleId;});
+  if(!v){ showToast('רכב לא נמצא'); return; }
+  var driverName = v.driver&&v.driver.name||'';
+  var phone = (v.driver&&v.driver.phone||v.driverPhone||'').replace(/\D/g,'').replace(/^0/,'972');
+  if(!phone){ showToast('אין מספר טלפון לנהג'); return; }
+  var plate = v.plate||'';
+  var dateStr = currentVal ? currentVal.split('-').reverse().join('/') : '';
+  var isTest = fieldKey==='licenseExp'||fieldKey==='driverLicenseExp';
+  var tpls = getTrtTemplates();
+  var tpl = isTest ? tpls.reminderTest : tpls.reminderService;
+  var msg = tpl
+    .replace(/\{נהג\}/g, driverName)
+    .replace(/\{רכב\}/g, plate)
+    .replace(/\{תאריך\}/g, dateStr);
+  document.getElementById('cal-event-edit-modal')&&document.getElementById('cal-event-edit-modal').remove();
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
 }
 
 function saveCalEventEdit(vehicleId, fieldKey, familyIdx){
@@ -23012,7 +23009,9 @@ var TRT_TPL_DEFAULTS = {
   reminder: 'שלום {נהג}, נא לבחור תאריך {סוג} ברכב: {לינק}',
   approval: 'שלום {נהג},\nהמועד שבחרת ל{סוג} אושר ✓\n📅 {תאריך}\n🚗 איסוף הרכב מהמקום הקבוע\n⏱ הרכב יוחזר עד סוף היום',
   reject: 'שלום {נהג}, התאריך שבחרת ל{סוג} לא מתאים. נא לבחור תאריך חדש: {לינק}',
-  cancel: 'שלום {נהג}, המועד ל{סוג} בוטל. נא לבחור תאריך חדש: {לינק}'
+  cancel: 'שלום {נהג}, המועד ל{סוג} בוטל. נא לבחור תאריך חדש: {לינק}',
+  reminderService: 'שלום {נהג}, תזכורת: רכב {רכב} מגיע לטיפול בתאריך {תאריך}.\nנא לוודא שהרכב פנוי לאיסוף.',
+  reminderTest: 'שלום {נהג}, תזכורת: רכב {רכב} מגיע לטסט בתאריך {תאריך}.\nנא לוודא שהרכב פנוי לאיסוף.'
 };
 
 function getTrtTemplates() {
@@ -23021,7 +23020,9 @@ function getTrtTemplates() {
     reminder: s.trtTplReminder || TRT_TPL_DEFAULTS.reminder,
     approval: s.trtTplApproval || TRT_TPL_DEFAULTS.approval,
     reject: s.trtTplReject || TRT_TPL_DEFAULTS.reject,
-    cancel: s.trtTplCancel || TRT_TPL_DEFAULTS.cancel
+    cancel: s.trtTplCancel || TRT_TPL_DEFAULTS.cancel,
+    reminderService: s.trtTplReminderService || TRT_TPL_DEFAULTS.reminderService,
+    reminderTest: s.trtTplReminderTest || TRT_TPL_DEFAULTS.reminderTest
   };
 }
 
@@ -23045,6 +23046,8 @@ function saveTrtTemplates() {
   el = document.getElementById('trt-tpl-approval'); if (el) s.trtTplApproval = el.value;
   el = document.getElementById('trt-tpl-reject'); if (el) s.trtTplReject = el.value;
   el = document.getElementById('trt-tpl-cancel'); if (el) s.trtTplCancel = el.value;
+  el = document.getElementById('trt-tpl-reminder-service'); if (el) s.trtTplReminderService = el.value;
+  el = document.getElementById('trt-tpl-reminder-test'); if (el) s.trtTplReminderTest = el.value;
   localStorage.setItem('fleetSettings',JSON.stringify(s));
   showToast('✓ תבניות הודעות נשמרו');
   var saved = document.getElementById('trt-tpl-saved');
@@ -23057,6 +23060,8 @@ function resetTrtTemplates() {
   el = document.getElementById('trt-tpl-approval'); if (el) el.value = TRT_TPL_DEFAULTS.approval;
   el = document.getElementById('trt-tpl-reject'); if (el) el.value = TRT_TPL_DEFAULTS.reject;
   el = document.getElementById('trt-tpl-cancel'); if (el) el.value = TRT_TPL_DEFAULTS.cancel;
+  el = document.getElementById('trt-tpl-reminder-service'); if (el) el.value = TRT_TPL_DEFAULTS.reminderService;
+  el = document.getElementById('trt-tpl-reminder-test'); if (el) el.value = TRT_TPL_DEFAULTS.reminderTest;
   showToast('✓ תבניות שוחזרו לברירת מחדל');
 }
 
@@ -23067,6 +23072,8 @@ function initTrtTemplates() {
   el = document.getElementById('trt-tpl-approval'); if (el) el.value = tpl.approval;
   el = document.getElementById('trt-tpl-reject'); if (el) el.value = tpl.reject;
   el = document.getElementById('trt-tpl-cancel'); if (el) el.value = tpl.cancel;
+  el = document.getElementById('trt-tpl-reminder-service'); if (el) el.value = tpl.reminderService;
+  el = document.getElementById('trt-tpl-reminder-test'); if (el) el.value = tpl.reminderTest;
 }
 // טען תבניות בטעינה
 setTimeout(initTrtTemplates, 500);
