@@ -441,8 +441,8 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .topbar > div[style*="gap:10px"] { flex:1!important;min-width:0!important;overflow:hidden!important;justify-content:center!important }
   /* כפתור תפריט - גדול יותר */
   .mobile-menu-btn{width:44px!important;height:44px!important;border-radius:10px}
-  /* הסתר כפתור טווח ק"מ בטופבר מובייל (יש שורת חיפוש נפרדת) */
-  #km-filter-wrap{display:none!important}
+  /* הסתר כפתורי ק"מ ורישיון בטופבר מובייל */
+  #km-filter-wrap,#lic-filter-wrap{display:none!important}
   .mobile-menu-btn svg{width:24px!important;height:24px!important}
   /* "הוסף רכב" - רק אייקון + */
   .topbar > button[onclick*="openAdd"] { font-size:0!important;gap:0!important;padding:0!important;width:36px!important;height:36px!important;justify-content:center }
@@ -2373,6 +2373,22 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div style="display:flex;gap:8px">
             <button onclick="kmRangeReset()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
             <button onclick="kmRangeApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">חפש</button>
+          </div>
+        </div>
+      </div>
+      <!-- LICENSE EXPIRY MONTH FILTER -->
+      <div style="position:relative;flex-shrink:0" id="lic-filter-wrap">
+        <button class="km-filter-btn" id="lic-filter-btn" onclick="toggleLicFilterPanel()" title="סינון לפי פקיעת רישיון רכב">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          פקיעת רישיון
+        </button>
+        <div class="km-filter-panel" id="lic-filter-panel" style="width:320px">
+          <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:4px">סינון לפי חודש פקיעת רישיון רכב</div>
+          <div style="font-size:11px;color:var(--t3);margin-bottom:12px">בחר חודש אחד או יותר</div>
+          <div id="lic-months-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:14px"></div>
+          <div style="display:flex;gap:8px">
+            <button onclick="licFilterReset()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
+            <button onclick="licFilterApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">סנן</button>
           </div>
         </div>
       </div>
@@ -9087,6 +9103,11 @@ function fil(){
     var km=raw?parseInt(String(raw).replace(/[^0-9]/g,''))||0:0;
     return km>=_vKmRange.min && km<=_vKmRange.max;
   });
+  if(_vLicMonths && _vLicMonths.length>0) r=r.filter(function(v){
+    if(!v.licenseExp) return false;
+    var ym=v.licenseExp.substring(0,7); // "YYYY-MM"
+    return _vLicMonths.indexOf(ym)!==-1;
+  });
   var statusOrder={danger:0,warn:1,success:2};
   r.sort(function(a,b){var aS=getVehicleStatus(a).cls;var bS=getVehicleStatus(b).cls;return(statusOrder[aS]||2)-(statusOrder[bS]||2);});
   return r;
@@ -10138,6 +10159,67 @@ function kmRangeReset(){
   filterV('');
   if(typeof renderV==='function') renderV();
 }
+/* ── LICENSE EXPIRY MONTH FILTER ── */
+var _vLicMonths = []; // מערך חודשים שנבחרו: ["2026-07","2026-08",...]
+
+var _HEB_MONTHS = ['ינו׳','פבר׳','מרס','אפר׳','מאי','יוני','יולי','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'];
+
+function _buildLicMonthsGrid(){
+  var grid = document.getElementById('lic-months-grid');
+  if(!grid) return;
+  var now = new Date();
+  var html = '';
+  for(var i = 0; i < 18; i++){
+    var d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    var label = _HEB_MONTHS[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2);
+    var isSelected = _vLicMonths.indexOf(key) !== -1;
+    var isNow = (i === 0);
+    html += '<button onclick="licToggleMonth(\''+key+'\')" id="licm-'+key+'" style="'+
+      'padding:6px 4px;border-radius:7px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid;transition:all .15s;'+
+      (isSelected ? 'background:var(--gd);color:#fff;border-color:var(--gd)' :
+       isNow ? 'background:#fff8f0;color:#d97706;border-color:#d97706' :
+       'background:var(--bg);color:var(--t2);border-color:var(--bdr)')+'">'+
+      label+'</button>';
+  }
+  grid.innerHTML = html;
+}
+
+function licToggleMonth(key){
+  var idx = _vLicMonths.indexOf(key);
+  if(idx === -1){ _vLicMonths.push(key); }
+  else { _vLicMonths.splice(idx, 1); }
+  _buildLicMonthsGrid();
+}
+
+function toggleLicFilterPanel(){
+  var panel = document.getElementById('lic-filter-panel');
+  var btn   = document.getElementById('lic-filter-btn');
+  var open  = panel.style.display === 'block';
+  if(!open) _buildLicMonthsGrid();
+  panel.style.display = open ? 'none' : 'block';
+  btn.classList.toggle('active', !open);
+  // סגור km panel אם פתוח
+  var kp = document.getElementById('km-filter-panel');
+  if(kp && kp.style.display === 'block'){ kp.style.display='none'; document.getElementById('km-filter-btn').classList.remove('active'); }
+}
+
+function licFilterApply(){
+  document.getElementById('lic-filter-panel').style.display = 'none';
+  var btn = document.getElementById('lic-filter-btn');
+  btn.classList.toggle('active', _vLicMonths.length > 0);
+  // עבור לעמוד הרכבים
+  if(typeof go==='function') go('vehicles', document.querySelector('[dp=vehicles]'));
+  if(typeof renderV==='function') renderV();
+}
+
+function licFilterReset(){
+  _vLicMonths = [];
+  document.getElementById('lic-filter-panel').style.display = 'none';
+  document.getElementById('lic-filter-btn').classList.remove('active');
+  if(typeof renderV==='function') renderV();
+}
+
 /* ── KM RANGE FILTER — מובייל ── */
 function toggleMobileKmPanel(){
   var panel = document.getElementById('mobile-km-filter-panel');
@@ -10198,9 +10280,14 @@ document.addEventListener('click', function(e){
   var panel = document.getElementById('km-filter-panel');
   if(panel && panel.style.display==='block' && wrap && !wrap.contains(e.target)){
     panel.style.display = 'none';
-    // הסר active רק אם אין חיפוש פעיל
     var inp = document.getElementById('srch-inp');
     if(!inp || !inp.value) document.getElementById('km-filter-btn')?.classList.remove('active');
+  }
+  var licWrap = document.getElementById('lic-filter-wrap');
+  var licPanel = document.getElementById('lic-filter-panel');
+  if(licPanel && licPanel.style.display==='block' && licWrap && !licWrap.contains(e.target)){
+    licPanel.style.display = 'none';
+    if(!_vLicMonths || _vLicMonths.length===0) document.getElementById('lic-filter-btn')?.classList.remove('active');
   }
 });
 function switchTab(f,el){vFilter=f;document.querySelectorAll('#page-vehicles .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderV()}
