@@ -1690,8 +1690,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   .treatments-header { flex-direction: column; gap: 10px; }
   .status-card { padding: 10px; }
 
-  /* מודאלים — bottom sheet */
-  .trt-modal-overlay { align-items: flex-end; padding: 0; }
+  /* מודאלים — מרכז */
+  .trt-modal-overlay { align-items: center; padding: 16px; }
   .trt-modal-container {
     margin: 0;
     border-radius: 14px 14px 0 0;
@@ -22592,7 +22592,7 @@ async function sendManualReminder(channel) {
 
       var phone = (t.driverPhone || '').replace(/\D/g, '');
       var text = encodeURIComponent(msgText);
-      window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
+      location.href = 'https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text;
     } else {
       await sendDriverEmail(t, t.kind, t.id);
     }
@@ -22636,7 +22636,7 @@ async function cancelScheduled(treatmentId) {
   var phone = (t.driverPhone || '').replace(/\D/g, '');
   var msg = buildTrtMessage('cancel', t);
   if (phone) {
-    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg), '_blank');
+    location.href = 'https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg);
   }
   showToast('המועד בוטל.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
