@@ -22363,6 +22363,8 @@ function markAllNotificationsRead() {
     if (_readNotifications.indexOf(n.id) < 0) _readNotifications.push(n.id);
   });
   localStorage.setItem('trt_read_notifications',JSON.stringify(_readNotifications));
+  // מחק גם התראות ק"מ מ-localStorage לגמרי
+  localStorage.setItem('km_update_notifications', '[]');
   updateBellBadge();
   renderNotificationsPanel();
 }
