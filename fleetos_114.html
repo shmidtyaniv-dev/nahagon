@@ -19473,7 +19473,8 @@ function renderSystemAlerts(){
     else daysText='בעוד '+a.days+' ימים';
 
     var actionLabel='עריכה';
-    var editClick="openCalEventEditModal({alertType:'"+a.type+"',vehicleId:"+a.vehicleId+",currentDate:'"+a.date+"',title:'"+(a.title||'').replace(/'/g,"\\'")+"'"+(a.familyIdx!==undefined?",familyIdx:"+a.familyIdx:"")+"})";
+    var _safeTitle=(a.title||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    var editClick="openCalEventEditModal({alertType:'"+a.type+"',vehicleId:"+a.vehicleId+",currentDate:'"+a.date+"',title:'"+_safeTitle+"'"+(a.familyIdx!==undefined?",familyIdx:"+a.familyIdx:"")+"})";
 
     html+='<div onclick="'+editClick+'" style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .15s;border-radius:6px;padding-right:6px;padding-left:6px" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">';
     // Icon
