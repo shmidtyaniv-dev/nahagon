@@ -9590,44 +9590,97 @@ function simulateServiceTest(){
     refresh();
   }
 }
+var _autoRemindShownThisSession=false;
 function checkAutoReminders(){
+  // מציג התראה בלבד — לא פותח וואצאפ אוטומטית. המשתמש מחליט אם לשלוח.
+  if(_autoRemindShownThisSession) return;
   var bookings=typeof getServiceBookings==='function'?getServiceBookings():[];
   var now=new Date();
-  var changed=false;
-  bookings.forEach(function(b){
-    if(b.status!=='pending')return;
+  var due=bookings.filter(function(b){
+    if(b.status!=='pending')return false;
     var created=new Date(b.createdAt||'');
-    var daysSince=Math.floor((now-created)/86400000);
     var lastReminder=b.lastReminderAt?new Date(b.lastReminderAt):created;
-    var daysSinceReminder=Math.floor((now-lastReminder)/86400000);
-    // Send auto reminder every 3 days
-    if(daysSinceReminder>=3){
-      if(!b.autoReminders)b.autoReminders=[];
-      b.autoReminders.push({date:now.toISOString(),daysSinceCreated:daysSince});
-      b.lastReminderAt=now.toISOString();
-      changed=true;
-      // Show notification
-      showToast('🔔 תזכורת אוטומטית נשלחה ל'+(b.driverName||'נהג')+' ('+b.plate+') — '+daysSince+' ימים ללא תשובה');
-      // Open WhatsApp/Email for the reminder
-      var bookUrl=(location.protocol==='file:'?'https://nahagon.vercel.app/fleetos_114.html':location.origin+location.pathname).replace(/[?#].*$/,'')+'?book='+b.id;
-      var msg='שלום '+(b.driverName||'')+',\n\nתזכורת: רכב '+b.plate+' צריך '+b.serviceType+'.\nטרם קבעת מועד לאיסוף הרכב.\n\nלקביעת מועד:\n'+bookUrl+'\n\n📍 מיקום: משרדי מור בית השקעות\n\nתודה,\nמרכז הרכב של מור';
-      var waNum=(b.driverPhone||'').replace(/[^0-9]/g,'').replace(/^0/,'972');
-      // Auto-open WhatsApp with the reminder
-      if(waNum)window.open('https://wa.me/'+waNum+'?text='+encodeURIComponent(msg),'_blank');
-    }
+    return Math.floor((now-lastReminder)/86400000)>=3;
   });
-  if(changed){
-    if(typeof saveServiceBookings==='function')saveServiceBookings(bookings);
-    // Sync to Firestore
-    if(typeof db!=='undefined'&&db){
-      bookings.filter(function(b){return b.lastReminderAt}).forEach(function(b){
-        db.collection('serviceBookings').doc(b.id).update({
-          autoReminders:b.autoReminders||[],
-          lastReminderAt:b.lastReminderAt
-        }).catch(function(){});
-      });
-    }
+  if(!due.length) return;
+  _autoRemindShownThisSession=true;
+  showPendingBookingReminders(due);
+}
+function showPendingBookingReminders(due){
+  var existing=document.getElementById('pending-book-remind-modal');
+  if(existing) existing.remove();
+  var ov=document.createElement('div');
+  ov.id='pending-book-remind-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  var now=new Date();
+  var rows=due.map(function(b){
+    var daysSince=Math.floor((now-new Date(b.createdAt||''))/86400000);
+    return '<div id="book-remind-row-'+b.id+'" style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bdr)">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:14px;font-weight:600;color:var(--t1)">'+_esc(b.driverName||'נהג')+'</div>'+
+        '<div style="font-size:12px;color:var(--t3)">'+_esc(b.plate||'')+' · '+_esc(b.serviceType||'טיפול')+'</div>'+
+        '<div style="font-size:11px;color:#d97706;margin-top:2px">'+daysSince+' ימים ללא קביעת מועד</div>'+
+      '</div>'+
+      '<button onclick="sendBookingReminderWa(\''+b.id+'\')" style="flex-shrink:0;padding:7px 10px;border:1px solid #25d366;border-radius:8px;background:#f0fdf4;color:#166534;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap">💬 שלח תזכורת</button>'+
+      '<button onclick="cancelPendingBooking(\''+b.id+'\')" style="flex-shrink:0;padding:7px 10px;border:1px solid #fca5a5;border-radius:8px;background:#fef2f2;color:#b91c1c;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap">✕ בטל הזמנה</button>'+
+    '</div>';
+  }).join('');
+  ov.innerHTML=
+    '<div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">'+
+        '<div>'+
+          '<div style="font-size:16px;font-weight:700;color:var(--t1)">🔔 תזכורות טיפול ממתינות</div>'+
+          '<div style="font-size:12px;color:var(--t3);margin-top:2px">נהגים שטרם קבעו מועד לטיפול · שליחה ידנית בלבד</div>'+
+        '</div>'+
+        '<button onclick="document.getElementById(\'pending-book-remind-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3);padding:4px">✕</button>'+
+      '</div>'+
+      '<div style="overflow-y:auto;flex:1">'+rows+'</div>'+
+    '</div>';
+  document.body.appendChild(ov);
+}
+function sendBookingReminderWa(bid){
+  var bookings=typeof getServiceBookings==='function'?getServiceBookings():[];
+  var b=bookings.find(function(x){return String(x.id)===String(bid);});
+  if(!b)return;
+  var waNum=(b.driverPhone||'').replace(/[^0-9]/g,'').replace(/^0/,'972');
+  if(!waNum){showToast('לא הוגדר טלפון לנהג');return;}
+  var now=new Date();
+  var daysSince=Math.floor((now-new Date(b.createdAt||''))/86400000);
+  var bookUrl=(location.protocol==='file:'?'https://nahagon.vercel.app/fleetos_114.html':location.origin+location.pathname).replace(/[?#].*$/,'')+'?book='+b.id;
+  var msg='שלום '+(b.driverName||'')+',\n\nתזכורת: רכב '+b.plate+' צריך '+b.serviceType+'.\nטרם קבעת מועד לאיסוף הרכב.\n\nלקביעת מועד:\n'+bookUrl+'\n\n📍 מיקום: משרדי מור בית השקעות\n\nתודה,\nמרכז הרכב של מור';
+  // עדכן זמן תזכורת אחרונה רק כששולחים בפועל
+  if(!b.autoReminders)b.autoReminders=[];
+  b.autoReminders.push({date:now.toISOString(),daysSinceCreated:daysSince});
+  b.lastReminderAt=now.toISOString();
+  if(typeof saveServiceBookings==='function')saveServiceBookings(bookings);
+  if(typeof db!=='undefined'&&db){
+    db.collection('serviceBookings').doc(String(b.id)).update({
+      autoReminders:b.autoReminders,
+      lastReminderAt:b.lastReminderAt
+    }).catch(function(){});
   }
+  window.open('https://wa.me/'+waNum+'?text='+encodeURIComponent(msg),'_blank');
+  var row=document.getElementById('book-remind-row-'+bid);
+  if(row) row.style.opacity='0.45';
+  showToast('✓ נפתח וואצאפ עם התזכורת ל'+(b.driverName||'נהג'));
+}
+function cancelPendingBooking(bid){
+  if(!confirm('לבטל את הזמנת הטיפול? לא יישלחו עוד תזכורות עבורה.'))return;
+  var bookings=typeof getServiceBookings==='function'?getServiceBookings():[];
+  var b=bookings.find(function(x){return String(x.id)===String(bid);});
+  if(!b)return;
+  b.status='cancelled';
+  if(typeof saveServiceBookings==='function')saveServiceBookings(bookings);
+  if(typeof db!=='undefined'&&db){
+    db.collection('serviceBookings').doc(String(b.id)).update({status:'cancelled'}).catch(function(){});
+  }
+  var row=document.getElementById('book-remind-row-'+bid);
+  if(row) row.remove();
+  showToast('✓ ההזמנה בוטלה — לא יופיעו עוד תזכורות עבורה');
+  // אם לא נשארו שורות — סגור את החלון
+  var modal=document.getElementById('pending-book-remind-modal');
+  if(modal && !modal.querySelector('[id^="book-remind-row-"]')) modal.remove();
 }
 function renderSvcSection(){
   var allItems=getSvcItems();
