@@ -21635,7 +21635,11 @@ async function performLocalScan() {
       if (lastSvcDate) {
         var nextTreatmentDate = addYears(parseTreatmentDate(lastSvcDate), 1);
         var daysUntilTreatment = daysBetween(today, nextTreatmentDate);
-        if (daysUntilTreatment <= range) {
+        // טריגר גם לפי ק"מ: אם הרכב התקרב/עבר את ק"מ הטיפול הבא
+        var _nxtSvc = (typeof calcNextSvc === 'function') ? calcNextSvc(vehicle) : null;
+        var _curKm = vehicle.currentKm || vehicle.curKm || 0;
+        var kmDue = !!(_nxtSvc && _nxtSvc.km && _curKm && _curKm >= _nxtSvc.km - 1000);
+        if (daysUntilTreatment <= range || kmDue) {
           await createTreatmentIfNotExists(vehicle, 'treatment', nextTreatmentDate);
         } else {
           // הטיפול הבא רחוק — סגור כל טיפול פתוח ישן (הרכב כבר טופל)
@@ -21677,15 +21681,22 @@ async function createTreatmentIfNotExists(vehicle, kind, dueDate) {
       var d = doc.data();
       if (d.status === 'closed') return;
       hasActive = true;
-      // אם תאריך הרישיון תוקן בכרטיס הרכב — עדכן את ה-treatment הקיים
+      // סנכרון הרשומה הקיימת עם כרטיס הרכב: תאריך יעד, ק"מ נוכחי, ק"מ טיפול הבא
+      var updates = {};
       var existingDateDay = (d.dueDate || '').slice(0, 10);
-      if (existingDateDay !== newDateDay) {
-        db.collection('treatments').doc(doc.id).update({
-          dueDate: dueDate.toISOString()
-        }).catch(function(e) { console.error('[Treatments] שגיאה בעדכון dueDate:', e); });
+      if (existingDateDay !== newDateDay) updates.dueDate = dueDate.toISOString();
+      var curKm = vehicle.currentKm || vehicle.curKm || 0;
+      if (curKm && d.currentMileage !== curKm) updates.currentMileage = curKm;
+      if (kind === 'treatment' && typeof calcNextSvc === 'function') {
+        var nx = calcNextSvc(vehicle);
+        if (nx && nx.km && d.nextServiceKm !== nx.km) updates.nextServiceKm = nx.km;
+      }
+      if (Object.keys(updates).length) {
+        db.collection('treatments').doc(doc.id).update(updates)
+          .catch(function(e) { console.error('[Treatments] שגיאה בסנכרון רשומה:', e); });
         // עדכן גם ב-local state
         var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === doc.id; });
-        if (local) local.dueDate = dueDate.toISOString();
+        if (local) Object.assign(local, updates);
       }
     });
 
@@ -21740,6 +21751,13 @@ async function createTreatmentRecord(vehicle, kind, dueDate) {
     treatmentType = vehicle.nextTreatmentType || 'טיפול שנתי';
   }
 
+  // ק"מ הטיפול הבא מרשומות הרכב (לסנכרון עם דף הנהג)
+  var nextServiceKm = null;
+  if (kind === 'treatment' && typeof calcNextSvc === 'function') {
+    var _nx = calcNextSvc(vehicle);
+    if (_nx && _nx.km) nextServiceKm = _nx.km;
+  }
+
   var record = {
     vehicleId: String(vehicle.id),
     licensePlate: licensePlate,
@@ -21748,6 +21766,7 @@ async function createTreatmentRecord(vehicle, kind, dueDate) {
     driverPhone: driverPhone,
     vehicleModel: vehicleModel,
     currentMileage: currentMileage,
+    nextServiceKm: nextServiceKm,
     kind: kind,
     treatmentType: treatmentType,
     dueDate: dueDate.toISOString(),

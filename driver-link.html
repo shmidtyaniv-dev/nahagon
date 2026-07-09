@@ -480,10 +480,19 @@
       document.getElementById('treatment-type').textContent = typeDisplay;
 
       const dueDate = new Date(TREATMENT.dueDate);
-      document.getElementById('deadline-date').textContent = formatHeb(dueDate);
       const today = new Date(); today.setHours(0,0,0,0);
       const daysRemaining = Math.floor((dueDate - today) / 86400000);
-      document.getElementById('days-remaining').textContent = daysRemaining;
+      const bannerText = document.querySelector('.deadline-banner .deadline-text');
+      const nextKm = Number(TREATMENT.nextServiceKm) || 0;
+      const curKm = Number(TREATMENT.currentMileage) || 0;
+      if (TREATMENT.kind !== 'test' && nextKm && curKm >= nextKm) {
+        // הרכב עבר את ק"מ הטיפול — הצג מצב לפי ק"מ
+        bannerText.innerHTML = 'הטיפול הבא: <strong>' + nextKm.toLocaleString() + ' ק"מ</strong> · הרכב כבר ב-<strong>' + curKm.toLocaleString() + ' ק"מ</strong> — נא לקבוע מועד בהקדם';
+      } else if (isNaN(dueDate.getTime()) || daysRemaining < 0) {
+        bannerText.innerHTML = 'מועד הטיפול חלף — נא לקבוע מועד בהקדם';
+      } else {
+        bannerText.innerHTML = 'הטיפול חייב להתבצע עד <strong>' + formatHeb(dueDate) + '</strong> · נותרו ' + daysRemaining + ' ימים';
+      }
 
       document.getElementById('hour-display').textContent =
         SETTINGS.appointmentTime || (String(SETTINGS.appointmentHour || 9).padStart(2, '0') + ':00');
@@ -508,11 +517,11 @@
       const lastDay = new Date(year, month + 1, 0);
       const today = new Date(); today.setHours(0,0,0,0);
       const dueDate = new Date(TREATMENT.dueDate); dueDate.setHours(0,0,0,0);
-      // אם תאריך היעד עבר או חסר - אפשר בחירה עד 30 יום קדימה (אחרת אף יום לא ניתן לבחירה)
+      // אם תאריך היעד עבר או חסר - אפשר בחירה עד 60 יום קדימה (אחרת אף יום לא ניתן לבחירה)
       let maxDate = dueDate;
       if (isNaN(maxDate.getTime()) || maxDate < today) {
         maxDate = new Date(today);
-        maxDate.setDate(maxDate.getDate() + (SETTINGS.scanRangeDays || 30));
+        maxDate.setDate(maxDate.getDate() + Math.max(SETTINGS.scanRangeDays || 30, 60));
       }
 
       const grid = document.getElementById('calendar-grid');
