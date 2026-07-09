@@ -21610,6 +21610,31 @@ async function autoCloseServicedTreatments(vehicle, lastSvcDate) {
   }
 }
 
+// סגירת בקשות "ממתין לבחירת תאריך" כשהטיפול כבר לא רלוונטי (למשל נוצרו בעקבות חישוב שגוי שתוקן)
+async function autoCloseNotDueTreatments(vehicle) {
+  try {
+    var snap = await db.collection('treatments')
+      .where('vehicleId', '==', String(vehicle.id))
+      .where('kind', '==', 'treatment')
+      .get();
+    snap.forEach(async function(doc) {
+      var d = doc.data();
+      // סוגרים רק בקשות שהנהג עוד לא הגיב עליהן - לא נוגעים בבקשות שנבחר/אושר בהן תאריך
+      if (d.status !== 'awaiting_choice') return;
+      await db.collection('treatments').doc(doc.id).update({
+        status: 'closed',
+        closedReason: 'auto_not_due',
+        closedAt: new Date().toISOString()
+      });
+      var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === doc.id; });
+      if (local) local.status = 'closed';
+      console.log('[Treatments] סגירה אוטומטית — הבקשה אינה רלוונטית עוד:', doc.id);
+    });
+  } catch (err) {
+    console.error('[Treatments] שגיאה בסגירת בקשה לא רלוונטית:', err);
+  }
+}
+
 async function performLocalScan() {
   if (_scanInProgress) return;
   _scanInProgress = true;
@@ -21647,6 +21672,8 @@ async function performLocalScan() {
         } else {
           // הטיפול הבא רחוק — סגור כל טיפול פתוח ישן (הרכב כבר טופל)
           await autoCloseServicedTreatments(vehicle, lastSvcDate);
+          // סגור גם בקשות שממתינות לבחירת תאריך אך כבר לא רלוונטיות (לא לפי תאריך ולא לפי ק"מ)
+          await autoCloseNotDueTreatments(vehicle);
         }
       }
 
