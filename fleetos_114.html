@@ -18171,40 +18171,26 @@ function setAlertRange(days,btn){
 }
 
 // Unified calendar events: only 3 types for grid display
+// ביומן מוצגים רק אירועים אמיתיים: שנוספו ידנית או שנוצרו מאישור מועד לנהג.
+// אירועים "מחושבים" (טסט/טיפול מתקרב) אינם נכנסים ליומן אוטומטית - הם מופיעים בהתראות המערכת בלבד.
 function getCalendarEvents(){
   var out=[];
-  (vehicles||[]).forEach(function(v){
-    // svc-pickup: vehicles needing service (from calcNextSvc or override)
-    var svcDate=v.nextSvcOverride||null;
-    if(!svcDate){ var nxt=calcNextSvc(v); if(nxt&&nxt.date) svcDate=nxt.date; }
-    // אירועים שהמנהל מחק מהיומן (מוסתרים עד שהתאריך משתנה)
-    var hid=v._calHidden||{};
-    if(hid['svc-pickup']===svcDate) svcDate=null;
-    if(svcDate){
-      out.push({
-        id:'cal-svc-'+v.id,
-        type:'svc-pickup',
-        title:'איסוף לטיפול',
-        label:(v.make||'')+' '+(v.model||''),
-        plate:v.plate,
-        driverName:v.driver?.name||'',
-        date:svcDate,
-        vehicleId:v.id
-      });
-    }
-    // test-pickup: vehicles needing test (from licenseExp)
-    if(v.licenseExp && hid['test-pickup']!==v.licenseExp){
-      out.push({
-        id:'cal-test-'+v.id,
-        type:'test-pickup',
-        title:'איסוף לטסט',
-        label:(v.make||'')+' '+(v.model||''),
-        plate:v.plate,
-        driverName:v.driver?.name||'',
-        date:v.licenseExp,
-        vehicleId:v.id
-      });
-    }
+  (typeof getFleetEvents==='function'?getFleetEvents():[]).forEach(function(fe){
+    if(!fe.date) return;
+    var t = fe.type==='service'?'svc-pickup':fe.type==='test'?'test-pickup':'personal';
+    var v = (vehicles||[]).find(function(x){return x.id===fe.vehicleId;});
+    out.push({
+      id:'cal-fe-'+fe.id,
+      fleetEventId:fe.id,
+      type:t,
+      title:fe.title||'אירוע',
+      label:fe.desc||'',
+      plate:(v&&v.plate)||'',
+      driverName:(v&&v.driver&&v.driver.name)||'',
+      date:fe.date,
+      time:fe.time||'',
+      vehicleId:fe.vehicleId||null
+    });
   });
   // personal: from selfReminders
   (selfReminders||[]).forEach(function(r){
@@ -18406,6 +18392,7 @@ function _buildDayEventsHtml(dayEvents){
         if(shown>=3) return;
         var clickAction='event.stopPropagation()';
         if(e.type==='personal'&&e.selfReminderId) clickAction="event.stopPropagation();openCalEventEditModal({type:'personal',selfReminderId:'"+e.selfReminderId+"'})";
+        else if(e.fleetEventId) clickAction="event.stopPropagation();openEnhancedEventModal('"+e.fleetEventId+"')";
         else if(e.vehicleId) clickAction="event.stopPropagation();openCalEventEditModal({type:'"+e.type+"',vehicleId:"+e.vehicleId+",currentDate:'"+(e.date||'')+"',title:'"+(e.title||'').replace(/'/g,"\\'")+"'})";
         var label;
         if(e.type==='personal'){
@@ -19212,6 +19199,7 @@ function renderCalendarDay(events){
       var bg=typeBgs[e.type]||'var(--bg)';
       var clickAction='';
       if(e.type==='personal'&&e.selfReminderId) clickAction="openCalEventEditModal({type:'personal',selfReminderId:'"+e.selfReminderId+"'})";
+      else if(e.fleetEventId) clickAction="openEnhancedEventModal('"+e.fleetEventId+"')";
       else if(e.vehicleId) clickAction="openCalEventEditModal({type:'"+e.type+"',vehicleId:"+e.vehicleId+",currentDate:'"+(e.date||'')+"',title:'"+(e.title||'').replace(/'/g,"\\'")+"'})";
       html+='<div onclick="'+clickAction+'" style="background:var(--card);border:1px solid var(--bdr);border-right:4px solid '+col+';border-radius:9px;padding:11px 14px;margin-bottom:8px;cursor:pointer;transition:box-shadow .15s"  onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'none\'">';
       html+='<div style="display:flex;align-items:center;gap:10px">';
