@@ -2458,30 +2458,15 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     </div>
     <!-- טאב ק"מ -->
     <div id="uft-km-body">
-      <div style="font-size:11px;color:var(--t3);margin-bottom:14px">גרור את הנקודות לבחירת טווח</div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2px">
-        <div style="text-align:right">
-          <div style="font-size:10px;color:var(--t3);margin-bottom:2px">מ-</div>
-          <div id="km-min-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">0</div>
-        </div>
-        <div style="font-size:12px;color:var(--t3);padding-bottom:4px">—</div>
-        <div style="text-align:left">
-          <div style="font-size:10px;color:var(--t3);margin-bottom:2px">עד</div>
-          <div id="km-max-lbl" style="font-size:18px;font-weight:700;color:var(--gd);direction:ltr">200,000</div>
-        </div>
-      </div>
-      <div class="km-dual-wrap">
-        <div class="km-track"></div>
-        <div class="km-fill" id="km-fill"></div>
-        <input type="range" id="km-min-slider" min="0" max="200000" step="1000" value="0" oninput="kmRangeUpdate('min')">
-        <input type="range" id="km-max-slider" min="0" max="200000" step="1000" value="200000" oninput="kmRangeUpdate('max')">
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:14px;direction:ltr">
-        <span>0</span><span>50,000</span><span>100,000</span><span>150,000</span><span>200,000</span>
+      <div style="font-size:11px;color:var(--t3);margin-bottom:12px">בחר טווח ק"מ</div>
+      <div id="km-range-btns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <button onclick="kmRangeSelect(0,20000);event.stopPropagation()" data-km="0-20000" style="padding:12px 6px;border-radius:9px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid var(--bdr);background:var(--card);color:var(--t1);direction:ltr">0 — 20,000</button>
+        <button onclick="kmRangeSelect(20000,40000);event.stopPropagation()" data-km="20000-40000" style="padding:12px 6px;border-radius:9px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid var(--bdr);background:var(--card);color:var(--t1);direction:ltr">20,000 — 40,000</button>
+        <button onclick="kmRangeSelect(40000,60000);event.stopPropagation()" data-km="40000-60000" style="padding:12px 6px;border-radius:9px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid var(--bdr);background:var(--card);color:var(--t1);direction:ltr">40,000 — 60,000</button>
+        <button onclick="kmRangeSelect(60000,90000);event.stopPropagation()" data-km="60000-90000" style="padding:12px 6px;border-radius:9px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid var(--bdr);background:var(--card);color:var(--t1);direction:ltr">60,000 — 90,000</button>
       </div>
       <div style="display:flex;gap:8px">
         <button onclick="kmRangeReset();event.stopPropagation()" style="flex:1;padding:8px;border:1px solid var(--bdr2);border-radius:7px;background:var(--bg);color:var(--t2);font-size:12px;font-family:inherit;cursor:pointer">איפוס</button>
-        <button onclick="kmRangeApply()" style="flex:2;padding:8px;border:none;border-radius:7px;background:var(--gd);color:#fff;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer">סנן</button>
       </div>
     </div>
     <!-- טאב רישיון -->
@@ -10292,43 +10277,37 @@ function closeGlobalSearch(){
   if(el) el.style.display='none';
 }
 
-/* ── KM RANGE FILTER ── */
-function kmRangeUpdate(changed){
-  var minEl = document.getElementById('km-min-slider');
-  var maxEl = document.getElementById('km-max-slider');
-  var min = parseInt(minEl.value);
-  var max = parseInt(maxEl.value);
-  // מניעת חפיפה — מרווח מינימום 1,000
-  if(changed === 'min' && min >= max){ min = max - 1000; minEl.value = min; }
-  if(changed === 'max' && max <= min){ max = min + 1000; maxEl.value = max; }
-  // תוויות עם פסיק
-  document.getElementById('km-min-lbl').textContent = min.toLocaleString('he-IL');
-  document.getElementById('km-max-lbl').textContent = max.toLocaleString('he-IL');
-  // פיל בין שני הידיות
-  var pctMin = (min / 200000) * 100;
-  var pctMax = (max / 200000) * 100;
-  var fill = document.getElementById('km-fill');
-  if(fill){ fill.style.left = pctMin + '%'; fill.style.width = (pctMax - pctMin) + '%'; }
-  // z-index: הידית הקרובה לקצה שמאל תהיה מעל
-  minEl.style.zIndex = min > 150000 ? 5 : 3;
-  maxEl.style.zIndex = min > 150000 ? 3 : 5;
+/* ── KM RANGE FILTER — כפתורי טווח ── */
+var _kmRangeBtnSel = null; // "min-max" של הכפתור הנבחר
+function _renderKmRangeBtns(){
+  var wrap = document.getElementById('km-range-btns');
+  if(!wrap) return;
+  var btns = wrap.querySelectorAll('button[data-km]');
+  for(var i=0;i<btns.length;i++){
+    var sel = btns[i].getAttribute('data-km') === _kmRangeBtnSel;
+    btns[i].style.background  = sel ? 'var(--gd)' : 'var(--card)';
+    btns[i].style.color       = sel ? '#fff' : 'var(--t1)';
+    btns[i].style.borderColor = sel ? 'var(--gd)' : 'var(--bdr)';
+    btns[i].style.boxShadow   = sel ? '0 1px 4px rgba(29,158,117,.3)' : 'none';
+  }
 }
-function kmRangeApply(){
-  var min = parseInt(document.getElementById('km-min-slider').value);
-  var max = parseInt(document.getElementById('km-max-slider').value);
-  var q   = min + '-' + max;
+function kmRangeSelect(min, max){
+  _kmRangeBtnSel = min + '-' + max;
+  _renderKmRangeBtns();
+  var q = min + '-' + max;
   var inp = document.getElementById('srch-inp');
   if(inp){ inp.value = q; }
   globalSearch(q);
   // סגור פאנל
   var up = document.getElementById('unified-filter-panel');
   if(up) up.style.display = 'none';
+  var uOverlay = document.getElementById('unified-filter-overlay');
+  if(uOverlay) uOverlay.style.display = 'none';
   _updateUnifiedBadge();
 }
 function kmRangeReset(){
-  document.getElementById('km-min-slider').value = 0;
-  document.getElementById('km-max-slider').value = 200000;
-  kmRangeUpdate('max');
+  _kmRangeBtnSel = null;
+  _renderKmRangeBtns();
   var inp = document.getElementById('srch-inp');
   if(inp) inp.value = '';
   closeGlobalSearch();
@@ -10368,7 +10347,7 @@ function _renderLicCalGrid(){
   // עדכן badge
   var cnt = document.getElementById('lic-selected-count');
   if(cnt){
-    if(_vLicMonths.size>0){ cnt.textContent=_vLicMonths.size+' נבחרו'; cnt.style.display='inline-block'; }
+    if(_vLicMonths.size>0){ cnt.textContent='חודש נבחר'; cnt.style.display='inline-block'; }
     else cnt.style.display='none';
   }
 }
@@ -10380,8 +10359,9 @@ function licCalYear(delta){
 
 function licToggleMonth(ym, ev){
   if(ev) ev.stopPropagation();
-  if(_vLicMonths.has(ym)) _vLicMonths.delete(ym);
-  else _vLicMonths.add(ym);
+  // בחירה של חודש אחד בלבד — לחיצה חוזרת מבטלת
+  if(_vLicMonths.has(ym)){ _vLicMonths.clear(); }
+  else { _vLicMonths.clear(); _vLicMonths.add(ym); }
   _renderLicCalGrid();
 }
 
@@ -10457,7 +10437,7 @@ function toggleUnifiedFilter(){
   panel.style.display = 'block';
   if(overlay) overlay.style.display = isMobile ? 'block' : 'none';
   switchFilterTab(_activeFilterTab);
-  kmRangeUpdate('max');
+  _renderKmRangeBtns();
 }
 function switchFilterTab(tab){
   _activeFilterTab = tab;
