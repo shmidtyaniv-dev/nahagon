@@ -22484,6 +22484,7 @@ async function cancelScheduled(treatmentId) {
   if (!confirm('לבטל את המועד שנקבע? הנהג יקבל הודעה ויצטרך לבחור מחדש.')) return;
   var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
   if (!t) return;
+  var cancelledDate = t.selectedDate; // לשחרור היום החסום
 
   await db.collection('treatments').doc(t.id).update({
     status: 'awaiting_choice',
@@ -22500,8 +22501,11 @@ async function cancelScheduled(treatmentId) {
   if (typeof getFleetEvents === 'function' && typeof saveFleetEvents === 'function') {
     var events = getFleetEvents().filter(function(e) { return e.treatmentId !== t.id; });
     saveFleetEvents(events);
-    if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
   }
+
+  // שחרר את היום החסום - רק אם החסימה נוצרה מאישור הבקשה הזו (לא חסימה ידנית)
+  await unblockDayForCancelledTreatment(t.id, cancelledDate);
+  if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
 
   // שלח WhatsApp לנהג
   var phone = (t.driverPhone || '').replace(/\D/g, '');
@@ -22512,6 +22516,30 @@ async function cancelScheduled(treatmentId) {
   showToast('המועד בוטל.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
 
+
+// שחרור יום חסום כשמבטלים מועד שנקבע - נהגים אחרים יראו את היום כפנוי שוב
+async function unblockDayForCancelledTreatment(treatmentId, selectedDate) {
+  try {
+    if (!selectedDate) return;
+    var iso = localDateStr(parseTreatmentDate(selectedDate));
+    if (!iso || !_blockedDays.has(iso)) return;
+    var info = _blockedDaysInfo[iso] || {};
+    // משחררים רק חסימה שנוצרה אוטומטית מאישור הבקשה הזו - לא חסימה ידנית של המנהל
+    if (info.source !== 'treatment_approval' || info.treatmentId !== treatmentId) return;
+    _blockedDays.delete(iso);
+    delete _blockedDaysInfo[iso];
+    if (typeof db !== 'undefined' && db) {
+      await db.collection('blockedDays').doc(iso).delete();
+    }
+    try {
+      localStorage.setItem('blockedDays', JSON.stringify(Array.from(_blockedDays)));
+      localStorage.setItem('blockedDaysInfo', JSON.stringify(_blockedDaysInfo));
+    } catch (e) {}
+    console.log('[Treatments] היום', iso, 'שוחרר - נהגים יכולים לבחור אותו שוב');
+  } catch (err) {
+    console.error('[Treatments] שגיאה בשחרור יום חסום:', err);
+  }
+}
 
 // ============================================================
 // 21. מודאל "סגירת טיפול"
