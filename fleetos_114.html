@@ -16255,6 +16255,7 @@ function startAuthedApp(){
   startViolApprovalsListener();
   if(typeof startFormSubmissionsListener==='function')startFormSubmissionsListener();
   if(typeof startKmReportsListener==='function')startKmReportsListener();
+  if(typeof startBlockedDaysListener==='function')startBlockedDaysListener();
   // Start vehicles real-time sync with Firestore
   if(typeof startVehiclesListener==='function')startVehiclesListener();
   // Register and start sync for all other data collections (cross-device sync)
@@ -18344,14 +18345,16 @@ function renderCalendarMonth(events){
     var dayName=wdays[dateObj.getDay()];
     var dayEvents=events.filter(function(e){return e.date===iso;});
     var evHtml=_buildDayEventsHtml(dayEvents);
+    var isBlocked=_blockedDays.has(iso);
+    var blockedChip=isBlocked?'<div style="background:#fee2e2;color:#b91c1c;font-size:9px;font-weight:700;border-radius:5px;padding:2px 4px;text-align:center;margin-bottom:2px" title="יום תפוס - נהגים לא יכולים לקבוע טיפול">🚫 תפוס לטיפולים</div>':'';
 
-    html+='<div class="fc-day'+(isToday?' today':'')+'" onclick="openDayPicker(\''+iso+'\')">'+
+    html+='<div class="fc-day'+(isToday?' today':'')+'" onclick="openDayPicker(\''+iso+'\')"'+(isBlocked?' style="background:#fef7f7"':'')+'>'+
       '<div class="fc-day-hdr">'+
         '<span class="fc-day-num">'+d+(isToday?' · היום':'')+'</span>'+
         '<span class="fc-day-name">'+dayName+'</span>'+
       '</div>'+
       (dayEvents.length===0?'<button class="fc-day-plus" onclick="event.stopPropagation();openSelfReminderModal(\''+iso+'\')">+</button>':'')+
-      '<div class="fc-day-events">'+evHtml+'</div>'+
+      '<div class="fc-day-events">'+blockedChip+evHtml+'</div>'+
     '</div>';
   }
 
@@ -18413,6 +18416,34 @@ function _buildDayEventsHtml(dayEvents){
     html+='<div style="font-size:9px;color:var(--t3);text-align:center">+'+(total-shown)+'</div>';
   }
   return html;
+}
+
+/* ── ימים חסומים לטיפולים (תפוס) ──
+   ימים שהמנהל מסמן ביומן כתפוסים - נהגים לא יוכלו לבחור אותם בדף קביעת תור.
+   נשמר ב-Firestore collection 'blockedDays' (doc id = תאריך ISO) לסנכרון עם הדף הציבורי. */
+var _blockedDays = new Set(JSON.parse(localStorage.getItem('blockedDays')||'[]'));
+function startBlockedDaysListener(){
+  if(typeof db==='undefined'||!db) return;
+  db.collection('blockedDays').onSnapshot(function(snap){
+    _blockedDays = new Set();
+    snap.forEach(function(doc){ _blockedDays.add(doc.id); });
+    try{localStorage.setItem('blockedDays',JSON.stringify(Array.from(_blockedDays)));}catch(e){}
+    if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
+  },function(e){console.error('blockedDays listener:',e);});
+}
+function toggleBlockedDay(iso){
+  if(!iso) return;
+  var wasBlocked=_blockedDays.has(iso);
+  if(wasBlocked){
+    _blockedDays.delete(iso);
+    if(typeof db!=='undefined'&&db) db.collection('blockedDays').doc(iso).delete().catch(function(e){console.error('blockedDays delete:',e);});
+  } else {
+    _blockedDays.add(iso);
+    if(typeof db!=='undefined'&&db) db.collection('blockedDays').doc(iso).set({date:iso,createdAt:new Date().toISOString()}).catch(function(e){console.error('blockedDays set:',e);});
+  }
+  try{localStorage.setItem('blockedDays',JSON.stringify(Array.from(_blockedDays)));}catch(e){}
+  if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
+  showToast(wasBlocked?'✓ החסימה הוסרה — נהגים יוכלו לבחור יום זה לטיפול':'🚫 היום סומן כתפוס — נהגים לא יוכלו לבחור אותו לטיפול');
 }
 
 // When clicking on a calendar day - jump to day view for that date
@@ -19064,12 +19095,14 @@ function renderCalendarWeek(events){
     var dayName=wdays[day.getDay()];
     var dayEvents=events.filter(function(e){return e.date===iso;});
     var evHtml=_buildDayEventsHtml(dayEvents);
-    html+='<div class="fc-day'+(isToday?' today':'')+'" style="min-height:180px" onclick="openDayPicker(\''+iso+'\')">'+
+    var isBlocked=_blockedDays.has(iso);
+    var blockedChip=isBlocked?'<div style="background:#fee2e2;color:#b91c1c;font-size:9px;font-weight:700;border-radius:5px;padding:2px 4px;text-align:center;margin-bottom:2px">🚫 תפוס לטיפולים</div>':'';
+    html+='<div class="fc-day'+(isToday?' today':'')+'" style="min-height:180px'+(isBlocked?';background:#fef7f7':'')+'" onclick="openDayPicker(\''+iso+'\')">'+
       '<div class="fc-day-hdr">'+
         '<span class="fc-day-name">'+dayName+'</span>'+
         '<span class="fc-day-num">'+day.getDate()+'/'+(day.getMonth()+1)+'</span>'+
       '</div>'+
-      '<div class="fc-day-events">'+evHtml+'</div>'+
+      '<div class="fc-day-events">'+blockedChip+evHtml+'</div>'+
     '</div>';
   }
   html+='</div>';
@@ -19098,9 +19131,14 @@ function renderCalendarDay(events){
   html+='<div style="font-size:13px;color:var(--t2);margin-bottom:4px">'+(isToday?'היום':'תאריך')+'</div>';
   html+='<div style="font-size:22px;font-weight:700;color:var(--gd)">'+wdays[d.getDay()]+', '+d.getDate()+' '+HEM[d.getMonth()]+' '+d.getFullYear()+'</div>';
   html+='<div style="font-size:12px;color:var(--t3);margin-top:4px">'+dayEvents.length+' פריטים ביום זה</div>';
+  var _dayBlocked=_blockedDays.has(iso);
+  if(_dayBlocked) html+='<div style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px;margin-top:6px">🚫 יום תפוס — נהגים לא יכולים לקבוע טיפול ביום זה</div>';
   html+='</div>';
   html+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
   html+='<button onclick="openSelfReminderModal(\''+iso+'\')" style="background:#EEEDFE;border:1.5px solid #c4b5fd;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:#3C3489">+ תזכורת</button>';
+  html+=_dayBlocked
+    ?'<button onclick="toggleBlockedDay(\''+iso+'\')" style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:#166534">✓ בטל חסימה</button>'
+    :'<button onclick="toggleBlockedDay(\''+iso+'\')" style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:#b91c1c">🚫 סמן יום תפוס</button>';
   html+='</div>';
   html+='</div>';
 
@@ -20894,24 +20932,32 @@ function checkServiceBooking(){
   page.innerHTML='<div style="background:#fff;border-radius:16px;padding:40px;max-width:400px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1)"><div style="font-size:32px;margin-bottom:12px">&#9203;</div><div style="font-size:14px;color:#666">טוען את פרטי הטיפול...</div></div>';
   document.body.appendChild(page);
 
-  if(db){
-    db.collection('serviceBookings').doc(token).get().then(function(doc){
-      if(doc.exists){
-        renderPublicBookingPage(page,token,doc.data());
-      } else {
-        renderPublicBookingPage(page,token,null);
-      }
-    }).catch(function(e){
-      console.error('booking load error:',e);
-      // Try localStorage fallback
+  function _doBookLoad(){
+    if(db){
+      db.collection('serviceBookings').doc(token).get().then(function(doc){
+        if(doc.exists){
+          renderPublicBookingPage(page,token,doc.data());
+        } else {
+          renderPublicBookingPage(page,token,null);
+        }
+      }).catch(function(e){
+        console.error('booking load error:',e);
+        // Try localStorage fallback
+        var bks=JSON.parse(localStorage.getItem('serviceBookings')||'[]');
+        var b=bks.find(function(x){return x.id===token;});
+        renderPublicBookingPage(page,token,b||null);
+      });
+    } else {
       var bks=JSON.parse(localStorage.getItem('serviceBookings')||'[]');
       var b=bks.find(function(x){return x.id===token;});
       renderPublicBookingPage(page,token,b||null);
-    });
+    }
+  }
+  // התחברות אנונימית כדי לעמוד ב-Firestore Rules בדף ציבורי
+  if(typeof auth!=='undefined'&&auth&&!auth.currentUser){
+    auth.signInAnonymously().then(_doBookLoad).catch(_doBookLoad);
   } else {
-    var bks=JSON.parse(localStorage.getItem('serviceBookings')||'[]');
-    var b=bks.find(function(x){return x.id===token;});
-    renderPublicBookingPage(page,token,b||null);
+    _doBookLoad();
   }
 
   return true;
@@ -20952,15 +20998,16 @@ function renderPublicBookingPage(page,token,info){
   var allBookings=[];
 
   // Load all bookings to check capacity
-  function renderCal(existingBookings){
+  function renderCal(existingBookings,blockedSet){
     allBookings=existingBookings||[];
+    blockedSet=blockedSet||new Set();
     var today=new Date();today.setHours(0,0,0,0);
     var calHtml='';
 
     // Show 2 months
     for(var cm=0;cm<2;cm++){
       var mo=new Date(today.getFullYear(),today.getMonth()+cm,1);
-      calHtml+=renderPublicMiniCal(mo,allBookings,settings,token,info);
+      calHtml+=renderPublicMiniCal(mo,allBookings,settings,token,info,blockedSet);
     }
 
     page.innerHTML='<div style="background:#fff;border-radius:16px;padding:0;max-width:460px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.1);overflow:hidden">'+
@@ -20992,21 +21039,27 @@ function renderPublicBookingPage(page,token,info){
       '</div></div>';
   }
 
-  // Load all bookings from Firestore to check capacity
+  // Load all bookings + blocked days from Firestore to check capacity
   if(db){
-    db.collection('serviceBookings').get().then(function(snap){
+    Promise.all([
+      db.collection('serviceBookings').get(),
+      db.collection('blockedDays').get().catch(function(){return null;})
+    ]).then(function(res){
       var all=[];
-      snap.forEach(function(doc){all.push(doc.data());});
-      renderCal(all);
-    }).catch(function(e){renderCal([]);});
+      res[0].forEach(function(doc){all.push(doc.data());});
+      var blocked=new Set();
+      if(res[1]) res[1].forEach(function(doc){blocked.add(doc.id);});
+      renderCal(all,blocked);
+    }).catch(function(e){renderCal([],new Set());});
   } else {
-    renderCal([]);
+    renderCal([],new Set(JSON.parse(localStorage.getItem('blockedDays')||'[]')));
   }
 }
 
 var _publicSelectedDate=null;
 
-function renderPublicMiniCal(mo,allBookings,settings,token,info){
+function renderPublicMiniCal(mo,allBookings,settings,token,info,blockedSet){
+  blockedSet=blockedSet||new Set();
   var dayNames=['א','ב','ג','ד','ה','ו','ש'];
   var mName=mo.toLocaleDateString('he-IL',{month:'long',year:'numeric'});
   var today=new Date();today.setHours(0,0,0,0);
@@ -21036,14 +21089,13 @@ function renderPublicMiniCal(mo,allBookings,settings,token,info){
     var isOpen=settings.openDays.indexOf(dt.getDay())>=0;
     var isPast=dt<today;
     var isFull=cnt>=cap;
+    var isBlocked=blockedSet.has(isoD);
 
-    if(isPast||!isOpen||isFull){
-      var label=isPast?'':'';
-      if(!isOpen) label='סגור';
-      else if(isFull) label=cnt+'/'+cap;
-      html+='<div style="padding:6px 2px;border-radius:6px;background:'+(isFull?'#fecaca':'#f3f4f6')+';color:#aaa;font-size:12px;cursor:not-allowed">';
+    if(isPast||!isOpen||isFull||isBlocked){
+      html+='<div style="padding:6px 2px;border-radius:6px;background:'+((isFull||isBlocked)?'#fecaca':'#f3f4f6')+';color:#aaa;font-size:12px;cursor:not-allowed">';
       html+=d;
-      if(isFull) html+='<div style="font-size:8px;color:#991b1b">מלא</div>';
+      if(isBlocked) html+='<div style="font-size:8px;color:#991b1b">תפוס</div>';
+      else if(isFull) html+='<div style="font-size:8px;color:#991b1b">מלא</div>';
       html+='</div>';
     } else {
       var avail=cap-cnt;
