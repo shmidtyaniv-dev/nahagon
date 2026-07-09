@@ -3919,6 +3919,31 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
       </div>
 
+      <!-- גיבוי ושחזור -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">גיבוי ושחזור נתונים</div>
+            <div class="settings-section-desc">הורד עותק מלא של כל הנתונים למחשב שלך, או שחזר מקובץ גיבוי קיים</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button id="backup-download-btn" class="settings-btn settings-btn-primary" style="padding:11px 22px" onclick="downloadFullBackup()">📥 הורד גיבוי מלא</button>
+            <button class="settings-btn" style="padding:11px 22px;border:1px solid var(--bdr);background:var(--bg);color:var(--t1)" onclick="document.getElementById('backup-restore-input').click()">📤 שחזר מגיבוי</button>
+            <input id="backup-restore-input" type="file" accept=".json,application/json" style="display:none" onchange="restoreFromBackupFile(this)">
+            <span id="last-backup-label" style="font-size:12px;color:var(--t3)"></span>
+          </div>
+          <div style="font-size:12px;color:var(--t3);margin-top:10px;line-height:1.6">
+            הגיבוי כולל: רכבים, נהגים, טיפולים, טסטים, תאונות, דוחות, משימות, אירועי יומן, ימים חסומים, טפסים דיגיטליים ותגובות, קבצים והגדרות.<br>
+            מומלץ להוריד גיבוי פעם בשבוע ולשמור את הקובץ במקום בטוח.
+          </div>
+        </div>
+      </div>
+
       <div class="settings-section danger">
         <div class="settings-section-header">
           <div class="settings-section-icon">
@@ -12631,6 +12656,116 @@ function clearAllVehiclesData(){
     .catch(function(e){ _clearingAllData = false; console.error(e); showToast('שגיאה במחיקה מהשרת: ' + e.message); });
 }
 
+/* ══════════ גיבוי ושחזור מלא ══════════ */
+var BACKUP_COLLECTIONS=['vehicles','treatments','accidents','violations','tasks','serviceBookings','selfReminders','fleetEvents','hoForms2','blockedDays','settings','formTemplates','formSubmissions','vehicleDocsStore','vehicleExtraFiles','vehicleMandatoryFiles','violationFiles','publicDrivers','approvals','paymentReceipts','kmReports'];
+
+function updateLastBackupLabel(){
+  var el=id('last-backup-label');
+  if(!el)return;
+  var iso=localStorage.getItem('lastBackupAt');
+  if(!iso){el.textContent='טרם בוצע גיבוי';return;}
+  var d=new Date(iso);
+  el.textContent='גיבוי אחרון: '+d.toLocaleDateString('he-IL')+' '+d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function downloadFullBackup(){
+  if(!db){alert('אין חיבור לשרת');return;}
+  var btn=id('backup-download-btn');
+  if(btn){btn.disabled=true;}
+  try{
+    var backup={version:1,createdAt:new Date().toISOString(),system:'מרכז הרכב של מור',collections:{}};
+    for(var i=0;i<BACKUP_COLLECTIONS.length;i++){
+      var col=BACKUP_COLLECTIONS[i];
+      if(btn)btn.textContent='מגבה... ('+(i+1)+'/'+BACKUP_COLLECTIONS.length+')';
+      var snap=await db.collection(col).get();
+      var docs=[];
+      snap.forEach(function(d){docs.push({id:d.id,data:d.data()});});
+      // formTemplates: גם את חלקי ה-PDF מתת-אוסף pdfChunks
+      if(col==='formTemplates'){
+        for(var j=0;j<docs.length;j++){
+          var t=docs[j];
+          if(t.data.pdfChunks&&t.data.pdfChunks>0){
+            var csnap=await db.collection('formTemplates').doc(t.id).collection('pdfChunks').orderBy('idx').get();
+            t.chunks=[];
+            csnap.forEach(function(c){t.chunks.push({id:c.id,data:c.data()});});
+          }
+        }
+      }
+      backup.collections[col]=docs;
+    }
+    var json=JSON.stringify(backup);
+    var blob=new Blob([json],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    var now=new Date();
+    var pad=function(n){return String(n).padStart(2,'0');};
+    a.href=url;
+    a.download='gibui-merkav-harechev_'+now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+'_'+pad(now.getHours())+'-'+pad(now.getMinutes())+'.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    localStorage.setItem('lastBackupAt',new Date().toISOString());
+    updateLastBackupLabel();
+    var total=0;Object.keys(backup.collections).forEach(function(k){total+=backup.collections[k].length;});
+    showToast('✓ הגיבוי הורד בהצלחה ('+total+' רשומות)');
+  }catch(e){
+    console.error('backup error:',e);
+    alert('שגיאה בגיבוי: '+e.message);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='📥 הורד גיבוי מלא';}
+  }
+}
+
+function restoreFromBackupFile(input){
+  var file=input.files&&input.files[0];
+  input.value='';
+  if(!file)return;
+  if(!db){alert('אין חיבור לשרת');return;}
+  var reader=new FileReader();
+  reader.onload=function(){
+    var backup;
+    try{backup=JSON.parse(reader.result);}catch(e){alert('הקובץ אינו קובץ גיבוי תקין');return;}
+    if(!backup||!backup.collections){alert('הקובץ אינו קובץ גיבוי של המערכת');return;}
+    var total=0;
+    Object.keys(backup.collections).forEach(function(k){total+=(backup.collections[k]||[]).length;});
+    var d=backup.createdAt?new Date(backup.createdAt):null;
+    var dateStr=d?d.toLocaleDateString('he-IL')+' '+d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}):'לא ידוע';
+    if(!confirm('לשחזר מגיבוי?\n\nתאריך הגיבוי: '+dateStr+'\nסה"כ רשומות: '+total+'\n\nהשחזור יכתוב מחדש את כל הרשומות מהגיבוי (רשומות קיימות עם אותו מזהה יידרסו).\nרשומות שנוצרו אחרי הגיבוי לא יימחקו.'))return;
+    performBackupRestore(backup);
+  };
+  reader.readAsText(file);
+}
+
+async function performBackupRestore(backup){
+  showToast('משחזר נתונים... נא לא לסגור את הדף');
+  try{
+    var writes=[]; // {ref, data}
+    Object.keys(backup.collections).forEach(function(col){
+      (backup.collections[col]||[]).forEach(function(docItem){
+        if(!docItem||!docItem.id)return;
+        writes.push({ref:db.collection(col).doc(String(docItem.id)),data:docItem.data||{}});
+        if(col==='formTemplates'&&docItem.chunks){
+          docItem.chunks.forEach(function(c){
+            writes.push({ref:db.collection('formTemplates').doc(String(docItem.id)).collection('pdfChunks').doc(String(c.id)),data:c.data||{}});
+          });
+        }
+      });
+    });
+    // כתיבה ב-batches של 400
+    for(var i=0;i<writes.length;i+=400){
+      var batch=db.batch();
+      writes.slice(i,i+400).forEach(function(w){batch.set(w.ref,w.data);});
+      await batch.commit();
+    }
+    showToast('✓ השחזור הושלם ('+writes.length+' רשומות). הדף ייטען מחדש...');
+    setTimeout(function(){location.reload();},2500);
+  }catch(e){
+    console.error('restore error:',e);
+    alert('שגיאה בשחזור: '+e.message);
+  }
+}
+
 function clearHandoverForms(){
   if(!confirm('למחוק את כל טפסי רכב חלופי וגישור?\nפעולה זו לא ניתנת לשחזור!')) return;
   if(!db){ alert('אין חיבור לשרת'); return; }
@@ -12908,6 +13043,7 @@ function applySystemName(){
 }
 document.addEventListener('DOMContentLoaded',function(){setTimeout(applySystemName,100);});
 document.addEventListener('DOMContentLoaded',function(){startDailyCheckScheduler();});
+document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){if(typeof updateLastBackupLabel==='function')updateLastBackupLabel();},200);});
 
 function showAttentionDetails(){
   var altCount=(countDriversOnAlt()||{}).total||0;
