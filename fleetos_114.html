@@ -22276,6 +22276,7 @@ async function confirmApproval() {
     });
     await sendApprovalMessage(t, channel, customMessage);
     await addTreatmentToCalendar(t);
+    await blockDayForApprovedTreatment(t);
     closeTreatmentModal('modal-approve');
     showToast('האישור נשלח ל' + t.driverName + ' ב' + (channel === 'whatsapp' ? 'וואטסאפ' : 'מייל'));
   } catch (err) {
@@ -22305,7 +22306,7 @@ async function addTreatmentToCalendar(treatment) {
       id: 'trt-' + treatment.id,
       type: treatment.kind === 'treatment' ? 'service' : 'test',
       enhType: treatment.kind === 'treatment' ? 'service' : 'test',
-      title: (treatment.kind === 'treatment' ? 'טיפול' : 'טסט') + ' - ' + treatment.driverName,
+      title: (treatment.kind === 'treatment' ? 'איסוף טיפול ל' : 'איסוף לטסט ל') + '-' + treatment.driverName,
       vehicleId: parseInt(treatment.vehicleId) || null,
       date: localDateStr(parseTreatmentDate(treatment.selectedDate)),
       time: getAppointmentTime(),
@@ -22316,6 +22317,29 @@ async function addTreatmentToCalendar(treatment) {
     });
     saveFleetEvents(events);
     if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
+  }
+}
+
+// כשמאשרים תאריך לנהג - היום נחסם אוטומטית כך שנהגים אחרים יראו אותו כתפוס
+async function blockDayForApprovedTreatment(treatment) {
+  try {
+    if (!treatment.selectedDate) return;
+    var iso = localDateStr(parseTreatmentDate(treatment.selectedDate));
+    if (!iso || _blockedDays.has(iso)) return;
+    _blockedDays.add(iso);
+    if (typeof db !== 'undefined' && db) {
+      await db.collection('blockedDays').doc(iso).set({
+        date: iso,
+        source: 'treatment_approval',
+        treatmentId: treatment.id,
+        driverName: treatment.driverName || '',
+        createdAt: new Date().toISOString()
+      });
+    }
+    try { localStorage.setItem('blockedDays', JSON.stringify(Array.from(_blockedDays))); } catch (e) {}
+    if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
+  } catch (err) {
+    console.error('[Treatments] שגיאה בחסימת יום לאחר אישור:', err);
   }
 }
 
