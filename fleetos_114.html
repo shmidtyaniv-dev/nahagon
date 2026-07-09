@@ -16985,6 +16985,23 @@ function startFormSubmissionsListener(){
   },function(err){console.error('form submissions listener error:',err);});
 }
 
+function loadFormTemplateFull(tid){
+  // Loads a template doc and reassembles pdfBase64 from pdfChunks subcollection if needed
+  return db.collection('formTemplates').doc(tid).get().then(function(doc){
+    if(!doc.exists)return null;
+    var tplData=doc.data();
+    if(tplData.pdfChunks && tplData.pdfChunks>0 && !tplData.pdfBase64){
+      return db.collection('formTemplates').doc(tid).collection('pdfChunks').orderBy('idx').get().then(function(snap){
+        var parts=[];
+        snap.forEach(function(c){parts.push(c.data().data);});
+        tplData.pdfBase64=parts.join('');
+        return tplData;
+      });
+    }
+    return tplData;
+  });
+}
+
 function viewSubmission(subId){
   const sub=formSubmissionsCache.find(function(s){return s.id===subId;});
   if(!sub)return;
@@ -17031,10 +17048,10 @@ function viewSubmission(subId){
     renderSubmissionPdf(template,sub);
   };
 
-  // Try to get template from Firestore
+  // Try to get template from Firestore (incl. chunked PDF)
   if(db){
-    db.collection('formTemplates').doc(tid).get().then(function(doc){
-      if(doc.exists)showModal(doc.data());
+    loadFormTemplateFull(tid).then(function(tpl){
+      if(tpl)showModal(tpl);
       else showToast('התבנית לא נמצאה');
     }).catch(function(e){console.error(e);showToast('שגיאה בטעינה');});
   }
@@ -17111,9 +17128,10 @@ function downloadSubmissionPdf(subId){
 
   // Load template
   if(!db){showToast('אין חיבור לשרת');return;}
-  db.collection('formTemplates').doc(sub.templateId).get().then(function(doc){
-    if(!doc.exists){showToast('תבנית לא נמצאה');return;}
-    return generateFilledPdf(doc.data(),sub);
+  loadFormTemplateFull(sub.templateId).then(function(tpl){
+    if(!tpl){showToast('תבנית לא נמצאה');return;}
+    if(!tpl.pdfBase64){showToast('קובץ ה-PDF של התבנית חסר');return;}
+    return generateFilledPdf(tpl,sub);
   }).catch(function(e){console.error(e);showToast('שגיאה: '+e.message);});
 }
 
