@@ -2930,6 +2930,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <button onclick="exportCalendar('excel')">ייצוא ל-Excel</button>
             </div>
           </div>
+          <button id="cal-block-mode-btn" class="cal-add-btn" style="background:#fef2f2;border:1.5px solid #fca5a5;color:#b91c1c" onclick="toggleBlockDayMode()">🚫 סימון ימים תפוסים</button>
           <button class="cal-add-btn" onclick="openSelfReminderModal()">+ תזכורת אישית</button>
         </div>
       </div>
@@ -18446,9 +18447,25 @@ function toggleBlockedDay(iso){
   showToast(wasBlocked?'✓ החסימה הוסרה — נהגים יוכלו לבחור יום זה לטיפול':'🚫 היום סומן כתפוס — נהגים לא יוכלו לבחור אותו לטיפול');
 }
 
+/* מצב סימון ימים תפוסים - לחיצה על יום ביומן מסמנת/מבטלת חסימה */
+var _blockDayMode=false;
+function toggleBlockDayMode(){
+  _blockDayMode=!_blockDayMode;
+  var btn=document.getElementById('cal-block-mode-btn');
+  if(btn){
+    btn.style.background=_blockDayMode?'#b91c1c':'#fef2f2';
+    btn.style.color=_blockDayMode?'#fff':'#b91c1c';
+    btn.style.borderColor=_blockDayMode?'#b91c1c':'#fca5a5';
+    btn.textContent=_blockDayMode?'✓ סיים סימון':'🚫 סימון ימים תפוסים';
+  }
+  showToast(_blockDayMode?'🚫 מצב סימון פעיל — לחץ על ימים ביומן כדי לסמן או לבטל יום תפוס':'✓ מצב הסימון הסתיים');
+}
+
 // When clicking on a calendar day - jump to day view for that date
 function openDayPicker(iso){
   if(!iso) return;
+  // במצב סימון ימים תפוסים - הלחיצה מסמנת/מבטלת במקום לפתוח את היום
+  if(_blockDayMode){ toggleBlockedDay(iso); return; }
   // Parse the iso date and jump to day view
   const dt = new Date(iso+'T12:00:00');
   if(isNaN(dt)) return;
