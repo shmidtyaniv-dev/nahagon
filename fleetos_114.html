@@ -18177,6 +18177,9 @@ function getCalendarEvents(){
     // svc-pickup: vehicles needing service (from calcNextSvc or override)
     var svcDate=v.nextSvcOverride||null;
     if(!svcDate){ var nxt=calcNextSvc(v); if(nxt&&nxt.date) svcDate=nxt.date; }
+    // אירועים שהמנהל מחק מהיומן (מוסתרים עד שהתאריך משתנה)
+    var hid=v._calHidden||{};
+    if(hid['svc-pickup']===svcDate) svcDate=null;
     if(svcDate){
       out.push({
         id:'cal-svc-'+v.id,
@@ -18190,7 +18193,7 @@ function getCalendarEvents(){
       });
     }
     // test-pickup: vehicles needing test (from licenseExp)
-    if(v.licenseExp){
+    if(v.licenseExp && hid['test-pickup']!==v.licenseExp){
       out.push({
         id:'cal-test-'+v.id,
         type:'test-pickup',
@@ -18783,6 +18786,9 @@ function openCalEventEditModal(info){
     // Buttons
     +'<div style="display:flex;gap:8px;margin-bottom:8px">'
     +'<button onclick="document.getElementById(\'cal-event-edit-modal\').remove()" style="padding:11px 14px;background:var(--bg);color:var(--t2);border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">ביטול</button>'
+    +((info.type==='svc-pickup'||info.type==='test-pickup')
+      ?'<button onclick="deleteCalEvent('+v.id+',\''+info.type+'\',\''+currentVal+'\')" style="padding:11px 14px;background:#fef2f2;color:#b91c1c;border:1.5px solid #fca5a5;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" title="הסרת האירוע מהיומן">🗑 מחק</button>'
+      :'')
     +'<button onclick="saveCalEventEdit('+v.id+',\''+fieldKey+'\','+familyIdx+')" style="flex:1;padding:11px;background:'+typeColor+';color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">שמור שינויים</button>'
     +'</div>'
     +(driverPhone
@@ -18815,6 +18821,20 @@ function sendCalEventWaReminder(vehicleId, fieldKey, currentVal){
   window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg), '_blank');
 }
 
+// מחיקת אירוע מהיומן (אירוע נגזר מנתוני הרכב - מוסתר עד שהתאריך שלו משתנה)
+function deleteCalEvent(vehicleId, type, dateVal){
+  var v = vehicles.find(function(x){return x.id===vehicleId;});
+  if(!v){ showToast('רכב לא נמצא'); return; }
+  if(!confirm('למחוק את האירוע מהיומן?\nהאירוע יחזור אוטומטית אם ייקבע תאריך חדש (למשל אחרי טיפול/טסט הבא).')) return;
+  if(!v._calHidden) v._calHidden={};
+  v._calHidden[type]=dateVal||'*';
+  persistVehicle(v);
+  try{ localStorage.setItem('vehicles',JSON.stringify(vehicles)); }catch(e){}
+  var m=document.getElementById('cal-event-edit-modal'); if(m) m.remove();
+  renderCalendar();
+  showToast('🗑 האירוע הוסר מהיומן');
+}
+
 function saveCalEventEdit(vehicleId, fieldKey, familyIdx){
   var v = vehicles.find(function(x){return x.id===vehicleId;});
   if(!v){ showToast('רכב לא נמצא'); return; }
@@ -18839,6 +18859,12 @@ function saveCalEventEdit(vehicleId, fieldKey, familyIdx){
   // Save notes
   if(!v._calNotes) v._calNotes = {};
   v._calNotes[fieldKey] = newNotes;
+
+  // אם האירוע הוסתר בעבר ("נמחק") - עריכת תאריך מחזירה אותו ליומן
+  if(v._calHidden){
+    if(fieldKey==='nextSvcOverride') delete v._calHidden['svc-pickup'];
+    if(fieldKey==='licenseExp') delete v._calHidden['test-pickup'];
+  }
 
   // Persist
   persistVehicle(v);
