@@ -404,6 +404,7 @@
     let SCHEDULED_TREATMENTS = [];
     let SELECTED_DATE = null;
     let CURRENT_MONTH = new Date();
+    let BLOCKED_DAYS = new Set();
 
     async function init() {
       // כניסה אנונימית — נדרשת לגישה ל-Firestore (Rules: auth != null)
@@ -419,12 +420,17 @@
       }
 
       try {
-        const [tDoc, sDoc] = await Promise.all([
+        const [tDoc, sDoc, bSnap] = await Promise.all([
           db.collection('treatments').doc(treatmentId).get(),
-          db.collection('settings').doc('treatments').get()
+          db.collection('settings').doc('treatments').get(),
+          db.collection('blockedDays').get().catch(function(){ return null; })
         ]);
 
         if (!tDoc.exists) { showError('הבקשה לא נמצאה'); return; }
+
+        // ימים שהמנהל סימן כתפוסים ביומן
+        BLOCKED_DAYS = new Set();
+        if (bSnap) bSnap.docs.forEach(function(d){ BLOCKED_DAYS.add(d.id); });
 
         TREATMENT = { id: tDoc.id, ...tDoc.data() };
         SETTINGS = sDoc.exists ? sDoc.data() : {
@@ -480,9 +486,9 @@
       document.getElementById('days-remaining').textContent = daysRemaining;
 
       document.getElementById('hour-display').textContent =
-        String(SETTINGS.appointmentHour).padStart(2, '0') + ':00';
-      document.getElementById('sla-display').textContent = SETTINGS.approvalSlaDays;
-      document.getElementById('sla-success').textContent = SETTINGS.approvalSlaDays;
+        SETTINGS.appointmentTime || (String(SETTINGS.appointmentHour || 9).padStart(2, '0') + ':00');
+      document.getElementById('sla-display').textContent = SETTINGS.approvalSlaDays || 3;
+      document.getElementById('sla-success').textContent = SETTINGS.approvalSlaDays || 3;
 
       if (TREATMENT.selectedDate) {
         SELECTED_DATE = new Date(TREATMENT.selectedDate);
@@ -502,6 +508,12 @@
       const lastDay = new Date(year, month + 1, 0);
       const today = new Date(); today.setHours(0,0,0,0);
       const dueDate = new Date(TREATMENT.dueDate); dueDate.setHours(0,0,0,0);
+      // אם תאריך היעד עבר או חסר - אפשר בחירה עד 30 יום קדימה (אחרת אף יום לא ניתן לבחירה)
+      let maxDate = dueDate;
+      if (isNaN(maxDate.getTime()) || maxDate < today) {
+        maxDate = new Date(today);
+        maxDate.setDate(maxDate.getDate() + (SETTINGS.scanRangeDays || 30));
+      }
 
       const grid = document.getElementById('calendar-grid');
       grid.innerHTML = '';
@@ -523,14 +535,16 @@
 
         const isToday = date.getTime() === today.getTime();
         const isPast = date < today;
-        const isFuture = date > dueDate;
-        const isOpenDay = SETTINGS.openDays.includes(weekDay);
-        const isFull = countTreatmentsOnDate(date) >= SETTINGS.maxTreatmentsPerDay;
+        const isFuture = date > maxDate;
+        const isOpenDay = (SETTINGS.openDays || [0,1,2,3,4]).includes(weekDay);
+        const isFull = countTreatmentsOnDate(date) >= (SETTINGS.maxTreatmentsPerDay || 2);
+        const iso = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        const isBlocked = BLOCKED_DAYS.has(iso);
 
         if (isToday) cls = 'today';
         else if (isPast || isFuture) cls = 'past';
         else if (!isOpenDay) cls = 'weekend';
-        else if (isFull) cls = 'full';
+        else if (isFull || isBlocked) cls = 'full';
         else { cls = 'available'; clickable = true; }
 
         if (SELECTED_DATE && SELECTED_DATE.getTime() === date.getTime()) cls = 'selected';
@@ -543,7 +557,7 @@
       }
 
       const minMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const maxMonth = new Date(dueDate.getFullYear(), dueDate.getMonth(), 1);
+      const maxMonth = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
       document.getElementById('prev-month-btn').disabled = CURRENT_MONTH <= minMonth;
       document.getElementById('next-month-btn').disabled = CURRENT_MONTH >= maxMonth;
     }
