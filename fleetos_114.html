@@ -9265,7 +9265,8 @@ function renderDash(){
   })();
   // Update no-km-update KPI
   (function(){
-    var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-30);
+    var _days=getNoKmDays();
+    var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-_days);
     var cutoffStr=cutoff.toISOString().substring(0,10);
     var noKm=(vehicles||[]).filter(function(v){
       var dn=v.driverName||(v.driver&&v.driver.name)||'';
@@ -9281,7 +9282,7 @@ function renderDash(){
     var cnt=noKm.length;
     updateStatCard('mv-no-km','mv-no-km-sub','mv-no-km-empty','mc-no-km',cnt);
     var sub=document.getElementById('mv-no-km-sub');
-    if(sub) sub.textContent=cnt>0?'לא עדכנו 30 יום אחרון':'כולם עדכנו';
+    if(sub) sub.textContent=cnt>0?'לא עדכנו '+_days+' יום אחרון':'כולם עדכנו';
   })();
   // Update greeting header
   updateDashGreeting();
@@ -9808,8 +9809,21 @@ function updateDashGreeting(){
   var pillEl=document.getElementById('dash-vehicle-count-val');
   if(pillEl) pillEl.textContent=pct+'% מהציר תקין \u00B7 '+total+' רכבים פעילים';
 }
+/* מספר ימים לסריקת נהגים שלא עדכנו ק"מ — ניתן להגדרה */
+function getNoKmDays(){
+  var d=parseInt(localStorage.getItem('no_km_days'));
+  return (d&&d>0)?d:30;
+}
+function setNoKmDays(val){
+  var d=parseInt(val);
+  if(!d||d<1) d=30;
+  localStorage.setItem('no_km_days', String(d));
+  if(typeof renderDash==='function') renderDash();
+  showNoKmUpdateModal();
+}
 function showNoKmUpdateModal(){
-  var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-30);
+  var _days=getNoKmDays();
+  var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-_days);
   var cutoffStr=cutoff.toISOString().substring(0,10);
   var noKm=(vehicles||[]).filter(function(v){
     var dn=v.driverName||(v.driver&&v.driver.name)||'';
@@ -9833,7 +9847,7 @@ function showNoKmUpdateModal(){
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
   ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
   var rows=noKm.length===0
-    ? '<div style="text-align:center;padding:24px;color:var(--t3)">כל הנהגים עדכנו ק"מ ב-30 הימים האחרונים ✓</div>'
+    ? '<div style="text-align:center;padding:24px;color:var(--t3)">כל הנהגים עדכנו ק"מ ב-'+_days+' הימים האחרונים ✓</div>'
     : noKm.map(function(v){
         var dn=v.driverName||(v.driver&&v.driver.name)||'';
         var last=v.lastKmUpdate ? new Date(v.lastKmUpdate).toLocaleDateString('he-IL') : 'מעולם לא';
@@ -9853,7 +9867,11 @@ function showNoKmUpdateModal(){
       '<div style="padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">'+
         '<div>'+
           '<div style="font-size:16px;font-weight:700;color:var(--t1)">נהגים שלא עדכנו ק"מ</div>'+
-          '<div style="font-size:12px;color:var(--t3);margin-top:2px">30 הימים האחרונים · '+noKm.length+' נהגים</div>'+
+          '<div style="font-size:12px;color:var(--t3);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">'+
+            '<span>סריקה אחורה:</span>'+
+            '<input type="number" id="no-km-days-inp" value="'+_days+'" min="1" max="365" style="width:56px;padding:3px 6px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;font-family:inherit;text-align:center;background:var(--card);color:var(--t1)" onkeydown="if(event.key===\'Enter\')setNoKmDays(this.value)" onchange="setNoKmDays(this.value)">'+
+            '<span>ימים · '+noKm.length+' נהגים</span>'+
+          '</div>'+
         '</div>'+
         '<button onclick="document.getElementById(\'no-km-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3);padding:4px">✕</button>'+
       '</div>'+
