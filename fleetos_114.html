@@ -11750,6 +11750,21 @@ function startKmUpdatesListener(){
         if(!d.km||!d.vid) return;
         var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
         if(!v) return;
+        // רשום גם בעמוד "עדכוני ק"מ" (kmReports) - עם ID קבוע למניעת כפילויות
+        if(!isFirst){
+          try{
+            db.collection('kmReports').doc('upd-'+change.doc.id).set({
+              driverName: (v.driver&&v.driver.name)||v.driverName||'נהג',
+              vehicleNum: v.plate||null,
+              km: d.km,
+              submittedAt: d.updatedAt||new Date().toISOString(),
+              status: 'matched',
+              matchedVehicleId: String(v.id),
+              matchedPlate: v.plate||'',
+              source: 'personal_link'
+            },{merge:true});
+          }catch(e){}
+        }
         if(v.currentKm>=d.km) return; // already higher
         v.currentKm=d.km;
         v.lastKmUpdate=d.updatedAt?d.updatedAt.split('T')[0]:localDateStr();
