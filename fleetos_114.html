@@ -22511,7 +22511,7 @@ async function cancelScheduled(treatmentId) {
   var phone = (t.driverPhone || '').replace(/\D/g, '');
   var msg = buildTrtMessage('cancel', t);
   if (phone) {
-    location.href = 'https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg);
+    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg), '_blank');
   }
   showToast('המועד בוטל.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
