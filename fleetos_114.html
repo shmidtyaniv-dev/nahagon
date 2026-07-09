@@ -18720,7 +18720,7 @@ function openCalEventEditModal(info){
     fieldKey='familyLicenseExp';
     currentVal=info.currentDate||'';
     eventTitle=info.title||'פקיעת רישיון נהיגה';
-  } else if(info.type==='svc-pickup'){
+  } else if(info.type==='svc-pickup'||info.alertType==='service-due'){
     fieldLabel='תאריך טיפול הבא';
     fieldKey='nextSvcOverride';
     currentVal=v.nextSvcOverride||info.currentDate||'';
@@ -19371,6 +19371,38 @@ function renderSystemAlerts(){
         });
       }
     }
+    // טיפול מתקרב - לפי תאריך (שנה מהטיפול האחרון) או לפי ק"מ (1,000 ק"מ לפני הטיפול הבא)
+    var _nxtSvc=(typeof calcNextSvc==='function')?calcNextSvc(v):null;
+    if(_nxtSvc&&(_nxtSvc.date||_nxtSvc.km)){
+      var svcDays=_nxtSvc.date?daysUntil(_nxtSvc.date):null;
+      var kmLeft=(_nxtSvc.km&&v.currentKm)?(_nxtSvc.km-v.currentKm):null;
+      var svcKmDue=kmLeft!==null&&kmLeft<=1000;
+      if((svcDays!==null&&svcDays<=30)||svcKmDue){
+        var svcTitle,svcDaysNum,svcCustom;
+        if(svcKmDue&&kmLeft<0){
+          svcTitle='טיפול בחריגת ק"מ ('+(_nxtSvc.km||0).toLocaleString('he-IL')+')';
+          svcDaysNum=0; svcCustom='חריגה של '+Math.abs(kmLeft).toLocaleString('he-IL')+' ק"מ';
+        } else if(svcKmDue){
+          svcTitle='טיפול מתקרב ('+(_nxtSvc.km||0).toLocaleString('he-IL')+' ק"מ)';
+          svcDaysNum=0; svcCustom='בעוד '+kmLeft.toLocaleString('he-IL')+' ק"מ';
+        } else {
+          svcTitle='טיפול מתקרב'+(_nxtSvc.km?' ('+_nxtSvc.km.toLocaleString('he-IL')+' ק"מ)':'');
+          svcDaysNum=svcDays; svcCustom=null;
+        }
+        allAlerts.push({
+          type:'service-due',
+          icon:'calendar',
+          title:svcTitle,
+          driverName:driverName,
+          plate:v.plate,
+          date:_nxtSvc.date||localDateStr(today),
+          days:svcDaysNum,
+          customDaysText:svcCustom,
+          vehicleId:v.id,
+          actionType:'remind'
+        });
+      }
+    }
     // Family member license expiring
     (v.family||[]).forEach(function(f,fidx){
       if(f.licenseExp){
@@ -19426,7 +19458,8 @@ function renderSystemAlerts(){
       ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>'
       : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     var daysText='';
-    if(a.days<0) daysText='פג לפני '+Math.abs(a.days)+' ימים';
+    if(a.customDaysText) daysText=a.customDaysText;
+    else if(a.days<0) daysText='פג לפני '+Math.abs(a.days)+' ימים';
     else if(a.days===0) daysText='היום!';
     else if(a.days===1) daysText='מחר';
     else daysText='בעוד '+a.days+' ימים';
