@@ -5921,7 +5921,8 @@ function calcNextSvc(v){
         lastSvcDate = latest.createdAt.split('T')[0];
         if(latest.km){
           const parsed = parseInt(String(latest.km).replace(/[^0-9]/g,''));
-          if(parsed) lastSvcKm = parsed;
+          // אם הק"מ בכרטיס הרכב (serviceKm) עודכן ידנית לערך גבוה יותר - הוא הקובע
+          if(parsed) lastSvcKm = Math.max(lastSvcKm, parsed);
         }
       }
     }
@@ -13825,19 +13826,21 @@ function saveEditVehicle(){
   v.driver.address=id('ev-daddress').value.trim();
   v.driver.company=id('ev-dcompany')?.value||v.driver.company||'';
   const lastSvc=id('ev-svc');
+  var _newSvcKm=parseInt(id('ev-svc-type')?.value)||0;
   if(lastSvc&&lastSvc.value){
     var oldLastSvc=v.lastService||'';
+    var oldSvcKm=v.serviceKm||0;
     v.lastService=lastSvc.value;
-    // Update historyLog if date changed - so calcNextSvc picks it up
-    if(lastSvc.value!==oldLastSvc){
+    // Update historyLog if date OR service-km changed - so calcNextSvc picks it up
+    if(lastSvc.value!==oldLastSvc || (_newSvcKm && _newSvcKm!==oldSvcKm)){
       if(!v.historyLog)v.historyLog=[];
-      // Remove ALL old service entries - the edited date is the source of truth
+      // Remove ALL old service entries - the edited values are the source of truth
       v.historyLog=v.historyLog.filter(function(h){return h.kind!=='service';});
-      var svcKm=parseInt(id('ev-svc-type')?.value)||v.serviceKm||0;
+      var svcKm=_newSvcKm||oldSvcKm;
       v.historyLog.push({id:'h'+Date.now(),kind:'service',desc:'טיפול '+(svcKm?svcKm.toLocaleString('he-IL')+' ק"מ':'שנתי'),km:svcKm,createdAt:lastSvc.value+'T12:00:00',source:'edit'});
     }
   }
-  const svcType=parseInt(id('ev-svc-type')?.value)||0;
+  const svcType=_newSvcKm;
   if(svcType){v.serviceKm=svcType;const next=svcType+15000;v.nextServiceType=`${next.toLocaleString('he-IL')} ק"מ`;}
   const ckmVal=id('ev-ckm');if(ckmVal)v.currentKm=getRawKm('ev-ckm');
   // Log edit to historyLog
@@ -21689,7 +21692,11 @@ async function createTreatmentIfNotExists(vehicle, kind, dueDate) {
       if (curKm && d.currentMileage !== curKm) updates.currentMileage = curKm;
       if (kind === 'treatment' && typeof calcNextSvc === 'function') {
         var nx = calcNextSvc(vehicle);
-        if (nx && nx.km && d.nextServiceKm !== nx.km) updates.nextServiceKm = nx.km;
+        if (nx && nx.km) {
+          if (d.nextServiceKm !== nx.km) updates.nextServiceKm = nx.km;
+          var tt = 'טיפול ' + nx.km.toLocaleString('he-IL') + ' ק"מ';
+          if (d.treatmentType !== tt) updates.treatmentType = tt;
+        }
       }
       if (Object.keys(updates).length) {
         db.collection('treatments').doc(doc.id).update(updates)
@@ -21744,18 +21751,21 @@ async function createTreatmentRecord(vehicle, kind, dueDate) {
   var licensePlate = vehicle.plate || '';
   var currentMileage = vehicle.currentKm || vehicle.curKm || 0;
 
-  var treatmentType;
-  if (kind === 'test') {
-    treatmentType = 'טסט רישוי';
-  } else {
-    treatmentType = vehicle.nextTreatmentType || 'טיפול שנתי';
-  }
-
   // ק"מ הטיפול הבא מרשומות הרכב (לסנכרון עם דף הנהג)
   var nextServiceKm = null;
   if (kind === 'treatment' && typeof calcNextSvc === 'function') {
     var _nx = calcNextSvc(vehicle);
     if (_nx && _nx.km) nextServiceKm = _nx.km;
+  }
+
+  var treatmentType;
+  if (kind === 'test') {
+    treatmentType = 'טסט רישוי';
+  } else if (nextServiceKm) {
+    // סוג הטיפול נגזר מחישוב הטיפול הבא (טיפול אחרון + 15,000)
+    treatmentType = 'טיפול ' + nextServiceKm.toLocaleString('he-IL') + ' ק"מ';
+  } else {
+    treatmentType = vehicle.nextTreatmentType || 'טיפול שנתי';
   }
 
   var record = {
