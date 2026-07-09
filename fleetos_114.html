@@ -18350,7 +18350,8 @@ function renderCalendarMonth(events){
     var dayEvents=events.filter(function(e){return e.date===iso;});
     var evHtml=_buildDayEventsHtml(dayEvents);
     var isBlocked=_blockedDays.has(iso);
-    var blockedChip=isBlocked?'<div style="background:#fee2e2;color:#b91c1c;font-size:9px;font-weight:700;border-radius:5px;padding:2px 4px;text-align:center;margin-bottom:2px" title="יום תפוס - נהגים לא יכולים לקבוע טיפול">🚫 תפוס לטיפולים</div>':'';
+    var _blkDrv=isBlocked?blockedDayDriver(iso):'';
+    var blockedChip=isBlocked?'<div style="background:#fee2e2;color:#b91c1c;font-size:9px;font-weight:700;border-radius:5px;padding:2px 4px;text-align:center;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="יום תפוס - נהגים לא יכולים לקבוע טיפול'+(_blkDrv?' (נתפס ע\u05f4י '+_blkDrv+')':'')+'">🚫 תפוס'+(_blkDrv?': '+_blkDrv:' לטיפולים')+'</div>':'';
 
     html+='<div class="fc-day'+(isToday?' today':'')+'" onclick="openDayPicker(\''+iso+'\')"'+(isBlocked?' style="background:#fef7f7"':'')+'>'+
       '<div class="fc-day-hdr">'+
@@ -18426,12 +18427,18 @@ function _buildDayEventsHtml(dayEvents){
    ימים שהמנהל מסמן ביומן כתפוסים - נהגים לא יוכלו לבחור אותם בדף קביעת תור.
    נשמר ב-Firestore collection 'blockedDays' (doc id = תאריך ISO) לסנכרון עם הדף הציבורי. */
 var _blockedDays = new Set(JSON.parse(localStorage.getItem('blockedDays')||'[]'));
+var _blockedDaysInfo = JSON.parse(localStorage.getItem('blockedDaysInfo')||'{}'); // iso → {driverName, treatmentId...}
+function blockedDayDriver(iso){ var inf=_blockedDaysInfo[iso]; return (inf&&inf.driverName)?inf.driverName:''; }
 function startBlockedDaysListener(){
   if(typeof db==='undefined'||!db) return;
   db.collection('blockedDays').onSnapshot(function(snap){
     _blockedDays = new Set();
-    snap.forEach(function(doc){ _blockedDays.add(doc.id); });
-    try{localStorage.setItem('blockedDays',JSON.stringify(Array.from(_blockedDays)));}catch(e){}
+    _blockedDaysInfo = {};
+    snap.forEach(function(doc){ _blockedDays.add(doc.id); _blockedDaysInfo[doc.id]=doc.data()||{}; });
+    try{
+      localStorage.setItem('blockedDays',JSON.stringify(Array.from(_blockedDays)));
+      localStorage.setItem('blockedDaysInfo',JSON.stringify(_blockedDaysInfo));
+    }catch(e){}
     if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
   },function(e){console.error('blockedDays listener:',e);});
 }
@@ -18440,12 +18447,17 @@ function toggleBlockedDay(iso){
   var wasBlocked=_blockedDays.has(iso);
   if(wasBlocked){
     _blockedDays.delete(iso);
+    delete _blockedDaysInfo[iso];
     if(typeof db!=='undefined'&&db) db.collection('blockedDays').doc(iso).delete().catch(function(e){console.error('blockedDays delete:',e);});
   } else {
     _blockedDays.add(iso);
-    if(typeof db!=='undefined'&&db) db.collection('blockedDays').doc(iso).set({date:iso,createdAt:new Date().toISOString()}).catch(function(e){console.error('blockedDays set:',e);});
+    _blockedDaysInfo[iso]={date:iso,source:'manual'};
+    if(typeof db!=='undefined'&&db) db.collection('blockedDays').doc(iso).set({date:iso,source:'manual',createdAt:new Date().toISOString()}).catch(function(e){console.error('blockedDays set:',e);});
   }
-  try{localStorage.setItem('blockedDays',JSON.stringify(Array.from(_blockedDays)));}catch(e){}
+  try{
+    localStorage.setItem('blockedDays',JSON.stringify(Array.from(_blockedDays)));
+    localStorage.setItem('blockedDaysInfo',JSON.stringify(_blockedDaysInfo));
+  }catch(e){}
   if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
   showToast(wasBlocked?'✓ החסימה הוסרה — נהגים יוכלו לבחור יום זה לטיפול':'🚫 היום סומן כתפוס — נהגים לא יוכלו לבחור אותו לטיפול');
 }
@@ -19116,7 +19128,8 @@ function renderCalendarWeek(events){
     var dayEvents=events.filter(function(e){return e.date===iso;});
     var evHtml=_buildDayEventsHtml(dayEvents);
     var isBlocked=_blockedDays.has(iso);
-    var blockedChip=isBlocked?'<div style="background:#fee2e2;color:#b91c1c;font-size:9px;font-weight:700;border-radius:5px;padding:2px 4px;text-align:center;margin-bottom:2px">🚫 תפוס לטיפולים</div>':'';
+    var _blkDrv=isBlocked?blockedDayDriver(iso):'';
+    var blockedChip=isBlocked?'<div style="background:#fee2e2;color:#b91c1c;font-size:9px;font-weight:700;border-radius:5px;padding:2px 4px;text-align:center;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🚫 תפוס'+(_blkDrv?': '+_blkDrv:' לטיפולים')+'</div>':'';
     html+='<div class="fc-day'+(isToday?' today':'')+'" style="min-height:180px'+(isBlocked?';background:#fef7f7':'')+'" onclick="openDayPicker(\''+iso+'\')">'+
       '<div class="fc-day-hdr">'+
         '<span class="fc-day-name">'+dayName+'</span>'+
@@ -19152,7 +19165,10 @@ function renderCalendarDay(events){
   html+='<div style="font-size:22px;font-weight:700;color:var(--gd)">'+wdays[d.getDay()]+', '+d.getDate()+' '+HEM[d.getMonth()]+' '+d.getFullYear()+'</div>';
   html+='<div style="font-size:12px;color:var(--t3);margin-top:4px">'+dayEvents.length+' פריטים ביום זה</div>';
   var _dayBlocked=_blockedDays.has(iso);
-  if(_dayBlocked) html+='<div style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px;margin-top:6px">🚫 יום תפוס — נהגים לא יכולים לקבוע טיפול ביום זה</div>';
+  if(_dayBlocked){
+    var _dayBlkDrv=blockedDayDriver(iso);
+    html+='<div style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px;margin-top:6px">🚫 יום תפוס'+(_dayBlkDrv?' — נתפס ע\u05f4י '+_dayBlkDrv:'')+' — נהגים לא יכולים לקבוע טיפול ביום זה</div>';
+  }
   html+='</div>';
   html+='<div style="display:flex;gap:6px;flex-wrap:wrap">';
   html+='<button onclick="openSelfReminderModal(\''+iso+'\')" style="background:#EEEDFE;border:1.5px solid #c4b5fd;border-radius:8px;padding:8px 12px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:600;color:#3C3489">+ תזכורת</button>';
@@ -22354,6 +22370,7 @@ async function blockDayForApprovedTreatment(treatment) {
     var iso = localDateStr(parseTreatmentDate(treatment.selectedDate));
     if (!iso || _blockedDays.has(iso)) return;
     _blockedDays.add(iso);
+    _blockedDaysInfo[iso] = { date: iso, source: 'treatment_approval', treatmentId: treatment.id, driverName: treatment.driverName || '' };
     if (typeof db !== 'undefined' && db) {
       await db.collection('blockedDays').doc(iso).set({
         date: iso,
@@ -22363,7 +22380,10 @@ async function blockDayForApprovedTreatment(treatment) {
         createdAt: new Date().toISOString()
       });
     }
-    try { localStorage.setItem('blockedDays', JSON.stringify(Array.from(_blockedDays))); } catch (e) {}
+    try {
+      localStorage.setItem('blockedDays', JSON.stringify(Array.from(_blockedDays)));
+      localStorage.setItem('blockedDaysInfo', JSON.stringify(_blockedDaysInfo));
+    } catch (e) {}
     if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
   } catch (err) {
     console.error('[Treatments] שגיאה בחסימת יום לאחר אישור:', err);
