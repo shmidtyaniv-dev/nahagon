@@ -19430,7 +19430,15 @@ function renderSystemAlerts(){
   // Sort by urgency (soonest first)
   allAlerts.sort(function(a,b){return a.days-b.days;});
 
-  // Count for each range button
+  // מונה על כל כפתור טווח - כדי לראות כמה התראות יש בכל טווח
+  var rangeBtns=document.querySelectorAll('.cal-range-btn');
+  var rangeVals=[7,14,30];
+  rangeBtns.forEach(function(b,i){
+    var r=rangeVals[i]; if(!r) return;
+    var c=allAlerts.filter(function(a){return a.days<=r;}).length;
+    b.textContent=(r===7?'7 ימים':r+' יום')+(c?' ('+c+')':'');
+  });
+
   // Filter by selected range
   var filtered=allAlerts.filter(function(a){return a.days<=_alertRange;});
 
