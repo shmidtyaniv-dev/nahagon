@@ -3968,6 +3968,23 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
       </div>
 
+      <!-- ניצול אחסון -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div class="settings-section-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          </div>
+          <div class="settings-section-title-wrapper">
+            <div class="settings-section-title">ניצול אחסון</div>
+            <div class="settings-section-desc">בדיקה כמה מקום המערכת תופסת בדפדפן ובענן — בדיקה בלבד, לא מוחק שום דבר</div>
+          </div>
+        </div>
+        <div class="settings-section-body">
+          <button id="storage-check-btn" class="settings-btn settings-btn-primary" style="padding:11px 22px" onclick="checkStorageUsage()">📊 בדוק ניצול אחסון</button>
+          <div id="storage-usage-results" style="margin-top:14px"></div>
+        </div>
+      </div>
+
       <div class="settings-section danger">
         <div class="settings-section-header">
           <div class="settings-section-icon">
@@ -12943,6 +12960,97 @@ function updateLastBackupLabel(){
   if(!iso){el.textContent='טרם בוצע גיבוי';return;}
   var d=new Date(iso);
   el.textContent='גיבוי אחרון: '+d.toLocaleDateString('he-IL')+' '+d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── מד ניצול אחסון (קריאה בלבד — לא מוחק כלום) ──
+var STORAGE_COLL_NAMES={vehicles:'רכבים ונהגים',treatments:'טיפולים וטסטים',accidents:'תאונות',violations:'דוחות תנועה',tasks:'משימות',serviceBookings:'הזמנות ישנות',selfReminders:'תזכורות',fleetEvents:'אירועי יומן',hoForms2:'טפסי מסירה (כולל תמונות)',blockedDays:'ימים חסומים',settings:'הגדרות',formTemplates:'טפסים דיגיטליים',formSubmissions:'תגובות לטפסים',vehicleDocsStore:'רשימת מסמכי רכב',vehicleExtraFiles:'קבצים שהועלו לרכבים',vehicleMandatoryFiles:'ביטוח ורישיונות',violationFiles:'קבצי דוחות',publicDrivers:'נהגים (לינקים)',approvals:'אישורים',paymentReceipts:'אישורי תשלום',kmReports:'דיווחי ק"מ',pdfChunks:'קבצי PDF של טפסים',kmRequests:'בקשות עדכון ק"מ'};
+function fmtBytes(b){
+  if(b>=1024*1024) return (b/(1024*1024)).toFixed(1)+' MB';
+  if(b>=1024) return Math.round(b/1024)+' KB';
+  return b+' B';
+}
+function storageBar(pct){
+  var color=pct<60?'#1D9E75':(pct<85?'#E89B2A':'#E24B4A');
+  var w=Math.min(100,Math.max(1,Math.round(pct)));
+  return '<div style="background:var(--bg2,#eef2ef);border-radius:999px;height:10px;overflow:hidden;margin:6px 0"><div style="width:'+w+'%;height:100%;background:'+color+';border-radius:999px"></div></div>';
+}
+async function checkStorageUsage(){
+  var btn=document.getElementById('storage-check-btn');
+  var out=document.getElementById('storage-usage-results');
+  if(!out) return;
+  if(btn){btn.disabled=true;btn.textContent='⏳ בודק... (עד דקה)';}
+  try{
+    // 1) אחסון מקומי בדפדפן
+    var localBytes=0;
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      localBytes+=((k?k.length:0)+((localStorage.getItem(k)||'').length))*2;
+    }
+    var LOCAL_QUOTA=5*1024*1024; // ~5MB, המכסה המקובלת בדפדפנים
+    var localPct=localBytes/LOCAL_QUOTA*100;
+    var html='<div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:2px">💻 זיכרון מקומי בדפדפן (במכשיר הזה)</div>'+
+      '<div style="font-size:12px;color:var(--t3)">'+fmtBytes(localBytes)+' מתוך ~5 MB ('+localPct.toFixed(1)+'%)</div>'+
+      storageBar(localPct);
+    if(localPct>=85) html+='<div style="font-size:12px;color:#E24B4A;font-weight:600">⚠️ הזיכרון המקומי כמעט מלא — מומלץ לבצע את שלב הניקוי האוטומטי בתוכנית</div>';
+
+    // 2) אחסון בענן (Firestore) — הערכה לפי גודל הנתונים
+    if(db){
+      html+='<div style="font-size:13px;font-weight:700;color:var(--t1);margin-top:16px;margin-bottom:2px">☁️ אחסון בענן (Firebase)</div>';
+      var perColl={};
+      var cloudBytes=0;
+      var colls=(typeof BACKUP_COLLECTIONS!=='undefined')?BACKUP_COLLECTIONS.slice():[];
+      if(colls.indexOf('kmRequests')<0) colls.push('kmRequests');
+      for(var ci=0;ci<colls.length;ci++){
+        var cname=colls[ci];
+        try{
+          var snap=await db.collection(cname).get();
+          var sz=0;
+          snap.forEach(function(doc){
+            try{ sz+=JSON.stringify(doc.data()).length; }catch(e){}
+            // חלקי PDF לא נטענים — מוערכים לפי המונה שנשמר בכל טופס
+            if(cname==='formTemplates'){
+              var d=doc.data()||{};
+              if(d.pdfChunks&&d.pdfChunks>0){
+                var chunkBytes=d.pdfChunks*800000;
+                perColl['pdfChunks']=(perColl['pdfChunks']||0)+chunkBytes;
+                cloudBytes+=chunkBytes;
+              }
+            }
+          });
+          perColl[cname]=(perColl[cname]||0)+sz;
+          cloudBytes+=sz;
+        }catch(e){ console.warn('storage check skip '+cname+':',e); }
+      }
+      var CLOUD_QUOTA=1024*1024*1024; // 1GB בתוכנית החינמית
+      var cloudPct=cloudBytes/CLOUD_QUOTA*100;
+      html+='<div style="font-size:12px;color:var(--t3)">'+fmtBytes(cloudBytes)+' מתוך 1 GB ('+cloudPct.toFixed(1)+'%) — הערכה</div>'+
+        storageBar(cloudPct);
+      if(cloudPct>=85) html+='<div style="font-size:12px;color:#E24B4A;font-weight:600">⚠️ מתקרבים למכסת החינם של גוגל — כדאי לשקול שדרוג או מעבר לשרת</div>';
+      else if(cloudPct>=60) html+='<div style="font-size:12px;color:#E89B2A;font-weight:600">שימו לב: עברתם 60% מהמכסה החינמית</div>';
+      // פירוט — 6 הצרכנים הגדולים
+      var entries=Object.keys(perColl).map(function(k){return {k:k,v:perColl[k]};})
+        .filter(function(e){return e.v>0;})
+        .sort(function(a,b){return b.v-a.v;})
+        .slice(0,6);
+      if(entries.length){
+        html+='<div style="font-size:12px;font-weight:600;color:var(--t2);margin-top:10px;margin-bottom:4px">מה תופס הכי הרבה מקום:</div>';
+        entries.forEach(function(e){
+          var label=STORAGE_COLL_NAMES[e.k]||e.k;
+          var p=cloudBytes>0?Math.round(e.v/cloudBytes*100):0;
+          html+='<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2);padding:3px 0;border-bottom:1px dashed var(--bdr)"><span>'+label+'</span><span>'+fmtBytes(e.v)+' ('+p+'%)</span></div>';
+        });
+      }
+    } else {
+      html+='<div style="font-size:12px;color:var(--t3);margin-top:12px">אין חיבור לשרת — לא ניתן לבדוק את אחסון הענן כרגע</div>';
+    }
+    html+='<div style="font-size:11px;color:var(--t3);margin-top:10px">נבדק: '+new Date().toLocaleString('he-IL')+' · הבדיקה לקריאה בלבד ולא משנה שום נתון</div>';
+    out.innerHTML=html;
+  }catch(err){
+    console.error('checkStorageUsage:',err);
+    out.innerHTML='<div style="font-size:12px;color:#E24B4A">שגיאה בבדיקה — נסו שוב מאוחר יותר</div>';
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='📊 בדוק ניצול אחסון';}
+  }
 }
 
 async function downloadFullBackup(){
