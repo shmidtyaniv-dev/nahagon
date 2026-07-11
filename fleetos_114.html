@@ -3976,11 +3976,14 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </div>
           <div class="settings-section-title-wrapper">
             <div class="settings-section-title">ניצול אחסון</div>
-            <div class="settings-section-desc">בדיקה כמה מקום המערכת תופסת בדפדפן ובענן — בדיקה בלבד, לא מוחק שום דבר</div>
+            <div class="settings-section-desc">בדיקה כמה מקום המערכת תופסת בדפדפן ובענן. כפתור הניקוי מוחק רק קבצים של דוחות ישנים — הרישום והתיעוד במערכת נשמרים תמיד</div>
           </div>
         </div>
         <div class="settings-section-body">
-          <button id="storage-check-btn" class="settings-btn settings-btn-primary" style="padding:11px 22px" onclick="checkStorageUsage()">📊 בדוק ניצול אחסון</button>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button id="storage-check-btn" class="settings-btn settings-btn-primary" style="padding:11px 22px" onclick="checkStorageUsage()">📊 בדוק ניצול אחסון</button>
+            <button id="file-cleanup-btn" class="settings-btn" style="padding:11px 22px;border:1px solid var(--bdr);background:var(--bg);color:var(--t1)" onclick="showFileCleanupModal()">🧹 ניקוי קבצים של דוחות ישנים</button>
+          </div>
           <div id="storage-usage-results" style="margin-top:14px"></div>
         </div>
       </div>
@@ -13065,6 +13068,181 @@ async function checkStorageUsage(){
   }finally{
     if(btn){btn.disabled=false;btn.textContent='📊 בדוק ניצול אחסון';}
   }
+}
+
+// ── ניקוי קבצים של דוחות תנועה ישנים (הרישום נשמר תמיד — נמחק רק הקובץ) ──
+function getFileCleanupMonths(){
+  var m=parseInt(getSettings().fileCleanupMonths);
+  if(isNaN(m)||m<1) m=6;
+  if(m>60) m=60;
+  return m;
+}
+function setFileCleanupMonths(val){
+  var m=parseInt(val);
+  if(isNaN(m)||m<1) m=1;
+  if(m>60) m=60;
+  saveSettings({fileCleanupMonths:m});
+  showFileCleanupModal();
+}
+function buildFileCleanupCandidates(months){
+  var cutoff=new Date();cutoff.setHours(0,0,0,0);cutoff.setMonth(cutoff.getMonth()-months);
+  var viols=[],usedKeys={};
+  (violationsList||[]).forEach(function(v){
+    var bd=v.date||v.transferDate;
+    if(!bd) return;
+    var d=new Date(String(bd).length===10?bd+'T12:00:00':bd);
+    if(isNaN(d.getTime())||d>=cutoff) return;
+    var localKey='violFile_'+v.id;
+    var localVal=null;
+    try{localVal=localStorage.getItem(localKey);}catch(e){}
+    var localBytes=localVal?((localKey.length+localVal.length)*2):0;
+    if(localBytes) usedKeys[localKey]=true;
+    var hasDocFile=!!(v.fileData||v._hasFile||_violFileCache[v.id]||localBytes);
+    var pr=v.paymentReceipt;
+    var hasReceiptFile=!!(pr&&(pr.data||pr.url));
+    var receiptBytes=(pr&&pr.data)?pr.data.length*2:0;
+    if(!hasDocFile&&!hasReceiptFile) return;
+    viols.push({v:v,date:bd,hasDocFile:hasDocFile,hasReceiptFile:hasReceiptFile,localBytes:localBytes,receiptBytes:receiptBytes});
+  });
+  // קבצים מקומיים מגרסה ישנה שהדוח שלהם כבר לא קיים — המערכת לא משתמשת בהם
+  var orphans=[];
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(!k||k.indexOf('violFile_')!==0||usedKeys[k]) continue;
+      var oid=parseInt(k.slice(9));
+      if((violationsList||[]).some(function(x){return x.id===oid;})) continue; // הדוח קיים אך עדיין לא ישן מספיק — לא נוגעים
+      var val=localStorage.getItem(k)||'';
+      orphans.push({key:k,bytes:(k.length+val.length)*2});
+    }
+  }catch(e){}
+  viols.sort(function(a,b){return String(a.date).localeCompare(String(b.date));});
+  return {viols:viols,orphans:orphans};
+}
+function showFileCleanupModal(){
+  var _months=getFileCleanupMonths();
+  var c=buildFileCleanupCandidates(_months);
+  var existing=document.getElementById('file-cleanup-modal');
+  if(existing) existing.remove();
+  var ov=document.createElement('div');
+  ov.id='file-cleanup-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  var rows='';
+  if(c.viols.length===0&&c.orphans.length===0){
+    rows='<div style="text-align:center;padding:24px;color:var(--t3)">אין קבצים ישנים לניקוי — הכל נקי ✓</div>';
+  }else{
+    rows+=c.viols.map(function(item){
+      var v=item.v;
+      var veh=(typeof vehicles!=='undefined'&&vehicles||[]).find(function(x){return x.id===v.vehicleId;});
+      var parts=[];
+      if(item.hasDocFile) parts.push('קובץ הדוח');
+      if(item.hasReceiptFile) parts.push('קובץ אישור תשלום');
+      var sizeTxt=(item.localBytes+item.receiptBytes)>0?(' · '+fmtBytes(item.localBytes+item.receiptBytes)+' במכשיר'):'';
+      var vehTxt=veh?((veh.plate||'')+(veh.driverName?' · '+veh.driverName:'')):'ללא רכב';
+      return '<label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--bdr);cursor:pointer">'+
+        '<input type="checkbox" class="fc-item" data-vid="'+v.id+'" checked style="width:17px;height:17px;flex-shrink:0">'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-size:13px;font-weight:600;color:var(--t1)">דוח '+_esc(v.num||'')+' · '+fd(item.date)+'</div>'+
+          '<div style="font-size:12px;color:var(--t3)">'+_esc(vehTxt)+'</div>'+
+          '<div style="font-size:11px;color:var(--t2);margin-top:2px">יימחק: '+parts.join(' + ')+sizeTxt+'</div>'+
+        '</div>'+
+      '</label>';
+    }).join('');
+    if(c.orphans.length){
+      rows+='<div style="padding:10px 14px 4px;font-size:12px;font-weight:700;color:var(--t2)">קבצים מקומיים מגרסה ישנה (של דוחות שכבר נמחקו — המערכת לא משתמשת בהם):</div>';
+      rows+=c.orphans.map(function(o){
+        return '<label style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--bdr);cursor:pointer">'+
+          '<input type="checkbox" class="fc-orphan" data-key="'+_esc(o.key)+'" checked style="width:17px;height:17px;flex-shrink:0">'+
+          '<div style="flex:1;font-size:12px;color:var(--t2)">'+_esc(o.key)+' · '+fmtBytes(o.bytes)+'</div>'+
+        '</label>';
+      }).join('');
+    }
+  }
+  var canClean=(c.viols.length+c.orphans.length)>0;
+  ov.innerHTML=
+    '<div style="background:#fff;border-radius:16px;width:100%;max-width:460px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'+
+        '<div>'+
+          '<div style="font-size:16px;font-weight:700;color:var(--t1)">🧹 ניקוי קבצים של דוחות ישנים</div>'+
+          '<div style="font-size:12px;color:var(--t3);margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">'+
+            '<span>דוחות מלפני יותר מ-</span>'+
+            '<input type="number" id="fc-months-inp" value="'+_months+'" min="1" max="60" style="width:56px;padding:3px 6px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;font-family:inherit;text-align:center;background:var(--card);color:var(--t1)" onkeydown="if(event.key===\'Enter\')setFileCleanupMonths(this.value)" onchange="setFileCleanupMonths(this.value)">'+
+            '<span>חודשים</span>'+
+          '</div>'+
+          '<div style="font-size:11px;color:#854d0e;margin-top:8px;line-height:1.6;background:#FEF3C7;border-radius:8px;padding:6px 10px">נמחקים רק הקבצים עצמם (סריקות הדוח ואישורי התשלום). רישום הדוח, הסטטוס וההיסטוריה נשמרים במערכת. מחיקת קובץ היא לצמיתות ולא ניתנת לשחזור.</div>'+
+        '</div>'+
+        '<button onclick="document.getElementById(\'file-cleanup-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3);padding:4px;flex-shrink:0">✕</button>'+
+      '</div>'+
+      '<div style="overflow-y:auto;flex:1">'+rows+'</div>'+
+      (canClean?('<div style="padding:12px 20px;border-top:1px solid var(--bdr)">'+
+        '<button onclick="runFileCleanup()" style="width:100%;padding:11px;background:var(--red);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit">🧹 נקה קבצים מסומנים</button>'+
+      '</div>'):'')+
+    '</div>';
+  document.body.appendChild(ov);
+}
+function runFileCleanup(){
+  var vids=Array.prototype.slice.call(document.querySelectorAll('#file-cleanup-modal .fc-item:checked')).map(function(el){return parseInt(el.dataset.vid);});
+  var keys=Array.prototype.slice.call(document.querySelectorAll('#file-cleanup-modal .fc-orphan:checked')).map(function(el){return el.dataset.key;});
+  if(vids.length===0&&keys.length===0){showToast('לא נבחרו קבצים לניקוי');return;}
+  showDangerConfirm({
+    title:'ניקוי קבצים של דוחות ישנים',
+    desc:'הקבצים המסומנים יימחקו לצמיתות ולא ניתן יהיה לשחזר אותם. רישום הדוחות עצמם נשאר במערכת.',
+    items:[
+      (vids.length? vids.length+' דוחות — יימחקו קובץ הדוח ו/או קובץ אישור התשלום' : ''),
+      (keys.length? keys.length+' קבצים מקומיים מגרסה ישנה' : '')
+    ].filter(Boolean),
+    confirmLabel:'מחק קבצים לצמיתות',
+    requireType:'נקה'
+  },function(){
+    var cleaned=0;
+    var nowStr=new Date().toLocaleDateString('he-IL')+' '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+    vids.forEach(function(vid){
+      var v=(violationsList||[]).find(function(x){return x.id===vid;});
+      if(!v) return;
+      var changed=false;
+      // קובץ הדוח — נמחק מהענן, מהאחסון ומהמכשיר; הרישום נשאר
+      if(v.fileData||v._hasFile||_violFileCache[vid]){
+        var cached=_violFileCache[vid];
+        var sp=v._storagePath||(cached&&cached.storagePath)||('violations/'+vid+'/file');
+        try{deleteFileFromStorage(sp);}catch(e){}
+        if(db) db.collection('violationFiles').doc(String(vid)).delete().catch(function(e){console.error('violationFiles cleanup:',e);});
+        delete _violFileCache[vid];
+        v.fileData=null;v._hasFile=false;delete v._fileUrl;
+        if(!v.logs)v.logs=[];
+        v.logs.push({date:nowStr,text:'🧹 קובץ הדוח נמחק בניקוי קבצים ישנים (הרישום נשמר)'});
+        changed=true;
+      }
+      try{localStorage.removeItem('violFile_'+vid);}catch(e){}
+      // קובץ אישור תשלום — נשמרים השם והתאריך כתיעוד, הקובץ נמחק
+      if(v.paymentReceipt&&(v.paymentReceipt.data||v.paymentReceipt.url)){
+        v.paymentReceipt={name:v.paymentReceipt.name||'אישור תשלום',type:v.paymentReceipt.type||'',uploadedAt:v.paymentReceipt.uploadedAt||null,fileCleaned:true};
+        if(!v.logs)v.logs=[];
+        v.logs.push({date:nowStr,text:'🧹 קובץ אישור התשלום נמחק בניקוי קבצים ישנים (הרישום נשמר)'});
+        ['approvalToken','noticeToken','transferToken'].forEach(function(tk){
+          var tok=v[tk];
+          if(!tok) return;
+          try{deleteFileFromStorage('violations/receipts/'+tok);}catch(e){}
+          if(!db) return;
+          db.collection('paymentReceipts').doc(String(tok)).delete().catch(function(e){console.error('paymentReceipts cleanup:',e);});
+          db.collection('paymentReceipts').where('token','==',tok).get().then(function(snap){
+            snap.forEach(function(doc){doc.ref.delete().catch(function(e){console.error('paymentReceipts cleanup:',e);});});
+          }).catch(function(e){console.error('paymentReceipts query cleanup:',e);});
+        });
+        changed=true;
+      }
+      if(changed){
+        try{syncPersistItem('violations',v);}catch(e){console.error(e);}
+        cleaned++;
+      }
+    });
+    keys.forEach(function(k){try{localStorage.removeItem(k);}catch(e){} cleaned++;});
+    try{localStorage.setItem('violationsList',JSON.stringify(violationsList));}catch(e){}
+    var m=document.getElementById('file-cleanup-modal');if(m)m.remove();
+    try{renderViolations();}catch(e){}
+    try{if(_currentVid)renderVcViolations(_currentVid);}catch(e){}
+    showToast('🧹 הניקוי הושלם — '+cleaned+' פריטים נוקו');
+  });
 }
 
 async function downloadFullBackup(){
