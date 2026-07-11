@@ -11255,8 +11255,6 @@ function _persistVehicleHistory(){
   try{
     if(typeof persistVehiclesDebounced === 'function'){
       persistVehiclesDebounced();
-    } else {
-      localStorage.setItem('fleetVehicles',JSON.stringify(vehicles));
     }
   }catch(e){ console.error('persist history error:', e); }
 }
@@ -11692,7 +11690,7 @@ function openDet(vid){
     MANDATORY_DOCS.map((doc,i)=>{
       const uploaded=vd[doc.key];
       const fname=uploaded?(uploaded.name||uploaded):'';
-      const hasData=uploaded&&uploaded.data;
+      const hasData=uploaded&&(uploaded.data||uploaded.url||uploaded.fsDocId);
       return`<div style="display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid var(--bdr)">
         <div style="width:22px;height:22px;border-radius:50%;background:${uploaded?'#dcfce7':'#fee2e2'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:700;color:${uploaded?'#166534':'#991b1b'}">${uploaded?'✓':'✗'}</div>
         <div style="flex:1">
@@ -11730,6 +11728,7 @@ function persistVehicleDocsDebounced(vid){
     Object.keys(vehicleDocs[vid]||{}).forEach(function(k){
       var d=vehicleDocs[vid][k];
       if(!d)return;
+      if(typeof d==='string'){docsMeta[k]=d;return;} // ערכים פשוטים (כמו תאריך תוקף ביטוח) — לשמור כמו שהם
       docsMeta[k]=Object.assign({},d);
       // הסר base64 גדול — נשמר ב-vehicleMandatoryFiles
       if(docsMeta[k].url && docsMeta[k].url.length>500) delete docsMeta[k].url;
@@ -11741,7 +11740,7 @@ function persistVehicleDocsDebounced(vid){
 }
 function loadVehicleDocsStore(){
   if(!db)return;
-  // טען metadata מ-vehicleDocsStore
+  // טען metadata בלבד — הקבצים עצמם (base64 כבד) נטענים לפי דרישה בלחיצת "צפה"
   db.collection('vehicleDocsStore').get().then(function(snap){
     snap.forEach(function(doc){
       var d=doc.data();
@@ -11749,32 +11748,7 @@ function loadVehicleDocsStore(){
       if(d.docs&&typeof d.docs==='object') vehicleDocs[d.vid]=d.docs;
       if(Array.isArray(d.extra)) extraDocs[d.vid]=d.extra;
     });
-    // טען קבצים מ-vehicleExtraFiles ומלא url בזיכרון
-    var p1=db.collection('vehicleExtraFiles').get().then(function(fsnap){
-      fsnap.forEach(function(fdoc){
-        var f=fdoc.data();
-        if(!f.vid||!f.data)return;
-        if(!extraDocs[f.vid])extraDocs[f.vid]=[];
-        var exists=extraDocs[f.vid].find(function(e){return e.id===f.ts||e.id===f.id;});
-        if(exists){exists.url=f.data;}
-        else{extraDocs[f.vid].push({id:f.ts||f.id,name:f.name,cat:f.cat,exp:f.exp,date:f.date,fileType:f.fileType,fileName:f.fileName,url:f.data});}
-      });
-    }).catch(function(e){console.error('vehicleExtraFiles load error:',e);});
-    // טען מסמכי חובה מ-vehicleMandatoryFiles
-    var p2=db.collection('vehicleMandatoryFiles').get().then(function(msnap){
-      msnap.forEach(function(mdoc){
-        var f=mdoc.data();
-        if(!f.vid||!f.key||!f.data)return;
-        if(!vehicleDocs[f.vid])vehicleDocs[f.vid]={};
-        if(!vehicleDocs[f.vid][f.key])vehicleDocs[f.vid][f.key]={};
-        vehicleDocs[f.vid][f.key].url=f.data;
-        vehicleDocs[f.vid][f.key].name=vehicleDocs[f.vid][f.key].name||f.name;
-        vehicleDocs[f.vid][f.key].type=vehicleDocs[f.vid][f.key].type||f.type;
-      });
-    }).catch(function(e){console.error('vehicleMandatoryFiles load error:',e);});
-    Promise.all([p1,p2]).then(function(){
-      if(_currentVid&&typeof openDet==='function'){try{openDet(_currentVid);}catch(e){}}
-    });
+    if(_currentVid&&typeof openDet==='function'){try{openDet(_currentVid);}catch(e){}}
   }).catch(function(e){console.error('vehicleDocsStore load error:',e);});
 }
 
@@ -13404,9 +13378,28 @@ function removeMandatoryDoc(key){
 
 function viewExtraDoc(vid,idx){
   const doc=extraDocs[vid]&&extraDocs[vid][idx];
+  if(!doc){alert('לא נמצא קובץ לצפייה');return;}
   const url=getDocUrl(doc);
-  if(!url){alert('לא נמצא קובץ לצפייה');return;}
-  openDocViewer(url,doc.fileType||doc.type||'',doc.name||'מסמך');
+  if(url){openDocViewer(url,doc.fileType||doc.type||'',doc.name||'מסמך');return;}
+  if(!db||!doc.fileName){alert('לא נמצא קובץ לצפייה');return;}
+  // טעינה לפי דרישה — הקובץ לא הורד בטעינת המערכת
+  showToast('טוען קובץ...');
+  var docId=doc.fsDocId||('vef_'+vid+'_'+doc.id);
+  db.collection('vehicleExtraFiles').doc(String(docId)).get().then(function(snap){
+    var d=snap.exists?snap.data():null;
+    if(d&&d.data){
+      doc.url=d.data; // שמירה בזיכרון לצפייה חוזרת באותה שיחה
+      openDocViewer(d.data,doc.fileType||d.fileType||'',doc.name||'מסמך');
+      return;
+    }
+    // fallback: חיפוש לפי מזהה רכב (רשומות ישנות)
+    db.collection('vehicleExtraFiles').where('vid','==',vid).get().then(function(q){
+      var found=null;
+      q.forEach(function(x){var xd=x.data();if(String(xd.ts||xd.id)===String(doc.id)&&xd.data)found=xd;});
+      if(found){doc.url=found.data;openDocViewer(found.data,doc.fileType||found.fileType||'',doc.name||'מסמך');}
+      else showToast('הקובץ לא נמצא בענן — נא להעלות שוב');
+    }).catch(function(e){console.error('viewExtraDoc fallback:',e);showToast('שגיאה בטעינת הקובץ');});
+  }).catch(function(e){console.error('viewExtraDoc:',e);showToast('שגיאה בטעינת הקובץ');});
 }
 function uploadDoc(){openExtDocModal(_currentVid)}
 
@@ -16986,6 +16979,8 @@ var _authedAppStarted = false;
 function startAuthedApp(){
   if(_authedAppStarted || _isPublicPage) return;
   _authedAppStarted = true;
+  // ניקוי חד-פעמי: עותקי רכבים ישנים בזיכרון המקומי — נכתבו בעבר אך אף קוד לא קורא אותם
+  try{localStorage.removeItem('fleetVehicles');localStorage.removeItem('vehicles');}catch(e){}
   syncViolApprovals();
   startViolApprovalsListener();
   if(typeof startFormSubmissionsListener==='function')startFormSubmissionsListener();
@@ -17471,9 +17466,29 @@ function showUploadSuccess(fileName,callback){
 
 function viewDoc(vid,key){
   const vd=vehicleDocs[vid]||{};const doc=vd[key];
+  if(!doc){alert('לא נמצא קובץ לצפייה');return;}
   var url=getDocUrl(doc);
-  if(!url){alert('לא נמצא קובץ לצפייה');return;}
-  openDocViewer(url,doc.type||'',doc.name||key);
+  if(url){openDocViewer(url,doc.type||'',doc.name||key);return;}
+  if(!db){alert('לא נמצא קובץ לצפייה');return;}
+  // טעינה לפי דרישה — הקובץ לא הורד בטעינת המערכת
+  showToast('טוען קובץ...');
+  var docId=doc.fsDocId||('vmf_'+vid+'_'+key);
+  var coll=(String(docId).indexOf('vef_')===0)?'vehicleExtraFiles':'vehicleMandatoryFiles';
+  db.collection(coll).doc(String(docId)).get().then(function(snap){
+    var d=snap.exists?snap.data():null;
+    if(d&&d.data){
+      doc.url=d.data; // שמירה בזיכרון לצפייה חוזרת באותה שיחה
+      openDocViewer(d.data,doc.type||d.type||'',doc.name||d.name||key);
+      return;
+    }
+    // fallback: חיפוש לפי מזהה רכב (רשומות ישנות ללא fsDocId)
+    db.collection('vehicleMandatoryFiles').where('vid','==',vid).get().then(function(q){
+      var found=null;
+      q.forEach(function(x){var xd=x.data();if(xd.key===key&&xd.data)found=xd;});
+      if(found){doc.url=found.data;openDocViewer(found.data,doc.type||found.type||'',doc.name||found.name||key);}
+      else showToast('הקובץ לא נמצא בענן — נא להעלות שוב');
+    }).catch(function(e){console.error('viewDoc fallback:',e);showToast('שגיאה בטעינת הקובץ');});
+  }).catch(function(e){console.error('viewDoc:',e);showToast('שגיאה בטעינת הקובץ');});
 }
 function openDocViewer(dataUrl,type,name){
   const overlay=document.createElement('div');
@@ -17495,7 +17510,7 @@ function renderExtraDocs(vid){
   const el=id('vc-extra-docs');if(!el)return;
   const docs=extraDocs[vid]||[];
   if(!docs.length){el.innerHTML='';return;}
-  el.innerHTML='<div class="tw" style="border-radius:var(--r)">'+docs.map((d,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--bdr)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--t1)">${esc(d.name)}</div><div style="font-size:11px;color:var(--t3)">${d.exp?'תוקף: '+fd(d.exp)+' · ':''}${fd(d.date)}</div></div>${(d.url||d.data)?`<button onclick="viewExtraDoc(${vid},${i})" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit">צפה</button>`:''}<button onclick="removeExtraDoc(${vid},${i})" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:16px;padding:2px 6px">×</button></div>`).join('')+'</div>';
+  el.innerHTML='<div class="tw" style="border-radius:var(--r)">'+docs.map((d,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--bdr)"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gd)" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--t1)">${esc(d.name)}</div><div style="font-size:11px;color:var(--t3)">${d.exp?'תוקף: '+fd(d.exp)+' · ':''}${fd(d.date)}</div></div>${(d.url||d.data||d.fileName)?`<button onclick="viewExtraDoc(${vid},${i})" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit">צפה</button>`:''}<button onclick="removeExtraDoc(${vid},${i})" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:16px;padding:2px 6px">×</button></div>`).join('')+'</div>';
 }
 function removeExtraDoc(vid,idx){if(extraDocs[vid])extraDocs[vid].splice(idx,1);persistVehicleDocsDebounced(vid);renderExtraDocs(vid);}
 // addCustomMandatoryDoc ו-removeMandatoryDoc מוגדרות בקובץ (גרסה יחידה עם persistence)
@@ -19576,7 +19591,6 @@ function deleteCalEvent(vehicleId, type, dateVal){
   if(!v._calHidden) v._calHidden={};
   v._calHidden[type]=dateVal||'*';
   persistVehicle(v);
-  try{ localStorage.setItem('vehicles',JSON.stringify(vehicles)); }catch(e){}
   var m=document.getElementById('cal-event-edit-modal'); if(m) m.remove();
   renderCalendar();
   showToast('🗑 האירוע הוסר מהיומן');
@@ -19615,7 +19629,6 @@ function saveCalEventEdit(vehicleId, fieldKey, familyIdx){
 
   // Persist
   persistVehicle(v);
-  try{ localStorage.setItem('vehicles',JSON.stringify(vehicles)); }catch(e){}
 
   document.getElementById('cal-event-edit-modal').remove();
   renderCalendar();
