@@ -5852,13 +5852,15 @@ function dupSubmit(token, vid, docKey){
           uploadedAt:new Date().toISOString()
         };
         if(url.startsWith('http')){payload.url=url;}else{payload.data=url;}
-        db.collection('docUploads').doc(token).set(payload).then(function(){
-          db.collection('docRequests').doc(token).update({status:'uploaded'});
+        publicWriteWithRetry(function(){
+          return db.collection('docUploads').doc(token).set(payload);
+        }).then(function(){
+          db.collection('docRequests').doc(token).update({status:'uploaded'}).catch(function(){});
           btn.textContent='✅ הועלה בהצלחה!';btn.style.background='#16a34a';
           status.textContent='המסמך נשלח בהצלחה. תודה!';status.style.color='#16a34a';
         }).catch(function(err){
           btn.disabled=false;btn.textContent='שלח מסמך';btn.style.background='#1a4a3a';
-          status.textContent='שגיאה בהעלאה, נסה שוב';status.style.color='#dc2626';
+          status.textContent='שגיאה בהעלאה - בדקו חיבור לאינטרנט ונסו שוב';status.style.color='#dc2626';
           console.error('upload error:',err);
         });
       };
@@ -9700,7 +9702,7 @@ function cancelPendingBooking(bid){
   b.status='cancelled';
   if(typeof saveServiceBookings==='function')saveServiceBookings(bookings);
   if(typeof db!=='undefined'&&db){
-    db.collection('serviceBookings').doc(String(b.id)).update({status:'cancelled'}).catch(function(){});
+    db.collection('serviceBookings').doc(String(b.id)).update({status:'cancelled'}).catch(function(){showToast('⚠️ הביטול לא נשמר בענן - בדקו חיבור לאינטרנט ונסו שוב');});
   }
   var row=document.getElementById('book-remind-row-'+bid);
   if(row) row.remove();
@@ -10226,7 +10228,7 @@ function globalSearch(query){
     html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:#d97706;border-bottom:1px solid var(--bdr);background:var(--bg)">🔧 טיפולים — לפי ק"מ הבא</div>';
     svcKeys.forEach(function(type){
       const svcs = svcGroups[type];
-      html += '<div style="padding:0"><div onclick="filterV(\''+type.replace(/\'/g,"\\'").replace(/"/g,'&quot;')+'\');go(\'vehicles\',q(\'[dp=vehicles]\');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:#fffbf0">'+
+      html += '<div style="padding:0"><div onclick="filterV(\''+type.replace(/\'/g,"\\'").replace(/"/g,'&quot;')+'\');go(\'vehicles\',q(\'[dp=vehicles]\'));closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;background:#fffbf0">'+
         '<div style="font-size:18px">🔧</div>'+
         '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#92400e">טיפול '+type+'</div><div style="font-size:11px;color:var(--t3)">לחץ לסנן את כל הרכבים האלה</div></div>'+
         '<span style="font-size:13px;font-weight:700;color:#d97706;background:#fef3c7;padding:3px 10px;border-radius:999px">'+svcs.length+' רכבים</span>'+
@@ -10235,7 +10237,7 @@ function globalSearch(query){
       svcs.slice(0,5).forEach(function(v){
         html += '<div onclick="openDet('+v.id+');closeGlobalSearch()" style="padding:8px 14px 8px 36px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px">'+
           '<div style="font-size:14px">🚗</div>'+
-          '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t1)">'+v.plate+' · '+v.make+' '+v.model+'</div><div style="font-size:11px;color:var(--t3)">'+(v.driver?.name||'')+'</div></div>'+
+          '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--t1)">'+_esc(v.plate||'')+' · '+_esc((v.make||'')+' '+(v.model||''))+'</div><div style="font-size:11px;color:var(--t3)">'+_esc(v.driver?.name||'')+'</div></div>'+
           '<div style="font-size:10px;color:#92400e;white-space:nowrap">'+type+'</div>'+
         '</div>';
       });
@@ -10252,7 +10254,7 @@ function globalSearch(query){
     html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:var(--gd);border-bottom:1px solid var(--bdr);background:var(--bg)">🏭 יצרני רכב</div>';
     mfrKeys.forEach(function(mfr){
       const count = mfrGroups[mfr].length;
-      html += '<div onclick="filterV(\''+mfr.replace(/\'/g,"\\'")+'\');go(\'vehicles\',q(\'[dp=vehicles]\');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
+      html += '<div onclick="filterV(\''+mfr.replace(/\'/g,"\\'").replace(/"/g,'&quot;')+'\');go(\'vehicles\',q(\'[dp=vehicles]\'));closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
         '<div style="font-size:18px">🚗</div>'+
         '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+mfr+'</div><div style="font-size:11px;color:var(--t3)">לחץ לראות רכבים</div></div>'+
         '<span style="font-size:13px;font-weight:700;color:var(--gd);background:#f0fdf4;padding:3px 10px;border-radius:999px">'+count+' רכבים</span>'+
@@ -10296,7 +10298,7 @@ function globalSearch(query){
     vehicleMatches.slice(0,8).forEach(function(v){
       html += '<div onclick="openDet('+v.id+');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
         '<div style="font-size:18px">🚗</div>'+
-        '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+v.plate+' · '+v.make+' '+v.model+'</div><div style="font-size:11px;color:var(--t3)">'+(v.driverName||v.driver?.name||'')+'</div></div>'+
+        '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+_esc(v.plate||'')+' · '+_esc((v.make||'')+' '+(v.model||''))+'</div><div style="font-size:11px;color:var(--t3)">'+_esc(v.driverName||v.driver?.name||'')+'</div></div>'+
       '</div>';
     });
   }
@@ -10306,7 +10308,7 @@ function globalSearch(query){
     driverMatches.slice(0,6).forEach(function(dr){
       html += '<div onclick="openDet('+dr.vid+');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
         '<div style="font-size:18px">👤</div>'+
-        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+dr.name+(dr.family?' <span style="font-size:9px;color:var(--t3)">משפחה</span>':'')+'</div><div style="font-size:11px;color:var(--t3)">רכב: '+dr.plate+'</div></div>'+
+        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+_esc(dr.name||'')+(dr.family?' <span style="font-size:9px;color:var(--t3)">משפחה</span>':'')+'</div><div style="font-size:11px;color:var(--t3)">רכב: '+_esc(dr.plate||'')+'</div></div>'+
       '</div>';
     });
   }
@@ -10315,7 +10317,7 @@ function globalSearch(query){
     html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:var(--gd);border-bottom:1px solid var(--bdr);background:var(--bg)">⚠️ דוחות תנועה ('+violMatches.length+')</div>';
     violMatches.slice(0,6).forEach(function(v){
       const veh = vehicles.find(function(x){return x.id===v.vehicleId;});
-      html += '<div onclick="go(\'violations\',q(\'[dp=violations]\');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
+      html += '<div onclick="go(\'violations\',q(\'[dp=violations]\'));closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
         '<div style="font-size:18px">⚠️</div>'+
         '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t1)">דוח '+v.num+'</div><div style="font-size:11px;color:var(--t3)">'+(veh?veh.plate+' · '+(veh.driver?.name||''):'')+'</div></div>'+
       '</div>';
@@ -10326,7 +10328,7 @@ function globalSearch(query){
     html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:var(--gd);border-bottom:1px solid var(--bdr);background:var(--bg)">💥 תאונות ('+accMatches.length+')</div>';
     accMatches.slice(0,6).forEach(function(a){
       const veh = vehicles.find(function(x){return x.id===a.vehicleId;});
-      html += '<div onclick="go(\'accidents\',q(\'[dp=accidents]\');closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
+      html += '<div onclick="go(\'accidents\',q(\'[dp=accidents]\'));closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
         '<div style="font-size:18px">💥</div>'+
         '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+(a.num||'תאונה')+'</div><div style="font-size:11px;color:var(--t3)">'+(veh?veh.plate:'')+' · '+(a.location||'')+'</div></div>'+
       '</div>';
@@ -14950,9 +14952,10 @@ function filterVehiclePicker(prefix){
   }
   drop.innerHTML = list.map(function(v){
     var name = (v.driver&&v.driver.name)||'—';
-    return '<div onmousedown="pickVehicle(\''+prefix+'\',\''+v.id+'\',\''+v.plate+'\',\''+name.replace(/'/g,"\\'")+'\')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background=\'#f8fffe\'" onmouseout="this.style.background=\'\'">'+
-      '<span style="font-size:13px;font-weight:600;color:#1A1A1A">'+v.plate+'</span>'+
-      '<span style="font-size:12px;color:#666">'+name+'</span>'+
+    var safeName = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return '<div onmousedown="pickVehicle(\''+prefix+'\',\''+v.id+'\',\''+_esc(v.plate||'')+'\',\''+safeName+'\')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background=\'#f8fffe\'" onmouseout="this.style.background=\'\'">'+
+      '<span style="font-size:13px;font-weight:600;color:#1A1A1A">'+_esc(v.plate||'')+'</span>'+
+      '<span style="font-size:12px;color:#666">'+_esc(name)+'</span>'+
     '</div>';
   }).join('');
 }
@@ -14966,7 +14969,7 @@ function pickVehicle(prefix, vid, plate, name){
   if(drop) drop.style.display = 'none';
   if(selEl){
     selEl.style.display = 'flex';
-    selEl.innerHTML = '<span>✓ '+plate+' · '+name+'</span>'+
+    selEl.innerHTML = '<span>✓ '+_esc(plate||'')+' · '+_esc(name||'')+'</span>'+
       '<button onmousedown="initVehiclePicker(\''+prefix+'\')" style="background:none;border:none;cursor:pointer;color:#888;font-size:16px;padding:0 2px" title="נקה">×</button>';
   }
 }
@@ -15091,21 +15094,21 @@ function saveViolation(){
           if(savedV){savedV._fileUrl=url;savedV._storagePath=_storagePath;}
           if(db) db.collection('violationFiles').doc(String(savedVid)).set(
             {id:savedVid,url:url,storagePath:_storagePath,type:_fType,name:_fName}
-          ).catch(function(e){console.error('violationFiles write error:',e);});
+          ).catch(function(e){console.error('violationFiles write error:',e);showToast('⚠️ קובץ הדוח לא נשמר בענן - נסה לשמור שוב');});
         }).catch(function(e){
           console.error('Storage upload failed, falling back to Firestore base64:',e);
           if(db){
             var _p={id:savedVid,data:_rawData,type:_fType,name:_fName};
             if(JSON.stringify(_p).length>950000){showToast('⚠️ הקובץ גדול מדי לשמירה בענן');return;}
             db.collection('violationFiles').doc(String(savedVid)).set(_p)
-              .catch(function(e2){console.error('violationFiles fallback error:',e2);});
+              .catch(function(e2){console.error('violationFiles fallback error:',e2);showToast('⚠️ קובץ הדוח לא נשמר בענן - נסה לשמור שוב');});
           }
         });
       }else if(db){
         var _p={id:savedVid,data:_rawData,type:_fType,name:_fName};
         if(JSON.stringify(_p).length>950000){showToast('⚠️ הקובץ גדול מדי לשמירה בענן');}
         else db.collection('violationFiles').doc(String(savedVid)).set(_p)
-          .catch(function(e){console.error('violationFiles write error:',e);});
+          .catch(function(e){console.error('violationFiles write error:',e);showToast('⚠️ קובץ הדוח לא נשמר בענן - נסה לשמור שוב');});
       }
     }
     // Persist to Firestore (without file)
@@ -15375,9 +15378,13 @@ function sendViolToDriver(vid,stage){
   localStorage.setItem('violApprovals',JSON.stringify(approvals));
   // Write to Firestore so driver can access from any device
   if(db){
-    db.collection('approvals').doc(v.approvalToken).set(approvalData)
-      .then(function(){console.log('✅ אישור נשמר ב-Firebase ('+stage+')');})
-      .catch(function(e){console.error('שגיאה בשמירה ל-Firebase:',e);});
+    publicWriteWithRetry(function(){
+      return db.collection('approvals').doc(v.approvalToken).set(approvalData);
+    }).then(function(){console.log('✅ אישור נשמר ב-Firebase ('+stage+')');})
+      .catch(function(e){
+        console.error('שגיאה בשמירה ל-Firebase:',e);
+        if(typeof showToast==='function')showToast('⚠️ שגיאה בשמירת הלינק בשרת - הלינק לנהג עלול לא לעבוד. נסה לשלוח שוב.',6000);
+      });
   }
 
   const driverName=veh.driver.name;
@@ -15700,14 +15707,17 @@ function driverUploadReceipt(input, token){
       const saveReceipt=function(url){
         const payload={token:token,fileName:file.name,fileType:file.type,uploadedAt:new Date().toISOString()};
         if(url.startsWith('http')){payload.url=url;}else{payload.data=url;}
-        db.collection('paymentReceipts').doc(token).set(payload).then(function(){
+        publicWriteWithRetry(function(){
+          return db.collection('paymentReceipts').doc(token).set(payload);
+        }).then(function(){
           var section=document.getElementById('pay-receipt-section');
           if(section){
             section.style.background='#dcfce7';section.style.borderColor='#bbf7d0';
-            section.innerHTML='<div style="font-size:28px;margin-bottom:6px">✅</div><div style="font-size:14px;font-weight:600;color:#166534">אישור תשלום הועלה בהצלחה!</div><div style="font-size:11px;color:#15803d;margin-top:4px">'+file.name+'</div>';
+            section.innerHTML='<div style="font-size:28px;margin-bottom:6px">✅</div><div style="font-size:14px;font-weight:600;color:#166534">אישור תשלום הועלה בהצלחה!</div><div style="font-size:11px;color:#15803d;margin-top:4px">'+_esc(file.name||'')+'</div>';
           }
         }).catch(function(err){
-          if(status){status.textContent='שגיאה בהעלאה, נסה שוב';status.style.color='#dc2626';}
+          console.error('receipt upload error:',err);
+          if(status){status.textContent='שגיאה בהעלאה - בדקו חיבור לאינטרנט ונסו שוב';status.style.color='#dc2626';}
         });
       };
       if(typeof storage!=='undefined'&&storage){
@@ -15741,23 +15751,32 @@ function confirmViolApproval(token){
     v.status='done';
   }
 
-  // Write to Firestore so manager's device gets the update in real-time
-  if(db){
-    db.collection('approvals').doc(token).update({approvedAt:dateStr,approvedIso:isoStr})
-      .then(function(){console.log('✅ אישור נשלח לשרת');})
-      .catch(function(e){
-        // If document doesn't exist, create it
-        db.collection('approvals').doc(token).set({approvedAt:dateStr,approvedIso:isoStr},{merge:true})
-          .catch(function(err){console.error('שגיאה בשליחת אישור:',err);});
-      });
-  }
-
-  // Show success
   const action=document.getElementById('approve-action');
-  if(action){
-    action.innerHTML='<div style="font-size:48px;margin-bottom:10px">✅</div>'+
-      '<div style="font-size:16px;font-weight:600;color:#166534;margin-bottom:4px">הדוח אושר בהצלחה!</div>'+
-      '<div style="font-size:13px;color:#888">אושר בתאריך '+dateStr+'</div>';
+  const showApproveSuccess=function(){
+    if(action){
+      action.innerHTML='<div style="font-size:48px;margin-bottom:10px">✅</div>'+
+        '<div style="font-size:16px;font-weight:600;color:#166534;margin-bottom:4px">הדוח אושר בהצלחה!</div>'+
+        '<div style="font-size:13px;color:#888">אושר בתאריך '+dateStr+'</div>';
+    }
+  };
+
+  // Write to Firestore so manager's device gets the update in real-time
+  // מציגים הצלחה רק אחרי שהאישור באמת נשמר בשרת
+  if(db){
+    if(action) action.innerHTML='<div style="font-size:32px;margin-bottom:8px">⏳</div><div style="font-size:14px;color:#666">שולח אישור...</div>';
+    publicWriteWithRetry(function(){
+      return db.collection('approvals').doc(token).set({approvedAt:dateStr,approvedIso:isoStr},{merge:true});
+    }).then(showApproveSuccess).catch(function(err){
+      console.error('שגיאה בשליחת אישור:',err);
+      if(action){
+        action.innerHTML='<div style="font-size:40px;margin-bottom:8px">⚠️</div>'+
+          '<div style="font-size:15px;font-weight:600;color:#991b1b;margin-bottom:6px">שגיאה בשליחת האישור</div>'+
+          '<div style="font-size:13px;color:#666;margin-bottom:12px">בדקו חיבור לאינטרנט ונסו שוב</div>'+
+          '<button onclick="confirmViolApproval(\''+String(token).replace(/'/g,"\\'")+'\')" style="padding:12px 28px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">נסה שוב</button>';
+      }
+    });
+  } else {
+    showApproveSuccess();
   }
 }
 
@@ -21256,9 +21275,9 @@ function renderPublicBookingPage(page,token,info){
         '<div style="font-size:16px;font-weight:600;color:#166534;margin-bottom:4px">'+doneTitle+'</div>'+
         '<div style="font-size:14px;color:#666;margin-bottom:14px">תאריך: <b>'+fd(info.bookedDate)+'</b></div>'+
         '<div style="background:#f8f9f8;border-radius:10px;padding:14px;text-align:right">'+
-          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">רכב</span><span style="font-weight:600;font-size:13px">'+info.plate+'</span></div>'+
-          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">סוג טיפול</span><span style="font-weight:600;font-size:13px">'+info.serviceType+'</span></div>'+
-          (info.garage?'<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">מוסך</span><span style="font-weight:600;font-size:13px">'+info.garage+'</span></div>':'')+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">רכב</span><span style="font-weight:600;font-size:13px">'+_esc(info.plate||'')+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">סוג טיפול</span><span style="font-weight:600;font-size:13px">'+_esc(info.serviceType||'')+'</span></div>'+
+          (info.garage?'<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">מוסך</span><span style="font-weight:600;font-size:13px">'+_esc(info.garage)+'</span></div>':'')+
         '</div>'+
         '<div style="margin-top:18px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
       '</div></div>';
@@ -21288,8 +21307,8 @@ function renderPublicBookingPage(page,token,info){
         '<div style="color:rgba(255,255,255,.7);font-size:12px">קביעת תור לטיפול</div></div>'+
       '<div style="padding:20px">'+
         '<div style="background:#f8f9f8;border-radius:10px;padding:14px;margin-bottom:16px">'+
-          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">רכב</span><span style="font-weight:600;font-size:13px">'+info.plate+'</span></div>'+
-          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">סוג טיפול</span><span style="font-weight:600;font-size:13px">'+info.serviceType+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">רכב</span><span style="font-weight:600;font-size:13px">'+_esc(info.plate||'')+'</span></div>'+
+          '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">סוג טיפול</span><span style="font-weight:600;font-size:13px">'+_esc(info.serviceType||'')+'</span></div>'+
           '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#888;font-size:13px">תאריך יעד</span><span style="font-weight:600;font-size:13px">'+fd(info.dueDate)+'</span></div>'+
         '</div>'+
         '<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:12px;text-align:center">בחר תאריך לאיסוף הרכב:</div>'+
@@ -22914,11 +22933,11 @@ function getTreatmentNotifications() {
         id: 'pending_' + t.id,
         type: 'pending_approval',
         dotClass: 'trt-notif-dot-amber',
-        title: t.driverName + ' בחר תאריך',
-        detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + t.licensePlate + ' · ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate),
+        title: _esc(t.driverName || '') + ' בחר תאריך',
+        detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + _esc(t.licensePlate || '') + ' · ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate),
         actionText: 'אשר',
         actionClass: 'primary',
-        actionFn: "openApproveModal('" + t.id + "')",
+        actionFn: "openApproveModal('" + String(t.id).replace(/'/g, "\\'") + "')",
         time: t.selectedDateAt,
         treatmentId: t.id
       });
@@ -22932,11 +22951,11 @@ function getTreatmentNotifications() {
           id: 'noresponse_' + t.id,
           type: 'no_response',
           dotClass: 'trt-notif-dot-red',
-          title: t.driverName + ' לא ענה ' + daysSinceEmail + ' ימים',
-          detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + t.licensePlate,
+          title: _esc(t.driverName || '') + ' לא ענה ' + daysSinceEmail + ' ימים',
+          detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + _esc(t.licensePlate || ''),
           actionText: 'תזכורת',
           actionClass: '',
-          actionFn: "openReminderModal('" + t.id + "')",
+          actionFn: "openReminderModal('" + String(t.id).replace(/'/g, "\\'") + "')",
           time: t.lastEmailSentAt,
           treatmentId: t.id
         });
@@ -22951,11 +22970,11 @@ function getTreatmentNotifications() {
           id: 'forgot_' + t.id,
           type: 'forgot_to_close',
           dotClass: 'trt-notif-dot-gray',
-          title: 'לא עדכנת שטופל: ' + t.driverName,
-          detail: 'הטיפול היה ב-' + formatTreatmentDateShort(t.selectedDate) + ' · ' + t.licensePlate,
+          title: 'לא עדכנת שטופל: ' + _esc(t.driverName || ''),
+          detail: 'הטיפול היה ב-' + formatTreatmentDateShort(t.selectedDate) + ' · ' + _esc(t.licensePlate || ''),
           actionText: 'בוצע ✓',
           actionClass: 'primary',
-          actionFn: "openMarkDoneModal('" + t.id + "')",
+          actionFn: "openMarkDoneModal('" + String(t.id).replace(/'/g, "\\'") + "')",
           time: t.selectedDate,
           treatmentId: t.id
         });
