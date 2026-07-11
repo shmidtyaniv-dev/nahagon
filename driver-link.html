@@ -622,19 +622,30 @@
 
       try {
         const note = document.getElementById('driver-notes').value.trim();
-
-        await db.collection('treatments').doc(TREATMENT.id).update({
+        const payload = {
           status: 'pending_approval',
           selectedDate: SELECTED_DATE.toISOString(),
           selectedDateAt: new Date().toISOString(),
           driverNote: note
-        });
+        };
+
+        // וידוא חיבור בתוקף (בנייד האסימון עלול לפוג כשהדף היה ברקע)
+        try { if (!auth.currentUser) await auth.signInAnonymously(); } catch(e) {}
+        try {
+          await db.collection('treatments').doc(TREATMENT.id).update(payload);
+        } catch (firstErr) {
+          // ניסיון חוזר אחרי התחברות מחדש
+          console.error('first submit failed, retrying:', firstErr);
+          await new Promise(function(r){ setTimeout(r, 900); });
+          try { await auth.signInAnonymously(); } catch(e) {}
+          await db.collection('treatments').doc(TREATMENT.id).update(payload);
+        }
 
         document.getElementById('main-content').style.display = 'none';
         document.getElementById('success-screen').style.display = 'block';
       } catch (err) {
         console.error(err);
-        alert('שגיאה. נסה שוב.');
+        alert('שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב.');
         btn.disabled = false;
         btn.textContent = 'שלח בקשה לאישור';
       }

@@ -12097,12 +12097,14 @@ function submitKmSelfReport(){
   statusEl.innerHTML='';
   function _doSubmit(){
     if(!db){ statusEl.innerHTML='<span style="color:#dc2626">שגיאה בחיבור, נסה שוב</span>'; btn.disabled=false; btn.textContent='שלח עדכון ק"מ'; return; }
-    db.collection('kmReports').add({
-      driverName: name,
-      vehicleNum: plate || null,
-      km: km,
-      submittedAt: new Date().toISOString(),
-      status: 'pending'
+    publicWriteWithRetry(function(){
+      return db.collection('kmReports').add({
+        driverName: name,
+        vehicleNum: plate || null,
+        km: km,
+        submittedAt: new Date().toISOString(),
+        status: 'pending'
+      });
     }).then(function(){
       var wrap=document.getElementById('km-self-report-page');
       if(wrap) wrap.innerHTML=
@@ -12116,8 +12118,9 @@ function submitKmSelfReport(){
           '</div>'+
         '</div>';
     }).catch(function(e){
+      console.error('km self-report error:',e);
       btn.disabled=false; btn.textContent='שלח עדכון ק"מ';
-      statusEl.innerHTML='<span style="color:#dc2626">שגיאה, נסה שוב</span>';
+      statusEl.innerHTML='<span style="color:#dc2626">שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב</span>';
     });
   }
   if(auth && !auth.currentUser){ auth.signInAnonymously().then(_doSubmit).catch(_doSubmit); }
@@ -12447,6 +12450,21 @@ function checkKmRequest(){
 }
 
 
+// כתיבה מדף ציבורי: מוודא חיבור אנונימי בתוקף, ומנסה שוב אוטומטית אם נכשל
+// (בנייד האסימון עלול לפוג כשהדף היה ברקע - זה גרם ל"שגיאה, נסה שוב" אצל נהגים)
+function publicWriteWithRetry(writeFn){
+  var ensure=function(){
+    try{ if(typeof auth!=='undefined' && auth && !auth.currentUser) return auth.signInAnonymously(); }catch(e){}
+    return Promise.resolve();
+  };
+  return ensure().then(writeFn).catch(function(err){
+    console.error('public write failed, retrying after re-auth:',err);
+    return new Promise(function(res){setTimeout(res,900);}).then(function(){
+      try{ if(typeof auth!=='undefined' && auth) return auth.signInAnonymously().catch(function(){}); }catch(e){}
+    }).then(writeFn);
+  });
+}
+
 function submitKmUpdate(token, vid){
   var input=document.getElementById('km-pub-input');
   var km=parseInt((input.value||'').replace(/[^0-9,]/g,'').replace(/,/g,''));
@@ -12457,10 +12475,12 @@ function submitKmUpdate(token, vid){
   }
   var btn=document.getElementById('km-pub-btn');
   btn.disabled=true;btn.textContent='שולח...';btn.style.background='#9ca3af';
-  db.collection('kmUpdates').doc(token).set({
-    vid:vid, km:km, updatedAt:new Date().toISOString()
+  publicWriteWithRetry(function(){
+    return db.collection('kmUpdates').doc(token).set({
+      vid:vid, km:km, updatedAt:new Date().toISOString()
+    });
   }).then(function(){
-    db.collection('kmRequests').doc(token).update({status:'done'});
+    db.collection('kmRequests').doc(token).update({status:'done'}).catch(function(){});
     var page=document.getElementById('km-page');
     if(page){
       page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1)">'+
@@ -12469,10 +12489,11 @@ function submitKmUpdate(token, vid){
         '<div style="font-size:14px;color:#666">'+km.toLocaleString('he-IL')+' ק"מ</div>'+
         '<div style="margin-top:16px;color:#ccc;font-size:11px">תודה! מרכז הרכב של מור</div></div>';
     }
-  }).catch(function(){
+  }).catch(function(e){
+    console.error('submitKmUpdate error:',e);
     btn.disabled=false;btn.textContent='שלח עדכון ק"מ';btn.style.background='#16a34a';
     var st=document.getElementById('km-pub-status');
-    if(st){st.textContent='שגיאה, נסה שוב';st.style.color='#dc2626';}
+    if(st){st.textContent='שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב';st.style.color='#dc2626';}
   });
 }
 
@@ -12542,10 +12563,12 @@ function submitLicenseUpdate(token, vid){
   }
   var btn=document.getElementById('lic-pub-btn');
   btn.disabled=true;btn.textContent='שולח...';btn.style.background='#9ca3af';
-  db.collection('licenseUpdates').doc(token).set({
-    vid:vid, licenseExp:val, updatedAt:new Date().toISOString()
+  publicWriteWithRetry(function(){
+    return db.collection('licenseUpdates').doc(token).set({
+      vid:vid, licenseExp:val, updatedAt:new Date().toISOString()
+    });
   }).then(function(){
-    db.collection('licenseRequests').doc(token).update({status:'done'});
+    db.collection('licenseRequests').doc(token).update({status:'done'}).catch(function(){});
     var page=document.getElementById('lic-page');
     if(page){
       page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1)">'+
@@ -12554,10 +12577,11 @@ function submitLicenseUpdate(token, vid){
         '<div style="font-size:14px;color:#666">תאריך תוקף: '+val.split('-').reverse().join('/')+'</div>'+
         '<div style="margin-top:16px;color:#ccc;font-size:11px">תודה! מרכז הרכב של מור</div></div>';
     }
-  }).catch(function(){
+  }).catch(function(e){
+    console.error('submitLicenseUpdate error:',e);
     btn.disabled=false;btn.textContent='שלח עדכון רישיון';btn.style.background='#1A4A3A';
     var st=document.getElementById('lic-pub-status');
-    if(st){st.textContent='שגיאה, נסה שוב';st.style.color='#dc2626';}
+    if(st){st.textContent='שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב';st.style.color='#dc2626';}
   });
 }
 
@@ -18232,11 +18256,13 @@ function submitFormFill(){
   };
 
   if(db){
-    db.collection('formSubmissions').doc(submissionId).set(submission).then(function(){
+    publicWriteWithRetry(function(){
+      return db.collection('formSubmissions').doc(submissionId).set(submission);
+    }).then(function(){
       id('form-fill-content').innerHTML='<div style="text-align:center;padding:50px 20px"><div style="font-size:64px;margin-bottom:16px">✅</div><div style="font-size:22px;font-weight:700;color:#166534;margin-bottom:8px">הטופס נשלח בהצלחה!</div><div style="font-size:14px;color:#888">הטופס התקבל אצל יניב ויטופל בהקדם.</div><div style="font-size:12px;color:#ccc;margin-top:20px">מרכז הרכב של מור בית השקעות</div></div>';
     }).catch(function(e){
       console.error(e);
-      id('ff-msg').innerHTML='<span style="color:#dc2626">⚠ שגיאה בשליחה: '+e.message+'</span>';
+      id('ff-msg').innerHTML='<span style="color:#dc2626">⚠ שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב</span>';
       if(btn)btn.disabled=false;
     });
   }else{
