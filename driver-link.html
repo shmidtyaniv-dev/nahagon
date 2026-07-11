@@ -364,7 +364,7 @@
           <label class="notes-label">הערות לטיפול</label>
           <span class="notes-optional">אופציונלי</span>
         </div>
-        <textarea class="notes-input" id="driver-notes"></textarea>
+        <textarea class="notes-input" id="driver-notes" maxlength="300" placeholder="למשל: רעש מהבלמים, נורית דולקת..."></textarea>
       </div>
 
       <!-- כפתור שליחה -->
@@ -377,9 +377,15 @@
     <div id="success-screen" class="success-screen" style="display: none;">
       <div class="success-icon">✓</div>
       <div class="success-title">הבקשה נשלחה!</div>
+      <div style="background:#E1F5EE;border-radius:8px;padding:14px;margin:16px auto;max-width:320px;text-align:right;">
+        <div style="font-size:11px;color:#0F6E56;margin-bottom:4px;">התאריך שביקשת:</div>
+        <div style="font-size:15px;font-weight:500;color:#04342C;" id="success-date">--</div>
+        <div style="font-size:12px;color:#0F6E56;margin-top:2px;">איסוף הרכב בשעה <span id="success-hour">09:00</span></div>
+      </div>
       <div class="success-text">
-        תקבל אישור סופי בוואטסאפ תוך <span id="sla-success">3</span> ימי עבודה.<br>
-        תוכל לסגור את החלון.
+        <strong>מה עכשיו?</strong><br>
+        הבקשה הועברה לאישור. תקבל אישור סופי בוואטסאפ תוך <span id="sla-success">3</span> ימי עבודה.<br>
+        אפשר לסגור את החלון.
       </div>
     </div>
 
@@ -420,13 +426,18 @@
       }
 
       try {
-        const [tDoc, sDoc, bSnap] = await Promise.all([
+        // אם אין תגובה מהשרת תוך 15 שניות — הודעת בעיית תקשורת במקום "טוען..." לנצח
+        const loadPromise = Promise.all([
           db.collection('treatments').doc(treatmentId).get(),
           db.collection('settings').doc('treatments').get(),
           db.collection('blockedDays').get().catch(function(){ return null; })
         ]);
+        const timeoutPromise = new Promise(function(_, reject){
+          setTimeout(function(){ reject(new Error('timeout')); }, 15000);
+        });
+        const [tDoc, sDoc, bSnap] = await Promise.race([loadPromise, timeoutPromise]);
 
-        if (!tDoc.exists) { showError('הבקשה לא נמצאה'); return; }
+        if (!tDoc.exists) { showError('הבקשה לא נמצאה. ייתכן שהקישור ישן — צרו קשר עם יניב לקבלת קישור חדש.'); return; }
 
         // ימים שהמנהל סימן כתפוסים ביומן
         BLOCKED_DAYS = new Set();
@@ -447,13 +458,23 @@
         renderForm();
       } catch (err) {
         console.error(err);
-        showError('שגיאה בטעינה. נסה שוב.');
+        if (err && err.message === 'timeout') {
+          showError('בעיית תקשורת — לא הצלחנו לטעון את הנתונים.', true);
+        } else {
+          showError('שגיאה בטעינה.', true);
+        }
       }
     }
 
-    function showError(msg) {
-      document.getElementById('loading').innerHTML =
-        '<div style="font-size: 14px; color: #A32D2D;">' + msg + '</div>';
+    function showError(msg, withRetry) {
+      var html = '<div style="font-size: 15px; color: #A32D2D; font-weight: 500; margin-bottom: 10px;">' + msg + '</div>';
+      if (withRetry) {
+        html += '<button onclick="location.reload()" style="margin-top:6px;padding:12px 28px;background:#1D9E75;color:white;border:none;border-radius:8px;font-size:15px;font-family:inherit;cursor:pointer;">נסו שוב</button>';
+        html += '<div style="font-size:12px;color:#6B6A65;margin-top:14px;line-height:1.6;">אם הבעיה חוזרת — צרו קשר עם יניב ממרכז הרכב.</div>';
+      } else {
+        html += '<div style="font-size:12px;color:#6B6A65;margin-top:10px;line-height:1.6;">לשאלות — צרו קשר עם יניב ממרכז הרכב.</div>';
+      }
+      document.getElementById('loading').innerHTML = html;
     }
 
     function renderForm() {
@@ -546,7 +567,9 @@
         const isPast = date < today;
         const isFuture = date > maxDate;
         const isOpenDay = (SETTINGS.openDays || [0,1,2,3,4]).includes(weekDay);
-        const isFull = countTreatmentsOnDate(date) >= (SETTINGS.maxTreatmentsPerDay || 2);
+        // הגנה: אם ההגדרה 0 או לא תקינה — ברירת מחדל 2 (אחרת כל הימים ייראו תפוסים)
+        const maxPerDay = Math.max(1, Number(SETTINGS.maxTreatmentsPerDay) || 2);
+        const isFull = countTreatmentsOnDate(date) >= maxPerDay;
         const iso = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
         const isBlocked = BLOCKED_DAYS.has(iso);
 
@@ -621,7 +644,7 @@
       btn.textContent = 'שולח...';
 
       try {
-        const note = document.getElementById('driver-notes').value.trim();
+        const note = document.getElementById('driver-notes').value.trim().slice(0, 300);
         const payload = {
           status: 'pending_approval',
           selectedDate: SELECTED_DATE.toISOString(),
@@ -641,11 +664,19 @@
           await db.collection('treatments').doc(TREATMENT.id).update(payload);
         }
 
+        // מילוי סיכום במסך ההצלחה
+        const days = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+        document.getElementById('success-date').textContent =
+          'יום ' + days[SELECTED_DATE.getDay()] + ' · ' + formatHeb(SELECTED_DATE);
+        document.getElementById('success-hour').textContent =
+          SETTINGS.appointmentTime || (String(SETTINGS.appointmentHour || 9).padStart(2, '0') + ':00');
+
         document.getElementById('main-content').style.display = 'none';
         document.getElementById('success-screen').style.display = 'block';
+        window.scrollTo(0, 0);
       } catch (err) {
         console.error(err);
-        alert('שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב.');
+        alert('שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב.\nאם הבעיה חוזרת, צרו קשר עם יניב ממרכז הרכב.');
         btn.disabled = false;
         btn.textContent = 'שלח בקשה לאישור';
       }
