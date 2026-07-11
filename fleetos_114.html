@@ -12982,16 +12982,30 @@ async function checkStorageUsage(){
   try{
     // 1) אחסון מקומי בדפדפן
     var localBytes=0;
+    var localKeys=[];
     for(var i=0;i<localStorage.length;i++){
       var k=localStorage.key(i);
-      localBytes+=((k?k.length:0)+((localStorage.getItem(k)||'').length))*2;
+      var kb=((k?k.length:0)+((localStorage.getItem(k)||'').length))*2;
+      localBytes+=kb;
+      localKeys.push({k:k||'',v:kb});
     }
-    var LOCAL_QUOTA=5*1024*1024; // ~5MB, המכסה המקובלת בדפדפנים
+    var LOCAL_QUOTA=10*1024*1024; // כרום מאפשר בפועל כ-10MB
     var localPct=localBytes/LOCAL_QUOTA*100;
     var html='<div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:2px">💻 זיכרון מקומי בדפדפן (במכשיר הזה)</div>'+
-      '<div style="font-size:12px;color:var(--t3)">'+fmtBytes(localBytes)+' מתוך ~5 MB ('+localPct.toFixed(1)+'%)</div>'+
+      '<div style="font-size:12px;color:var(--t3)">'+fmtBytes(localBytes)+' מתוך ~10 MB ('+localPct.toFixed(1)+'%)</div>'+
       storageBar(localPct);
     if(localPct>=85) html+='<div style="font-size:12px;color:#E24B4A;font-weight:600">⚠️ הזיכרון המקומי כמעט מלא — מומלץ לבצע את שלב הניקוי האוטומטי בתוכנית</div>';
+    // פירוט — 8 המפתחות הגדולים בזיכרון המקומי
+    var LOCAL_KEY_NAMES={hoForms2:'טפסי מסירה (כולל תמונות וחתימות)',fleetVehicles:'עותק רכבים (ישן)',vehicles:'עותק רכבים',formTemplates:'טפסים דיגיטליים',violationsList:'דוחות תנועה',archivedVehicles:'ארכיון רכבים',fleetSettings:'הגדרות (כולל לוגואים)',km_update_notifications:'התראות ק"מ',fleetEvents:'אירועי יומן',serviceBookings:'הזמנות ישנות',selfReminders:'תזכורות',violApprovals:'אישורי דוחות',vehicle_orders:'סדר רכבים',blockedDays:'ימים חסומים',blockedDaysInfo:'פרטי ימים חסומים',dismissedReminders:'תזכורות שנסגרו'};
+    var bigKeys=localKeys.sort(function(a,b){return b.v-a.v;}).slice(0,8).filter(function(e){return e.v>2048;});
+    if(bigKeys.length){
+      html+='<div style="font-size:12px;font-weight:600;color:var(--t2);margin-top:8px;margin-bottom:4px">מה תופס הכי הרבה מקום במכשיר:</div>';
+      bigKeys.forEach(function(e){
+        var label=LOCAL_KEY_NAMES[e.k]||(e.k.indexOf('logo_')===0?'לוגו':_esc(e.k));
+        var p=localBytes>0?Math.round(e.v/localBytes*100):0;
+        html+='<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--t2);padding:3px 0;border-bottom:1px dashed var(--bdr)"><span>'+label+'</span><span>'+fmtBytes(e.v)+' ('+p+'%)</span></div>';
+      });
+    }
 
     // 2) אחסון בענן (Firestore) — הערכה לפי גודל הנתונים
     if(db){
