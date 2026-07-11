@@ -22997,7 +22997,7 @@ function getTreatmentNotifications() {
         detail: 'אירוע ' + (acc.num || '') + ' · דווח לפני ' + daysSinceAcc + ' ימים',
         actionText: 'פתח',
         actionClass: '',
-        actionFn: "go('accidents',document.querySelector('[dp=accidents]')",
+        actionFn: "go('accidents',document.querySelector('[dp=accidents]'))",
         time: reportDate
       });
     }
@@ -23024,7 +23024,7 @@ function getTreatmentNotifications() {
       detail: (plate || '') + ' · ' + (n.km ? n.km.toLocaleString('he-IL') : '') + ' ק&quot;מ',
       actionText: 'פתח רכב',
       actionClass: '',
-      actionFn: "openVehicleFromNotifId(" + JSON.stringify(n.id) + ")",
+      actionFn: "openVehicleFromNotifId('" + String(n.id).replace(/'/g, "\\'") + "')",
       time: n.time
     });
   });
