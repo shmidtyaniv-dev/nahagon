@@ -2315,6 +2315,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     </div>
 
     <div class="sb-nav-group-title">מעקב</div>
+    <div class="ni" dp="treatments-hub" onclick="go('treatments-hub',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+      <span>טיפולים וטסטים</span>
+      <span class="sb-badge warning" id="nb-treatments" style="display:none"></span>
+    </div>
     <div class="ni" dp="violations" onclick="go('violations',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <span>דוחות תנועה</span>
@@ -2353,9 +2358,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <span>הגדרות</span>
     </div>
 
-    <!-- Hidden items for backward compatibility -->
-    <div class="ni" dp="tasks" onclick="go('calendar',q('[dp=calendar]'))" style="display:none"></div>
-    <div class="ni" dp="reminders" onclick="go('reminders',this)" style="display:none"></div>
   </nav>
 
   <!-- 4. User card (sticky bottom) -->
@@ -2721,6 +2723,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <button class="tab active" onclick="switchTab('all',this)">הכל</button>
         <button class="tab" onclick="switchTab('alerts',this)">דורשים טיפול</button>
         <button class="tab" onclick="switchTab('ok',this)">תקינים</button>
+        <button class="btn btn-l btn-sm" id="km-batch-toggle-btn" onclick="toggleKmBatchMode()" style="margin-right:auto;align-self:center">📩 בקשת ק"מ מרוכזת</button>
+      </div>
+      <div id="km-batch-bar" style="display:none;background:var(--green-bg);border:1px solid var(--green-light);border-radius:var(--rs);padding:10px 14px;margin-bottom:12px;flex-wrap:wrap;gap:8px;align-items:center">
+        <span style="font-size:13px;font-weight:500;color:var(--green-dark)"><span id="km-batch-count">0</span> נבחרו</span>
+        <button class="btn btn-l btn-sm" onclick="kmBatchSelectStale()">סמן את כל מי שלא עדכן חודש+</button>
+        <button class="btn btn-p btn-sm" onclick="kmBatchOpenModal()">📩 שלח בקשת ק"מ לנבחרים</button>
+        <button class="btn btn-l btn-sm" onclick="toggleKmBatchMode()" style="margin-right:auto">✕ סגור</button>
       </div>
       <div class="tw">
         <div class="v-table-row header">
@@ -3097,6 +3106,19 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 <div class="page" id="page-scheduling">
   <div style="padding:16px;max-width:1200px" id="scheduling-content">
     <!-- scheduling content rendered dynamically -->
+  </div>
+</div>
+
+<div class="page" id="page-treatments-hub">
+  <div style="padding:16px;max-width:1000px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px" id="trthub-tabs">
+      <button class="btn btn-p" data-trthub-tab="queue" onclick="trthubSetTab('queue',this)">תור אישורים <span id="trthub-count-queue" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 8px;font-size:11px">0</span></button>
+      <button class="btn btn-l" data-trthub-tab="awaiting" onclick="trthubSetTab('awaiting',this)">ממתינים לבחירת תאריך <span id="trthub-count-awaiting" style="background:rgba(0,0,0,.08);border-radius:10px;padding:1px 8px;font-size:11px">0</span></button>
+      <button class="btn btn-l" data-trthub-tab="scheduled" onclick="trthubSetTab('scheduled',this)">מתוזמנים <span id="trthub-count-scheduled" style="background:rgba(0,0,0,.08);border-radius:10px;padding:1px 8px;font-size:11px">0</span></button>
+      <button class="btn btn-l" data-trthub-tab="history" onclick="trthubSetTab('history',this)">היסטוריה</button>
+    </div>
+    <div id="trthub-subtitle" style="font-size:12px;color:var(--t2);margin-bottom:10px"></div>
+    <div class="tw" style="padding:8px" id="trthub-content"></div>
   </div>
 </div>
 
@@ -3981,7 +4003,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <div class="settings-danger-item-title">איפוס כל ההגדרות</div>
               <div class="settings-danger-item-desc">מחזיר את כל ההגדרות לברירת מחדל - לוגויים, צבעים, תבניות</div>
             </div>
-            <button class="settings-btn settings-btn-danger-outline" onclick="if(confirm('האם אתה בטוח שברצונך לאפס את כל ההגדרות?')){localStorage.removeItem('fleetos_settings');location.reload()}">אפס הגדרות</button>
+            <button class="settings-btn settings-btn-danger-outline" onclick="showDangerConfirm({title:'איפוס כל ההגדרות',desc:'כל ההגדרות יחזרו לברירת המחדל: לוגו, צבעים, תבניות הודעות והעדפות. הנתונים עצמם (רכבים, טיפולים וכו׳) לא יימחקו.',confirmLabel:'אפס הגדרות'},function(){localStorage.removeItem('fleetos_settings');location.reload();})">אפס הגדרות</button>
           </div>
           <div class="settings-danger-item">
             <div class="settings-danger-item-info">
@@ -6796,6 +6818,104 @@ function kmReqSendWA(){document.getElementById('km-req-modal')?.remove();locatio
 function kmReqSendEmail(){document.getElementById('km-req-modal')?.remove();location.href=_kmReqData.mailUrl;}
 function kmReqCopy(){navigator.clipboard.writeText(_kmReqData.copyUrl);showToast('✓ קישור הועתק');document.getElementById('km-req-modal')?.remove();}
 
+/* ── בקשת עדכון ק"מ מרוכזת (סימון מספר רכבים) ── */
+window._kmBatchMode=false;
+var _kmBatchSelected=new Set();
+function toggleKmBatchMode(){
+  window._kmBatchMode=!window._kmBatchMode;
+  if(!window._kmBatchMode)_kmBatchSelected.clear();
+  var bar=document.getElementById('km-batch-bar');
+  if(bar)bar.style.display=window._kmBatchMode?'flex':'none';
+  var tbtn=document.getElementById('km-batch-toggle-btn');
+  if(tbtn)tbtn.style.display=window._kmBatchMode?'none':'';
+  kmBatchUpdateCount();
+  if(typeof renderV==='function')renderV();
+}
+function kmBatchToggle(vid,checked){
+  vid=String(vid);
+  var fromCheckbox=(typeof checked==='boolean');
+  if(!fromCheckbox)checked=!_kmBatchSelected.has(vid);
+  if(checked)_kmBatchSelected.add(vid);else _kmBatchSelected.delete(vid);
+  kmBatchUpdateCount();
+  // לחיצה על השורה (לא על התיבה עצמה) דורשת רינדור כדי לעדכן את התיבה
+  if(!fromCheckbox&&typeof renderV==='function')renderV();
+}
+function kmBatchUpdateCount(){
+  var el=document.getElementById('km-batch-count');
+  if(el)el.textContent=_kmBatchSelected.size;
+}
+function kmVehicleIsStale(v){
+  // לא עדכן ק"מ חודש ומעלה (או מעולם לא)
+  if(!v.lastKmUpdate)return true;
+  var d=new Date(v.lastKmUpdate);
+  if(isNaN(d.getTime()))return true;
+  return (Date.now()-d.getTime())>=30*86400000;
+}
+function kmBatchSelectStale(){
+  // רק רכבים שמוצגים כרגע בטבלה (מכבד חיפוש וסינון פעילים)
+  var list=(typeof fil==='function')?fil():vehicles.slice();
+  if(typeof vFilter!=='undefined'&&typeof slvl==='function'){
+    if(vFilter==='alerts')list=list.filter(function(v){return slvl(v)!=='ok';});
+    if(vFilter==='ok')list=list.filter(function(v){return slvl(v)==='ok';});
+  }
+  var n=0;
+  list.forEach(function(v){
+    if(kmVehicleIsStale(v)){_kmBatchSelected.add(String(v.id));n++;}
+  });
+  kmBatchUpdateCount();
+  if(typeof renderV==='function')renderV();
+  showToast(n>0?('✓ סומנו '+n+' רכבים שלא עדכנו חודש ומעלה'):'כולם עדכנו ק"מ בחודש האחרון 👍');
+}
+function kmBatchOpenModal(){
+  if(_kmBatchSelected.size===0){showToast('לא נבחרו רכבים - סמנו רכבים בטבלה');return;}
+  var sel=vehicles.filter(function(v){return _kmBatchSelected.has(String(v.id));});
+  var ex=document.getElementById('km-batch-modal');if(ex)ex.remove();
+  var m=document.createElement('div');
+  m.id='km-batch-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.onclick=function(e){if(e.target===m)m.remove();};
+  var rows=sel.map(function(v){
+    var name=v.driverName||v.driver?.name||'';
+    var phone=(v.driverPhone||v.driver?.phone||'').replace(/[^0-9]/g,'');
+    var last=v.lastKmUpdate?new Date(v.lastKmUpdate).toLocaleDateString('he-IL'):'מעולם לא';
+    var btn=phone
+      ?'<button onclick="kmBatchSendOne(\''+v.id+'\',this)" style="background:#25d366;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">💬 שלח</button>'
+      :'<span style="font-size:11px;color:var(--red-dark)">אין טלפון</span>';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr)">'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">'+_esc(name)+'</div>'
+      +'<div style="font-size:11px;color:var(--t2)">'+_esc(v.plate||'')+' · עדכון אחרון: '+_esc(last)+'</div></div>'
+      +btn+'</div>';
+  }).join('');
+  m.innerHTML=
+    '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:440px;direction:rtl;max-height:80vh;display:flex;flex-direction:column">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
+        '<div style="font-size:15px;font-weight:700;color:var(--gd)">📩 בקשת עדכון ק"מ - '+sel.length+' נהגים</div>'+
+        '<button onclick="document.getElementById(\'km-batch-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">×</button>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--t2);margin-bottom:10px;line-height:1.6">לחיצה על "שלח" פותחת וואטסאפ עם הודעה מוכנה לכל נהג. שלחו אחד-אחד וחזרו לחלון הזה.</div>'+
+      '<div style="overflow-y:auto;flex:1">'+rows+'</div>'+
+    '</div>';
+  document.body.appendChild(m);
+}
+function kmBatchSendOne(vid,btn){
+  var v=vehicles.find(function(x){return String(x.id)===String(vid);});
+  if(!v){showToast('רכב לא נמצא');return;}
+  var driverName=v.driverName||v.driver?.name||'';
+  var driverPhone=(v.driverPhone||v.driver?.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'972');
+  var plate=v.plate||'';
+  var token='KM-'+vid+'-'+Date.now().toString(36).slice(-5);
+  if(db){
+    db.collection('kmRequests').doc(token).set({
+      vid:v.id, plate:plate, driverName:driverName,
+      createdAt:new Date().toISOString(), status:'pending'
+    }).catch(function(e){console.error('kmRequest save error:',e);showToast('⚠️ הבקשה ל'+driverName+' לא נשמרה בשרת');});
+  }
+  var kmUrl=location.origin+'/?km='+token;
+  var waMsg=fillRequestTemplate(getKmMsgTemplate(),{driverName:driverName,plate:plate,link:kmUrl});
+  window.open('https://wa.me/'+driverPhone+'?text='+encodeURIComponent(waMsg),'_blank');
+  if(btn){btn.textContent='✓ נשלח';btn.style.background='var(--bg2)';btn.style.color='var(--green-dark)';btn.disabled=true;btn.style.cursor='default';}
+}
+
 var _licReqData={};
 function sendLicenseRequest(vid){
   var v=vehicles.find(function(x){return x.id===vid;});
@@ -9117,8 +9237,15 @@ function dRow(v){
 }
 function fRow(v){
   var st=getVehicleStatus(v);
-  return'<div class="v-table-row" onclick="openDet('+v.id+')">'
-    +'<div class="driver-cell"><div class="driver-avatar" style="background:'+avatarColor(v.driver.name)+';color:#fff">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div></div>'+altBadge(v.id)+'</div>'
+  var checkHtml='';
+  var rowClick='openDet('+v.id+')';
+  if(window._kmBatchMode){
+    var checked=_kmBatchSelected.has(String(v.id))?' checked':'';
+    checkHtml='<input type="checkbox" class="km-batch-cb"'+checked+' onclick="event.stopPropagation();kmBatchToggle(\''+v.id+'\',this.checked)" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--green);cursor:pointer">';
+    rowClick='kmBatchToggle(\''+v.id+'\')';
+  }
+  return'<div class="v-table-row" onclick="'+rowClick+'">'
+    +'<div class="driver-cell">'+checkHtml+'<div class="driver-avatar" style="background:'+avatarColor(v.driver.name)+';color:#fff">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+_esc(v.driver.name||'')+'</div></div>'+altBadge(v.id)+'</div>'
     +'<div>'+renderPlate(v.plate)+'</div>'
     +'<div class="muted">'+v.make+' '+v.model+'</div>'
     +'<div>'+st.html+'</div>'
@@ -12614,9 +12741,58 @@ function startDocUploadsListener(){
 }
 
 // Reset ALL vehicles data (for fresh start)
+/* ── חלון אישור מעוצב לפעולות מסוכנות ── */
+function showDangerConfirm(opts, onConfirm){
+  // opts: {title, desc, items:[], confirmLabel, requireType}
+  var ex=document.getElementById('danger-confirm-modal');if(ex)ex.remove();
+  var m=document.createElement('div');
+  m.id='danger-confirm-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.onclick=function(e){if(e.target===m)m.remove();};
+  var itemsHtml=(opts.items&&opts.items.length)
+    ?'<ul style="margin:0 0 14px;padding-right:18px;font-size:12px;color:var(--t2);line-height:1.9">'+opts.items.map(function(i){return '<li>'+_esc(i)+'</li>';}).join('')+'</ul>'
+    :'';
+  var typeHtml=opts.requireType
+    ?'<div style="margin-bottom:14px"><div style="font-size:12px;color:var(--t2);margin-bottom:5px">לאישור, הקלידו <strong style="color:var(--red-dark)">'+_esc(opts.requireType)+'</strong> בתיבה:</div>'
+      +'<input id="danger-confirm-input" type="text" autocomplete="off" style="width:100%;padding:9px 10px;border:1.5px solid var(--red-border);border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box" oninput="var b=document.getElementById(\'danger-confirm-btn\');if(b)b.disabled=(this.value.trim()!==this.dataset.expect)" data-expect="'+_esc(opts.requireType)+'"></div>'
+    :'';
+  m.innerHTML=
+    '<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:420px;direction:rtl;border-top:4px solid var(--red)">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
+        '<span style="font-size:20px">⚠️</span>'+
+        '<span style="font-size:16px;font-weight:700;color:var(--red-dark)">'+_esc(opts.title||'אישור פעולה')+'</span>'+
+      '</div>'+
+      '<div style="font-size:13px;color:var(--t1);margin-bottom:10px;line-height:1.7">'+_esc(opts.desc||'')+'</div>'+
+      itemsHtml+typeHtml+
+      '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+        '<button onclick="document.getElementById(\'danger-confirm-modal\').remove()" style="padding:9px 18px;border:1px solid var(--bdr2);border-radius:8px;background:var(--card);cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>'+
+        '<button id="danger-confirm-btn" '+(opts.requireType?'disabled':'')+' style="padding:9px 18px;background:var(--red);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">'+_esc(opts.confirmLabel||'אשר')+'</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(m);
+  var btn=document.getElementById('danger-confirm-btn');
+  if(btn){
+    btn.style.opacity=btn.disabled?'.5':'1';
+    var inp=document.getElementById('danger-confirm-input');
+    if(inp)inp.addEventListener('input',function(){btn.style.opacity=btn.disabled?'.5':'1';});
+    btn.onclick=function(){
+      if(btn.disabled)return;
+      m.remove();
+      onConfirm();
+    };
+  }
+}
+
 function clearAllVehiclesData(){
-  if(!confirm('⚠️ למחוק את כל נתוני המערכת?\nרכבים, טיפולים, טסטים, תאונות, דוחות תנועה, משימות — הכל!\nפעולה זו לא ניתנת לשחזור!')) return;
-  if(!confirm('בטוח לגמרי? אין דרך חזרה!')) return;
+  showDangerConfirm({
+    title:'מחיקת כל נתוני המערכת',
+    desc:'הפעולה תמחק לצמיתות מהשרת את כל הנתונים:',
+    items:['כל הרכבים והנהגים','טיפולים וטסטים','תאונות ודוחות תנועה','משימות, טפסים והיסטוריה'],
+    confirmLabel:'מחק את הכל לצמיתות',
+    requireType:'מחק הכל'
+  }, _doClearAllVehiclesData);
+}
+function _doClearAllVehiclesData(){
   if(!db){alert('אין חיבור לשרת');return;}
   _clearingAllData = true;
 
@@ -16341,7 +16517,7 @@ document.addEventListener('click',e=>{
 });
 
 /* ── NAV ── */
-const PT={dashboard:'דשבורד',vehicles:'רכבים ונהגים','vehicle-card':'כרטיס רכב',tasks:'משימות',violations:'דוחות תנועה',accidents:'תאונות',orders:'הזמנות חדשות',archive:'ארכיון',calendar:'יומן',scheduling:'לוח טיפולים',forms:'טפסים דיגיטליים',reminders:'תזכורות',settings:'הגדרות','km-reports':'עדכוני ק"מ'};
+const PT={dashboard:'דשבורד',vehicles:'רכבים ונהגים','vehicle-card':'כרטיס רכב',tasks:'משימות',violations:'דוחות תנועה',accidents:'תאונות',orders:'הזמנות חדשות',archive:'ארכיון',calendar:'יומן',scheduling:'לוח טיפולים',forms:'טפסים דיגיטליים',reminders:'תזכורות',settings:'הגדרות','km-reports':'עדכוני ק"מ','treatments-hub':'טיפולים וטסטים'};
 function go(name,el){
   // Reset ALL vc-tab-panels when navigating away from vehicle card
   document.querySelectorAll('.vc-tab-panel').forEach(function(p){p.style.display='none';});
@@ -16373,6 +16549,7 @@ function go(name,el){
   if(name==='reminders')renderReminders();
   if(name==='archive')renderArchivePage();
   if(name==='scheduling')renderScheduling();
+  if(name==='treatments-hub'&&typeof renderTreatmentsHub==='function')renderTreatmentsHub();
   if(name==='settings'){setTimeout(initSettingsPage,10);}
 }
 
@@ -22178,6 +22355,10 @@ function renderTreatments() {
   updateFilterCounts();
   renderPendingApprovalList(filtered);
   if (typeof updateBellBadge === 'function') updateBellBadge();
+  // סנכרון הכרטיסייה המאוחדת + תג בתפריט הצד
+  if (typeof updateTreatmentsNavBadge === 'function') updateTreatmentsNavBadge();
+  var hubPage = document.getElementById('page-treatments-hub');
+  if (hubPage && hubPage.classList.contains('active') && typeof renderTreatmentsHub === 'function') renderTreatmentsHub();
 }
 
 function filterTreatments(treatments) {
@@ -22457,6 +22638,152 @@ function renderScheduledRow(t) {
     + '<button class="trt-btn-action trt-btn-action-danger" onclick="cancelScheduled(\'' + t.id + '\')">בטל</button>'
     + '<button class="trt-btn-action trt-btn-action-primary" ' + (canMarkDone ? '' : 'disabled') + ' onclick="openMarkDoneModal(\'' + t.id + '\')">בוצע ✓</button>'
     + '</div></div>';
+}
+
+
+// ============================================================
+// 14ב. כרטיסיית "טיפולים וטסטים" — מרכז שליטה מאוחד
+// ============================================================
+var TRTHUB_TAB = 'queue';
+
+function trthubSetTab(tab, btn) {
+  TRTHUB_TAB = tab;
+  document.querySelectorAll('#trthub-tabs [data-trthub-tab]').forEach(function(b) {
+    b.className = 'btn btn-l';
+  });
+  if (btn) btn.className = 'btn btn-p';
+  renderTreatmentsHub();
+}
+
+function renderTreatmentsHub() {
+  var content = document.getElementById('trthub-content');
+  if (!content) return;
+  var all = (TREATMENT_STATE && TREATMENT_STATE.treatments) || [];
+
+  // עדכון מונים בטאבים
+  var queue = all.filter(function(t) { return t.status === 'pending_approval'; });
+  var awaiting = all.filter(function(t) { return t.status === 'awaiting_choice'; });
+  var scheduled = all.filter(function(t) { return t.status === 'scheduled'; });
+  var el;
+  el = document.getElementById('trthub-count-queue'); if (el) el.textContent = queue.length;
+  el = document.getElementById('trthub-count-awaiting'); if (el) el.textContent = awaiting.length;
+  el = document.getElementById('trthub-count-scheduled'); if (el) el.textContent = scheduled.length;
+
+  var sub = document.getElementById('trthub-subtitle');
+  var sla = Number(TREATMENT_STATE.settings.approvalSlaDays) || 3;
+
+  if (TRTHUB_TAB === 'queue') {
+    if (sub) sub.textContent = 'נהגים שבחרו תאריך וממתינים לאישור שלך. יעד מענה: עד ' + sla + ' ימים. "אשר ✓" מאשר בלחיצה אחת ופותח וואטסאפ עם הודעה מוכנה.';
+    queue.sort(function(a, b) { return parseTreatmentDate(a.selectedDateAt) - parseTreatmentDate(b.selectedDateAt); });
+    content.innerHTML = queue.map(trthubQueueRow).join('')
+      || '<div style="text-align:center;padding:32px;color:var(--t2);font-size:13px">אין בקשות שממתינות לאישור 👍</div>';
+  } else if (TRTHUB_TAB === 'awaiting') {
+    if (sub) sub.textContent = 'נהגים שקיבלו לינק ועוד לא בחרו תאריך.';
+    awaiting.sort(function(a, b) { return daysSince(b.lastEmailSentAt) - daysSince(a.lastEmailSentAt); });
+    content.innerHTML = awaiting.map(function(t) { return renderAwaitingRow(t); }).join('')
+      || '<div style="text-align:center;padding:32px;color:var(--t2);font-size:13px">אין נהגים שממתינים לבחירת תאריך</div>';
+  } else if (TRTHUB_TAB === 'scheduled') {
+    if (sub) sub.textContent = 'טיפולים וטסטים שאושרו, לפי תאריך.';
+    scheduled.sort(function(a, b) { return parseTreatmentDate(a.selectedDate) - parseTreatmentDate(b.selectedDate); });
+    content.innerHTML = scheduled.map(function(t) { return renderScheduledRow(t); }).join('')
+      || '<div style="text-align:center;padding:32px;color:var(--t2);font-size:13px">אין מועדים מתוזמנים</div>';
+  } else {
+    if (sub) sub.textContent = 'בקשות שנסגרו — בוצעו או שכבר לא רלוונטיות (עד 50 אחרונות).';
+    var closed = all.filter(function(t) { return t.status === 'closed'; });
+    closed.sort(function(a, b) { return new Date(b.closedAt || 0) - new Date(a.closedAt || 0); });
+    content.innerHTML = closed.slice(0, 50).map(trthubHistoryRow).join('')
+      || '<div style="text-align:center;padding:32px;color:var(--t2);font-size:13px">אין היסטוריה עדיין</div>';
+  }
+}
+
+function trthubQueueRow(t) {
+  var days = t.selectedDateAt ? daysSince(t.selectedDateAt) : 0;
+  var sla = Number(TREATMENT_STATE.settings.approvalSlaDays) || 3;
+  var slaTag, slaClass;
+  if (days >= sla) { slaTag = '⚠ ממתין ' + days + ' ימים'; slaClass = 'trt-driver-tag-red'; }
+  else if (days >= Math.max(1, sla - 1)) { slaTag = 'ממתין ' + days + ' ימים'; slaClass = 'trt-driver-tag-amber'; }
+  else { slaTag = days === 0 ? 'הגיע היום' : 'ממתין ' + days + ' ימים'; slaClass = 'trt-driver-tag-gray'; }
+
+  var avatarClass = days >= sla ? 'trt-driver-avatar-red' : (days >= Math.max(1, sla - 1) ? 'trt-driver-avatar-amber' : 'trt-driver-avatar-green');
+  var noteTag = t.driverNote ? '<span class="trt-driver-tag trt-driver-tag-note" title="' + _esc(t.driverNote) + '">📝 הערה</span>' : '';
+  var safeId = String(t.id).replace(/'/g, "\\'");
+
+  return '<div class="trt-driver-row" data-treatment-id="' + _esc(t.id) + '" onclick="openVehicleCard(\'' + String(t.vehicleId).replace(/'/g, "\\'") + '\')">'
+    + '<div class="trt-driver-avatar ' + avatarClass + '">' + _esc(getInitials(t.driverName)) + '</div>'
+    + '<div class="trt-driver-info">'
+    + '<div class="trt-driver-info-row">'
+    + '<span class="trt-driver-name">' + _esc(t.driverName || '') + '</span>'
+    + '<span class="trt-driver-tag ' + slaClass + '">' + slaTag + '</span>'
+    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + '</span>'
+    + noteTag
+    + '</div>'
+    + '<div class="trt-driver-meta">' + _esc(t.licensePlate || '') + ' · ' + _esc(t.vehicleModel || '') + ' · ביקש: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
+    + '</div>'
+    + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
+    + '<button class="trt-btn-action trt-btn-action-danger" onclick="rejectDate(\'' + safeId + '\')">דחה</button>'
+    + '<button class="trt-btn-action" onclick="openApproveModal(\'' + safeId + '\')" title="עריכת ההודעה לפני שליחה">ערוך ואשר</button>'
+    + '<button class="trt-btn-action trt-btn-action-primary" onclick="quickApproveTreatment(\'' + safeId + '\',this)">אשר ✓</button>'
+    + '</div></div>';
+}
+
+function trthubHistoryRow(t) {
+  var reasonLabels = { auto_renewed: 'טסט חודש', auto_serviced: 'טופל', auto_not_due: 'לא רלוונטי עוד' };
+  var reason = t.actualDate ? ('בוצע ב-' + formatTreatmentDate(t.actualDate)) : (reasonLabels[t.closedReason] || 'נסגר');
+  return '<div class="trt-driver-row" onclick="openVehicleCard(\'' + String(t.vehicleId).replace(/'/g, "\\'") + '\')" style="opacity:.75">'
+    + '<div class="trt-driver-avatar trt-driver-avatar-green" style="filter:grayscale(.5)">' + _esc(getInitials(t.driverName)) + '</div>'
+    + '<div class="trt-driver-info">'
+    + '<div class="trt-driver-info-row">'
+    + '<span class="trt-driver-name">' + _esc(t.driverName || '') + '</span>'
+    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + '</span>'
+    + '<span class="trt-driver-tag trt-driver-tag-green">' + _esc(reason) + '</span>'
+    + '</div>'
+    + '<div class="trt-driver-meta">' + _esc(t.licensePlate || '') + ' · ' + _esc(t.vehicleModel || '') + ' · נסגר: ' + (t.closedAt ? formatTreatmentDate(t.closedAt) : '--') + '</div>'
+    + '</div></div>';
+}
+
+// אישור בלחיצה אחת — בלי מודל ביניים, עם הודעת וואטסאפ מוכנה
+async function quickApproveTreatment(treatmentId, btn) {
+  var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
+  if (!t) return;
+  if (!db) { alert('אין חיבור לשרת - נסו לרענן את הדף'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'מאשר...'; }
+  var msg = buildTrtMessage('approval', t);
+  // פתיחת חלון וואטסאפ מיידית (בתוך לחיצת המשתמש) כדי שחוסם החלונות לא יעצור אותו
+  var waWin = null;
+  var phone = (t.driverPhone || '').replace(/\D/g, '');
+  if (phone && window.location.protocol !== 'file:') {
+    try { waWin = window.open('', '_blank'); } catch (e) {}
+  }
+  try {
+    await db.collection('treatments').doc(t.id).update({
+      status: 'scheduled',
+      approvedAt: new Date().toISOString(),
+      approvedChannel: 'whatsapp',
+      approvedMessage: msg
+    });
+    if (waWin) {
+      waWin.location.href = 'https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg);
+    } else {
+      await sendApprovalMessage(t, 'whatsapp', msg);
+    }
+    await addTreatmentToCalendar(t);
+    await blockDayForApprovedTreatment(t);
+    showToast(phone ? ('✓ אושר — נפתח וואטסאפ עם הודעה מוכנה ל' + t.driverName) : ('✓ אושר. לנהג אין טלפון במערכת - יש לעדכן אותו ידנית'));
+  } catch (err) {
+    console.error('[Treatments] שגיאה באישור מהיר:', err);
+    if (waWin) { try { waWin.close(); } catch (e) {} }
+    alert('שגיאה באישור - בדקו חיבור לאינטרנט ונסו שוב');
+    if (btn) { btn.disabled = false; btn.textContent = 'אשר ✓'; }
+  }
+}
+
+// עדכון תג המספר בתפריט הצד (בקשות שממתינות לאישור)
+function updateTreatmentsNavBadge() {
+  var badge = document.getElementById('nb-treatments');
+  if (!badge) return;
+  var n = ((TREATMENT_STATE && TREATMENT_STATE.treatments) || []).filter(function(t) { return t.status === 'pending_approval'; }).length;
+  if (n > 0) { badge.textContent = n; badge.style.display = 'inline-block'; }
+  else { badge.style.display = 'none'; }
 }
 
 
