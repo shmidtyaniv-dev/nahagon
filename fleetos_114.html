@@ -22504,6 +22504,9 @@ async function performLocalScan() {
         }
       }
       if (!lastSvcDate && vehicle.lastService) lastSvcDate = vehicle.lastService;
+      // רכב שטרם טופל אף פעם — טיפול ראשון: שנה מיום המסירה (כמו בכרטיס הרכב)
+      var isFirstService = false;
+      if (!lastSvcDate && vehicle.delivery) { lastSvcDate = vehicle.delivery; isFirstService = true; }
 
       if (lastSvcDate) {
         var nextTreatmentDate = addYears(parseTreatmentDate(lastSvcDate), 1);
@@ -22516,7 +22519,8 @@ async function performLocalScan() {
           await createTreatmentIfNotExists(vehicle, 'treatment', nextTreatmentDate);
         } else {
           // הטיפול הבא רחוק — סגור כל טיפול פתוח ישן (הרכב כבר טופל)
-          await autoCloseServicedTreatments(vehicle, lastSvcDate);
+          // ברכב שטרם טופל אין "טיפול שבוצע", לכן לא סוגרים לפי תאריך המסירה
+          if (!isFirstService) await autoCloseServicedTreatments(vehicle, lastSvcDate);
           // סגור גם בקשות שממתינות לבחירת תאריך אך כבר לא רלוונטיות (לא לפי תאריך ולא לפי ק"מ)
           await autoCloseNotDueTreatments(vehicle);
         }
