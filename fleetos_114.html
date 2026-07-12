@@ -22441,7 +22441,8 @@ async function autoCloseServicedTreatments(vehicle, lastSvcDate) {
       var d = doc.data();
       if (d.status === 'closed') return;
       // אם תאריך הטיפול האחרון חדש יותר מתאריך יצירת הרשומה — הרכב טופל אחרי שנשלחה הבקשה
-      var createdAt = d.lastEmailSentAt ? new Date(d.lastEmailSentAt) : null;
+      // משתמשים ב-createdAt האמיתי; lastEmailSentAt מתעדכן בכל תזכורת ידנית ולכן לא אמין כאן
+      var createdAt = d.createdAt ? new Date(d.createdAt) : (d.lastEmailSentAt ? new Date(d.lastEmailSentAt) : null);
       if (!createdAt || lastSvc >= createdAt) {
         await db.collection('treatments').doc(doc.id).update({
           status: 'closed',
@@ -23037,6 +23038,7 @@ function renderScheduledRow(t) {
     + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · אושר ב-' + formatTreatmentDate(t.approvedAt) + ' ב' + (t.approvedChannel === 'whatsapp' ? 'וואטסאפ' : 'מייל') + '</div>'
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
+    + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">תזכורת 💬</button>'
     + '<button class="trt-btn-action trt-btn-action-danger" onclick="cancelScheduled(\'' + t.id + '\')">בטל</button>'
     + '<button class="trt-btn-action trt-btn-action-primary" ' + (canMarkDone ? '' : 'disabled') + ' onclick="openMarkDoneModal(\'' + t.id + '\')">בוצע ✓</button>'
     + '</div></div>';
@@ -23410,14 +23412,19 @@ function openReminderModal(treatmentId) {
   if (!t) return;
   TREATMENT_STATE.currentReminderContext = t;
 
+  var isScheduled = t.status === 'scheduled';
   var el;
   el = document.getElementById('reminder-driver-name'); if (el) el.textContent = t.driverName;
-  el = document.getElementById('reminder-status'); if (el) el.textContent = 'לא ענה ' + daysSince(t.lastEmailSentAt) + ' ימים';
+  el = document.getElementById('reminder-status');
+  if (el) el.textContent = isScheduled
+    ? 'מועד: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDate(t.selectedDate) + ' · ' + getAppointmentTime()
+    : 'לא ענה ' + daysSince(t.lastEmailSentAt) + ' ימים';
   el = document.getElementById('reminder-whatsapp'); if (el) el.textContent = maskPhone(t.driverPhone);
   el = document.getElementById('reminder-email'); if (el) el.textContent = maskEmail(t.driverEmail);
 
-  // מלא הודעה מתבנית
-  el = document.getElementById('reminder-message-text'); if (el) el.value = buildTrtMessage('reminder', t);
+  // מלא הודעה מתבנית — למועד שנקבע: "תזכורת לפני טיפול/טסט" מההגדרות; אחרת: תזכורת לבחירת תאריך
+  var tplKey = isScheduled ? (t.kind === 'treatment' ? 'reminderService' : 'reminderTest') : 'reminder';
+  el = document.getElementById('reminder-message-text'); if (el) el.value = buildTrtMessage(tplKey, t);
 
   var modal = document.getElementById('modal-reminder'); if (modal) modal.style.display = 'flex';
 }
