@@ -6023,8 +6023,11 @@ function calcNextSvc(v){
 function slvl(v){
   const dd=[dys(v.licenseExp),dys(v.driver.licenseExp),...v.family.map(f=>dys(f.licenseExp))];
   const kmN=v.nextServiceType?(parseKm(v.nextServiceType)+v.serviceKm-v.currentKm):9999;
-  if(Math.min(...dd)<0||kmN<=0)return'danger';
-  if(Math.min(...dd)<60||kmN<2000)return'warn';
+  // גם לפי תאריך: שנה מהטיפול האחרון (או מהמסירה ברכב חדש) — גם אם הק"מ נמוך
+  const nxt=calcNextSvc(v);
+  const svcD=(nxt&&nxt.date)?dys(nxt.date):9999;
+  if(Math.min(...dd)<0||kmN<=0||svcD<=0)return'danger';
+  if(Math.min(...dd)<60||kmN<2000||svcD<30)return'warn';
   return'ok';
 }
 function slbl(v){const s=slvl(v);
@@ -8969,7 +8972,7 @@ function getMonthItems(mo){
     const lastSvcDate = getVehicleLastServiceDate(v);
     if(lastSvcDate){
       const anniversary = new Date(lastSvcDate);
-      while(anniversary <= NOW) anniversary.setFullYear(anniversary.getFullYear()+1);
+      anniversary.setFullYear(anniversary.getFullYear()+1);
       const annivStr = localDateStr(anniversary);
       if(inM(annivStr,m,y) && isWithin30Days(annivStr)){
         items.push({
@@ -9147,10 +9150,10 @@ function getTimelineItems(rangeDays){
     var lastSvcDate=typeof getVehicleLastServiceDate==='function'?getVehicleLastServiceDate(v):null;
     if(lastSvcDate){
       var anniversary=new Date(lastSvcDate);
-      while(anniversary<=now)anniversary.setFullYear(anniversary.getFullYear()+1);
+      anniversary.setFullYear(anniversary.getFullYear()+1);
       var annivStr=localDateStr(anniversary);
       if(annivStr<=endStr){
-        items.push({uid:'svc-'+v.id,type:'svc',plate:v.plate,driver:drv,model:(v.make||'')+' '+(v.model||''),date:annivStr,vid:v.id});
+        items.push({uid:'svc-'+v.id,type:'svc',plate:v.plate,driver:drv,model:(v.make||'')+' '+(v.model||''),date:annivStr,vid:v.id,overdue:annivStr<todayStr});
       }
     }
   });
@@ -16939,7 +16942,8 @@ function refresh(){
       const lastSvc = getVehicleLastServiceDate(v);
       if(lastSvc){
         const anniversary = new Date(lastSvc);
-        while(anniversary<=today) anniversary.setFullYear(anniversary.getFullYear()+1);
+        anniversary.setFullYear(anniversary.getFullYear()+1);
+        // אם התאריך כבר עבר — הרכב באיחור וחייב להיספר (isWithin30Days מחזירה true גם לעבר)
         const annivStr = localDateStr(anniversary);
         if(typeof isWithin30Days==='function' && isWithin30Days(annivStr, svcDaysThreshold)){
           treatmentCount++;
@@ -21372,16 +21376,13 @@ function getVehiclesNeedingService(withinDays){
     var svcType='טיפול שנתי';
     if(lastSvc){
       var anniv=new Date(lastSvc);
-      while(anniv<=today) anniv.setFullYear(anniv.getFullYear()+1);
+      anniv.setFullYear(anniv.getFullYear()+1);
+      // אם התאריך עבר — הרכב באיחור (diff שלילי) וצריך להופיע ברשימה, לא להידחות שנה
       nextSvcDate=anniv;
     } else if(v.isNew && v.delivery){
       var first=new Date(v.delivery);
       first.setFullYear(first.getFullYear()+1);
-      if(first>today) nextSvcDate=first;
-      else {
-        while(first<=today) first.setFullYear(first.getFullYear()+1);
-        nextSvcDate=first;
-      }
+      nextSvcDate=first;
     }
     if(nextSvcDate){
       var diff=Math.round((nextSvcDate-today)/(1000*60*60*24));
@@ -23551,7 +23552,7 @@ async function confirmTreatmentDone() {
 
   var doneDate = document.getElementById('done-date').value;
   var doneType = document.getElementById('done-type').value;
-  var mileage = parseInt(document.getElementById('done-mileage').value) || 0;
+  var mileage = parseInt(String(document.getElementById('done-mileage').value).replace(/[^0-9]/g, '')) || 0;
   var nextType = document.getElementById('done-next-type').value;
 
   if (!doneDate || !doneType) { alert('יש למלא תאריך וסוג טיפול'); return; }
@@ -23566,25 +23567,49 @@ async function confirmTreatmentDone() {
     });
 
     // עדכן את כרטיס הרכב
+    var v = (vehicles || []).find(function(x) { return String(x.id) === String(t.vehicleId); });
     var vehicleUpdate = {};
-    if (mileage) vehicleUpdate.currentKm = mileage;
-    if (nextType) vehicleUpdate.nextTreatmentType = nextType;
-
+    var svcKm = 0;
     if (t.kind === 'treatment') {
+      // אם לא הוזן ק"מ במודל — נשתמש בק"מ הנוכחי של הרכב, כדי שחישוב הטיפול הבא לא יישאר על הטיפול הקודם
+      svcKm = mileage || (v && v.currentKm) || 0;
       vehicleUpdate.lastService = doneDate;
+      if (mileage) vehicleUpdate.currentKm = mileage;
+      if (svcKm) vehicleUpdate.serviceKm = svcKm;
+      // "סוג טיפול הבא" — השדה שהכרטיס מציג הוא nextServiceType
+      if (nextType) { vehicleUpdate.nextServiceType = nextType; vehicleUpdate.nextTreatmentType = nextType; }
+      else if (svcKm) { vehicleUpdate.nextServiceType = (svcKm + 15000).toLocaleString('he-IL') + ' ק"מ'; }
     } else {
-      vehicleUpdate.licenseExp = doneDate;
+      // טסט בוצע — הרישיון חודש לשנה קדימה מיום הביצוע
+      var _newExp = new Date(doneDate);
+      _newExp.setFullYear(_newExp.getFullYear() + 1);
+      vehicleUpdate.licenseExp = _newExp.toISOString().slice(0, 10);
+      if (mileage) vehicleUpdate.currentKm = mileage;
     }
 
     // עדכן רכב מקומי
-    var v = (vehicles || []).find(function(x) { return String(x.id) === String(t.vehicleId); });
     if (v) {
       Object.assign(v, vehicleUpdate);
+      // רישום בהיסטוריית הרכב — זה מה שקובע את מועד הטיפול הבא (שנה קדימה) בכרטיס ובסריקה
+      if (t.kind === 'treatment') {
+        if (!v.historyLog) v.historyLog = [];
+        v.historyLog.push({
+          id: 'h' + Date.now(),
+          kind: 'service',
+          serviceType: doneType,
+          desc: doneType,
+          km: svcKm ? svcKm.toLocaleString('he-IL') : '',
+          createdAt: doneDate + 'T12:00:00',
+          source: 'treatment'
+        });
+      }
       if (typeof persistVehicle === 'function') persistVehicle(v);
+      if (typeof openDet === 'function' && typeof _currentVid !== 'undefined' && String(_currentVid) === String(v.id)) { try { openDet(v.id); } catch (e) {} }
+      if (typeof renderV === 'function') { try { renderV(); } catch (e) {} }
+    } else {
+      // הרכב לא נמצא מקומית — עדכון ישיר ב-Firestore
+      await db.collection('vehicles').doc(String(t.vehicleId)).update(vehicleUpdate);
     }
-
-    // עדכן גם ב-Firestore ישירות
-    await db.collection('vehicles').doc(String(t.vehicleId)).update(vehicleUpdate);
 
     closeTreatmentModal('modal-mark-done');
     showToast('הטיפול נסגר. כרטיס הרכב עודכן.');
