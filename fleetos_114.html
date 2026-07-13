@@ -9526,14 +9526,7 @@ function getDocIssues(){
         issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'רישיון נהיגה',reason:'expiring',date:drv.licenseExp,daysLeft:Math.ceil((new Date(drv.licenseExp)-now)/86400000)});
       }
     }
-    // Insurance expiring/expired
-    if(v.insuranceExp){
-      if(v.insuranceExp<todayStr){
-        issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'ביטוח',reason:'missing',date:v.insuranceExp,daysLeft:Math.ceil((new Date(v.insuranceExp)-now)/86400000)});
-      } else if(v.insuranceExp<=limitStr){
-        issues.push({vid:v.id,driver:drvName,company:company,plate:v.plate,doc:'ביטוח',reason:'expiring',date:v.insuranceExp,daysLeft:Math.ceil((new Date(v.insuranceExp)-now)/86400000)});
-      }
-    }
+    // תוקף ביטוח חובה גלובלי — מוצג בכרטיס הרכב ובהתראות היומן, לא פר-רכב כאן
     // Family driver licenses
     if(v.family) v.family.forEach(function(f){
       if(f.licenseExp){
@@ -11456,12 +11449,14 @@ function openDet(vid){
   const docsStatus=docsMissing===0?'✓ מלאים':`חסרים ${docsMissing} מסמכים`;
   const docsColor=docsMissing===0?'#16a34a':'#dc2626';
 
-  // insurance expiry from uploaded doc (stored in vd)
-  const insuranceExp=vd['insurance_exp']||null;
-  const insColor=insuranceExp&&dys(insuranceExp)<60?'#d97706':null;
-  const insTxt=insuranceExp
-    ?`${fd(insuranceExp)} <button class="vc-add-btn" style="font-size:11px;padding:2px 8px;margin-right:6px" onclick="event.stopPropagation();openInsuranceDateModal(${vid})">עדכון תאריך</button>`
-    :'<button class="vc-add-btn" onclick="event.stopPropagation();openInsuranceDateModal('+vid+')">+ עדכון תאריך</button>';
+  // תוקף ביטוח חובה — תאריך גלובלי אחיד לכל הרכבים (מוגדר פעם בשנה בהגדרות)
+  const insuranceExp=getInsuranceGlobalExp();
+  const insDays=dys(insuranceExp);
+  const insColor=insDays<0?'#dc2626':insDays<60?'#d97706':null;
+  const insTxt=`${fd(insuranceExp)} <button class="vc-add-btn" style="font-size:11px;padding:2px 8px;margin-right:6px" onclick="event.stopPropagation();openInsuranceDateModal()">עריכה</button>`;
+  const insFileTag=vd['insurance']
+    ?'<span style="color:#16a34a">📎 קובץ ביטוח הועלה ✓</span>'
+    :'<span style="color:#dc2626">אין קובץ ביטוח ✗</span>';
 
   // next service - auto-calculated from lastService + serviceKm (or from delivery for new vehicles)
   const svcType=nxtSvc.type||'—';
@@ -11553,9 +11548,9 @@ function openDet(vid){
         ${dLicDays!==null?`<div class="vc-info-sublabel">${dLicDays<0?'<span style="color:#A32D2D">פג תוקף!</span>':'בתוקף · עוד '+dLicDays+' ימים'}</div>`:''}
       </div>
       <div class="vc-info-box">
-        <div class="vc-info-label">תוקף ביטוח</div>
+        <div class="vc-info-label">תוקף ביטוח חובה</div>
         <div style="font-size:18px;font-weight:500">${insTxt}</div>
-        <div class="vc-info-sublabel">${insColor?'<span style="color:'+insColor+'">שים לב</span>':''}</div>
+        <div class="vc-info-sublabel">${insFileTag}${insColor?' · <span style="color:'+insColor+'">'+(insDays<0?'פג תוקף!':'שים לב')+'</span>':''}</div>
       </div>
       <div class="vc-info-box">
         <div class="vc-info-label">תוקף רישיון נהיגה</div>
@@ -19051,10 +19046,6 @@ function buildSystemAlertItems(rangeDays){
       var d2=Math.ceil((new Date(drv.licenseExp)-now)/86400000);
       if(d2<=rangeDays) allAlerts.push({type:'רישיון נהיגה',icon:'cal',driver:drv.name||'',plate:v.plate||'',date:drv.licenseExp,days:d2,vid:v.id,actionType:'remind'});
     }
-    if(v.insuranceExp){
-      var d3=Math.ceil((new Date(v.insuranceExp)-now)/86400000);
-      if(d3<=rangeDays) allAlerts.push({type:'ביטוח',icon:'doc',driver:drv.name||'',plate:v.plate||'',date:v.insuranceExp,days:d3,vid:v.id,actionType:'renew'});
-    }
     if(v.family) v.family.forEach(function(f,i){
       if(f.licenseExp){
         var d4=Math.ceil((new Date(f.licenseExp)-now)/86400000);
@@ -19062,6 +19053,12 @@ function buildSystemAlertItems(rangeDays){
       }
     });
   });
+  // ביטוח חובה — גלובלי, נספר פעם אחת
+  if(typeof getInsuranceGlobalExp==='function'){
+    var _gIns=getInsuranceGlobalExp();
+    var dIns=Math.ceil((new Date(_gIns)-now)/86400000);
+    if(dIns<=rangeDays) allAlerts.push({type:'ביטוח חובה',icon:'doc',driver:'כל הרכבים',plate:'',date:_gIns,days:dIns,vid:null,actionType:'renew'});
+  }
   allAlerts.sort(function(a,b){return a.days-b.days;});
   return allAlerts;
 }
@@ -19490,10 +19487,10 @@ function openCalEventEditModal(info){
     currentVal=(v.driver&&v.driver.licenseExp)||info.currentDate||'';
     eventTitle=info.title||'פקיעת רישיון נהיגה';
   } else if(info.alertType==='insurance'){
-    fieldLabel='תאריך פקיעת ביטוח';
+    fieldLabel='תאריך פקיעת ביטוח חובה (אחיד לכל הרכבים)';
     fieldKey='insuranceExp';
-    currentVal=v.insuranceExp||info.currentDate||'';
-    eventTitle=info.title||'פקיעת ביטוח';
+    currentVal=(typeof getInsuranceGlobalExp==='function'?getInsuranceGlobalExp():'')||info.currentDate||'';
+    eventTitle=info.title||'פקיעת ביטוח חובה';
   } else if(info.alertType==='family-license'){
     fieldLabel='תאריך פקיעת רישיון (בן משפחה)';
     fieldKey='familyLicenseExp';
@@ -19614,7 +19611,8 @@ function saveCalEventEdit(vehicleId, fieldKey, familyIdx){
     if(!v.driver) v.driver={};
     v.driver.licenseExp = newDate;
   } else if(fieldKey==='insuranceExp'){
-    v.insuranceExp = newDate;
+    // תוקף ביטוח חובה גלובלי — נשמר בהגדרות עבור כל הרכבים
+    saveSettings({insuranceGlobalExp:newDate});
   } else if(fieldKey==='familyLicenseExp' && familyIdx>=0 && v.family && v.family[familyIdx]){
     v.family[familyIdx].licenseExp = newDate;
   } else if(fieldKey==='nextSvcOverride'){
@@ -20120,34 +20118,6 @@ function renderSystemAlerts(){
         });
       }
     }
-    // Insurance expiring (check vehicleDocs if available, else check v.insuranceExp)
-    var insExp=v.insuranceExp;
-    if(!insExp&&typeof vehicleDocs==='object'&&vehicleDocs[v.id]){
-      var docs=vehicleDocs[v.id];
-      if(docs){
-        for(var dk in docs){
-          if(dk.indexOf('insurance')>=0||dk.indexOf('ביטוח')>=0){
-            if(docs[dk]&&docs[dk].expDate) insExp=docs[dk].expDate;
-          }
-        }
-      }
-    }
-    if(insExp){
-      var days=daysUntil(insExp);
-      if(days!==null&&days<=30){
-        allAlerts.push({
-          type:'insurance',
-          icon:'document',
-          title:'פקיעת ביטוח',
-          driverName:driverName,
-          plate:v.plate,
-          date:insExp,
-          days:days,
-          vehicleId:v.id,
-          actionType:'renew'
-        });
-      }
-    }
     // טיפול מתקרב - לפי תאריך (שנה מהטיפול האחרון) או לפי ק"מ (1,000 ק"מ לפני הטיפול הבא)
     var _nxtSvc=(typeof calcNextSvc==='function')?calcNextSvc(v):null;
     if(_nxtSvc&&(_nxtSvc.date||_nxtSvc.km)){
@@ -20204,6 +20174,25 @@ function renderSystemAlerts(){
     });
   });
 
+  // ביטוח חובה — תאריך גלובלי אחיד לכל הרכבים, לכן התראה אחת בלבד
+  if(typeof getInsuranceGlobalExp==='function'){
+    var _gInsExp=getInsuranceGlobalExp();
+    var _gInsDays=daysUntil(_gInsExp);
+    if(_gInsDays!==null&&_gInsDays<=30){
+      allAlerts.push({
+        type:'insurance',
+        icon:'document',
+        title:'פקיעת ביטוח חובה',
+        driverName:'כל הרכבים',
+        plate:'',
+        date:_gInsExp,
+        days:_gInsDays,
+        vehicleId:null,
+        actionType:'renew'
+      });
+    }
+  }
+
   // Sort by urgency (soonest first)
   allAlerts.sort(function(a,b){return a.days-b.days;});
 
@@ -20251,7 +20240,10 @@ function renderSystemAlerts(){
 
     var actionLabel='עריכה';
     var _safeTitle=(a.title||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    var editClick="openCalEventEditModal({alertType:'"+a.type+"',vehicleId:"+a.vehicleId+",currentDate:'"+a.date+"',title:'"+_safeTitle+"'"+(a.familyIdx!==undefined?",familyIdx:"+a.familyIdx:"")+"})";
+    // התראת ביטוח חובה גלובלית — עריכה פותחת את חלון התאריך האחיד, לא כרטיס רכב
+    var editClick=a.type==='insurance'
+      ? "openInsuranceDateModal()"
+      : "openCalEventEditModal({alertType:'"+a.type+"',vehicleId:"+a.vehicleId+",currentDate:'"+a.date+"',title:'"+_safeTitle+"'"+(a.familyIdx!==undefined?",familyIdx:"+a.familyIdx:"")+"})";
 
     html+='<div onclick="'+editClick+'" style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .15s;border-radius:6px;padding-right:6px;padding-left:6px" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'transparent\'">';
     // Icon
@@ -20999,33 +20991,37 @@ var incomingTasks=[]; // kept empty, no longer used
 /* ── SCAN INSURANCE ONLY ── */
 // Note: second definition removed - using the one above (line ~4942) with API key support.
 
-function openInsuranceDateModal(vid){
-  const vd=vehicleDocs[vid]||{};
-  const cur=vd['insurance_exp']||'';
+// תוקף ביטוח חובה — גלובלי לכל הרכבים, נשמר בהגדרות ומסונכרן בענן
+function getInsuranceGlobalExp(){
+  return getSettings().insuranceGlobalExp||'2027-02-28';
+}
+
+function openInsuranceDateModal(){
+  const cur=getInsuranceGlobalExp();
   const m=document.createElement('div');
   m.id='ins-date-modal';
   m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
   m.innerHTML=`<div style="background:var(--bg);border-radius:16px;padding:24px;width:100%;max-width:320px;direction:rtl;font-family:inherit">
-    <div style="font-weight:700;font-size:17px;margin-bottom:16px">עדכון תוקף ביטוח</div>
+    <div style="font-weight:700;font-size:17px;margin-bottom:6px">עדכון תוקף ביטוח חובה</div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:16px">התאריך אחיד לכל הרכבים — עדכון כאן משנה את כולם</div>
     <input type="date" id="ins-date-inp" value="${cur}" style="width:100%;border:1.5px solid var(--bdr2);border-radius:10px;padding:10px 12px;font-size:16px;font-family:inherit;background:var(--bg);color:var(--t1);box-sizing:border-box;margin-bottom:16px">
     <div style="display:flex;gap:10px">
       <button onclick="document.getElementById('ins-date-modal').remove()" style="flex:1;padding:11px;border:1.5px solid var(--bdr2);border-radius:10px;background:none;font-size:15px;font-family:inherit;cursor:pointer;color:var(--t1)">ביטול</button>
-      <button onclick="saveInsuranceDate(${vid})" style="flex:1;padding:11px;border:none;border-radius:10px;background:#0C2E5A;color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer">שמור</button>
+      <button onclick="saveInsuranceDate()" style="flex:1;padding:11px;border:none;border-radius:10px;background:#0C2E5A;color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer">שמור</button>
     </div>
   </div>`;
   document.body.appendChild(m);
   m.addEventListener('click',function(e){if(e.target===m)m.remove();});
 }
 
-function saveInsuranceDate(vid){
+function saveInsuranceDate(){
   const val=document.getElementById('ins-date-inp')?.value;
   if(!val){showToast('יש לבחור תאריך');return;}
-  if(!vehicleDocs[vid])vehicleDocs[vid]={};
-  vehicleDocs[vid]['insurance_exp']=val;
-  persistVehicleDocsDebounced(vid);
+  saveSettings({insuranceGlobalExp:val});
   document.getElementById('ins-date-modal')?.remove();
-  showToast('תוקף ביטוח עודכן ✅');
-  openDet(vid);
+  showToast('תוקף ביטוח חובה עודכן לכל הרכבים ✅');
+  if(typeof _currentVid!=='undefined'&&_currentVid!=null){try{openDet(_currentVid);}catch(e){}}
+  if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
 }
 
 async function scanInsuranceDoc(vid,file){
@@ -21033,7 +21029,11 @@ async function scanInsuranceDoc(vid,file){
   try{
     const p=await callClaudeWithDoc(file,'זהו מסמך ביטוח רכב. חלץ תאריך תפוגה. החזר JSON בלבד: {"insuranceExp":"DD/MM/YYYY"} אם לא נמצא: {"insuranceExp":null}');
     if(!p){toast.textContent='המסמך הועלה (סריקה לא זמינה)';setTimeout(()=>toast.remove(),3500);openDet(vid);vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]);return;}
-    if(p.insuranceExp){const iso=toIsoDate(p.insuranceExp);if(iso){if(!vehicleDocs[vid])vehicleDocs[vid]={};vehicleDocs[vid]['insurance_exp']=iso;persistVehicleDocsDebounced(vid);toast.textContent='✓ תוקף ביטוח זוהה: '+fd(iso);}else toast.textContent='⚠️ לא זוהה תאריך — בדוק ידנית';}
+    if(p.insuranceExp){const iso=toIsoDate(p.insuranceExp);if(iso){
+      // התאריך גלובלי לכל הרכבים — מבקשים אישור לפני דריסה
+      if(iso!==getInsuranceGlobalExp()&&confirm('זוהה תוקף ביטוח: '+fd(iso)+'\nלעדכן את תוקף ביטוח החובה לכל הרכבים?')){saveSettings({insuranceGlobalExp:iso});toast.textContent='✓ תוקף ביטוח עודכן לכל הרכבים: '+fd(iso);}
+      else toast.textContent='✓ המסמך הועלה (התאריך לא שונה)';
+    }else toast.textContent='⚠️ לא זוהה תאריך — בדוק ידנית';}
     else toast.textContent='⚠️ לא זוהה תאריך — בדוק ידנית';
   }catch(e){toast.textContent='שגיאה בסריקה: '+e.message;console.error(e);}
   setTimeout(()=>toast.remove(),3500);openDet(vid);vcTab('docs',document.querySelectorAll('.vc-tab-btn')[2]);
