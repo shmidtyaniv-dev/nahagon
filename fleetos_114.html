@@ -2421,7 +2421,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div class="trt-notif-panel" id="trt-notifications-panel" style="display:none">
         <div class="trt-notif-header">
           <span class="trt-notif-header-title">התראות</span>
-          <button class="trt-notif-mark-read" onclick="markAllNotificationsRead()">סמן הכל כנקרא</button>
+          <div style="display:flex;gap:12px;align-items:center">
+            <button class="trt-notif-mark-read" onclick="markAllNotificationsRead()">סמן הכל כנקרא</button>
+            <button class="trt-notif-mark-read" onclick="clearAllNotifications()" style="color:#dc2626">נקה</button>
+          </div>
         </div>
         <div class="trt-notif-list" id="trt-notif-list"></div>
       </div>
@@ -12348,6 +12351,7 @@ function startKmReportsListener(){
         var existing=JSON.parse(localStorage.getItem('km_update_notifications')||'[]');
         if(!existing.find(function(n){return n.id===notifId;})){
           existing.unshift({id:notifId,driverName:d.driverName||'נהג',plate:d.vehicleNum||d.matchedPlate||'',km:d.km||0,vid:d.matchedVehicleId||null,time:d.submittedAt||new Date().toISOString()});
+          if(existing.length>30) existing=existing.slice(0,30);
           localStorage.setItem('km_update_notifications',JSON.stringify(existing));
           if(typeof updateBellBadge==='function') updateBellBadge();
         }
@@ -23631,6 +23635,7 @@ async function confirmTreatmentDone() {
 // 22. מערכת התראות (פעמון)
 // ============================================================
 var _readNotifications = JSON.parse(localStorage.getItem('trt_read_notifications') || '[]');
+var _clearedNotifications = JSON.parse(localStorage.getItem('trt_cleared_notifications') || '[]');
 
 function getRelativeTime(date) {
   if (!date) return '';
@@ -23654,27 +23659,35 @@ function isNotificationRead(id) {
 }
 
 function markNotificationRead(id) {
+  // רק מסמן כנקרא — ההתראה נשארת ברשימה עד לחיצה על "נקה"
   if (_readNotifications.indexOf(id) < 0) {
     _readNotifications.push(id);
     localStorage.setItem('trt_read_notifications',JSON.stringify(_readNotifications));
-  }
-  // אם זו התראת ק"מ — הסר אותה מהרשימה
-  if(id.indexOf('km_update_') === 0){
-    var kmNotifs = JSON.parse(localStorage.getItem('km_update_notifications') || '[]');
-    kmNotifs = kmNotifs.filter(function(n){ return n.id !== id; });
-    localStorage.setItem('km_update_notifications',JSON.stringify(kmNotifs));
   }
   updateBellBadge();
   renderNotificationsPanel();
 }
 
 function markAllNotificationsRead() {
+  // רק מסמן הכל כנקרא — ההתראות נשארות ברשימה עד לחיצה על "נקה"
   var all = getTreatmentNotifications();
   all.forEach(function(n) {
     if (_readNotifications.indexOf(n.id) < 0) _readNotifications.push(n.id);
   });
   localStorage.setItem('trt_read_notifications',JSON.stringify(_readNotifications));
-  // מחק גם התראות ק"מ מ-localStorage לגמרי
+  updateBellBadge();
+  renderNotificationsPanel();
+}
+
+function clearAllNotifications() {
+  // מוחק את כל ההתראות מהרשימה — הדרך היחידה להסיר התראות
+  var all = getTreatmentNotifications();
+  all.forEach(function(n) {
+    if (_clearedNotifications.indexOf(n.id) < 0) _clearedNotifications.push(n.id);
+  });
+  if (_clearedNotifications.length > 400) _clearedNotifications = _clearedNotifications.slice(-400);
+  localStorage.setItem('trt_cleared_notifications',JSON.stringify(_clearedNotifications));
+  // התראות ק"מ נשמרות ב-localStorage נפרד — מחיקה בפועל
   localStorage.setItem('km_update_notifications', '[]');
   updateBellBadge();
   renderNotificationsPanel();
@@ -23807,6 +23820,9 @@ function getTreatmentNotifications() {
       time: n.time
     });
   });
+
+  // סינון התראות שנוקו ע"י כפתור "נקה"
+  notifications = notifications.filter(function(n) { return _clearedNotifications.indexOf(n.id) < 0; });
 
   // מיון: pending_approval ראשון, no_response, forgot, reminders, accidents. בתוך כל קטגוריה - חדש קודם
   notifications.sort(function(a, b) {
