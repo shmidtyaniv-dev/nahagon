@@ -8971,12 +8971,10 @@ function getMonthItems(mo){
         });
       }
     });
-    // services: annual logic — show only if anniversary is within 30 days
-    const lastSvcDate = getVehicleLastServiceDate(v);
-    if(lastSvcDate){
-      const anniversary = new Date(lastSvcDate);
-      anniversary.setFullYear(anniversary.getFullYear()+1);
-      const annivStr = localDateStr(anniversary);
+    // services: אותו חישוב כמו בכרטיס הרכב (calcNextSvc) — מקור אמת אחד
+    const _nxtSvcCal = (typeof calcNextSvc==='function') ? calcNextSvc(v) : null;
+    if(_nxtSvcCal && _nxtSvcCal.date){
+      const annivStr = _nxtSvcCal.date;
       if(inM(annivStr,m,y) && isWithin30Days(annivStr)){
         items.push({
           uid:'svc-'+v.id,
@@ -9149,12 +9147,10 @@ function getTimelineItems(rangeDays){
         }
       }
     });
-    // Service anniversary - show if overdue OR within range
-    var lastSvcDate=typeof getVehicleLastServiceDate==='function'?getVehicleLastServiceDate(v):null;
-    if(lastSvcDate){
-      var anniversary=new Date(lastSvcDate);
-      anniversary.setFullYear(anniversary.getFullYear()+1);
-      var annivStr=localDateStr(anniversary);
+    // Service anniversary — אותו חישוב כמו בכרטיס הרכב (calcNextSvc), מוצג אם באיחור או בטווח
+    var _nxtSvcDay=typeof calcNextSvc==='function'?calcNextSvc(v):null;
+    if(_nxtSvcDay && _nxtSvcDay.date){
+      var annivStr=_nxtSvcDay.date;
       if(annivStr<=endStr){
         items.push({uid:'svc-'+v.id,type:'svc',plate:v.plate,driver:drv,model:(v.make||'')+' '+(v.model||''),date:annivStr,vid:v.id,overdue:annivStr<todayStr});
       }
@@ -16936,24 +16932,12 @@ function refresh(){
     if(v.licenseExp && typeof isWithin30Days==='function' && isWithin30Days(v.licenseExp, testDaysThreshold)){
       testCount++;
     }
-    // Annual service - within svcReminderDays from last service anniversary
-    if(typeof getVehicleLastServiceDate==='function'){
-      const lastSvc = getVehicleLastServiceDate(v);
-      if(lastSvc){
-        const anniversary = new Date(lastSvc);
-        anniversary.setFullYear(anniversary.getFullYear()+1);
-        // אם התאריך כבר עבר — הרכב באיחור וחייב להיספר (isWithin30Days מחזירה true גם לעבר)
-        const annivStr = localDateStr(anniversary);
-        if(typeof isWithin30Days==='function' && isWithin30Days(annivStr, svcDaysThreshold)){
-          treatmentCount++;
-        }
-      } else if(v.isNew && v.delivery){
-        const firstSvc = new Date(v.delivery);
-        firstSvc.setFullYear(firstSvc.getFullYear()+1);
-        const firstStr = localDateStr(firstSvc);
-        if(typeof isWithin30Days==='function' && isWithin30Days(firstStr, svcDaysThreshold)){
-          treatmentCount++;
-        }
+    // Annual service — אותו חישוב בדיוק כמו בכרטיס הרכב (calcNextSvc = מקור אמת אחד)
+    // isWithin30Days מחזירה true גם לתאריך שעבר, כך שרכב באיחור נספר
+    if(typeof calcNextSvc==='function'){
+      const _nxt = calcNextSvc(v);
+      if(_nxt && _nxt.date && typeof isWithin30Days==='function' && isWithin30Days(_nxt.date, svcDaysThreshold)){
+        treatmentCount++;
       }
     }
   });
@@ -21374,20 +21358,11 @@ function getVehiclesNeedingService(withinDays){
   var today=new Date();today.setHours(0,0,0,0);
   var results=[];
   (vehicles||[]).forEach(function(v){
-    // Check annual service
-    var lastSvc=typeof getVehicleLastServiceDate==='function'?getVehicleLastServiceDate(v):null;
-    var nextSvcDate=null;
+    // Check annual service — אותו חישוב כמו בכרטיס הרכב (calcNextSvc = מקור אמת אחד)
+    // אם התאריך עבר — הרכב באיחור (diff שלילי) וצריך להופיע ברשימה, לא להידחות שנה
+    var _nxtSched=typeof calcNextSvc==='function'?calcNextSvc(v):null;
+    var nextSvcDate=(_nxtSched && _nxtSched.date)?new Date(_nxtSched.date):null;
     var svcType='טיפול שנתי';
-    if(lastSvc){
-      var anniv=new Date(lastSvc);
-      anniv.setFullYear(anniv.getFullYear()+1);
-      // אם התאריך עבר — הרכב באיחור (diff שלילי) וצריך להופיע ברשימה, לא להידחות שנה
-      nextSvcDate=anniv;
-    } else if(v.isNew && v.delivery){
-      var first=new Date(v.delivery);
-      first.setFullYear(first.getFullYear()+1);
-      nextSvcDate=first;
-    }
     if(nextSvcDate){
       var diff=Math.round((nextSvcDate-today)/(1000*60*60*24));
       if(diff<=withinDays){
@@ -22498,7 +22473,11 @@ async function performLocalScan() {
       var vehicle = TREATMENT_STATE.vehicles[i];
       if (!vehicle.id) continue;
 
-      // === טיפול: שנה מהטיפול האחרון ===
+      // === טיפול: אותו חישוב בדיוק כמו בכרטיס הרכב (calcNextSvc = מקור אמת אחד) ===
+      // בעבר הסורק חישב לבד (כולל fallback לתאריך מסירה גם ברכב לא-חדש) ויצר בקשות
+      // עם תאריך שלא תואם למה שמוצג בכרטיס הרכב — לכן חייבים להשתמש באותה פונקציה.
+      var _nxtSvc = (typeof calcNextSvc === 'function') ? calcNextSvc(vehicle) : null;
+      // תאריך הטיפול האחרון בפועל (לסגירת בקשות ישנות בלבד — בלי fallback למסירה)
       var lastSvcDate = null;
       if (vehicle.historyLog && vehicle.historyLog.length) {
         var services = vehicle.historyLog.filter(function(h) { return h.kind === 'service'; });
@@ -22510,26 +22489,26 @@ async function performLocalScan() {
         }
       }
       if (!lastSvcDate && vehicle.lastService) lastSvcDate = vehicle.lastService;
-      // רכב שטרם טופל אף פעם — טיפול ראשון: שנה מיום המסירה (כמו בכרטיס הרכב)
-      var isFirstService = false;
-      if (!lastSvcDate && vehicle.delivery) { lastSvcDate = vehicle.delivery; isFirstService = true; }
 
-      if (lastSvcDate) {
-        var nextTreatmentDate = addYears(parseTreatmentDate(lastSvcDate), 1);
+      if (_nxtSvc && _nxtSvc.date) {
+        var nextTreatmentDate = parseTreatmentDate(_nxtSvc.date);
         var daysUntilTreatment = daysBetween(today, nextTreatmentDate);
         // טריגר גם לפי ק"מ: אם הרכב התקרב/עבר את ק"מ הטיפול הבא
-        var _nxtSvc = (typeof calcNextSvc === 'function') ? calcNextSvc(vehicle) : null;
         var _curKm = vehicle.currentKm || vehicle.curKm || 0;
-        var kmDue = !!(_nxtSvc && _nxtSvc.km && _curKm && _curKm >= _nxtSvc.km - 1000);
+        var kmDue = !!(_nxtSvc.km && _curKm && _curKm >= _nxtSvc.km - 1000);
         if (daysUntilTreatment <= range || kmDue) {
           await createTreatmentIfNotExists(vehicle, 'treatment', nextTreatmentDate);
         } else {
           // הטיפול הבא רחוק — סגור כל טיפול פתוח ישן (הרכב כבר טופל)
           // ברכב שטרם טופל אין "טיפול שבוצע", לכן לא סוגרים לפי תאריך המסירה
-          if (!isFirstService) await autoCloseServicedTreatments(vehicle, lastSvcDate);
+          if (lastSvcDate) await autoCloseServicedTreatments(vehicle, lastSvcDate);
           // סגור גם בקשות שממתינות לבחירת תאריך אך כבר לא רלוונטיות (לא לפי תאריך ולא לפי ק"מ)
           await autoCloseNotDueTreatments(vehicle);
         }
+      } else {
+        // בכרטיס הרכב אין נתוני טיפול (אין תאריך/ק"מ טיפול אחרון) — אין ליצור בקשה,
+        // וסוגרים בקשות "ממתין לבחירת תאריך" שנוצרו בעבר מחישוב שגוי
+        await autoCloseNotDueTreatments(vehicle);
       }
 
       // === טסט: ישירות מתאריך פקיעת הרישיון ===
