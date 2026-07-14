@@ -4469,6 +4469,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                   <label id="ho-altplate-label" style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">מספר רישוי הרכב החלופי</label>
                   <input id="ho-altplate" type="text" placeholder="לדוגמה: 12-345-67" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
                 </div>
+                <div id="ho-altcode-row" style="margin-bottom:10px;display:none">
+                  <label id="ho-altcode-label" style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">קוד הרכב החלופי</label>
+                  <input id="ho-altcode" type="text" placeholder="קוד הרכב (אם קיים)" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
+                </div>
                 <!-- fuel / electric toggle -->
                 <div style="margin-bottom:8px">
                   <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -7275,6 +7279,38 @@ let hoForms2=JSON.parse(localStorage.getItem('hoForms2')||'[]');
 let hoCurrentVid=null,hoFormType=null,hoFormMode=null,hoLinkedTakeId=null;
 let hoDamages={},hoPhotos=[],hoFuel='',hoNoDmg=false,hoAltPlate='';
 
+// הצגת שדות רישוי + קוד של רכב חלופי/גישור, כולל מילוי אוטומטי בטופס החזרה מטופס המסירה
+function hoSetupAltFields(type, mode){
+  const altRow = document.getElementById('ho-altplate-row');
+  const altLbl = document.getElementById('ho-altplate-label');
+  const altInp = document.getElementById('ho-altplate');
+  const codeRow = document.getElementById('ho-altcode-row');
+  const codeLbl = document.getElementById('ho-altcode-label');
+  const codeInp = document.getElementById('ho-altcode');
+  if(!altRow) return;
+  if(type==='loaner'||type==='bridge'){
+    const carLbl = type==='bridge'?'רכב הגישור':'הרכב החלופי';
+    altRow.style.display='block';
+    if(altLbl) altLbl.textContent = 'מספר רישוי '+carLbl;
+    if(codeRow) codeRow.style.display='block';
+    if(codeLbl) codeLbl.textContent = 'קוד '+carLbl;
+    // בטופס החזרה — מילוי אוטומטי ממה שנרשם בטופס המסירה
+    if(mode==='return' && hoLinkedTakeId){
+      const tk = hoForms2.find(x=>x.id===hoLinkedTakeId);
+      if(altInp) altInp.value = (tk && tk.altPlate)||'';
+      if(codeInp) codeInp.value = (tk && tk.altCode)||'';
+    } else {
+      if(altInp) altInp.value='';
+      if(codeInp) codeInp.value='';
+    }
+  } else {
+    altRow.style.display='none';
+    if(altInp) altInp.value='';
+    if(codeRow) codeRow.style.display='none';
+    if(codeInp) codeInp.value='';
+  }
+}
+
 /* ── IndexedDB photo store (תמונות גדולות ב-IndexedDB במקום localStorage) ── */
 const hoPhotoStore=(function(){
   var _db=null;
@@ -7535,25 +7571,8 @@ async function hoOpenFormDirect(type, mode){
       });
     }
   }
-  // Show alt plate field for loaner/bridge
-  const altRow = document.getElementById('ho-altplate-row');
-  const altLbl = document.getElementById('ho-altplate-label');
-  const altInp = document.getElementById('ho-altplate');
-  if(altRow){
-    if(type==='loaner'||type==='bridge'){
-      altRow.style.display='block';
-      if(altLbl) altLbl.textContent = 'מספר רישוי '+(type==='bridge'?'רכב הגישור':'הרכב החלופי');
-      if(mode==='return' && hoLinkedTakeId){
-        const tk = hoForms2.find(x=>x.id===hoLinkedTakeId);
-        if(tk && altInp) altInp.value = tk.altPlate||'';
-      } else if(altInp){
-        altInp.value='';
-      }
-    } else {
-      altRow.style.display='none';
-      if(altInp) altInp.value='';
-    }
-  }
+  // Show alt plate + code fields for loaner/bridge
+  hoSetupAltFields(type, mode);
   document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active'));
   hoSetView('front', document.querySelector('.ho-view-btn'));
   hoRenderDmgList();
@@ -7615,7 +7634,7 @@ function hoRenderList(vid){
       <!-- HEADER -->
       <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--bg);border-bottom:1px solid var(--bdr)">
         <div style="font-size:18px;line-height:1">${typeIcon}</div>
-        <div style="font-size:12px;color:var(--t3);font-weight:500">${typeLabel}${purpose?` · ${purpose}`:''}${f.altPlate?` <span style="font-size:11px;background:#fef3c7;color:#854d0e;padding:2px 7px;border-radius:999px;font-weight:700;border:1px solid #fde68a;margin-right:4px">לוחית: ${f.altPlate}</span>`:''}</div>
+        <div style="font-size:12px;color:var(--t3);font-weight:500">${typeLabel}${purpose?` · ${purpose}`:''}${f.altPlate?` <span style="font-size:11px;background:#fef3c7;color:#854d0e;padding:2px 7px;border-radius:999px;font-weight:700;border:1px solid #fde68a;margin-right:4px">לוחית: ${f.altPlate}</span>`:''}${f.altCode?` <span style="font-size:11px;background:#e0e7ff;color:#3730a3;padding:2px 7px;border-radius:999px;font-weight:700;border:1px solid #c7d2fe;margin-right:4px">קוד: ${f.altCode}</span>`:''}</div>
         <div style="flex:1"></div>
         ${badge}
         <button class="tt-sm-btn" onclick="event.stopPropagation();hoDeletePair(${JSON.stringify([p.take?.id,p.ret?.id].filter(Boolean))})" style="width:26px;height:26px;border-radius:50%;background:#fee2e2;border:1px solid #fecaca;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0" title="מחק">
@@ -7767,26 +7786,8 @@ async function hoOpenForm(type, mode){
       tk2.loanerTolls.forEach(function(t){ var el=document.getElementById(tollMap[t]); if(el) el.checked=true; });
     }
   }
-  // Show alt plate field for loaner/bridge (both take and return)
-  const altRow = document.getElementById('ho-altplate-row');
-  const altLbl = document.getElementById('ho-altplate-label');
-  const altInp = document.getElementById('ho-altplate');
-  if(altRow){
-    if(type==='loaner'||type==='bridge'){
-      altRow.style.display='block';
-      if(altLbl) altLbl.textContent = 'מספר רישוי '+(type==='bridge'?'רכב הגישור':'הרכב החלופי');
-      // Pre-fill from linked take form if return
-      if(mode==='return' && hoLinkedTakeId){
-        const tk = hoForms2.find(x=>x.id===hoLinkedTakeId);
-        if(tk && altInp) altInp.value = tk.altPlate||'';
-      } else if(altInp){
-        altInp.value='';
-      }
-    } else {
-      altRow.style.display='none';
-      if(altInp) altInp.value='';
-    }
-  }
+  // Show alt plate + code fields for loaner/bridge (both take and return)
+  hoSetupAltFields(type, mode);
 
   // Reset fuel buttons
   document.querySelectorAll('.ho-fuel-btn').forEach(b=>b.classList.remove('active'));
@@ -8140,6 +8141,7 @@ function hoSaveForm(){
     destination: (hoFormType==='loaner'||hoFormType==='bridge')?'':(document.getElementById('ho-destination')?.value.trim()||''),
     loanerTolls: hoFormType==='loaner'?['כביש 6','מנהרות הכרמל','כביש 6 צפון','הנתיב המהיר'].filter(function(t){var m={'כביש 6':'ho-toll-road6','מנהרות הכרמל':'ho-toll-carmel','כביש 6 צפון':'ho-toll-road6n','הנתיב המהיר':'ho-toll-express'};var el=document.getElementById(m[t]);return el&&el.checked;}):undefined,
     altPlate: document.getElementById('ho-altplate')?.value.trim()||'',
+    altCode: document.getElementById('ho-altcode')?.value.trim()||'',
     isElectric: document.getElementById('ho-energy-electric')?.checked||false,
     batteryPct: document.getElementById('ho-energy-electric')?.checked ? (document.getElementById('ho-battery-range')?.value||'100')+'%' : null,
     fuel: hoFuel,
@@ -8322,6 +8324,9 @@ async function hoBuildCombinedPDF(takeForm, retForm){
       if(f.altPlate){
         const altTitle = f.type==='bridge'?'רישוי רכב גישור':'רישוי רכב חלופי';
         driverHTML += '<tr><td style="color:#888;padding:3px 0">'+altTitle+'</td><td style="font-weight:bold">' + f.altPlate + '</td></tr>';
+      }
+      if(f.altCode){
+        driverHTML += '<tr><td style="color:#888;padding:3px 0">'+(f.type==='bridge'?'קוד רכב גישור':'קוד רכב חלופי')+'</td><td style="font-weight:bold">' + f.altCode + '</td></tr>';
       }
       if(repName) driverHTML += '<tr><td style="color:#888;padding:3px 0">נציג</td><td style="font-weight:bold">' + repName + '</td></tr>';
       driverHTML += '</table></div>';
@@ -8595,6 +8600,9 @@ async function hoDownloadPDF(){
   if(f.altPlate){
     const altTitle = f.type==='bridge'?'רישוי רכב גישור':'רישוי רכב חלופי';
     html += '<tr><td style="color:#888;padding:3px 0;width:40%">'+altTitle+'</td><td style="font-weight:bold">' + f.altPlate + '</td></tr>';
+  }
+  if(f.altCode){
+    html += '<tr><td style="color:#888;padding:3px 0;width:40%">'+(f.type==='bridge'?'קוד רכב גישור':'קוד רכב חלופי')+'</td><td style="font-weight:bold">' + f.altCode + '</td></tr>';
   }
   if(repName) html += '<tr><td style="color:#888;padding:3px 0">נציג</td><td style="font-weight:bold">' + repName + '</td></tr>';
   html += '</table></div>';
@@ -8870,10 +8878,11 @@ function hoViewFormContent(){
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px';
   let html='<div style="background:var(--card);border-radius:14px;padding:20px 18px;width:100%;max-width:480px;direction:rtl;max-height:85vh;overflow-y:auto">';
   html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-size:15px;font-weight:700;color:var(--gd)">'+f.typeLabel+'</div>';
-  html+='<buttgetElementById(&quot;ho-view-modal&quot;).remove()style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3)">×</button></div>';
+  html+='<button onclick="document.getElementById(\'ho-view-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3)">×</button></div>';
   html+='<div style="font-size:11px;color:var(--t3);margin-bottom:12px">'+date+' · '+time+'</div>';
   const altLbl = f.type==='bridge'?'רישוי רכב גישור':(f.type==='loaner'?'רישוי רכב חלופי':'רישוי רכב משני');
-  [['נהג',f.driverName],['טלפון',f.driverPhone],['רישוי',f.vehicle?.plate],['רכב',(f.vehicle?.make||'')+' '+(f.vehicle?.model||'')],[altLbl,f.altPlate],['מטרה',f.purpose],['דלק',f.fuel],['ק"מ',f.km],['הערות',f.notes]].filter(function(r){return r[1];}).forEach(function(r){
+  const altCodeLbl = f.type==='bridge'?'קוד רכב גישור':'קוד רכב חלופי';
+  [['נהג',f.driverName],['טלפון',f.driverPhone],['רישוי',f.vehicle?.plate],['רכב',(f.vehicle?.make||'')+' '+(f.vehicle?.model||'')],[altLbl,f.altPlate],[altCodeLbl,f.altCode],['מטרה',f.purpose],['דלק',f.fuel],['ק"מ',f.km],['הערות',f.notes]].filter(function(r){return r[1];}).forEach(function(r){
     html+='<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bdr);font-size:13px"><span style="color:var(--t3)">'+r[0]+'</span><span style="font-weight:500">'+r[1]+'</span></div>';
   });
   html+='<div style="margin-top:10px;font-size:10px;font-weight:700;color:var(--gd);text-transform:uppercase;margin-bottom:5px">נזקים</div>';
@@ -21191,6 +21200,7 @@ function exportToExcel(type){
         'טלפון נהג':f.driverPhone||'',
         'מטרת נסיעה':f.purpose||'',
         'רישוי רכב חלופי/גישור':f.altPlate||'',
+        'קוד רכב חלופי/גישור':f.altCode||'',
         'דלק':f.fuel||'',
         'ק"מ':f.km||'',
         'תאריך':isoToIL(f.date||''),
