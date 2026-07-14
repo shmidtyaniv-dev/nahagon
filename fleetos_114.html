@@ -1867,6 +1867,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .trt-notif-dot-gray { background: #B4B2A9; }
 .trt-notif-dot-purple { background: var(--purple-dark); }
 .trt-notif-dot-blue { background: #2563eb; }
+.trt-notif-dot-read { background: transparent; border: 1.5px solid #D6D4CC; box-sizing: border-box; }
 .trt-notif-content { flex: 1; min-width: 0; }
 .trt-notif-title { font-size: 12px; font-weight: 500; color: var(--t1); margin-bottom: 2px; }
 .trt-notif-detail { font-size: 11px; color: var(--t2); }
@@ -23996,7 +23997,7 @@ function renderNotificationsPanel() {
   list.innerHTML = notifications.map(function(n) {
     var read = isNotificationRead(n.id);
     return '<div class="trt-notif-item ' + (read ? '' : 'unread') + '" onclick="markNotificationRead(\'' + n.id + '\')">'
-      + '<div class="trt-notif-dot ' + n.dotClass + '"></div>'
+      + '<div class="trt-notif-dot ' + (read ? 'trt-notif-dot-read' : n.dotClass) + '"></div>'
       + '<div class="trt-notif-content">'
       + '<div class="trt-notif-title">' + n.title + '</div>'
       + '<div class="trt-notif-detail">' + n.detail + '</div>'
