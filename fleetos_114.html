@@ -4467,7 +4467,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                 </div>
                 <div id="ho-altplate-row" style="margin-bottom:10px;display:none">
                   <label id="ho-altplate-label" style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">מספר רישוי הרכב החלופי</label>
-                  <input id="ho-altplate" type="text" placeholder="לדוגמה: 12-345-67" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
+                  <input id="ho-altplate" type="text" placeholder="לדוגמה: 123-45-678" oninput="plateInputFmt(this)" onblur="this.value=formatPlate(this.value)" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
                 </div>
                 <div id="ho-altcode-row" style="margin-bottom:10px;display:none">
                   <label id="ho-altcode-label" style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">קוד הרכב החלופי</label>
@@ -5148,7 +5148,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         </div>
         <div class="acc-body" style="padding:0 20px 16px">
           <div class="fg">
-            <div class="ff"><label>מספר רכב</label><input id="ev-plate" dir="ltr"></div>
+            <div class="ff"><label>מספר רכב</label><input id="ev-plate" dir="ltr" oninput="plateInputFmt(this)" onblur="this.value=formatPlate(this.value)"></div>
             <div class="ff"><label>קודן</label><input id="ev-code"></div>
             <div class="ff"><label>יצרן</label><input id="ev-make"></div>
             <div class="ff"><label>דגם</label><input id="ev-model"></div>
@@ -5290,7 +5290,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
 
       <div class="fg">
-        <div class="ff"><label>מספר רכב *</label><input id="fa-plate" placeholder="12-345-67" dir="ltr" autocomplete="off"></div>
+        <div class="ff"><label>מספר רכב *</label><input id="fa-plate" placeholder="123-45-678" dir="ltr" autocomplete="off" oninput="plateInputFmt(this)" onblur="this.value=formatPlate(this.value)"></div>
         <div class="ff"><label>קודן</label><input id="fa-code" placeholder="COL-2025-013" autocomplete="off"></div>
         <div class="ff"><label>יצרן</label><input id="fa-make" placeholder="יונדאי / קיה / ..." autocomplete="off"></div>
         <div class="ff"><label>דגם</label><input id="fa-model" placeholder="Tucson / i35 ..." autocomplete="off"></div>
@@ -5985,6 +5985,37 @@ function companyBadge(company){
 }
 
 function parseKm(s){if(!s)return 0;return parseInt(String(s).replace(/[^\d]/g,'')||0)}
+
+// עיצוב לוחית רישוי לפי התקן: 8 ספרות (רכבים מ-2017) → 3-2-3, 7 ספרות → 2-3-2
+function formatPlate(p){
+  if(!p) return p||'';
+  const s=String(p).trim();
+  // אם יש תווים שאינם ספרות/מפרידים (למשל "ממתין לעדכון רכב חדש") — לא נוגעים
+  if(/[^\d\s.\-]/.test(s)) return s;
+  const digits=s.replace(/[^0-9]/g,'');
+  if(digits.length===8) return digits.slice(0,3)+'-'+digits.slice(3,5)+'-'+digits.slice(5);
+  if(digits.length===7) return digits.slice(0,2)+'-'+digits.slice(2,5)+'-'+digits.slice(5);
+  return s;
+}
+
+// חיפוש לוחית עמיד למקפים — משווה גם רצף ספרות בלבד
+function plateSearchMatch(plate,q){
+  if(!plate||!q) return false;
+  var p=String(plate).toLowerCase();
+  if(p.includes(q)) return true;
+  var qd=String(q).replace(/[^0-9]/g,'');
+  return qd.length>=2 && p.replace(/[^0-9]/g,'').includes(qd);
+}
+
+// עיצוב תוך כדי הקלדה בשדות לוחית (מוסיף מקפים אוטומטית בתבנית 3-2-3)
+function plateInputFmt(el){
+  if(/[^\d\s.\-]/.test(el.value)) return; // טקסט חופשי — לא נוגעים
+  const digits=el.value.replace(/[^0-9]/g,'').slice(0,8);
+  let out=digits;
+  if(digits.length>5) out=digits.slice(0,3)+'-'+digits.slice(3,5)+'-'+digits.slice(5);
+  else if(digits.length>3) out=digits.slice(0,3)+'-'+digits.slice(3);
+  el.value=out;
+}
 
 // Auto-calculate next service (1 year from last service). Prefer historyLog over lastService field.
 function calcNextSvc(v){
@@ -8140,7 +8171,7 @@ function hoSaveForm(){
     purpose: document.getElementById('ho-purpose')?.value.trim()||'',
     destination: (hoFormType==='loaner'||hoFormType==='bridge')?'':(document.getElementById('ho-destination')?.value.trim()||''),
     loanerTolls: hoFormType==='loaner'?['כביש 6','מנהרות הכרמל','כביש 6 צפון','הנתיב המהיר'].filter(function(t){var m={'כביש 6':'ho-toll-road6','מנהרות הכרמל':'ho-toll-carmel','כביש 6 צפון':'ho-toll-road6n','הנתיב המהיר':'ho-toll-express'};var el=document.getElementById(m[t]);return el&&el.checked;}):undefined,
-    altPlate: document.getElementById('ho-altplate')?.value.trim()||'',
+    altPlate: formatPlate(document.getElementById('ho-altplate')?.value.trim()||''),
     altCode: document.getElementById('ho-altcode')?.value.trim()||'',
     isElectric: document.getElementById('ho-energy-electric')?.checked||false,
     batteryPct: document.getElementById('ho-energy-electric')?.checked ? (document.getElementById('ho-battery-range')?.value||'100')+'%' : null,
@@ -9306,7 +9337,7 @@ function fil(){
   let r=vehicles.slice();
   if(vSearch) r=r.filter(function(v){
     var q=vSearch;
-    return v.plate.toLowerCase().includes(q)||
+    return plateSearchMatch(v.plate,q)||
            (v.driver&&v.driver.name?v.driver.name.toLowerCase().includes(q):false)||
            v.make.toLowerCase().includes(q)||
            (v.model||'').toLowerCase().includes(q)||
@@ -9354,7 +9385,7 @@ function renderDash(){
   if(_dashSearch){
     r=r.filter(function(v){
       return (v.driver.name||'').toLowerCase().includes(_dashSearch)
-        ||(v.plate||'').toLowerCase().includes(_dashSearch)
+        ||plateSearchMatch(v.plate,_dashSearch)
         ||(v.driver.company||'').toLowerCase().includes(_dashSearch)
         ||(v.driver.address||'').toLowerCase().includes(_dashSearch)
         ||(v.make||'').toLowerCase().includes(_dashSearch)
@@ -10310,7 +10341,7 @@ function globalSearch(query){
   // Search vehicles (by plate, driver, make, model, code)
   const vehicleMatches = (vehicles||[]).filter(function(v){
     var dName = (v.driverName||v.driver?.name||'').toLowerCase();
-    return (v.plate||'').toLowerCase().includes(q) ||
+    return plateSearchMatch(v.plate,q) ||
            dName.includes(q) ||
            (v.make||'').toLowerCase().includes(q) ||
            (v.model||'').toLowerCase().includes(q) ||
@@ -10350,7 +10381,7 @@ function globalSearch(query){
     const veh = vehicles.find(function(x){return x.id===v.vehicleId;});
     return (v.num||'').toLowerCase().includes(q) ||
            (v.issuer||'').toLowerCase().includes(q) ||
-           (veh?.plate||'').toLowerCase().includes(q) ||
+           plateSearchMatch(veh?.plate,q) ||
            (veh?.driver?.name||'').toLowerCase().includes(q);
   });
 
@@ -10359,7 +10390,7 @@ function globalSearch(query){
     const veh = vehicles.find(function(x){return x.id===a.vehicleId;});
     return (a.num||'').toLowerCase().includes(q) ||
            (a.location||'').toLowerCase().includes(q) ||
-           (veh?.plate||'').toLowerCase().includes(q) ||
+           plateSearchMatch(veh?.plate,q) ||
            (veh?.driver?.name||'').toLowerCase().includes(q);
   });
 
@@ -10376,7 +10407,7 @@ function globalSearch(query){
     return (e.title||'').toLowerCase().includes(q) ||
            (e.desc||'').toLowerCase().includes(q) ||
            (e.otherText||'').toLowerCase().includes(q) ||
-           (veh?.plate||'').toLowerCase().includes(q) ||
+           plateSearchMatch(veh?.plate,q) ||
            (veh?.driver?.name||'').toLowerCase().includes(q);
   });
 
@@ -11872,6 +11903,14 @@ function startVehiclesListener(){
     // Refresh UI
     if(typeof refresh==='function')refresh();
     if(typeof renderV==='function')renderV();
+    // יישור חד-פעמי: עיצוב לוחיות קיימות לתבנית 3-2-3 (רק אם שונה — כתיבה חד-פעמית)
+    if(!window._plateFmtDone && typeof formatPlate==='function' && (vehicles||[]).length){
+      window._plateFmtDone=true;
+      vehicles.forEach(function(v){
+        var f=formatPlate(v.plate);
+        if(f && v.plate && f!==v.plate){ v.plate=f; if(typeof persistVehicle==='function') persistVehicle(v); }
+      });
+    }
     // Hook: refresh treatments system when vehicles change
     if(typeof TREATMENT_STATE!=='undefined'){ TREATMENT_STATE.vehicles=vehicles||[]; }
     if(typeof performLocalScan==='function'){ try{performLocalScan();}catch(e){console.error('[Treatments] scan error:',e);} }
@@ -14164,7 +14203,7 @@ async function scanDriverDoc(input){
 }
 
 function addVehicle(){
-  const plate=id('fa-plate').value.trim(),dname=id('fa-dname').value.trim();
+  const plate=formatPlate(id('fa-plate').value.trim()),dname=id('fa-dname').value.trim();
   if(!plate||!dname){alert('נא למלא מספר רכב ושם נהג');return}
   const delivery=id('fa-delivery').value;
   const isNew=id('fa-isnew').checked;
@@ -14522,7 +14561,7 @@ function openEditVehicle(vid){
 function saveEditVehicle(){
   const vid=_currentVid;
   const v=vehicles.find(x=>x.id===vid);if(!v)return;
-  var newPlateVal=id('ev-plate').value.trim();
+  var newPlateVal=formatPlate(id('ev-plate').value.trim());
   if(newPlateVal) v.plate=newPlateVal;
   // אם הוזנה לוחית חדשה ואמיתית - נקה סטטוס "ממתין לרכב"
   if(newPlateVal && newPlateVal!=='ממתין לעדכון רכב חדש' && v.status==='waiting_vehicle') v.status='';
@@ -15495,7 +15534,7 @@ function filterVehiclePicker(prefix){
   var q = (searchEl.value||'').trim().toLowerCase();
   var list = (vehicles||[]).filter(function(v){
     return !q ||
-      (v.plate||'').toLowerCase().includes(q) ||
+      plateSearchMatch(v.plate,q) ||
       ((v.driver&&v.driver.name)||'').toLowerCase().includes(q);
   });
   drop.style.display = 'block';
@@ -22881,7 +22920,7 @@ function renderPendingRow(t) {
     + trtKindTag(t)
     + noteTag
     + '</div>'
-    + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · בחר: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
+    + '<div class="trt-driver-meta">' + formatPlate(t.licensePlate) + ' · ' + t.vehicleModel + ' · בחר: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
     + '<button class="trt-btn-action trt-btn-action-danger" onclick="rejectDate(\'' + t.id + '\')">דחה</button>'
@@ -23011,7 +23050,7 @@ function renderAwaitingRow(t) {
     + '<span class="trt-driver-tag ' + tagClass + '">' + tagText + '</span>'
     + trtKindTag(t)
     + '</div>'
-    + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · נשלח: ' + formatTreatmentDate(t.lastEmailSentAt) + ' · פוקע: ' + formatTreatmentDate(t.dueDate) + '</div>'
+    + '<div class="trt-driver-meta">' + formatPlate(t.licensePlate) + ' · ' + t.vehicleModel + ' · נשלח: ' + formatTreatmentDate(t.lastEmailSentAt) + ' · פוקע: ' + formatTreatmentDate(t.dueDate) + '</div>'
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
     + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">תזכורת ↗</button>'
@@ -23071,7 +23110,7 @@ function renderScheduledRow(t) {
     + trtKindTag(t, t.treatmentType || null)
     + noteTag
     + '</div>'
-    + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · אושר ב-' + formatTreatmentDate(t.approvedAt) + ' ב' + (t.approvedChannel === 'whatsapp' ? 'וואטסאפ' : 'מייל') + '</div>'
+    + '<div class="trt-driver-meta">' + formatPlate(t.licensePlate) + ' · ' + t.vehicleModel + ' · אושר ב-' + formatTreatmentDate(t.approvedAt) + ' ב' + (t.approvedChannel === 'whatsapp' ? 'וואטסאפ' : 'מייל') + '</div>'
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
     + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">תזכורת 💬</button>'
@@ -23157,7 +23196,7 @@ function trthubQueueRow(t) {
     + trtKindTag(t)
     + noteTag
     + '</div>'
-    + '<div class="trt-driver-meta">' + _esc(t.licensePlate || '') + ' · ' + _esc(t.vehicleModel || '') + ' · ביקש: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
+    + '<div class="trt-driver-meta">' + _esc(formatPlate(t.licensePlate || '')) + ' · ' + _esc(t.vehicleModel || '') + ' · ביקש: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
     + '<button class="trt-btn-action trt-btn-action-danger" onclick="rejectDate(\'' + safeId + '\')">דחה</button>'
@@ -23177,7 +23216,7 @@ function trthubHistoryRow(t) {
     + trtKindTag(t)
     + '<span class="trt-driver-tag trt-driver-tag-green">' + _esc(reason) + '</span>'
     + '</div>'
-    + '<div class="trt-driver-meta">' + _esc(t.licensePlate || '') + ' · ' + _esc(t.vehicleModel || '') + ' · נסגר: ' + (t.closedAt ? formatTreatmentDate(t.closedAt) : '--') + '</div>'
+    + '<div class="trt-driver-meta">' + _esc(formatPlate(t.licensePlate || '')) + ' · ' + _esc(t.vehicleModel || '') + ' · נסגר: ' + (t.closedAt ? formatTreatmentDate(t.closedAt) : '--') + '</div>'
     + '</div></div>';
 }
 
@@ -23269,7 +23308,7 @@ function openApproveModal(treatmentId) {
   el = document.getElementById('approve-driver-name'); if (el) el.textContent = t.driverName;
   el = document.getElementById('approve-selected-date');
   if (el) el.textContent = getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + getAppointmentTime();
-  el = document.getElementById('approve-vehicle'); if (el) el.textContent = t.licensePlate + ' · ' + t.vehicleModel;
+  el = document.getElementById('approve-vehicle'); if (el) el.textContent = formatPlate(t.licensePlate) + ' · ' + t.vehicleModel;
   el = document.getElementById('approve-type'); if (el) el.textContent = t.treatmentType || (t.kind === 'treatment' ? 'טיפול שנתי' : 'טסט רישוי');
 
   var noteRow = document.getElementById('approve-note-row');
@@ -23375,7 +23414,7 @@ async function addTreatmentToCalendar(treatment) {
       vehicleId: parseInt(treatment.vehicleId) || null,
       date: localDateStr(parseTreatmentDate(treatment.selectedDate)),
       time: getAppointmentTime(),
-      desc: treatment.licensePlate + ' · ' + treatment.vehicleModel,
+      desc: formatPlate(treatment.licensePlate) + ' · ' + treatment.vehicleModel,
       status: 'planned',
       treatmentId: treatment.id,
       createdAt: new Date().toISOString()
@@ -23578,7 +23617,7 @@ function openMarkDoneModal(treatmentId) {
 
   var el;
   el = document.getElementById('done-driver-name'); if (el) el.textContent = t.driverName;
-  el = document.getElementById('done-vehicle'); if (el) el.textContent = t.licensePlate + ' · ' + t.vehicleModel;
+  el = document.getElementById('done-vehicle'); if (el) el.textContent = formatPlate(t.licensePlate) + ' · ' + t.vehicleModel;
 
   var dateInput = document.getElementById('done-date');
   if (dateInput) dateInput.value = parseTreatmentDate(t.selectedDate).toISOString().slice(0, 10);
@@ -23739,7 +23778,7 @@ function getTreatmentNotifications() {
         type: 'pending_approval',
         dotClass: 'trt-notif-dot-amber',
         title: _esc(t.driverName || '') + ' בחר תאריך',
-        detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + _esc(t.licensePlate || '') + ' · ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate),
+        detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + _esc(formatPlate(t.licensePlate || '')) + ' · ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate),
         actionText: 'אשר',
         actionClass: 'primary',
         actionFn: "openApproveModal('" + String(t.id).replace(/'/g, "\\'") + "')",
@@ -23757,7 +23796,7 @@ function getTreatmentNotifications() {
           type: 'no_response',
           dotClass: 'trt-notif-dot-red',
           title: _esc(t.driverName || '') + ' לא ענה ' + daysSinceEmail + ' ימים',
-          detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + _esc(t.licensePlate || ''),
+          detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + _esc(formatPlate(t.licensePlate || '')),
           actionText: 'תזכורת',
           actionClass: '',
           actionFn: "openReminderModal('" + String(t.id).replace(/'/g, "\\'") + "')",
@@ -23776,7 +23815,7 @@ function getTreatmentNotifications() {
           type: 'forgot_to_close',
           dotClass: 'trt-notif-dot-gray',
           title: 'לא עדכנת שטופל: ' + _esc(t.driverName || ''),
-          detail: 'הטיפול היה ב-' + formatTreatmentDateShort(t.selectedDate) + ' · ' + _esc(t.licensePlate || ''),
+          detail: 'הטיפול היה ב-' + formatTreatmentDateShort(t.selectedDate) + ' · ' + _esc(formatPlate(t.licensePlate || '')),
           actionText: 'בוצע ✓',
           actionClass: 'primary',
           actionFn: "openMarkDoneModal('" + String(t.id).replace(/'/g, "\\'") + "')",
@@ -23966,7 +24005,7 @@ function buildTrtMessage(templateKey, t) {
     .replace(/\{נהג\}/g, (t.driverName || '').split(' ')[0])
     .replace(/\{סוג\}/g, t.kind === 'treatment' ? 'טיפול' : 'טסט')
     .replace(/\{תאריך\}/g, dateStr)
-    .replace(/\{רכב\}/g, t.licensePlate || '')
+    .replace(/\{רכב\}/g, formatPlate(t.licensePlate || ''))
     .replace(/\{לינק\}/g, link);
 }
 
