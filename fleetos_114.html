@@ -24051,10 +24051,13 @@ function getAppointmentTime() {
 
 function buildTrtMessage(templateKey, t) {
   var tpl = getTrtTemplates()[templateKey];
-  var dateStr = t.selectedDate ? getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' · ' + getAppointmentTime() : '';
+  var dateStr = t.selectedDate ? getHebrewDayName(t.selectedDate) + ' · ' + formatTreatmentDate(t.selectedDate) + ' בשעה ' + getAppointmentTime() : '';
   var link = window.location.origin + '/driver-link.html?id=' + t.id;
+  // אם בתבנית כתוב "{תאריך} בשעה" — המילה כבר כלולה בתאריך, מסירים כפילות
+  tpl = tpl.replace(/\{תאריך\}\s*בשעה/g, '{תאריך}');
   return tpl
     .replace(/\{נהג\}/g, (t.driverName || '').split(' ')[0])
+    .replace(/\{שעה\}/g, getAppointmentTime())
     .replace(/\{סוג\}/g, t.kind === 'treatment' ? 'טיפול' : 'טסט')
     .replace(/\{תאריך\}/g, dateStr)
     .replace(/\{רכב\}/g, formatPlate(t.licensePlate || ''))
