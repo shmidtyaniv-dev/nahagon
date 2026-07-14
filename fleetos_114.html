@@ -2759,7 +2759,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div>רישוי</div>
           <div>דגם</div>
           <div>סטטוס</div>
-          <div>טיפול הבא</div>
+          <div onclick="toggleVSort('service')" style="cursor:pointer" title="מיון לפי תאריך הטיפול הבא">טיפול הבא <span class="sort-icon" id="v-sort-service"></span></div>
           <div>מסמכים</div>
         </div>
         <div id="v-tbody"></div>
@@ -10286,7 +10286,25 @@ function showAltDriversModal(){
   </div>`;
   document.body.appendChild(modal);
 }
-function renderV(){let r=fil();if(vFilter==='alerts')r=r.filter(v=>slvl(v)!=='ok');if(vFilter==='ok')r=r.filter(v=>slvl(v)==='ok');id('v-tbody').innerHTML=r.map(fRow).join('')||'<div style="text-align:center;padding:20px;color:var(--t3)">לא נמצאו</div>'}
+var _vSort=null,_vSortDir='asc'; // מיון במסך הרכבים: null=ברירת מחדל (לפי סטטוס), 'service'=לפי תאריך הטיפול הבא
+function toggleVSort(col){
+  if(_vSort===col){
+    if(_vSortDir==='asc'){_vSortDir='desc';}
+    else{_vSort=null;_vSortDir='asc';} // לחיצה שלישית מחזירה לברירת מחדל
+  } else {_vSort=col;_vSortDir='asc';}
+  renderV();
+}
+function renderV(){
+  let r=fil();
+  if(vFilter==='alerts')r=r.filter(v=>slvl(v)!=='ok');
+  if(vFilter==='ok')r=r.filter(v=>slvl(v)==='ok');
+  if(_vSort==='service'){
+    r.sort(function(a,b){var da=calcNextSvc(a).date||'9999';var db=calcNextSvc(b).date||'9999';return _vSortDir==='asc'?(da>db?1:da<db?-1:0):(da<db?1:da>db?-1:0);});
+  }
+  var _ic=document.getElementById('v-sort-service');
+  if(_ic)_ic.textContent=_vSort==='service'?(_vSortDir==='asc'?'▲':'▼'):'';
+  id('v-tbody').innerHTML=r.map(fRow).join('')||'<div style="text-align:center;padding:20px;color:var(--t3)">לא נמצאו</div>'
+}
 function filterV(q){vSearch=q.trim().toLowerCase();renderDash();renderV()}
 
 /* ─ GLOBAL SEARCH ─ */
