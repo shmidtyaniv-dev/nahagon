@@ -620,7 +620,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .field label{display:block;font-size:12px;font-weight:600;color:var(--t2);margin-bottom:5px}
 .field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1.5px solid var(--bdr);border-radius:8px;font-size:14px;font-family:inherit;background:var(--card);color:var(--t1);outline:none;transition:border .2s;direction:rtl}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gd)}
-@media(max-width:768px){#ho-form-screen input[type="text"],#ho-form-screen input[type="number"],#ho-form-screen input[type="date"],#ho-form-screen input[type="time"],#ho-form-screen input[type="tel"],#ho-form-screen select,#ho-form-screen textarea{font-size:16px!important}} /* מונע זום אוטומטי באייפון בטופס מסירה */
+@media(max-width:768px){
+  #ho-form-screen input[type="text"],#ho-form-screen input[type="number"],#ho-form-screen input[type="date"],#ho-form-screen input[type="time"],#ho-form-screen input[type="tel"],#ho-form-screen select,#ho-form-screen textarea{font-size:16px!important} /* מונע זום אוטומטי באייפון בטופס מסירה */
+  /* מונע גלישה מגבולות המסך באייפון — שדות תאריך/שעה לא מכבדים רוחב קונטיינר */
+  #ho-form-screen{overflow-x:hidden!important}
+  #ho-form-screen input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),#ho-form-screen select,#ho-form-screen textarea{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
+  #ho-form-screen input[type="date"],#ho-form-screen input[type="time"]{-webkit-appearance:none!important;appearance:none!important;height:42px!important;line-height:1.2!important;text-align:right!important}
+}
 .field textarea{resize:none;height:80px}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .field-section{background:var(--card);border-radius:12px;padding:14px;margin-bottom:14px;border:1px solid var(--bdr)}
@@ -4504,14 +4510,14 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                     </div>
                   </div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-                  <div>
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-bottom:10px;min-width:0">
+                  <div style="min-width:0">
                     <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">תאריך</label>
-                    <input id="ho-date" type="date" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
+                    <input id="ho-date" type="date" style="width:100%;max-width:100%;box-sizing:border-box;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
                   </div>
-                  <div>
+                  <div style="min-width:0">
                     <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">שעה</label>
-                    <input id="ho-time" type="time" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
+                    <input id="ho-time" type="time" style="width:100%;max-width:100%;box-sizing:border-box;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
                   </div>
                 </div>
                 <div>
