@@ -1318,6 +1318,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .trt-driver-tag-blue { color: var(--blue-dark); background: var(--blue-light); }
 .trt-driver-tag-green { color: var(--green-dark); background: var(--green-light); font-weight: 500; }
 .trt-driver-tag-gray { color: #444441; background: var(--bg2); }
+.trt-kind-treatment { color: #1e40af; background: #dbeafe; font-weight: 600; }
+.trt-kind-test { color: #854d0e; background: #fef3c7; font-weight: 600; }
 .trt-driver-tag-note { color: var(--blue-dark); background: var(--blue-light); }
 
 .trt-driver-meta { font-size: 11px; color: var(--t2); }
@@ -22059,10 +22061,10 @@ function showBookingSuccess(date){
 
     <div class="trt-modal-filters">
       <span class="trt-filter-label">סנן:</span>
-      <button class="mini-pill active" data-awaiting-filter="all">הכל · <span id="awaiting-all-count">0</span></button>
-      <button class="mini-pill mini-pill-red" data-awaiting-filter="late">לא ענו 5+ ימים · <span id="awaiting-late-count">0</span></button>
-      <button class="mini-pill" data-awaiting-filter="treatment">טיפולים</button>
-      <button class="mini-pill" data-awaiting-filter="test">טסטים</button>
+      <button class="mini-pill active" data-awaiting-filter="all" onclick="setAwaitingFilter('all',this)">הכל · <span id="awaiting-all-count">0</span></button>
+      <button class="mini-pill mini-pill-red" data-awaiting-filter="late" onclick="setAwaitingFilter('late',this)">לא ענו <span id="awaiting-late-days">5</span>+ ימים · <span id="awaiting-late-count">0</span></button>
+      <button class="mini-pill" data-awaiting-filter="treatment" onclick="setAwaitingFilter('treatment',this)">טיפולים</button>
+      <button class="mini-pill" data-awaiting-filter="test" onclick="setAwaitingFilter('test',this)">טסטים</button>
     </div>
 
     <div class="trt-modal-list" id="awaiting-choice-list">
@@ -22745,6 +22747,9 @@ function renderTreatments() {
   if (typeof updateTreatmentsNavBadge === 'function') updateTreatmentsNavBadge();
   var hubPage = document.getElementById('page-treatments-hub');
   if (hubPage && hubPage.classList.contains('active') && typeof renderTreatmentsHub === 'function') renderTreatmentsHub();
+  // אם מודל "ממתין לבחירת תאריך" פתוח — רענן את הרשימה (שומר על הסינון שנבחר)
+  var awMod = document.getElementById('modal-awaiting-choice');
+  if (awMod && awMod.style.display !== 'none' && typeof renderAwaitingChoiceList === 'function') renderAwaitingChoiceList();
 }
 
 function filterTreatments(treatments) {
@@ -22863,7 +22868,7 @@ function renderPendingRow(t) {
     + '<div class="trt-driver-info-row">'
     + '<span class="trt-driver-name">' + t.driverName + '</span>'
     + '<span class="trt-driver-tag ' + timeTagClass + '">' + timeTag + '</span>'
-    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + '</span>'
+    + trtKindTag(t)
     + noteTag
     + '</div>'
     + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · בחר: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
@@ -22919,24 +22924,62 @@ function setupTreatmentFilterButtons() {
 // ============================================================
 // 13. מודאל "ממתין לבחירת תאריך" (כחול)
 // ============================================================
+var _awaitingFilter = 'all';
+
 function openAwaitingChoiceModal() {
   var modal = document.getElementById('modal-awaiting-choice');
+  if (!modal) return;
+  // איפוס הסינון בכל פתיחה
+  _awaitingFilter = 'all';
+  document.querySelectorAll('[data-awaiting-filter]').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-awaiting-filter') === 'all');
+  });
+  renderAwaitingChoiceList();
+  modal.style.display = 'flex';
+}
+
+function setAwaitingFilter(filter, btn) {
+  _awaitingFilter = filter;
+  document.querySelectorAll('[data-awaiting-filter]').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderAwaitingChoiceList();
+}
+
+function renderAwaitingChoiceList() {
   var list = document.getElementById('awaiting-choice-list');
-  if (!modal || !list) return;
+  if (!list) return;
 
   var awaiting = filterTreatments(TREATMENT_STATE.treatments)
     .filter(function(t) { return t.status === 'awaiting_choice'; });
   awaiting.sort(function(a, b) { return daysSince(b.lastEmailSentAt) - daysSince(a.lastEmailSentAt); });
 
+  // סף "לא ענו" — לפי הגדרת ימי התזכורת (ברירת מחדל 5)
+  var lateDays = (TREATMENT_STATE.settings && TREATMENT_STATE.settings.reminderIntervalDays) || 5;
+
   var el;
   el = document.getElementById('awaiting-modal-count'); if (el) el.textContent = awaiting.length;
   el = document.getElementById('awaiting-all-count'); if (el) el.textContent = awaiting.length;
+  el = document.getElementById('awaiting-late-days'); if (el) el.textContent = lateDays;
   el = document.getElementById('awaiting-late-count');
-  if (el) el.textContent = awaiting.filter(function(t) { return daysSince(t.lastEmailSentAt) >= 5; }).length;
+  if (el) el.textContent = awaiting.filter(function(t) { return daysSince(t.lastEmailSentAt) >= lateDays; }).length;
 
-  list.innerHTML = awaiting.map(function(t) { return renderAwaitingRow(t); }).join('')
+  var filtered = awaiting.filter(function(t) {
+    if (_awaitingFilter === 'late') return daysSince(t.lastEmailSentAt) >= lateDays;
+    if (_awaitingFilter === 'treatment' || _awaitingFilter === 'test') return t.kind === _awaitingFilter;
+    return true;
+  });
+
+  list.innerHTML = filtered.map(function(t) { return renderAwaitingRow(t); }).join('')
     || '<div style="padding:32px;text-align:center;color:var(--t2)">אין נהגים ממתינים לבחירת תאריך</div>';
-  modal.style.display = 'flex';
+}
+
+// תגית סוג (טיפול/טסט) עם צבע מבחין — כחול לטיפול, ענבר לטסט
+function trtKindTag(t, txt) {
+  var isTreatment = t.kind === 'treatment';
+  var label = txt || (isTreatment ? 'טיפול' : 'טסט');
+  if (typeof _esc === 'function') label = _esc(label);
+  return '<span class="trt-driver-tag ' + (isTreatment ? 'trt-kind-treatment' : 'trt-kind-test') + '">'
+    + (isTreatment ? '🔧 ' : '📋 ') + label + '</span>';
 }
 
 function renderAwaitingRow(t) {
@@ -22956,7 +22999,7 @@ function renderAwaitingRow(t) {
     + '<div class="trt-driver-info-row">'
     + '<span class="trt-driver-name">' + t.driverName + '</span>'
     + '<span class="trt-driver-tag ' + tagClass + '">' + tagText + '</span>'
-    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + '</span>'
+    + trtKindTag(t)
     + '</div>'
     + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · נשלח: ' + formatTreatmentDate(t.lastEmailSentAt) + ' · פוקע: ' + formatTreatmentDate(t.dueDate) + '</div>'
     + '</div>'
@@ -23015,7 +23058,7 @@ function renderScheduledRow(t) {
     + '<div class="trt-driver-info-row">'
     + '<span class="trt-driver-name">' + t.driverName + '</span>'
     + '<span class="trt-driver-tag ' + timeTagClass + '">' + timeTag + '</span>'
-    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.treatmentType || (t.kind === 'treatment' ? 'טיפול' : 'טסט')) + '</span>'
+    + trtKindTag(t, t.treatmentType || null)
     + noteTag
     + '</div>'
     + '<div class="trt-driver-meta">' + t.licensePlate + ' · ' + t.vehicleModel + ' · אושר ב-' + formatTreatmentDate(t.approvedAt) + ' ב' + (t.approvedChannel === 'whatsapp' ? 'וואטסאפ' : 'מייל') + '</div>'
@@ -23101,7 +23144,7 @@ function trthubQueueRow(t) {
     + '<div class="trt-driver-info-row">'
     + '<span class="trt-driver-name">' + _esc(t.driverName || '') + '</span>'
     + '<span class="trt-driver-tag ' + slaClass + '">' + slaTag + '</span>'
-    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + '</span>'
+    + trtKindTag(t)
     + noteTag
     + '</div>'
     + '<div class="trt-driver-meta">' + _esc(t.licensePlate || '') + ' · ' + _esc(t.vehicleModel || '') + ' · ביקש: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
@@ -23121,7 +23164,7 @@ function trthubHistoryRow(t) {
     + '<div class="trt-driver-info">'
     + '<div class="trt-driver-info-row">'
     + '<span class="trt-driver-name">' + _esc(t.driverName || '') + '</span>'
-    + '<span class="trt-driver-tag trt-driver-tag-gray">' + (t.kind === 'treatment' ? 'טיפול' : 'טסט') + '</span>'
+    + trtKindTag(t)
     + '<span class="trt-driver-tag trt-driver-tag-green">' + _esc(reason) + '</span>'
     + '</div>'
     + '<div class="trt-driver-meta">' + _esc(t.licensePlate || '') + ' · ' + _esc(t.vehicleModel || '') + ' · נסגר: ' + (t.closedAt ? formatTreatmentDate(t.closedAt) : '--') + '</div>'
