@@ -1744,10 +1744,13 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
-    max-height: calc(100vh - 54px) !important;
-    border-radius: 0 !important;
+    max-height: 62vh !important;
+    border-radius: 0 0 14px 14px !important;
   }
-  .trt-notif-item { padding: 12px 14px; min-height: 44px; }
+  .trt-notif-list { max-height: none; }
+  .trt-notif-item { padding: 8px 12px; min-height: 40px; gap: 8px; }
+  .trt-notif-title { margin-bottom: 1px; }
+  .trt-notif-time { margin-top: 1px; }
 }
 
 /* === Responsive — טלפון מודרני (iPhone 17 Pro 402px) === */
@@ -23829,7 +23832,7 @@ function getTreatmentNotifications() {
         id: 'pending_' + t.id,
         type: 'pending_approval',
         dotClass: 'trt-notif-dot-amber',
-        title: _esc(t.driverName || '') + ' בחר תאריך',
+        title: '<b>' + _esc(t.driverName || '') + '</b> בחר תאריך',
         detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + _esc(formatPlate(t.licensePlate || '')) + ' · ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate),
         actionText: 'אשר',
         actionClass: 'primary',
@@ -23847,7 +23850,7 @@ function getTreatmentNotifications() {
           id: 'noresponse_' + t.id,
           type: 'no_response',
           dotClass: 'trt-notif-dot-red',
-          title: _esc(t.driverName || '') + ' לא ענה ' + daysSinceEmail + ' ימים',
+          title: '<b>' + _esc(t.driverName || '') + '</b> לא ענה ' + daysSinceEmail + ' ימים',
           detail: (t.kind === 'treatment' ? 'טיפול' : 'טסט') + ' · ' + _esc(formatPlate(t.licensePlate || '')),
           actionText: 'תזכורת',
           actionClass: '',
@@ -23866,7 +23869,7 @@ function getTreatmentNotifications() {
           id: 'forgot_' + t.id,
           type: 'forgot_to_close',
           dotClass: 'trt-notif-dot-gray',
-          title: 'לא עדכנת שטופל: ' + _esc(t.driverName || ''),
+          title: 'לא עדכנת שטופל: <b>' + _esc(t.driverName || '') + '</b>',
           detail: 'הטיפול היה ב-' + formatTreatmentDateShort(t.selectedDate) + ' · ' + _esc(formatPlate(t.licensePlate || '')),
           actionText: 'בוצע ✓',
           actionClass: 'primary',
@@ -23935,7 +23938,7 @@ function getTreatmentNotifications() {
       id: n.id,
       type: 'km_update',
       dotClass: 'trt-notif-dot-blue',
-      title: (n.driverName || 'נהג') + ' עדכן ק&quot;מ',
+      title: '<b>' + _esc(n.driverName || 'נהג') + '</b> עדכן ק&quot;מ',
       detail: (plate || '') + ' · ' + (n.km ? n.km.toLocaleString('he-IL') : '') + ' ק&quot;מ',
       actionText: 'פתח רכב',
       actionClass: '',
