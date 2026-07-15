@@ -430,18 +430,21 @@
         const loadPromise = Promise.all([
           db.collection('treatments').doc(treatmentId).get(),
           db.collection('settings').doc('treatments').get(),
-          db.collection('blockedDays').get().catch(function(){ return null; })
+          db.collection('blockedDays').get().catch(function(){ return null; }),
+          // ימים תפוסים מיומן האייפון של המנהל (אם לא נטען — ממשיכים בלעדיו)
+          fetch('/api/busy-days').then(function(r){ return r.json(); }).catch(function(){ return null; })
         ]);
         const timeoutPromise = new Promise(function(_, reject){
           setTimeout(function(){ reject(new Error('timeout')); }, 15000);
         });
-        const [tDoc, sDoc, bSnap] = await Promise.race([loadPromise, timeoutPromise]);
+        const [tDoc, sDoc, bSnap, busyJson] = await Promise.race([loadPromise, timeoutPromise]);
 
         if (!tDoc.exists) { showError('הבקשה לא נמצאה. ייתכן שהקישור ישן — צרו קשר עם יניב לקבלת קישור חדש.'); return; }
 
         // ימים שהמנהל סימן כתפוסים ביומן
         BLOCKED_DAYS = new Set();
         if (bSnap) bSnap.docs.forEach(function(d){ BLOCKED_DAYS.add(d.id); });
+        if (busyJson && busyJson.dates) busyJson.dates.forEach(function(d){ BLOCKED_DAYS.add(d); });
 
         TREATMENT = { id: tDoc.id, ...tDoc.data() };
         SETTINGS = sDoc.exists ? sDoc.data() : {
