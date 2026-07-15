@@ -15791,10 +15791,19 @@ function saveViolation(){
       };
       reader.readAsDataURL(file);
     } else {
-      // PDF - check size
-      if(file.size>5*1024*1024){alert('הקובץ גדול מדי (מקסימום 5MB)');return;}
+      // PDF — אם כבד, מכווץ אוטומטית לפני שמירה
+      if(file.size>25*1024*1024){alert('הקובץ גדול מדי (מעל 25MB) — נסה קובץ קטן יותר');return;}
       const reader=new FileReader();
-      reader.onload=e=>doSave(e.target.result,file.type,file.name);
+      reader.onload=function(e){
+        var dataUrl=e.target.result;
+        if(dataUrl.length<=900000){doSave(dataUrl,file.type,file.name);return;}
+        if(file.type!=='application/pdf'){alert('הקובץ גדול מדי לשמירה — נסה קובץ קטן יותר');return;}
+        showToast('📄 הקובץ גדול — מכווץ אוטומטית, רגע...');
+        _compressPdfDataUrl(dataUrl,function(smaller){
+          if(smaller){doSave(smaller,'application/pdf',file.name);}
+          else{alert('לא הצלחנו לכווץ את הקובץ מספיק — נסה קובץ קטן או ברור יותר');}
+        });
+      };
       reader.readAsDataURL(file);
     }
   }else{
@@ -16912,9 +16921,19 @@ function saveAccident(){
       };
       reader.readAsDataURL(_f);
     }else{
-      if(_f.size>5*1024*1024){alert('הקובץ גדול מדי (מקסימום 5MB)');return;}
+      // PDF — אם כבד, מכווץ אוטומטית לפני שמירה
+      if(_f.size>25*1024*1024){alert('הקובץ גדול מדי (מעל 25MB) — נסה קובץ קטן יותר');return;}
       const reader=new FileReader();
-      reader.onload=function(e){finalize(e.target.result,_f.type,_f.name);};
+      reader.onload=function(e){
+        var dataUrl=e.target.result;
+        if(dataUrl.length<=900000){finalize(dataUrl,_f.type,_f.name);return;}
+        if(_f.type!=='application/pdf'){alert('הקובץ גדול מדי לשמירה — נסה קובץ קטן יותר');return;}
+        showToast('📄 הקובץ גדול — מכווץ אוטומטית, רגע...');
+        _compressPdfDataUrl(dataUrl,function(smaller){
+          if(smaller){finalize(smaller,'application/pdf',_f.name);}
+          else{alert('לא הצלחנו לכווץ את הקובץ מספיק — נסה קובץ קטן או ברור יותר');}
+        });
+      };
       reader.readAsDataURL(_f);
     }
   }else if(accPendingFile && accPendingFile.clear){
@@ -16922,6 +16941,62 @@ function saveAccident(){
   }else{
     finalize(undefined);
   }
+}
+
+// כיווץ PDF כבד: מרנדר כל עמוד לתמונה (pdf.js) ובונה PDF קל (jsPDF).
+// מנסה כמה רמות איכות עד שהתוצאה נכנסת למגבלת השמירה בענן; אם לא מצליח — מחזיר null.
+function _compressPdfDataUrl(dataUrl,cb0){
+  // הגנה מקריאה כפולה של ה-callback (שמירה + הודעת כישלון ביחד)
+  var _done=false;
+  var cb=function(r){ if(_done)return; _done=true; setTimeout(function(){cb0(r);},0); };
+  if(!window.pdfjsLib){cb(null);return;}
+  var ensureJsPDF=function(done){
+    if(window.jspdf&&window.jspdf.jsPDF){done();return;}
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    s.onload=done;s.onerror=function(){cb(null);};
+    document.head.appendChild(s);
+  };
+  ensureJsPDF(function(){
+    try{
+      var bin=atob(dataUrl.split(',')[1]);
+      var bytes=new Uint8Array(bin.length);
+      for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+      pdfjsLib.getDocument({data:bytes}).promise.then(function(pdf){
+        if(pdf.numPages>40){cb(null);return;}
+        var attempts=[{scale:1.6,q:.8},{scale:1.3,q:.65},{scale:1.0,q:.55}];
+        var tryAttempt=function(ai){
+          if(ai>=attempts.length){cb(null);return;}
+          var a=attempts[ai];
+          var jsPDF=window.jspdf.jsPDF;
+          var out=null;
+          var renderPage=function(p){
+            if(p>pdf.numPages){
+              var res=out.output('datauristring');
+              if(res.length<=900000)cb(res);else tryAttempt(ai+1);
+              return;
+            }
+            pdf.getPage(p).then(function(page){
+              var vp=page.getViewport({scale:a.scale});
+              var canvas=document.createElement('canvas');
+              canvas.width=vp.width;canvas.height=vp.height;
+              page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise.then(function(){
+                // גודל העמוד ב-מ"מ (נקודות PDF ← מ"מ)
+                var wmm=(vp.width/a.scale)*25.4/72, hmm=(vp.height/a.scale)*25.4/72;
+                var ori=wmm>hmm?'landscape':'portrait';
+                if(!out) out=new jsPDF({unit:'mm',format:[wmm,hmm],orientation:ori});
+                else out.addPage([wmm,hmm],ori);
+                out.addImage(canvas.toDataURL('image/jpeg',a.q),'JPEG',0,0,wmm,hmm);
+                renderPage(p+1);
+              }).catch(function(){cb(null);});
+            }).catch(function(){cb(null);});
+          };
+          renderPage(1);
+        };
+        tryAttempt(0);
+      }).catch(function(){cb(null);});
+    }catch(e){console.error('pdf compress error:',e);cb(null);}
+  });
 }
 
 // שמירת קובץ תאונה: קודם Firebase Storage, ואם לא זמין — Firestore (עם מגבלת גודל)
