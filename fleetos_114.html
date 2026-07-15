@@ -13031,7 +13031,7 @@ function _doClearAllVehiclesData(){
 }
 
 /* ══════════ גיבוי ושחזור מלא ══════════ */
-var BACKUP_COLLECTIONS=['vehicles','treatments','accidents','violations','tasks','serviceBookings','selfReminders','fleetEvents','hoForms2','blockedDays','settings','formTemplates','formSubmissions','vehicleDocsStore','vehicleExtraFiles','vehicleMandatoryFiles','violationFiles','publicDrivers','approvals','paymentReceipts','kmReports'];
+var BACKUP_COLLECTIONS=['vehicles','treatments','accidents','violations','tasks','serviceBookings','selfReminders','fleetEvents','hoForms2','blockedDays','settings','formTemplates','formSubmissions','vehicleDocsStore','vehicleExtraFiles','vehicleMandatoryFiles','violationFiles','accidentFiles','publicDrivers','approvals','paymentReceipts','kmReports'];
 
 function updateLastBackupLabel(){
   var el=id('last-backup-label');
@@ -16643,7 +16643,7 @@ function renderAccidents(){
     html+='<div class="viol-cell" style="text-align:center">'+statusHtml+'</div>';
     html+='<div class="viol-actions" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">';
     html+='<button class="viol-icon-btn v-green" onclick="openAccidentModal('+a.id+')" title="עריכה"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>';
-    if(a.fileData) html+='<button class="viol-icon-btn v-blue" onclick="viewAccidentDoc('+a.id+')" title="צפה בקובץ"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>';
+    if(a.fileData||a._hasFile) html+='<button class="viol-icon-btn v-blue" onclick="viewAccidentDoc('+a.id+')" title="צפה בקובץ"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>';
     html+='<button class="viol-icon-btn v-amber" onclick="openAccLogsModal('+a.id+')" title="תיעודים"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#854F0B" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></button>';
     html+='<button class="viol-icon-btn v-red" onclick="deleteAccident('+a.id+')" title="מחק"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A32D2D" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/></svg></button>';
     html+='</div></div>';
@@ -16710,6 +16710,7 @@ function accAddLogToModal(aid){
   const dateStr=now.toLocaleDateString('he-IL')+' '+now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
   if(!a.logs)a.logs=[];
   a.logs.push({date:dateStr,text:txt});
+  if(typeof syncPersistItem==='function') syncPersistItem('accidents', a);
   if(input)input.value='';
   // Refresh the modal view
   openAccLogsModal(aid);
@@ -16723,6 +16724,7 @@ function accDeleteLog(aid,idx){
   const a=accidentsList.find(function(x){return x.id===aid;});
   if(!a||!a.logs)return;
   a.logs.splice(idx,1);
+  if(typeof syncPersistItem==='function') syncPersistItem('accidents', a);
   openAccLogsModal(aid);
   renderAccidents();
   if(_currentVid)renderVcAccidents(_currentVid);
@@ -16730,12 +16732,15 @@ function accDeleteLog(aid,idx){
 
 function changeAccStatus(aid,newStatus){
   const a=accidentsList.find(function(x){return x.id===aid;});
-  if(a){a.status=newStatus;showToast('סטטוס עודכן');renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);}
+  if(a){a.status=newStatus;if(typeof syncPersistItem==='function') syncPersistItem('accidents', a);showToast('סטטוס עודכן');renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);}
 }
 
 function deleteAccident(aid){
   if(!confirm('למחוק את האירוע?')) return;
   accidentsList=accidentsList.filter(function(a){return a.id!==aid;});
+  delete _accFileCache[aid];
+  deleteFileFromStorage('accidents/'+aid+'/file');
+  if(db) db.collection('accidentFiles').doc(String(aid)).delete().catch(function(e){console.error('accidentFiles delete error:',e);});
   if(typeof persistAccidentsList==='function') persistAccidentsList();
   renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);
   showToast('האירוע נמחק');
@@ -16743,6 +16748,8 @@ function deleteAccident(aid){
 
 // Pending file data for the currently edited accident (to keep existing file when editing)
 let accPendingFile=null;
+// מטמון קבצי תאונות בזיכרון (הקבצים נשמרים באוסף accidentFiles / Storage, לא בתוך הרשומה)
+let _accFileCache={};
 
 function accResetFileUI(fileName){
   const nameEl=id('acc-file-name');
@@ -16793,7 +16800,7 @@ function openAccidentModal(editId){
     document.getElementById('acc-reminder-enabled').checked=!!a.reminderEnabled;
     document.getElementById('acc-reminder-days').value=a.reminderDays||14;
     toggleReminderFields();
-    accResetFileUI(a.fileData?(a.fileName||'קובץ מצורף'):'');
+    accResetFileUI((a.fileData||a._hasFile)?(a.fileName||a._fileName||'קובץ מצורף'):'');
   }else{
     id('acc-modal-title').textContent='פתיחת אירוע תאונה';
     const nextN='ACC-'+new Date().getFullYear()+'-'+(accidentsList.length+1).toString().padStart(3,'0');
@@ -16847,24 +16854,36 @@ function saveAccident(){
   };
 
   const finalize=function(fileData,fileType,fileName){
-    if(fileData!==undefined){
-      data.fileData=fileData;
-      data.fileType=fileType;
-      data.fileName=fileName;
-    }
+    var acc;
     if(editId){
-      const target=accidentsList.find(function(a){return a.id===editId;});
-      if(target){
-        // Preserve existing file if user didn't change it
-        if(fileData===undefined){
-          data.fileData=target.fileData;
-          data.fileType=target.fileType;
-          data.fileName=target.fileName;
-        }
-        Object.assign(target,data);
-      }
+      acc=accidentsList.find(function(a){return a.id===editId;});
+      if(acc) Object.assign(acc,data);
     }else{
-      accidentsList.unshift(Object.assign({id:++accIdSeq,logs:[]},data));
+      acc=Object.assign({id:++accIdSeq,logs:[]},data);
+      accidentsList.unshift(acc);
+    }
+    if(acc){
+      if(fileData){
+        // קובץ חדש — נשמר בנפרד (accidentFiles/Storage) ולא בתוך רשומת התאונה,
+        // כי לרשומה בענן יש מגבלת 1MB וקובץ גדול מפיל את השמירה של כל האירוע
+        _accFileCache[acc.id]={data:fileData,type:fileType||'',name:fileName||''};
+        acc._hasFile=true; acc._fileType=fileType||''; acc._fileName=fileName||'';
+        delete acc.fileData; delete acc.fileType; delete acc.fileName;
+        _saveAccidentFile(acc.id,fileData,fileType||'',fileName||'');
+      }else if(fileData===null){
+        // המשתמש הסיר את הקובץ
+        acc._hasFile=false; delete acc._fileUrl; delete acc._fileType; delete acc._fileName;
+        delete acc.fileData; delete acc.fileType; delete acc.fileName;
+        delete _accFileCache[acc.id];
+        deleteFileFromStorage('accidents/'+acc.id+'/file');
+        if(db) db.collection('accidentFiles').doc(String(acc.id)).delete().catch(function(e){console.error('accidentFiles delete:',e);});
+      }else if(acc.fileData){
+        // מיגרציה: קובץ ישן שהיה שמור בתוך הרשומה — מועבר לאחסון הנפרד
+        _accFileCache[acc.id]={data:acc.fileData,type:acc.fileType||'',name:acc.fileName||''};
+        acc._hasFile=true; acc._fileType=acc.fileType||''; acc._fileName=acc.fileName||'';
+        _saveAccidentFile(acc.id,acc.fileData,acc.fileType||'',acc.fileName||'');
+        delete acc.fileData; delete acc.fileType; delete acc.fileName;
+      }
     }
     if(typeof persistAccidentsList==='function') persistAccidentsList();
     accPendingFile=null;
@@ -16874,9 +16893,29 @@ function saveAccident(){
   };
 
   if(accPendingFile && accPendingFile.isNew && accPendingFile.file){
-    const reader=new FileReader();
-    reader.onload=function(e){finalize(e.target.result,accPendingFile.file.type,accPendingFile.file.name);};
-    reader.readAsDataURL(accPendingFile.file);
+    var _f=accPendingFile.file;
+    if(_f.type && _f.type.startsWith('image/')){
+      // דחיסת תמונה לפני שמירה (כמו בדוחות תנועה)
+      const reader=new FileReader();
+      reader.onload=function(e){
+        const img=new Image();
+        img.onload=function(){
+          const canvas=document.createElement('canvas');
+          let w=img.width,h=img.height;const max=1400;
+          if(w>max||h>max){const ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
+          canvas.width=w;canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          finalize(canvas.toDataURL('image/jpeg',.82),'image/jpeg',_f.name);
+        };
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(_f);
+    }else{
+      if(_f.size>5*1024*1024){alert('הקובץ גדול מדי (מקסימום 5MB)');return;}
+      const reader=new FileReader();
+      reader.onload=function(e){finalize(e.target.result,_f.type,_f.name);};
+      reader.readAsDataURL(_f);
+    }
   }else if(accPendingFile && accPendingFile.clear){
     finalize(null,null,null);
   }else{
@@ -16884,14 +16923,58 @@ function saveAccident(){
   }
 }
 
+// שמירת קובץ תאונה: קודם Firebase Storage, ואם לא זמין — Firestore (עם מגבלת גודל)
+function _saveAccidentFile(aid,rawData,fType,fName){
+  var _fsFallback=function(){
+    if(!db) return;
+    var _p={id:aid,data:rawData,type:fType,name:fName};
+    if(JSON.stringify(_p).length>950000){showToast('⚠️ הקובץ גדול מדי לשמירה בענן');return;}
+    db.collection('accidentFiles').doc(String(aid)).set(_p)
+      .catch(function(e){console.error('accidentFiles write error:',e);showToast('⚠️ הקובץ לא נשמר בענן - נסה לשמור שוב');});
+  };
+  if(storage){
+    var _storagePath='accidents/'+aid+'/file';
+    uploadFileToStorage(_storagePath,rawData).then(function(url){
+      _accFileCache[aid]={url:url,storagePath:_storagePath,type:fType,name:fName};
+      var a=accidentsList.find(function(x){return x.id===aid;});
+      if(a){a._fileUrl=url;a._storagePath=_storagePath;if(typeof syncPersistItem==='function')syncPersistItem('accidents',a);}
+      if(db) db.collection('accidentFiles').doc(String(aid)).set({id:aid,url:url,storagePath:_storagePath,type:fType,name:fName})
+        .catch(function(e){console.error('accidentFiles write error:',e);showToast('⚠️ הקובץ לא נשמר בענן - נסה לשמור שוב');});
+    }).catch(function(e){
+      console.error('Storage upload failed, falling back to Firestore:',e);
+      _fsFallback();
+    });
+  }else{
+    _fsFallback();
+  }
+}
+
 function viewAccidentDoc(aid){
   const a=accidentsList.find(function(x){return x.id===aid;});
-  if(!a||!a.fileData){showToast('אין קובץ מצורף לאירוע זה');return;}
+  if(!a){showToast('אירוע לא נמצא');return;}
+  var cached=_accFileCache[aid];
+  var displayUrl=a.fileData||a._fileUrl||(cached&&(cached.url||cached.data));
+  var typeName=a.fileType||a._fileType||(cached&&cached.type)||'';
+  var fileName=a.fileName||a._fileName||(cached&&cached.name)||'אירוע תאונה';
+  if(displayUrl){_openAccDoc(displayUrl,typeName,fileName);return;}
+  if(!a._hasFile){showToast('אין קובץ מצורף לאירוע זה');return;}
+  if(!db){showToast('הקובץ אינו זמין');return;}
+  showToast('טוען קובץ...');
+  db.collection('accidentFiles').doc(String(aid)).get().then(function(doc){
+    if(!doc.exists){showToast('הקובץ לא נמצא — נא להעלות שוב');return;}
+    var d=doc.data();
+    var url=d.url||d.data;
+    if(!url){showToast('הקובץ לא נמצא — נא להעלות שוב');return;}
+    _accFileCache[aid]={url:url,storagePath:d.storagePath||'',type:d.type||'',name:d.name||''};
+    _openAccDoc(url,d.type||'',d.name||'אירוע תאונה');
+  }).catch(function(e){showToast('שגיאה בטעינת הקובץ');console.error(e);});
+}
+function _openAccDoc(url,type,name){
   if(typeof openDocViewer==='function'){
-    openDocViewer(a.fileData,a.fileType||'',a.fileName||'אירוע תאונה');
+    openDocViewer(url,type||'',name||'אירוע תאונה');
   }else{
     const w=window.open('','_blank');
-    if(w)w.document.write('<html><body style="margin:0"><embed src="'+a.fileData+'" style="position:fixed;inset:0;width:100%;height:100%"></body></html>');
+    if(w)w.document.write('<html><body style="margin:0"><embed src="'+url+'" style="position:fixed;inset:0;width:100%;height:100%"></body></html>');
   }
 }
 
@@ -16917,7 +17000,7 @@ function renderVcAccidents(vid){
         '</select></td>'+
         '<td><button onclick="openAccLogsModal('+a.id+')" style="background:var(--bg2);border:1px solid var(--bdr2);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:13px;color:var(--gd);font-family:inherit;font-weight:500">📋 '+logsCount+'</button></td>'+
         '<td><div style="display:flex;gap:4px">'+
-          (a.fileData?'<button onclick="viewAccidentDoc('+a.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:13px;font-family:inherit">📄 צפה</button>':'')+
+          ((a.fileData||a._hasFile)?'<button onclick="viewAccidentDoc('+a.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:13px;font-family:inherit">📄 צפה</button>':'')+
           '<button onclick="openAccidentModal('+a.id+')" style="background:var(--bg);border:1px solid var(--bdr2);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:13px;color:var(--t2);font-family:inherit">עריכה</button>'+
           '<button onclick="goToAccident('+a.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 10px;cursor:pointer;font-size:12px;font-family:inherit;white-space:nowrap">עבור לאירוע ←</button>'+
         '</div></td>'+
