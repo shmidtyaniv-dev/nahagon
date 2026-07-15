@@ -19230,6 +19230,7 @@ function buildSystemAlertItems(rangeDays){
 
 function renderCalendar(){
   if(!id('cal-grid-area'))return;
+  loadIcloudBusyDays(); // בדיקה מחודשת של ימים תפוסים מהאייפון (מוגבל לפעם ב-2 דקות)
   var allEvents=getCalendarEvents();
   // Apply filter
   var filteredEvents=allEvents;
@@ -19368,12 +19369,17 @@ function blockedDayDriver(iso){
 /* ימים תפוסים מיומן האייפון של יניב (נקראים דרך /api/busy-days) — תצוגה + חסימה, לא נשמרים ב-Firestore */
 var _icloudBusyDays=new Set();
 function isDayBlocked(iso){ return _blockedDays.has(iso)||_icloudBusyDays.has(iso); }
+var _icloudBusyLast=0;
 function loadIcloudBusyDays(){
   if(window.location.protocol==='file:') return;
+  if(Date.now()-_icloudBusyLast<120000) return; // לא יותר מפעם ב-2 דקות
+  _icloudBusyLast=Date.now();
   fetch('/api/busy-days').then(function(r){return r.json();}).then(function(j){
     if(j&&j.dates){
-      _icloudBusyDays=new Set(j.dates);
-      if(typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
+      var ns=new Set(j.dates);
+      var changed=ns.size!==_icloudBusyDays.size||j.dates.some(function(d){return !_icloudBusyDays.has(d);});
+      _icloudBusyDays=ns;
+      if(changed&&typeof renderCalendar==='function'){try{renderCalendar();}catch(e){}}
     }
   }).catch(function(){});
 }
