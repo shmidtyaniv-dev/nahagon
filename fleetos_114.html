@@ -2960,10 +2960,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div class="cal-export-wrap">
             <button class="cal-export-btn" onclick="toggleCalExport()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ייצוא יומן</button>
             <div class="cal-export-dropdown" id="cal-export-dropdown" style="display:none">
-              <button onclick="exportCalendar('google')">Google Calendar</button>
-              <button onclick="exportCalendar('ics')">Outlook / iCal (.ics)</button>
-              <button onclick="exportCalendar('pdf')">ייצוא ל-PDF</button>
-              <button onclick="exportCalendar('excel')">ייצוא ל-Excel</button>
+              <button onclick="showCalSubscribeModal()">📱 סנכרון ליומן אייפון (מתעדכן אוטומטית)</button>
+              <button onclick="downloadCalendarIcs()">⬇ הורדת קובץ יומן (.ics)</button>
             </div>
           </div>
           <button id="cal-block-mode-btn" class="cal-add-btn" style="background:#fef2f2;border:1.5px solid #fca5a5;color:#b91c1c" onclick="toggleBlockDayMode()">🚫 סימון ימים תפוסים</button>
@@ -19080,9 +19078,81 @@ function toggleCalExport(){
   var dd=document.getElementById('cal-export-dropdown');
   if(dd) dd.style.display=dd.style.display==='none'?'':'none';
 }
-function exportCalendar(type){
-  document.getElementById('cal-export-dropdown').style.display='none';
-  alert('ייצוא ל-'+type+' — בקרוב');
+// === ייצוא יומן לאייפון ===
+var CAL_FEED_KEY='d755906eaa2f316bedcdbb2593955a85';
+function _icsEsc(s){
+  return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');
+}
+function _icsVevent(ev){
+  var lines=['BEGIN:VEVENT'];
+  lines.push('UID:'+_icsEsc(ev.uid)+'@mor-fleet');
+  lines.push('DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z');
+  var d=String(ev.date).replace(/-/g,'');
+  if(ev.time&&/^\d{2}:\d{2}$/.test(ev.time)){
+    var t=ev.time.replace(':','');
+    lines.push('DTSTART:'+d+'T'+t+'00');
+    var hh=parseInt(ev.time.slice(0,2),10)+1; if(hh>=24)hh=23;
+    lines.push('DTEND:'+d+'T'+String(hh).padStart(2,'0')+ev.time.slice(3,5)+'00');
+  }else{
+    lines.push('DTSTART;VALUE=DATE:'+d);
+    var nd=new Date(ev.date+'T12:00:00Z'); nd.setUTCDate(nd.getUTCDate()+1);
+    lines.push('DTEND;VALUE=DATE:'+nd.toISOString().slice(0,10).replace(/-/g,''));
+  }
+  lines.push('SUMMARY:'+_icsEsc(ev.title));
+  if(ev.desc)lines.push('DESCRIPTION:'+_icsEsc(ev.desc));
+  lines.push('END:VEVENT');
+  return lines.join('\r\n');
+}
+function _buildIcs(evs){
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//MorFleet//Calendar//HE','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:מרכז הרכב של מור',
+    evs.map(_icsVevent).join('\r\n'),'END:VCALENDAR'].filter(Boolean).join('\r\n');
+}
+function _dlIcs(content,filename){
+  var blob=new Blob([content],{type:'text/calendar;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},2000);
+}
+function downloadCalendarIcs(){
+  var dd=document.getElementById('cal-export-dropdown'); if(dd)dd.style.display='none';
+  var evs=getCalendarEvents().filter(function(e){return e.date;}).map(function(e){
+    var icon=e.type==='svc-pickup'?'🔧':e.type==='test-pickup'?'📋':'🔔';
+    return {uid:e.id,date:e.date,time:e.time||'',title:icon+' '+(e.title||''),desc:[e.plate,e.driverName,e.label].filter(Boolean).join(' · ')};
+  });
+  if(!evs.length){showToast('אין אירועים ביומן לייצוא');return;}
+  _dlIcs(_buildIcs(evs),'yoman-mor.ics');
+  showToast('✓ קובץ היומן ירד — פתח אותו כדי להוסיף ליומן');
+}
+function downloadEventIcs(fleetEventId){
+  var e=getFleetEvents().find(function(x){return x.id===fleetEventId;});
+  if(!e||!e.date){showToast('אירוע לא נמצא');return;}
+  var v=(vehicles||[]).find(function(x){return x.id===e.vehicleId;});
+  var icon=e.type==='service'?'🔧':e.type==='test'?'📋':'📅';
+  _dlIcs(_buildIcs([{uid:'fe-'+e.id,date:e.date,time:e.time||'',title:icon+' '+(e.title||'אירוע'),desc:[(v&&v.plate)||'',e.desc||''].filter(Boolean).join(' · ')}]),'event.ics');
+  showToast('✓ האירוע ירד — פתח אותו כדי להוסיף ליומן');
+}
+function showCalSubscribeModal(){
+  var dd=document.getElementById('cal-export-dropdown'); if(dd)dd.style.display='none';
+  var old=document.getElementById('cal-subscribe-modal'); if(old)old.remove();
+  var host=window.location.host||'nahagon.vercel.app';
+  var webcalUrl='webcal://'+host+'/api/calendar?key='+CAL_FEED_KEY;
+  var m=document.createElement('div');
+  m.id='cal-subscribe-modal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  m.onclick=function(ev){if(ev.target===m)m.remove();};
+  m.innerHTML='<div style="background:var(--card);border-radius:14px;padding:22px 20px;width:100%;max-width:440px;direction:rtl">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    +'<div style="font-size:16px;font-weight:700">📱 סנכרון ליומן האייפון</div>'
+    +'<button onclick="document.getElementById(\'cal-subscribe-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer">×</button></div>'
+    +'<div style="font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:14px">כל אירועי היומן (טיפולים, טסטים, תזכורות) יופיעו ביומן של האייפון ויתעדכנו אוטומטית — כולל טיפולים חדשים שנהגים קובעים.</div>'
+    +'<a href="'+webcalUrl+'" style="display:block;text-align:center;padding:13px;background:var(--gd);color:#fff;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;margin-bottom:10px">➕ הוסף ליומן האייפון (לחץ מהטלפון)</a>'
+    +'<button onclick="navigator.clipboard.writeText(\''+webcalUrl+'\').then(function(){showToast(\'✓ הלינק הועתק\')})" style="width:100%;padding:11px;background:var(--bg);border:1.5px solid var(--bdr2);border-radius:10px;font-size:13px;font-weight:600;color:var(--t1);cursor:pointer;font-family:inherit;margin-bottom:12px">📋 העתק לינק (להוספה ידנית)</button>'
+    +'<div style="font-size:11px;color:var(--t3);line-height:1.7;background:var(--bg);border-radius:8px;padding:10px">'
+    +'<b>אם הלחיצה לא פותחת את היומן:</b><br>הגדרות ← אפליקציות ← לוח שנה ← חשבונות ← הוסף חשבון ← אחר ← הוסף לוח שנה עם מינוי ← הדבק את הלינק.<br><br>'
+    +'💡 האייפון מרענן יומן כזה אחת לכמה שעות — טיפול חדש שנקבע יופיע ביומן תוך זמן קצר, לא באותה שנייה.</div>'
+    +'</div>';
+  document.body.appendChild(m);
 }
 document.addEventListener('click',function(e){
   var wrap=document.querySelector('.cal-export-wrap');
@@ -19790,6 +19860,7 @@ function openEnhancedEventModal(editId, presetDate){
         <div style="font-size:10px;color:#16a34a;margin-top:4px;margin-right:24px">ייפתח מודאל לבחירת מייל / וואצאפ עם תוכן מוכן</div>
       </div>
 
+      ${editId?`<button onclick="downloadEventIcs('${String(editId).replace(/'/g,"\\'")}')" style="width:100%;padding:11px;background:var(--bg);border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;font-weight:600;color:var(--t1);cursor:pointer;font-family:inherit;margin-bottom:10px">📲 הוסף ליומן האייפון</button>`:''}
       <div style="display:flex;gap:8px">
         <button onclick="document.getElementById('enh-event-modal').remove()" style="flex:1;padding:11px;background:var(--bg);color:var(--t2);border:1.5px solid var(--bdr2);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">ביטול</button>
         <button id="enh-ev-delete-btn" onclick="deleteEnhancedEvent()" style="display:none;padding:11px 14px;background:#fef2f2;color:#dc2626;border:1.5px solid #fca5a5;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🗑 מחק</button>
