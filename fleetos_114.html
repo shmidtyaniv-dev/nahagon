@@ -12447,10 +12447,11 @@ function startKmReportsListener(){
     snap.docChanges().forEach(function(ch){
       if(ch.type==='added' && !_kmReportsIsInit){
         var d=Object.assign({id:ch.doc.id},ch.doc.data());
-        // פעמון
+        // פעמון — מדלגים על דיווחים שהם עותק של עדכון מלינק אישי (upd-),
+        // כי המאזין של kmUpdates כבר יצר להם התראה → אחרת נוצרת כפילות
         var notifId='kmr-'+d.id;
         var existing=JSON.parse(localStorage.getItem('km_update_notifications')||'[]');
-        if(!existing.find(function(n){return n.id===notifId;})){
+        if(d.id.indexOf('upd-')!==0 && !existing.find(function(n){return n.id===notifId;})){
           existing.unshift({id:notifId,driverName:d.driverName||'נהג',plate:d.vehicleNum||d.matchedPlate||'',km:d.km||0,vid:d.matchedVehicleId||null,time:d.submittedAt||new Date().toISOString()});
           if(existing.length>30) existing=existing.slice(0,30);
           localStorage.setItem('km_update_notifications',JSON.stringify(existing));
@@ -24107,6 +24108,8 @@ function getTreatmentNotifications() {
 
   // סוג ו: עדכוני ק"מ מנהגים
   var kmNotifs = JSON.parse(localStorage.getItem('km_update_notifications') || '[]');
+  // ניקוי כפילויות ישנות: התראות kmr-upd- הן עותק של התראת km_update_ מאותו עדכון
+  kmNotifs = kmNotifs.filter(function(n) { return String(n.id).indexOf('kmr-upd-') !== 0; });
   kmNotifs.forEach(function(n) {
     // לנוטיפיקציות מסוג kmr- — קח נתונים עדכניים מה-cache (אחרי שיוך)
     var vid = n.vid || '';
