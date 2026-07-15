@@ -67,7 +67,7 @@ export default async function handler(req, res) {
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     // מטמון קצר בצד Vercel — לא מפציצים את iCloud בכל טעינה
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+    res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=60');
     res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(200).json({ dates: Array.from(dates).sort() });
   } catch (e) {
