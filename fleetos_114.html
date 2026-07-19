@@ -16643,9 +16643,9 @@ function renderAccidents(){
     if(a.fault==='self') faultBadge='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#5F5E5A;background:#F1EFE8">עצמי</span>';
     else if(a.fault==='third') faultBadge='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#185FA5;background:#E6F1FB">צד ג׳</span>';
     else faultBadge='—';
-    var statusHtml='<span onclick="showAccidentTimeline('+a.id+')" style="cursor:pointer" title="לחץ לציר זמן">'+getAccidentStatusLabel(a)+'</span>';
+    var statusHtml='<span onclick="showAccStatusMenu('+a.id+',event)" style="cursor:pointer" title="לחץ לשינוי סטטוס">'+getAccidentStatusLabel(a)+'</span>';
     html+='<div class="viol-row viol-data-row acc-row" data-aid="'+a.id+'">';
-    html+='<div class="viol-driver" style="justify-content:center"><div class="viol-avatar" style="background:'+avatarColor(driverName)+'">'+inits(driverName)+'</div><span style="font-weight:500;font-size:14px">'+driverName+'</span></div>';
+    html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(driverName)+'">'+inits(driverName)+'</div><span style="font-weight:500;font-size:14px">'+driverName+'</span></div>';
     html+='<div class="viol-cell" data-label="רכב" style="text-align:center">'+plateHtml+'</div>';
     html+='<div class="viol-cell" data-label="תאריך" style="text-align:center"><span class="viol-muted">'+(a.date?fd(a.date):'—')+'</span></div>';
     html+='<div class="viol-cell" data-label="מס׳ אירוע" style="text-align:center"><span class="viol-mono" style="color:var(--gd)">'+(a.num||'—')+'</span></div>';
@@ -16740,9 +16740,72 @@ function accDeleteLog(aid,idx){
   if(_currentVid)renderVcAccidents(_currentVid);
 }
 
+// רשימת הסטטוסים לפי סוג האשם — משמש גם את המודל וגם את תפריט השינוי המהיר
+function _accStatusOptions(fault){
+  return (fault==='third') ? [
+    { value: 'waiting_garage', label: 'ממתין לכניסה למוסך' },
+    { value: 'in_garage', label: 'נכנס למוסך' },
+    { value: 'fixed', label: 'תוקן (יצא ממוסך)' },
+    { value: 'waiting_credit', label: 'ממתין לזיכוי' },
+    { value: 'credit_received', label: 'זוכה - תיק נסגר' }
+  ] : [
+    { value: 'waiting_garage', label: 'ממתין לכניסה למוסך' },
+    { value: 'in_garage', label: 'נכנס למוסך' },
+    { value: 'fixed', label: 'הרכב תוקן (יצא ממוסך)' },
+    { value: 'closed', label: 'תיק נסגר' },
+    { value: 'closed_no_repair', label: 'תיק נסגר ללא כניסה למוסך' }
+  ];
+}
+
 function changeAccStatus(aid,newStatus){
   const a=accidentsList.find(function(x){return x.id===aid;});
-  if(a){a.status=newStatus;if(typeof syncPersistItem==='function') syncPersistItem('accidents', a);showToast('סטטוס עודכן');renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);}
+  if(!a||a.status===newStatus)return;
+  // תאריכים אוטומטיים לפי שינוי סטטוס (כמו בשמירה מהמודל)
+  var today=new Date().toISOString().slice(0,10);
+  if(newStatus==='in_garage'&&a.status!=='in_garage'&&!a.garageEntryDate)a.garageEntryDate=today;
+  if(newStatus==='fixed'&&a.status!=='fixed'&&!a.garageExitDate)a.garageExitDate=today;
+  var closedStatuses=['closed','closed_no_repair','credit_received'];
+  if(closedStatuses.indexOf(newStatus)>=0&&closedStatuses.indexOf(a.status)<0&&!a.closedDate)a.closedDate=today;
+  a.status=newStatus;
+  if(typeof syncPersistItem==='function') syncPersistItem('accidents', a);
+  showToast('סטטוס עודכן');
+  renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);
+}
+
+// תפריט שינוי סטטוס מהיר — נפתח בלחיצה על תג הסטטוס בטבלת התאונות
+function closeAccStatusMenu(){
+  var m=document.getElementById('acc-status-menu');
+  if(m)m.remove();
+  document.removeEventListener('click',closeAccStatusMenu);
+}
+function showAccStatusMenu(aid,ev){
+  if(ev){ev.stopPropagation();}
+  var a=accidentsList.find(function(x){return x.id===aid;});
+  if(!a)return;
+  closeAccStatusMenu();
+  var opts=_accStatusOptions(a.fault);
+  var menu=document.createElement('div');
+  menu.id='acc-status-menu';
+  menu.style.cssText='position:fixed;z-index:10000;background:var(--bg2,#fff);border:1px solid var(--bdr2);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px;min-width:210px;direction:rtl';
+  menu.onclick=function(e){e.stopPropagation();};
+  var itemStyle='padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--t1)';
+  menu.innerHTML=
+    '<div style="padding:6px 12px 4px;font-size:11px;font-weight:700;color:var(--t3)">שנה סטטוס</div>'+
+    opts.map(function(o){
+      var cur=a.status===o.value;
+      return '<div onclick="closeAccStatusMenu();changeAccStatus('+aid+',\''+o.value+'\')" style="'+itemStyle+(cur?';background:var(--bg);font-weight:700':'')+'" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\''+(cur?'var(--bg)':'')+'\'">'+(cur?'✓ ':'')+o.label+'</div>';
+    }).join('')+
+    '<div style="border-top:1px solid var(--bdr);margin:5px 0"></div>'+
+    '<div onclick="closeAccStatusMenu();showAccidentTimeline('+aid+')" style="'+itemStyle+';color:var(--t2)" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">🕒 ציר זמן של האירוע</div>';
+  document.body.appendChild(menu);
+  // מיקום ליד התג, בלי לגלוש מהמסך
+  var r=(ev&&ev.target)?ev.target.getBoundingClientRect():{left:innerWidth/2,bottom:innerHeight/2,top:innerHeight/2};
+  var mw=menu.offsetWidth,mh=menu.offsetHeight;
+  var left=Math.min(Math.max(8,r.left-mw/2+40),innerWidth-mw-8);
+  var top=r.bottom+6;
+  if(top+mh>innerHeight-8)top=Math.max(8,r.top-mh-6);
+  menu.style.left=left+'px';menu.style.top=top+'px';
+  setTimeout(function(){document.addEventListener('click',closeAccStatusMenu);},0);
 }
 
 function deleteAccident(aid){
@@ -17071,9 +17134,7 @@ function renderVcAccidents(vid){
         '<td style="font-size:13px"><span style="font-size:13px;color:'+fc+';background:'+fc+'1a;padding:2px 8px;border-radius:999px;font-weight:500">'+(ACC_FAULT_LABELS[a.fault]||'—')+'</span></td>'+
         '<td style="font-size:13px">'+(a.date?fd(a.date):'—')+'</td>'+
         '<td style="font-size:13px">'+(a.reportDate?fd(a.reportDate):'—')+'</td>'+
-        '<td><select onchange="changeAccStatus('+a.id+',this.value)" style="font-size:13px;padding:3px 7px;border-radius:6px;border:1px solid var(--bdr2);background:var(--bg);color:var(--t1);font-family:inherit;cursor:pointer">'+
-          Object.keys(ACC_STATUS).map(function(k){return '<option value="'+k+'"'+(a.status===k?' selected':'')+'>'+ACC_STATUS[k]+'</option>';}).join('')+
-        '</select></td>'+
+        '<td><span onclick="showAccStatusMenu('+a.id+',event)" style="cursor:pointer" title="לחץ לשינוי סטטוס">'+getAccidentStatusLabel(a)+'</span></td>'+
         '<td><button onclick="openAccLogsModal('+a.id+')" style="background:var(--bg2);border:1px solid var(--bdr2);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:13px;color:var(--gd);font-family:inherit;font-weight:500">📋 '+logsCount+'</button></td>'+
         '<td><div style="display:flex;gap:4px">'+
           ((a.fileData||a._hasFile)?'<button onclick="viewAccidentDoc('+a.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:13px;font-family:inherit">📄 צפה</button>':'')+
@@ -24391,19 +24452,7 @@ function updateAccStatusOptions() {
   var fault = document.getElementById('acc-fault').value;
   var select = document.getElementById('acc-status');
   var currentValue = select.value;
-  var options = (fault === 'third') ? [
-    { value: 'waiting_garage', label: 'ממתין לכניסה למוסך' },
-    { value: 'in_garage', label: 'נכנס למוסך' },
-    { value: 'fixed', label: 'תוקן (יצא ממוסך)' },
-    { value: 'waiting_credit', label: 'ממתין לזיכוי' },
-    { value: 'credit_received', label: 'זוכה - תיק נסגר' }
-  ] : [
-    { value: 'waiting_garage', label: 'ממתין לכניסה למוסך' },
-    { value: 'in_garage', label: 'נכנס למוסך' },
-    { value: 'fixed', label: 'הרכב תוקן (יצא ממוסך)' },
-    { value: 'closed', label: 'תיק נסגר' },
-    { value: 'closed_no_repair', label: 'תיק נסגר ללא כניסה למוסך' }
-  ];
+  var options = _accStatusOptions(fault);
   select.innerHTML = options.map(function(o) { return '<option value="' + o.value + '">' + o.label + '</option>'; }).join('');
   if (options.some(function(o) { return o.value === currentValue; })) {
     select.value = currentValue;
