@@ -6833,12 +6833,12 @@ function fillRequestTemplate(tpl,data){
   return (tpl||'').replace(/\{נהג\}/g,data.driverName||'').replace(/\{רכב\}/g,data.plate||'').replace(/\{לינק\}/g,data.link||'').replace(/\{מסמך\}/g,data.docLabel||'').replace(/\n{3,}/g,'\n\n').trim();
 }
 function saveRequestTemplates(){
-  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   var kmEl=document.getElementById('km-msg-template');
   var docEl=document.getElementById('doc-msg-template');
-  if(kmEl) s.kmMsgTemplate=kmEl.value;
-  if(docEl) s.docMsgTemplate=docEl.value;
-  localStorage.setItem('fleetSettings',JSON.stringify(s));
+  var obj={};
+  if(kmEl) obj.kmMsgTemplate=kmEl.value;
+  if(docEl) obj.docMsgTemplate=docEl.value;
+  saveSettings(obj); // שמירה מקומית + סנכרון לענן (קודם נשמר רק מקומית והענן דרס את השינוי)
   var el=document.getElementById('req-msg-saved');
   if(el){el.textContent='✓ נשמר';el.style.opacity='1';setTimeout(function(){el.style.opacity='0';},2000);}
 }
@@ -17409,6 +17409,7 @@ function startAuthedApp(){
           if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
           // Refresh templates (synced from Firebase)
           if(typeof initTrtTemplates==='function')try{initTrtTemplates();}catch(e){}
+          if(typeof initRequestTemplates==='function')try{initRequestTemplates();}catch(e){}
         },function(e){console.error('fleetSettings listener:',e);});
       }
     }catch(e){ console.error('sync setup error:', e); }
