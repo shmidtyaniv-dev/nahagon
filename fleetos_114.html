@@ -23686,6 +23686,12 @@ async function confirmApproval() {
   var msgEl = document.getElementById('approve-message-text');
   var customMessage = msgEl ? msgEl.value : '';
 
+  // פתיחת חלון וואטסאפ מיידית (בתוך לחיצת המשתמש) — אחרי ההמתנה לענן הדפדפן חוסם חלונות חדשים
+  var waWin = null;
+  if (channel === 'whatsapp' && window.location.protocol !== 'file:') {
+    try { waWin = window.open('', '_blank'); } catch (e) {}
+  }
+
   try {
     await db.collection('treatments').doc(t.id).update({
       status: 'scheduled',
@@ -23693,27 +23699,34 @@ async function confirmApproval() {
       approvedChannel: channel,
       approvedMessage: customMessage
     });
-    await sendApprovalMessage(t, channel, customMessage);
+    await sendApprovalMessage(t, channel, customMessage, waWin);
     await addTreatmentToCalendar(t);
     await blockDayForApprovedTreatment(t);
     closeTreatmentModal('modal-approve');
     showToast('האישור נשלח ל' + t.driverName + ' ב' + (channel === 'whatsapp' ? 'וואטסאפ' : 'מייל'));
   } catch (err) {
     console.error('[Treatments] שגיאה באישור:', err);
+    if (waWin) { try { waWin.close(); } catch (e) {} }
     alert('שגיאה באישור. נסה שוב.');
   }
 }
 
-async function sendApprovalMessage(treatment, channel, customMessage) {
+async function sendApprovalMessage(treatment, channel, customMessage, waWin) {
   console.log('[Treatments] שולח אישור ל' + treatment.driverName + ' ב' + channel);
   if (channel === 'whatsapp') {
     if (window.location.protocol === 'file:') {
       console.log('[Treatments] אישור WhatsApp (מקומי) - דילוג');
+      if (waWin) { try { waWin.close(); } catch (e) {} }
       return;
     }
     var phone = (treatment.driverPhone || '').replace(/\D/g, '');
-    var text = encodeURIComponent(customMessage);
-    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + text);
+    var url = 'https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(customMessage);
+    if (waWin && !waWin.closed) {
+      waWin.location.href = url;
+    } else {
+      var w = window.open(url);
+      if (!w) location.href = url; // חוסם חלונות מנע פתיחה — ניווט ישיר (חוזרים למערכת עם חזרה)
+    }
   }
 }
 
