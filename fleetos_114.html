@@ -12556,8 +12556,10 @@ function openShareKmLinkModal(){
   var linkEl=document.getElementById('kmr-link-display');
   if(linkEl) linkEl.textContent=link;
 
-  var msg='היי,\nנא לעדכן ק"מ נוכחי לרכב שברשותך.\nלעדכון ק"מ, לחץ כאן:\n'+link;
+  // שימוש בתבנית "בקשת עדכון ק"מ" מההגדרות (קישור כללי — ללא נהג/רכב ספציפי)
+  var msg=fillRequestTemplate(getKmMsgTemplate(),{driverName:'',plate:'שברשותך',link:link}).replace(/[ \t]+,/g,',');
   var waUrl='https://wa.me/?text='+encodeURIComponent(msg);
+  var previewHtml=_esc(msg).split(_esc(link)).join('<a href="'+link+'" style="color:#1D9E75;font-weight:600">לעדכון ק"מ, לחץ כאן</a>');
 
   var ex=document.getElementById('share-km-modal'); if(ex) ex.remove();
   var m=document.createElement('div');
@@ -12571,7 +12573,7 @@ function openShareKmLinkModal(){
         '<button onclick="document.getElementById(\'share-km-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer;line-height:1">×</button>'+
       '</div>'+
       '<div style="background:#f8faf8;border-radius:10px;padding:14px;margin-bottom:16px;font-size:13px;color:#333;line-height:1.6;white-space:pre-wrap;direction:rtl">'+
-        'היי,\nנא לעדכן ק"מ נוכחי לרכב שברשותך.\n<a href="'+link+'" style="color:#1D9E75;font-weight:600">לעדכון ק"מ, לחץ כאן</a>'+
+        previewHtml+
       '</div>'+
       '<div style="display:flex;gap:10px;margin-bottom:10px">'+
         '<button onclick="document.getElementById(\'share-km-modal\').remove();location.href=\''+waUrl.replace(/'/g,"\\'")+'\';" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">💬</span> וואצאפ</button>'+
