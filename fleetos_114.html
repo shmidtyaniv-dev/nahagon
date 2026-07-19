@@ -5224,6 +5224,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div class="ff"><label>סוג הטיפול האחרון</label>
               <select id="ev-svc-type">
                 <option value="">בחר</option>
+                <option value="new">🆕 רכב חדש (טרם טופל)</option>
                 <option value="15000">15,000 ק"מ</option>
                 <option value="30000">30,000 ק"מ</option>
                 <option value="45000">45,000 ק"מ</option>
@@ -14609,7 +14610,7 @@ function openEditVehicle(vid){
   id('ev-daddress').value=v.driver.address||'';
   const evComp=id('ev-dcompany');if(evComp)evComp.value=v.driver.company||'';
   const svcInput=id('ev-svc');if(svcInput)svcInput.value=v.lastService||'';
-  const svcType=id('ev-svc-type');if(svcType)svcType.value=v.serviceKm||'';
+  const svcType=id('ev-svc-type');if(svcType)svcType.value=v.serviceKm?String(v.serviceKm):(v.isNew?'new':'');
   const ckmInput=id('ev-ckm');if(ckmInput)ckmInput.value=v.currentKm||'';
   openModal('edit-ov');
 }
@@ -14636,7 +14637,15 @@ function saveEditVehicle(){
   v.driver.address=id('ev-daddress').value.trim();
   v.driver.company=id('ev-dcompany')?.value||v.driver.company||'';
   const lastSvc=id('ev-svc');
-  var _newSvcKm=parseInt(id('ev-svc-type')?.value)||0;
+  var _svcSel=String(id('ev-svc-type')?.value||'');
+  var _newSvcKm=(_svcSel==='new')?0:(parseInt(_svcSel)||0);
+  if(_svcSel==='new'){
+    // רכב חדש שטרם טופל — הטיפול הראשון: 15,000 ק"מ או שנה מהמסירה, המוקדם מביניהם
+    v.isNew=true; v.serviceKm=0; v.lastService='';
+    v.nextServiceType='טיפול ראשון';
+    if(v.historyLog)v.historyLog=v.historyLog.filter(function(h){return h.kind!=='service';});
+    if(v.delivery){var _nd=new Date(v.delivery);_nd.setFullYear(_nd.getFullYear()+1);v.nextSvcDate=localDateStr(_nd);}else{v.nextSvcDate='';}
+  }else{
   if(lastSvc&&lastSvc.value){
     var oldLastSvc=v.lastService||'';
     var oldSvcKm=v.serviceKm||0;
@@ -14651,7 +14660,8 @@ function saveEditVehicle(){
     }
   }
   const svcType=_newSvcKm;
-  if(svcType){v.serviceKm=svcType;const next=svcType+15000;v.nextServiceType=`${next.toLocaleString('he-IL')} ק"מ`;}
+  if(svcType){v.isNew=false;v.serviceKm=svcType;const next=svcType+15000;v.nextServiceType=`${next.toLocaleString('he-IL')} ק"מ`;}
+  }
   const ckmVal=id('ev-ckm');if(ckmVal)v.currentKm=getRawKm('ev-ckm');
   // Log edit to historyLog
   if(!v.historyLog)v.historyLog=[];
