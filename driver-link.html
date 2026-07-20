@@ -447,6 +447,43 @@
         if (busyJson && busyJson.dates) busyJson.dates.forEach(function(d){ BLOCKED_DAYS.add(d); });
 
         TREATMENT = { id: tDoc.id, ...tDoc.data() };
+
+        // ── הגנה: קישור ישן לבקשה סגורה ──
+        // אם הבקשה נסגרה אבל קיימת בקשה פעילה חדשה לאותו רכב — ממשיכים איתה במקום
+        // "להחיות" רשומה סגורה (מונע כפילויות כמו שקרה בעבר).
+        if (TREATMENT.status === 'closed') {
+          let alt = null;
+          try {
+            const repl = await db.collection('treatments')
+              .where('vehicleId', '==', String(TREATMENT.vehicleId || ''))
+              .get();
+            const wantKind = TREATMENT.kind || 'treatment';
+            repl.docs.forEach(function(d) {
+              const x = d.data();
+              if ((x.kind || 'treatment') !== wantKind) return;
+              if (x.status === 'awaiting_choice') alt = { id: d.id, ...x };
+              else if (!alt && (x.status === 'scheduled' || x.status === 'pending_approval' || x.status === 'date_selected')) alt = { id: d.id, ...x };
+            });
+          } catch (e) { console.warn('replacement lookup failed', e); }
+          if (alt) {
+            TREATMENT = alt;
+          } else {
+            showInfo('הבקשה הזו כבר טופלה ואינה פעילה.', 'אם עדיין נדרש לקבוע מועד — צרו קשר עם יניב ממרכז הרכב ותקבלו קישור חדש.');
+            return;
+          }
+        }
+
+        // ── מועד כבר נקבע ואושר — מציגים את הפרטים במקום טופס בחירה ──
+        if (TREATMENT.status === 'scheduled' && TREATMENT.selectedDate) {
+          const _sd = new Date(TREATMENT.selectedDate);
+          const _days = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+          showInfo('כבר נקבע לך מועד ✓',
+            'יום ' + _days[_sd.getDay()] + ' · ' + formatHeb(_sd) +
+            '<br>רכב: ' + String(TREATMENT.licensePlate || '').replace(/[<>&"']/g, '') +
+            '<br><br>לשינוי המועד — צרו קשר עם יניב ממרכז הרכב.');
+          return;
+        }
+
         SETTINGS = sDoc.exists ? sDoc.data() : {
           scanRangeDays: 30,
           maxTreatmentsPerDay: 2,
@@ -467,6 +504,13 @@
           showError('שגיאה בטעינה.', true);
         }
       }
+    }
+
+    // הודעת מידע ניטרלית (לא שגיאה) — למשל "כבר נקבע מועד"
+    function showInfo(title, body) {
+      document.getElementById('loading').innerHTML =
+        '<div style="font-size:16px;color:#1A4A3A;font-weight:600;margin-bottom:10px;">' + title + '</div>' +
+        '<div style="font-size:14px;color:#444;line-height:1.7;">' + body + '</div>';
     }
 
     function showError(msg, withRetry) {
@@ -657,6 +701,15 @@
 
         // וידוא חיבור בתוקף (בנייד האסימון עלול לפוג כשהדף היה ברקע)
         try { if (!auth.currentUser) await auth.signInAnonymously(); } catch(e) {}
+        // בטיחות: אם הבקשה נסגרה בינתיים — לא דורסים רשומה סגורה
+        try {
+          const fresh = await db.collection('treatments').doc(TREATMENT.id).get();
+          if (fresh.exists && fresh.data().status === 'closed') {
+            alert('הבקשה הזו כבר טופלה. לקביעת מועד — צרו קשר עם יניב ממרכז הרכב.');
+            btn.textContent = 'הבקשה כבר טופלה';
+            return;
+          }
+        } catch(e) {}
         try {
           await db.collection('treatments').doc(TREATMENT.id).update(payload);
         } catch (firstErr) {
