@@ -4861,7 +4861,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div>
           <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">מספר אירוע <span style="color:#E24B4A">*</span></label>
-          <input id="acc-num" placeholder="ACC-2025-001" dir="ltr" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-family:monospace;font-size:14px;background:#fff;color:#1A1A1A">
+          <input id="acc-num" dir="ltr" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-family:monospace;font-size:14px;background:#fff;color:#1A1A1A">
         </div>
         <div>
           <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">רכב <span style="color:#E24B4A">*</span></label>
@@ -9217,6 +9217,16 @@ function avatarColor(name){var colors=['#16a34a','#3b82f6','#f59e0b','#ec4899','
 function driverCell(v){return`<div class="dc"><div class="av" style="background:${avatarColor(v.driver.name)}">${inits(v.driver.name)}</div><div><div style="font-weight:600;font-size:13px;color:var(--t1)">${esc(v.driver.name)}</div></div>${altBadge(v.id)}</div>`;}
 /* ── ACCIDENT HELPERS (must be in same script block as renderDash) ── */
 function formatAccDate(iso){if(!iso)return'';var m=iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:iso;}
+// איתור רכב של אירוע תאונה — כולל רכבים שהועברו לארכיון (מזהה שמתחיל ב-arc_)
+function findAccVehicle(vid){
+  if(vid==null||vid==='')return null;
+  var s=String(vid);
+  if(s.indexOf('arc_')===0){
+    var r=(typeof archivedVehicles!=='undefined'?archivedVehicles:[]).find(function(x){return String(x.id)===s;});
+    return r?{id:r.id,plate:r.plate||'',driver:{name:(r.driver&&r.driver.name)||''},_archived:true}:null;
+  }
+  return (vehicles||[]).find(function(x){return String(x.id)===s;})||null;
+}
 function getAccidentStatusLabel(acc){
   // סטטוס האירוע: פתוח = "בטיפול", סגור = "תיק נסגר" (ירוק). מפתחות ישנים ממופים אוטומטית
   var closedSet=['closed','closed_no_repair','credit_received','done'];
@@ -10239,10 +10249,10 @@ function showOpenAccidentsModal(){
     ? '<div style="text-align:center;padding:24px;color:var(--t3)">אין תאונות פתוחות ✓</div>'
     : open.map(function(a){
         // חפש רכב לפי vehicleId
-        var v=(vehicles||[]).find(function(x){ return String(x.id)===String(a.vehicleId); });
+        var v=(typeof findAccVehicle==='function')?findAccVehicle(a.vehicleId):(vehicles||[]).find(function(x){ return String(x.id)===String(a.vehicleId); });
         var dn=(v ? (v.driverName||(v.driver&&v.driver.name)||'') : '') || a.driverName || '';
-        var plate=(v ? v.plate : '') || a.plate || '';
-        var vid=v?String(v.id):'';
+        var plate=((v ? v.plate : '') || a.plate || '')+((v&&v._archived)?' 📦':'');
+        var vid=(v&&!v._archived)?String(v.id):'';
         var statusHtml=getAccidentStatusLabel(a);
         var dateStr=a.date?new Date(a.date).toLocaleDateString('he-IL'):'';
         var descShort=a.desc?_esc(a.desc.substring(0,45)):'';
@@ -10410,7 +10420,7 @@ function globalSearch(query){
 
   // Accidents
   const accMatches = (typeof accidentsList!=='undefined'?accidentsList:[]).filter(function(a){
-    const veh = vehicles.find(function(x){return x.id===a.vehicleId;});
+    const veh = (typeof findAccVehicle==='function')?findAccVehicle(a.vehicleId):vehicles.find(function(x){return x.id===a.vehicleId;});
     return (a.num||'').toLowerCase().includes(q) ||
            (a.location||'').toLowerCase().includes(q) ||
            plateSearchMatch(veh?.plate,q) ||
@@ -10609,7 +10619,7 @@ function globalSearch(query){
   if(accMatches.length){
     html += '<div style="padding:10px 12px 6px;font-size:11px;font-weight:700;color:var(--gd);border-bottom:1px solid var(--bdr);background:var(--bg)">💥 תאונות ('+accMatches.length+')</div>';
     accMatches.slice(0,6).forEach(function(a){
-      const veh = vehicles.find(function(x){return x.id===a.vehicleId;});
+      const veh = (typeof findAccVehicle==='function')?findAccVehicle(a.vehicleId):vehicles.find(function(x){return x.id===a.vehicleId;});
       html += '<div onclick="go(\'accidents\',q(\'[dp=accidents]\'));closeGlobalSearch()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px">'+
         '<div style="font-size:18px">💥</div>'+
         '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--t1)">'+(a.num||'תאונה')+'</div><div style="font-size:11px;color:var(--t3)">'+(veh?veh.plate:'')+' · '+(a.location||'')+'</div></div>'+
@@ -15642,19 +15652,37 @@ function filterVehiclePicker(prefix){
       plateSearchMatch(v.plate,q) ||
       ((v.driver&&v.driver.name)||'').toLowerCase().includes(q);
   });
+  // באירועי תאונה אפשר לבחור גם רכבים מהארכיון (רכבים ישנים שהוחלפו)
+  var archList=[];
+  if(prefix==='acc'){
+    archList=(typeof archivedVehicles!=='undefined'?archivedVehicles:[]).filter(function(r){
+      return !q ||
+        plateSearchMatch(r.plate,q) ||
+        ((r.driver&&r.driver.name)||'').toLowerCase().includes(q);
+    });
+  }
   drop.style.display = 'block';
-  if(!list.length){
+  if(!list.length&&!archList.length){
     drop.innerHTML = '<div style="padding:12px 14px;font-size:13px;color:#888;text-align:center">לא נמצאו רכבים</div>';
     return;
   }
-  drop.innerHTML = list.map(function(v){
-    var name = (v.driver&&v.driver.name)||'—';
-    var safeName = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-    return '<div onmousedown="pickVehicle(\''+prefix+'\',\''+v.id+'\',\''+_esc(v.plate||'')+'\',\''+safeName+'\')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background=\'#f8fffe\'" onmouseout="this.style.background=\'\'">'+
-      '<span style="font-size:13px;font-weight:600;color:#1A1A1A">'+_esc(v.plate||'')+'</span>'+
-      '<span style="font-size:12px;color:#666">'+_esc(name)+'</span>'+
+  var _row=function(vid,plate,name,isArch){
+    var safeName = String(name||'—').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return '<div onmousedown="pickVehicle(\''+prefix+'\',\''+vid+'\',\''+_esc(plate||'')+'\',\''+safeName+'\')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background=\'#f8fffe\'" onmouseout="this.style.background=\'\'">'+
+      '<span style="font-size:13px;font-weight:600;color:#1A1A1A">'+_esc(plate||'')+(isArch?' <span style="font-size:10px;font-weight:600;color:#854d0e;background:#fef3c7;padding:1px 6px;border-radius:999px">📦 ארכיון</span>':'')+'</span>'+
+      '<span style="font-size:12px;color:#666">'+_esc(name||'—')+'</span>'+
     '</div>';
+  };
+  var html = list.map(function(v){
+    return _row(v.id,v.plate,(v.driver&&v.driver.name)||'—',false);
   }).join('');
+  if(archList.length){
+    html+='<div style="padding:6px 14px;font-size:11px;font-weight:700;color:#854d0e;background:#fffbeb;border-bottom:1px solid #f0f0f0">📦 רכבים מהארכיון</div>';
+    html+=archList.map(function(r){
+      return _row(r.id,r.plate,(r.driver&&r.driver.name)||'—',true);
+    }).join('');
+  }
+  drop.innerHTML = html;
 }
 function pickVehicle(prefix, vid, plate, name){
   var hiddenEl = document.getElementById(prefix+'-vehicle');
@@ -15673,7 +15701,12 @@ function pickVehicle(prefix, vid, plate, name){
 function selectVehiclePicker(prefix, vid){
   if(!vid){ initVehiclePicker(prefix); return; }
   var v = (vehicles||[]).find(function(x){ return String(x.id)===String(vid); });
-  if(v) pickVehicle(prefix, v.id, v.plate, (v.driver&&v.driver.name)||'—');
+  if(v){ pickVehicle(prefix, v.id, v.plate, (v.driver&&v.driver.name)||'—'); return; }
+  // רכב מהארכיון (נבחר באירוע תאונה)
+  if(String(vid).indexOf('arc_')===0&&typeof archivedVehicles!=='undefined'){
+    var r=archivedVehicles.find(function(x){ return String(x.id)===String(vid); });
+    if(r) pickVehicle(prefix, r.id, (r.plate||'')+' (ארכיון)', (r.driver&&r.driver.name)||'—');
+  }
 }
 function openViolationModal(editId){
   id('viol-edit-id').value=editId||'';
@@ -16692,10 +16725,11 @@ function renderAccidents(){
   html+='<div style="text-align:center">שם הנהג</div><div style="text-align:center">רכב</div><div style="text-align:center">תאריך תאונה</div><div style="text-align:center">מס׳ אירוע</div><div style="text-align:center">אשם</div><div style="text-align:center">מוסך</div><div style="text-align:center">סטטוס</div><div style="text-align:center">פעולות</div></div>';
   // Rows
   list.forEach(function(a){
-    var veh=vehicles.find(function(x){return x.id===a.vehicleId;});
+    var veh=findAccVehicle(a.vehicleId);
     var driverName=veh?veh.driver.name:'—';
     var plate=veh?veh.plate:'';
     var plateHtml=plate?renderPlate(plate):'<span style="color:#888">—</span>';
+    if(veh&&veh._archived)plateHtml+='<div style="font-size:10px;font-weight:600;color:#854d0e;margin-top:2px">📦 ארכיון</div>';
     var faultBadge='';
     if(a.fault==='self') faultBadge='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#5F5E5A;background:#F1EFE8">עצמי</span>';
     else if(a.fault==='third') faultBadge='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#185FA5;background:#E6F1FB">צד ג׳</span>';
@@ -16725,7 +16759,7 @@ function renderAccidents(){
 function openAccLogsModal(aid){
   const a=accidentsList.find(function(x){return x.id===aid;});
   if(!a)return;
-  const veh=vehicles.find(function(x){return x.id===a.vehicleId;});
+  const veh=(typeof findAccVehicle==='function')?findAccVehicle(a.vehicleId):vehicles.find(function(x){return x.id===a.vehicleId;});
   const ex=document.getElementById('acc-logs-modal');if(ex)ex.remove();
   const modal=document.createElement('div');
   modal.id='acc-logs-modal';
@@ -16991,8 +17025,7 @@ function openAccidentModal(editId){
     accResetFileUI((a.fileData||a._hasFile)?(a.fileName||a._fileName||'קובץ מצורף'):'');
   }else{
     id('acc-modal-title').textContent='פתיחת אירוע תאונה';
-    const nextN='ACC-'+new Date().getFullYear()+'-'+(accidentsList.length+1).toString().padStart(3,'0');
-    id('acc-num').value=nextN;
+    id('acc-num').value=''; // שדה נקי — המנהל מזין את מספר האירוע בעצמו
     id('acc-date').value=localDateStr();
     id('acc-report-date').value=localDateStr();
     id('acc-vehicle').value='';
@@ -17030,7 +17063,7 @@ function saveAccident(){
 
   const data={
     num:id('acc-num').value.trim(),
-    vehicleId:parseInt(id('acc-vehicle').value)||null,
+    vehicleId:(function(){var _v=id('acc-vehicle').value;return String(_v).indexOf('arc_')===0?_v:(parseInt(_v)||null);})(),
     date:id('acc-date').value,
     reportDate:id('acc-report-date').value,
     fault:id('acc-fault').value,
@@ -21714,7 +21747,7 @@ function exportToExcel(type){
   // Accidents
   if(type==='accidents'||type==='all'){
     const rows=(accidentsList||[]).map(function(a){
-      const veh=vehicles.find(function(x){return x.id===a.vehicleId;});
+      const veh=(typeof findAccVehicle==='function')?findAccVehicle(a.vehicleId):vehicles.find(function(x){return x.id===a.vehicleId;});
       return{
         'מספר אירוע':a.num||'',
         'מספר רכב':veh?veh.plate:'',
