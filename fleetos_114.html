@@ -9201,7 +9201,15 @@ function avatarColor(name){var colors=['#16a34a','#3b82f6','#f59e0b','#ec4899','
 function driverCell(v){return`<div class="dc"><div class="av" style="background:${avatarColor(v.driver.name)}">${inits(v.driver.name)}</div><div><div style="font-weight:600;font-size:13px;color:var(--t1)">${esc(v.driver.name)}</div></div>${altBadge(v.id)}</div>`;}
 /* ── ACCIDENT HELPERS (must be in same script block as renderDash) ── */
 function formatAccDate(iso){if(!iso)return'';var m=iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?m[3]+'/'+m[2]+'/'+m[1]:iso;}
-function getAccidentStatusLabel(acc){var sl={'waiting_garage':{text:'ממתין למוסך',color:'#BA7517',bg:'#FAEEDA'},'in_garage':{text:'במוסך',color:'#185FA5',bg:'#E6F1FB'},'fixed':{text:'תוקן',color:'#1D9E75',bg:'#E1F5EE'},'waiting_credit':{text:'ממתין לזיכוי',color:'#BA7517',bg:'#FAEEDA'},'credit_received':{text:'זוכה ✓',color:'#1D9E75',bg:'#E1F5EE'},'closed':{text:'תיק נסגר ✓',color:'#5F5E5A',bg:'#F1EFE8'},'closed_no_repair':{text:'נסגר ללא תיקון ✓',color:'#5F5E5A',bg:'#F1EFE8'}};var s=sl[acc.status]||{text:acc.status||'-',color:'#5F5E5A',bg:'#F1EFE8'};return'<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:'+s.color+';background:'+s.bg+'">'+s.text+'</span>';}
+function getAccidentStatusLabel(acc){var sl={'waiting_garage':{text:'ממתין למוסך',color:'#BA7517',bg:'#FAEEDA'},'in_garage':{text:'במוסך',color:'#185FA5',bg:'#E6F1FB'},'fixed':{text:'בטיפול',color:'#BA7517',bg:'#FAEEDA'},'waiting_credit':{text:'בטיפול',color:'#BA7517',bg:'#FAEEDA'},'in_treatment':{text:'בטיפול',color:'#BA7517',bg:'#FAEEDA'},'credit_received':{text:'זוכה - תיק נסגר ✓',color:'#1D9E75',bg:'#E1F5EE'},'closed':{text:'תיק נסגר ✓',color:'#1D9E75',bg:'#E1F5EE'},'closed_no_repair':{text:'נסגר ללא תיקון ✓',color:'#1D9E75',bg:'#E1F5EE'}};var s=sl[acc.status]||{text:acc.status||'-',color:'#5F5E5A',bg:'#F1EFE8'};return'<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:'+s.color+';background:'+s.bg+'">'+s.text+'</span>';}
+// תגים נוספים המוצגים ליד הסטטוס — ממתין לזיכוי (רק כשמסומן ופתוח) ומצב הרכב (תוקן/טרם תוקן)
+function _accExtraTags(a){
+  var tag=function(t,c,b){return'<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:'+c+';background:'+b+'">'+t+'</span>';};
+  var h='';
+  if(a.waitingCredit&&isAccidentOpen(a))h+=tag('⏳ ממתין לזיכוי','#BA7517','#FAEEDA');
+  h+=a.repaired?tag('🔧 תוקן','#1D9E75','#E1F5EE'):tag('❌ טרם תוקן','#A32D2D','#FCEBEB');
+  return h;
+}
 function isAccidentOpen(acc){if(!acc)return false;var cs=['closed','closed_no_repair','credit_received','done'];return cs.indexOf(acc.status)===-1;}
 function showAccidentTimeline(accId){var acc=accidentsList.find(function(a){return a.id===accId;});if(!acc)return;var events=[];if(acc.date)events.push({label:'נפתח האירוע',date:acc.date,icon:'📋',color:'#5F5E5A'});if(acc.garageEntryDate)events.push({label:'נכנס למוסך',date:acc.garageEntryDate,icon:'🔧',color:'#185FA5'});if(acc.garageExitDate)events.push({label:'יצא ממוסך (תוקן)',date:acc.garageExitDate,icon:'✅',color:'#1D9E75'});if(acc.closedDate){var isCredit=acc.fault==='third'&&acc.status==='credit_received';events.push({label:isCredit?'התקבל זיכוי - תיק נסגר':'תיק נסגר',date:acc.closedDate,icon:'🏁',color:'#1D9E75'});}var currentStatus=getAccidentStatusLabel(acc);var html='<div style="margin-bottom:16px;padding:12px;background:#F7F7F4;border-radius:8px"><div style="font-size:11px;color:#5F5E5A;margin-bottom:4px">סטטוס נוכחי</div><div>'+currentStatus+'</div></div>';if(events.length===0){html+='<div style="text-align:center;color:#888;padding:20px">אין מידע זמין</div>';}else{html+='<div style="position:relative;padding-right:20px">';html+='<div style="position:absolute;right:8px;top:8px;bottom:8px;width:2px;background:#E5E7EB"></div>';events.forEach(function(e,i){html+='<div style="position:relative;padding-bottom:'+(i===events.length-1?'0':'20px')+'"><div style="position:absolute;right:-16px;top:0;width:16px;height:16px;border-radius:50%;background:'+e.color+';display:flex;align-items:center;justify-content:center;color:white;font-size:9px">'+(i+1)+'</div><div style="padding-right:8px"><div style="font-size:12px;color:#5F5E5A;margin-bottom:2px">'+e.icon+' '+e.label+'</div><div style="font-size:14px;font-weight:600;color:#1A1A1A">'+formatAccDate(e.date)+'</div></div></div>';});html+='</div>';}if(acc.num)html+='<div style="margin-top:16px;padding-top:14px;border-top:1px solid #E5E7EB;font-size:12px;color:#888">מספר אירוע: <span style="font-family:monospace;color:#1A1A1A">'+acc.num+'</span></div>';document.getElementById('acc-timeline-content').innerHTML=html;openModal('acc-timeline-ov');}
 
@@ -16600,17 +16608,21 @@ let accidentsList=[];
 let accIdSeq=10;
 var _lastAccidentIds = new Set();
 
-// מיגרציית סטטוסים ישנים לחדשים
-(function migrateOldAccidentStatuses(){
-  var migrated=0;
-  accidentsList.forEach(function(acc){
-    if(!acc.status)return;
-    var map={'inprogress':'waiting_garage','opened':'waiting_garage'};
-    if(acc.status==='done') map.done = acc.fault==='third'?'credit_received':'closed';
-    if(map[acc.status]){ acc.status=map[acc.status]; migrated++; }
-  });
-  if(migrated>0) console.log('[Migration] עודכנו '+migrated+' סטטוסים של תאונות');
-})();
+// מיגרציית סטטוסים ישנים לחדשים — רץ על כל רשומה בטעינה מהענן
+function migrateAccidentRecord(acc){
+  if(!acc||!acc.status)return;
+  if(acc.status==='inprogress'||acc.status==='opened')acc.status='waiting_garage';
+  if(acc.status==='done')acc.status=(acc.fault==='third')?'credit_received':'closed';
+  // "תוקן (יצא ממוסך)" הוסר מרשימת הסטטוסים — הופך ל"בטיפול" + מצב רכב תוקן
+  if(acc.status==='fixed'){
+    acc.status=(acc.fault==='third')?'waiting_credit':'in_treatment';
+    if(acc.repaired===undefined)acc.repaired=true;
+  }
+  // רשומות ישנות שהיו בסטטוס "ממתין לזיכוי" — מקבלות את התג אוטומטית
+  if(acc.status==='waiting_credit'&&acc.waitingCredit===undefined)acc.waitingCredit=true;
+  // אם יש תאריך יציאה ממוסך — הרכב תוקן
+  if(acc.repaired===undefined&&acc.garageExitDate)acc.repaired=true;
+}
 
 // Persist accidents list to Firestore
 function persistAccidentsList(){
@@ -16655,7 +16667,7 @@ function renderAccidents(){
     if(a.fault==='self') faultBadge='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#5F5E5A;background:#F1EFE8">עצמי</span>';
     else if(a.fault==='third') faultBadge='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;color:#185FA5;background:#E6F1FB">צד ג׳</span>';
     else faultBadge='—';
-    var statusHtml='<span onclick="showAccStatusMenu('+a.id+',event)" style="cursor:pointer" title="לחץ לשינוי סטטוס">'+getAccidentStatusLabel(a)+'</span>';
+    var statusHtml='<div onclick="showAccStatusMenu('+a.id+',event)" style="cursor:pointer;display:inline-flex;flex-direction:column;align-items:center;gap:3px" title="לחץ לשינוי סטטוס">'+getAccidentStatusLabel(a)+'<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">'+_accExtraTags(a)+'</div></div>';
     html+='<div class="viol-row viol-data-row acc-row" data-aid="'+a.id+'">';
     html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(driverName)+'">'+inits(driverName)+'</div><span style="font-weight:500;font-size:14px">'+driverName+'</span></div>';
     html+='<div class="viol-cell" data-label="רכב" style="text-align:center">'+plateHtml+'</div>';
@@ -16757,13 +16769,12 @@ function _accStatusOptions(fault){
   return (fault==='third') ? [
     { value: 'waiting_garage', label: 'ממתין לכניסה למוסך' },
     { value: 'in_garage', label: 'נכנס למוסך' },
-    { value: 'fixed', label: 'תוקן (יצא ממוסך)' },
-    { value: 'waiting_credit', label: 'ממתין לזיכוי' },
+    { value: 'waiting_credit', label: 'בטיפול (האירוע פתוח)' },
     { value: 'credit_received', label: 'זוכה - תיק נסגר' }
   ] : [
     { value: 'waiting_garage', label: 'ממתין לכניסה למוסך' },
     { value: 'in_garage', label: 'נכנס למוסך' },
-    { value: 'fixed', label: 'הרכב תוקן (יצא ממוסך)' },
+    { value: 'in_treatment', label: 'בטיפול (האירוע פתוח)' },
     { value: 'closed', label: 'תיק נסגר' },
     { value: 'closed_no_repair', label: 'תיק נסגר ללא כניסה למוסך' }
   ];
@@ -16775,12 +16786,42 @@ function changeAccStatus(aid,newStatus){
   // תאריכים אוטומטיים לפי שינוי סטטוס (כמו בשמירה מהמודל)
   var today=new Date().toISOString().slice(0,10);
   if(newStatus==='in_garage'&&a.status!=='in_garage'&&!a.garageEntryDate)a.garageEntryDate=today;
-  if(newStatus==='fixed'&&a.status!=='fixed'&&!a.garageExitDate)a.garageExitDate=today;
   var closedStatuses=['closed','closed_no_repair','credit_received'];
   if(closedStatuses.indexOf(newStatus)>=0&&closedStatuses.indexOf(a.status)<0&&!a.closedDate)a.closedDate=today;
   a.status=newStatus;
+  if(newStatus==='credit_received')a.waitingCredit=false; // הזיכוי התקבל — התג יורד אוטומטית
+  if(a.waitingCredit===undefined)a.waitingCredit=false;
+  if(a.repaired===undefined)a.repaired=false;
   if(typeof syncPersistItem==='function') syncPersistItem('accidents', a);
   showToast('סטטוס עודכן');
+  renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);
+}
+
+// הדלקה/כיבוי של תג "⏳ ממתין לזיכוי" — לא תלוי בסטטוס
+function toggleAccWaitingCredit(aid){
+  const a=accidentsList.find(function(x){return x.id===aid;});
+  if(!a)return;
+  a.waitingCredit=!a.waitingCredit;
+  if(a.repaired===undefined)a.repaired=false;
+  if(typeof syncPersistItem==='function') syncPersistItem('accidents', a);
+  showToast(a.waitingCredit?'סומן: ממתין לזיכוי':'הסימון "ממתין לזיכוי" הוסר');
+  renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);
+}
+
+// הדלקה/כיבוי של מצב הרכב (תוקן / טרם תוקן) — לא תלוי בסטטוס
+function toggleAccRepaired(aid){
+  const a=accidentsList.find(function(x){return x.id===aid;});
+  if(!a)return;
+  a.repaired=!a.repaired;
+  if(a.repaired){
+    if(!a.garageExitDate){a.garageExitDate=new Date().toISOString().slice(0,10);a._autoExitDate=true;} // התאריך נקבע אוטומטית מהטוגל
+  }else if(a._autoExitDate){
+    // בוטל הסימון "תוקן" — מוחקים רק תאריך יציאה שנקבע אוטומטית, לא תאריך שהוזן ידנית
+    a.garageExitDate=null; delete a._autoExitDate;
+  }
+  if(a.waitingCredit===undefined)a.waitingCredit=false;
+  if(typeof syncPersistItem==='function') syncPersistItem('accidents', a);
+  showToast('מצב רכב עודכן: '+(a.repaired?'🔧 תוקן':'❌ טרם תוקן'));
   renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);
 }
 
@@ -16807,6 +16848,10 @@ function showAccStatusMenu(aid,ev){
       var cur=a.status===o.value;
       return '<div onclick="closeAccStatusMenu();changeAccStatus('+aid+',\''+o.value+'\')" style="'+itemStyle+(cur?';background:var(--bg);font-weight:700':'')+'" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\''+(cur?'var(--bg)':'')+'\'">'+(cur?'✓ ':'')+o.label+'</div>';
     }).join('')+
+    '<div style="border-top:1px solid var(--bdr);margin:5px 0"></div>'+
+    '<div style="padding:6px 12px 4px;font-size:11px;font-weight:700;color:var(--t3)">סימונים</div>'+
+    (a.fault==='third'?'<div onclick="closeAccStatusMenu();toggleAccWaitingCredit('+aid+')" style="'+itemStyle+(a.waitingCredit?';font-weight:700':'')+'" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">'+(a.waitingCredit?'✓ ':'')+'⏳ ממתין לזיכוי</div>':'')+
+    '<div onclick="closeAccStatusMenu();toggleAccRepaired('+aid+')" style="'+itemStyle+'" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">מצב רכב: '+(a.repaired?'🔧 תוקן':'❌ טרם תוקן')+' <span style="font-size:11px;color:var(--t3)">(לחץ לשינוי)</span></div>'+
     '<div style="border-top:1px solid var(--bdr);margin:5px 0"></div>'+
     '<div onclick="closeAccStatusMenu();showAccidentTimeline('+aid+')" style="'+itemStyle+';color:var(--t2)" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">🕒 ציר זמן של האירוע</div>';
   document.body.appendChild(menu);
@@ -16879,6 +16924,7 @@ function openAccidentModal(editId){
     id('acc-report-date').value=a.reportDate||'';
     selectVehiclePicker('acc', a.vehicleId||'');
     id('acc-fault').value=a.fault||'self';
+    if(typeof migrateAccidentRecord==='function')migrateAccidentRecord(a); // ביטחון: סטטוס ישן שכבר לא ברשימה
     updateAccStatusOptions();
     id('acc-status').value=a.status||'waiting_garage';
     id('acc-desc').value=a.desc||'';
@@ -16919,7 +16965,6 @@ function saveAccident(){
   var garageExitDate = oldAcc ? oldAcc.garageExitDate||null : null;
   var closedDate = oldAcc ? oldAcc.closedDate||null : null;
   if (newStatus === 'in_garage' && oldStatus !== 'in_garage' && !garageEntryDate) garageEntryDate = today;
-  if (newStatus === 'fixed' && oldStatus !== 'fixed' && !garageExitDate) garageExitDate = today;
   var closedStatuses = ['closed', 'closed_no_repair', 'credit_received'];
   if (closedStatuses.indexOf(newStatus) >= 0 && closedStatuses.indexOf(oldStatus) < 0 && !closedDate) closedDate = today;
 
@@ -16942,9 +16987,14 @@ function saveAccident(){
     var acc;
     if(editId){
       acc=accidentsList.find(function(a){return a.id===editId;});
-      if(acc) Object.assign(acc,data);
+      if(acc){
+        Object.assign(acc,data);
+        // קיבוע ערכים בוליאניים — כדי שהמיגרציה בטעינה הבאה לא תסמן "ממתין לזיכוי" אוטומטית
+        if(acc.waitingCredit===undefined)acc.waitingCredit=false;
+        if(acc.repaired===undefined)acc.repaired=false;
+      }
     }else{
-      acc=Object.assign({id:++accIdSeq,logs:[]},data);
+      acc=Object.assign({id:++accIdSeq,logs:[],waitingCredit:false,repaired:false},data);
       accidentsList.unshift(acc);
     }
     if(acc){
@@ -17146,7 +17196,7 @@ function renderVcAccidents(vid){
         '<td style="font-size:13px"><span style="font-size:13px;color:'+fc+';background:'+fc+'1a;padding:2px 8px;border-radius:999px;font-weight:500">'+(ACC_FAULT_LABELS[a.fault]||'—')+'</span></td>'+
         '<td style="font-size:13px">'+(a.date?fd(a.date):'—')+'</td>'+
         '<td style="font-size:13px">'+(a.reportDate?fd(a.reportDate):'—')+'</td>'+
-        '<td><span onclick="showAccStatusMenu('+a.id+',event)" style="cursor:pointer" title="לחץ לשינוי סטטוס">'+getAccidentStatusLabel(a)+'</span></td>'+
+        '<td><div onclick="showAccStatusMenu('+a.id+',event)" style="cursor:pointer;display:inline-flex;flex-direction:column;align-items:center;gap:3px" title="לחץ לשינוי סטטוס">'+getAccidentStatusLabel(a)+'<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">'+_accExtraTags(a)+'</div></div></td>'+
         '<td><button onclick="openAccLogsModal('+a.id+')" style="background:var(--bg2);border:1px solid var(--bdr2);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:13px;color:var(--gd);font-family:inherit;font-weight:500">📋 '+logsCount+'</button></td>'+
         '<td><div style="display:flex;gap:4px">'+
           ((a.fileData||a._hasFile)?'<button onclick="viewAccidentDoc('+a.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:13px;font-family:inherit">📄 צפה</button>':'')+
@@ -17340,7 +17390,7 @@ function startAuthedApp(){
       // Accidents
       registerSyncCollection('accidents',
         function(){ return accidentsList; },
-        function(arr){ accidentsList.length=0; (arr||[]).forEach(function(a){ accidentsList.push(a); }); _lastAccidentIds = new Set(accidentsList.map(a=>String(a.id))); accidentsList.forEach(function(a){ if(Number(a.id)>accIdSeq) accIdSeq=Number(a.id); }); },
+        function(arr){ accidentsList.length=0; (arr||[]).forEach(function(a){ if(typeof migrateAccidentRecord==='function')try{migrateAccidentRecord(a);}catch(e){} accidentsList.push(a); }); _lastAccidentIds = new Set(accidentsList.map(a=>String(a.id))); accidentsList.forEach(function(a){ if(Number(a.id)>accIdSeq) accIdSeq=Number(a.id); }); },
         function(){
           if(typeof renderAccidents==='function'){try{renderAccidents();}catch(e){}}
           if(_currentVid && typeof renderVcAccidents==='function'){try{renderVcAccidents(_currentVid);}catch(e){}}
@@ -21564,7 +21614,9 @@ function exportToExcel(type){
         'אשם':({self:'עצמי',third:'צד ג׳'}[a.fault]||a.fault||''),
         'תאריך האירוע':a.date||'',
         'תאריך דיווח':a.reportDate||'',
-        'סטטוס':(ACC_STATUS[a.status]||a.status||''),
+        'סטטוס':({waiting_garage:'ממתין למוסך',in_garage:'במוסך',fixed:'בטיפול',waiting_credit:'בטיפול',in_treatment:'בטיפול',credit_received:'זוכה - תיק נסגר',closed:'תיק נסגר',closed_no_repair:'נסגר ללא תיקון'}[a.status]||ACC_STATUS[a.status]||a.status||''),
+        'ממתין לזיכוי':a.waitingCredit?'כן':'',
+        'מצב רכב':a.repaired?'תוקן':'טרם תוקן',
         'תיאור':a.desc||'',
         'מספר תיעודים':(a.logs||[]).length
       };
