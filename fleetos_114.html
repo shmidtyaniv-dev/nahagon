@@ -22883,10 +22883,18 @@ async function autoCloseNotDueTreatments(vehicle) {
       .where('vehicleId', '==', String(vehicle.id))
       .where('kind', '==', 'treatment')
       .get();
+    var _today = new Date(); _today.setHours(0, 0, 0, 0);
+    var _range = (TREATMENT_STATE.settings && TREATMENT_STATE.settings.scanRangeDays) || 20;
     snap.forEach(async function(doc) {
       var d = doc.data();
       // סוגרים רק בקשות שהנהג עוד לא הגיב עליהן - לא נוגעים בבקשות שנבחר/אושר בהן תאריך
       if (d.status !== 'awaiting_choice') return;
+      // בטיחות: אם תאריך היעד של הבקשה עצמה עדיין בטווח הסריקה — היא רלוונטית, לא סוגרים.
+      // מונע פינג-פונג בין מכשירים עם נתוני רכב לא מסונכרנים (יצירה→סגירה→יצירה...)
+      if (d.dueDate) {
+        var _du = daysBetween(_today, parseTreatmentDate(d.dueDate));
+        if (_du >= -30 && _du <= _range) return;
+      }
       await db.collection('treatments').doc(doc.id).update({
         status: 'closed',
         closedReason: 'auto_not_due',
@@ -23636,6 +23644,7 @@ async function quickApproveTreatment(treatmentId, btn) {
     }
     await addTreatmentToCalendar(t);
     await blockDayForApprovedTreatment(t);
+    await closeDuplicateOpenTreatments(t);
     showToast(phone ? ('✓ אושר — נפתח וואטסאפ עם הודעה מוכנה ל' + t.driverName) : ('✓ אושר. לנהג אין טלפון במערכת - יש לעדכן אותו ידנית'));
   } catch (err) {
     console.error('[Treatments] שגיאה באישור מהיר:', err);
@@ -23776,12 +23785,42 @@ async function confirmApproval() {
     await sendApprovalMessage(t, channel, customMessage, waWin);
     await addTreatmentToCalendar(t);
     await blockDayForApprovedTreatment(t);
+    await closeDuplicateOpenTreatments(t);
     closeTreatmentModal('modal-approve');
     showToast('האישור נשלח ל' + t.driverName + ' ב' + (channel === 'whatsapp' ? 'וואטסאפ' : 'מייל'));
   } catch (err) {
     console.error('[Treatments] שגיאה באישור:', err);
     if (waWin) { try { waWin.close(); } catch (e) {} }
     alert('שגיאה באישור. נסה שוב.');
+  }
+}
+
+// סגירת בקשות פתוחות כפולות של אותו רכב אחרי שאושר מועד (מונע "ממתין לבחירת תאריך" מיותם)
+async function closeDuplicateOpenTreatments(t) {
+  try {
+    if (!db || !t || !t.vehicleId) return;
+    var snap = await db.collection('treatments')
+      .where('vehicleId', '==', String(t.vehicleId))
+      .where('kind', '==', t.kind || 'treatment')
+      .get();
+    var now = new Date().toISOString();
+    var closed = 0;
+    var jobs = [];
+    snap.forEach(function(doc) {
+      if (doc.id === t.id) return;
+      var d = doc.data();
+      if (d.status !== 'awaiting_choice' && d.status !== 'date_selected' && d.status !== 'pending_approval') return;
+      jobs.push(db.collection('treatments').doc(doc.id).update({
+        status: 'closed', closedReason: 'duplicate_auto', closedAt: now
+      }));
+      var local = (TREATMENT_STATE.treatments || []).find(function(x) { return x.id === doc.id; });
+      if (local) local.status = 'closed';
+      closed++;
+    });
+    await Promise.all(jobs);
+    if (closed) console.log('[Treatments] נסגרו ' + closed + ' בקשות כפולות אחרי אישור מועד');
+  } catch (err) {
+    console.error('[Treatments] שגיאה בסגירת כפולות:', err);
   }
 }
 
