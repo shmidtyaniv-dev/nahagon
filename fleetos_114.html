@@ -9526,10 +9526,11 @@ function updateStatCard(valId,subId,emptyId,cardId,count){
   var emptyEl=document.getElementById(emptyId);
   if(emptyEl)emptyEl.style.display='none';
   if(valEl){valEl.style.display='';valEl.textContent=formatNumber(count);}
-  if(subEl)subEl.style.display='';
-  if(count===0){
-    if(subEl)subEl.textContent='אין';
-  } else {
+  if(subEl){
+    subEl.style.display='';
+    // שומרים את הטקסט המקורי פעם אחת, כדי שאפשר יהיה להחזיר אותו כשהמונה חוזר מ-0
+    if(subEl.dataset.defText===undefined)subEl.dataset.defText=subEl.textContent;
+    subEl.textContent=(count===0)?'אין':subEl.dataset.defText;
   }
 }
 function formatNumber(n){
