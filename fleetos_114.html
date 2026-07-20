@@ -13082,7 +13082,7 @@ function updateLastBackupLabel(){
 }
 
 // ── מד ניצול אחסון (קריאה בלבד — לא מוחק כלום) ──
-var STORAGE_COLL_NAMES={vehicles:'רכבים ונהגים',treatments:'טיפולים וטסטים',accidents:'תאונות',violations:'דוחות תנועה',tasks:'משימות',serviceBookings:'הזמנות ישנות',selfReminders:'תזכורות',fleetEvents:'אירועי יומן',hoForms2:'טפסי מסירה (כולל תמונות)',blockedDays:'ימים חסומים',settings:'הגדרות',formTemplates:'טפסים דיגיטליים',formSubmissions:'תגובות לטפסים',vehicleDocsStore:'רשימת מסמכי רכב',vehicleExtraFiles:'קבצים שהועלו לרכבים',vehicleMandatoryFiles:'ביטוח ורישיונות',violationFiles:'קבצי דוחות',publicDrivers:'נהגים (לינקים)',approvals:'אישורים',paymentReceipts:'אישורי תשלום',kmReports:'דיווחי ק"מ',pdfChunks:'קבצי PDF של טפסים',kmRequests:'בקשות עדכון ק"מ'};
+var STORAGE_COLL_NAMES={vehicles:'רכבים ונהגים',treatments:'טיפולים וטסטים',accidents:'תאונות',violations:'דוחות תנועה',tasks:'משימות',serviceBookings:'הזמנות ישנות',selfReminders:'תזכורות',fleetEvents:'אירועי יומן',hoForms2:'טפסי מסירה (כולל תמונות)',blockedDays:'ימים חסומים',settings:'הגדרות',formTemplates:'טפסים דיגיטליים',formSubmissions:'תגובות לטפסים',vehicleDocsStore:'רשימת מסמכי רכב',vehicleExtraFiles:'קבצים שהועלו לרכבים',vehicleMandatoryFiles:'ביטוח ורישיונות',violationFiles:'קבצי דוחות',publicDrivers:'נהגים (לינקים)',approvals:'אישורים',paymentReceipts:'אישורי תשלום',kmReports:'דיווחי ק"מ',pdfChunks:'קבצי PDF של טפסים',kmRequests:'בקשות עדכון ק"מ',accidentFiles:'קבצי תאונות',docUploads:'מסמכים שנהגים העלו',kmUpdates:'עדכוני ק"מ מנהגים',docRequests:'בקשות העלאת מסמכים',hoForms:'טפסי מסירה ישנים',customReminders:'תזכורות מותאמות',treatmentAppointments:'תורי טיפולים'};
 function fmtBytes(b){
   if(b>=1024*1024) return (b/(1024*1024)).toFixed(1)+' MB';
   if(b>=1024) return Math.round(b/1024)+' KB';
@@ -13132,7 +13132,9 @@ async function checkStorageUsage(){
       var perColl={};
       var cloudBytes=0;
       var colls=(typeof BACKUP_COLLECTIONS!=='undefined')?BACKUP_COLLECTIONS.slice():[];
-      if(colls.indexOf('kmRequests')<0) colls.push('kmRequests');
+      ['kmRequests','docUploads','kmUpdates','docRequests','hoForms','customReminders','treatmentAppointments'].forEach(function(c){
+        if(colls.indexOf(c)<0) colls.push(c);
+      });
       for(var ci=0;ci<colls.length;ci++){
         var cname=colls[ci];
         try{
