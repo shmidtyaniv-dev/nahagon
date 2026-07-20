@@ -16924,7 +16924,7 @@ function deleteAccident(aid){
   accidentsList=accidentsList.filter(function(a){return a.id!==aid;});
   delete _accFileCache[aid];
   deleteFileFromStorage('accidents/'+aid+'/file');
-  if(db) db.collection('accidentFiles').doc(String(aid)).delete().catch(function(e){console.error('accidentFiles delete error:',e);});
+  if(typeof _deleteAccidentFileDocs==='function')_deleteAccidentFileDocs(aid);
   if(typeof persistAccidentsList==='function') persistAccidentsList();
   renderAccidents();if(_currentVid)renderVcAccidents(_currentVid);
   showToast('האירוע נמחק');
@@ -17072,7 +17072,7 @@ function saveAccident(){
         delete acc.fileData; delete acc.fileType; delete acc.fileName;
         delete _accFileCache[acc.id];
         deleteFileFromStorage('accidents/'+acc.id+'/file');
-        if(db) db.collection('accidentFiles').doc(String(acc.id)).delete().catch(function(e){console.error('accidentFiles delete:',e);});
+        if(typeof _deleteAccidentFileDocs==='function')_deleteAccidentFileDocs(acc.id);
       }else if(acc.fileData){
         // מיגרציה: קובץ ישן שהיה שמור בתוך הרשומה — מועבר לאחסון הנפרד
         _accFileCache[acc.id]={data:acc.fileData,type:acc.fileType||'',name:acc.fileName||''};
@@ -17187,12 +17187,32 @@ function _compressPdfDataUrl(dataUrl,cb0){
 
 // שמירת קובץ תאונה: קודם Firebase Storage, ואם לא זמין — Firestore (עם מגבלת גודל)
 function _saveAccidentFile(aid,rawData,fType,fName){
+  // כשל בשמירה — מורידים את סימון "יש קובץ" כדי שלא יופיע כפתור צפייה על קובץ שלא קיים
+  var _onSaveError=function(e){
+    console.error('accidentFiles write error:',e);
+    showToast('⚠️ הקובץ לא נשמר בענן - נסה להעלות שוב');
+    var a=accidentsList.find(function(x){return x.id===aid;});
+    if(a){a._hasFile=false;if(typeof syncPersistItem==='function')syncPersistItem('accidents',a);}
+  };
   var _fsFallback=function(){
     if(!db) return;
-    var _p={id:aid,data:rawData,type:fType,name:fName};
-    if(JSON.stringify(_p).length>950000){showToast('⚠️ הקובץ גדול מדי לשמירה בענן');return;}
-    db.collection('accidentFiles').doc(String(aid)).set(_p)
-      .catch(function(e){console.error('accidentFiles write error:',e);showToast('⚠️ הקובץ לא נשמר בענן - נסה לשמור שוב');});
+    var CH=700000; // גודל מקסימלי לחלק אחד (מתחת למגבלת 1MB של רשומה בענן)
+    var ref=db.collection('accidentFiles');
+    // ניקוי חלקים ישנים אם הקובץ הקודם היה מפוצל
+    ref.doc(String(aid)).get().then(function(old){
+      var oldChunks=(old.exists&&old.data().chunks)||0;
+      for(var i=0;i<oldChunks;i++)ref.doc(String(aid)+'_c'+i).delete().catch(function(){});
+    }).catch(function(){}).then(function(){
+      if(rawData.length<=CH){
+        ref.doc(String(aid)).set({id:aid,data:rawData,type:fType,name:fName}).catch(_onSaveError);
+      }else{
+        // קובץ גדול — נחתך לחלקים ונשמר בכמה רשומות
+        var n=Math.ceil(rawData.length/CH);
+        var ps=[ref.doc(String(aid)).set({id:aid,type:fType,name:fName,chunks:n})];
+        for(var i=0;i<n;i++)ps.push(ref.doc(String(aid)+'_c'+i).set({data:rawData.substr(i*CH,CH)}));
+        Promise.all(ps).then(function(){console.log('accident file saved in '+n+' chunks');}).catch(_onSaveError);
+      }
+    });
   };
   if(storage){
     var _storagePath='accidents/'+aid+'/file';
@@ -17211,6 +17231,17 @@ function _saveAccidentFile(aid,rawData,fType,fName){
   }
 }
 
+// מחיקת קובץ תאונה מהענן — כולל חלקים אם הקובץ נשמר מפוצל
+function _deleteAccidentFileDocs(aid){
+  if(!db)return;
+  var ref=db.collection('accidentFiles');
+  ref.doc(String(aid)).get().then(function(doc){
+    var n=(doc.exists&&doc.data().chunks)||0;
+    for(var i=0;i<n;i++)ref.doc(String(aid)+'_c'+i).delete().catch(function(){});
+    ref.doc(String(aid)).delete().catch(function(e){console.error('accidentFiles delete:',e);});
+  }).catch(function(){});
+}
+
 function viewAccidentDoc(aid){
   const a=accidentsList.find(function(x){return x.id===aid;});
   if(!a){showToast('אירוע לא נמצא');return;}
@@ -17225,6 +17256,19 @@ function viewAccidentDoc(aid){
   db.collection('accidentFiles').doc(String(aid)).get().then(function(doc){
     if(!doc.exists){showToast('הקובץ לא נמצא — נא להעלות שוב');return;}
     var d=doc.data();
+    // קובץ גדול שנשמר מפוצל לחלקים — טוענים את כולם ומרכיבים חזרה
+    if(d.chunks){
+      var ps=[];
+      for(var i=0;i<d.chunks;i++)ps.push(db.collection('accidentFiles').doc(String(aid)+'_c'+i).get());
+      Promise.all(ps).then(function(docs){
+        var missing=docs.some(function(c){return !c.exists||!c.data().data;});
+        if(missing){showToast('הקובץ לא נמצא — נא להעלות שוב');return;}
+        var full=docs.map(function(c){return c.data().data;}).join('');
+        _accFileCache[aid]={url:full,type:d.type||'',name:d.name||''};
+        _openAccDoc(full,d.type||'',d.name||'אירוע תאונה');
+      }).catch(function(e){showToast('שגיאה בטעינת הקובץ');console.error(e);});
+      return;
+    }
     var url=d.url||d.data;
     if(!url){showToast('הקובץ לא נמצא — נא להעלות שוב');return;}
     _accFileCache[aid]={url:url,storagePath:d.storagePath||'',type:d.type||'',name:d.name||''};
