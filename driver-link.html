@@ -315,7 +315,7 @@
       <div class="deadline-banner">
         <div class="deadline-icon">!</div>
         <div class="deadline-text">
-          הטיפול חייב להתבצע עד <strong id="deadline-date">--</strong> · נותרו <span id="days-remaining">--</span> ימים
+          מומלץ לבצע את הטיפול עד <strong id="deadline-date">--</strong> · נותרו <span id="days-remaining">--</span> ימים
         </div>
       </div>
 
@@ -559,7 +559,7 @@
       } else if (isNaN(dueDate.getTime()) || daysRemaining < 0) {
         bannerText.innerHTML = 'מועד הטיפול חלף — נא לקבוע מועד בהקדם';
       } else {
-        bannerText.innerHTML = 'הטיפול חייב להתבצע עד <strong>' + formatHeb(dueDate) + '</strong> · נותרו ' + daysRemaining + ' ימים';
+        bannerText.innerHTML = 'מומלץ לבצע את ה' + (TREATMENT.kind === 'test' ? 'טסט' : 'טיפול') + ' עד <strong>' + formatHeb(dueDate) + '</strong> · נותרו ' + daysRemaining + ' ימים';
       }
 
       document.getElementById('hour-display').textContent =
@@ -584,13 +584,10 @@
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       const today = new Date(); today.setHours(0,0,0,0);
-      const dueDate = new Date(TREATMENT.dueDate); dueDate.setHours(0,0,0,0);
-      // אם תאריך היעד עבר או חסר - אפשר בחירה עד 60 יום קדימה (אחרת אף יום לא ניתן לבחירה)
-      let maxDate = dueDate;
-      if (isNaN(maxDate.getTime()) || maxDate < today) {
-        maxDate = new Date(today);
-        maxDate.setDate(maxDate.getDate() + Math.max(SETTINGS.scanRangeDays || 30, 60));
-      }
+      // הנהג לא מוגבל לתאריך היעד — תאריך היעד הוא המלצה בלבד.
+      // ניתן לבחור כל יום עד שנה קדימה.
+      const maxDate = new Date(today);
+      maxDate.setDate(maxDate.getDate() + 365);
 
       const grid = document.getElementById('calendar-grid');
       grid.innerHTML = '';
