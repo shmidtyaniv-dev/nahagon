@@ -5687,6 +5687,15 @@ let storage=null;
 try{
   firebase.initializeApp(firebaseConfig);
   db=firebase.firestore();
+  // זיכרון מקומי — הנתונים נשמרים במכשיר והמסך נטען מיד, העדכונים מגיעים ברקע.
+  // מאיץ משמעותית את הכניסה בנייד (בלי זה כל הנתונים יורדים מהענן בכל פתיחה).
+  try{
+    db.enablePersistence({synchronizeTabs:true}).then(function(){
+      console.log('✅ זיכרון מקומי פעיל');
+    }).catch(function(e){
+      console.warn('⚠️ זיכרון מקומי לא זמין:', e && e.code);
+    });
+  }catch(e){ console.warn('⚠️ enablePersistence:', e); }
   auth=firebase.auth();
   storage=firebase.storage();
   console.log('✅ Firebase מחובר');
