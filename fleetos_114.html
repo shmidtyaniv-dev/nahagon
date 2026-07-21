@@ -24107,20 +24107,37 @@ async function rejectDate(treatmentId) {
   var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
   if (!t) return;
 
-  await db.collection('treatments').doc(t.id).update({
-    status: 'awaiting_choice',
-    selectedDate: null,
-    selectedDateAt: null,
-    lastEmailSentAt: new Date().toISOString(),
-    emailsSent: (t.emailsSent || 0) + 1,
-    rejectedAt: new Date().toISOString()
-  });
+  // פתיחת חלון וואטסאפ מיידית (בתוך לחיצת המשתמש) כדי שחוסם החלונות בנייד לא יעצור אותו
+  var phone = (t.driverPhone || '').replace(/\D/g, '');
+  var waWin = null;
+  if (phone && window.location.protocol !== 'file:') {
+    try { waWin = window.open('', '_blank'); } catch (e) {}
+  }
+
+  try {
+    await db.collection('treatments').doc(t.id).update({
+      status: 'awaiting_choice',
+      selectedDate: null,
+      selectedDateAt: null,
+      lastEmailSentAt: new Date().toISOString(),
+      emailsSent: (t.emailsSent || 0) + 1,
+      rejectedAt: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('[Treatments] שגיאה בדחיית תאריך:', err);
+    if (waWin) { try { waWin.close(); } catch (e) {} }
+    alert('שגיאה בדחיית התאריך - בדקו חיבור לאינטרנט ונסו שוב');
+    return;
+  }
 
   // שלח WhatsApp לנהג
-  var phone = (t.driverPhone || '').replace(/\D/g, '');
   var msg = buildTrtMessage('reject', t);
+  var waUrl = 'https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg);
   if (phone) {
-    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg), '_blank');
+    if (waWin) { waWin.location.href = waUrl; }
+    else { window.open(waUrl, '_blank'); }
+  } else if (waWin) {
+    try { waWin.close(); } catch (e) {}
   }
   showToast('התאריך נדחה.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
