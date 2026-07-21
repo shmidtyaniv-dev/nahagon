@@ -19501,7 +19501,20 @@ function getCalendarEvents(){
 
 function toggleCalExport(){
   var dd=document.getElementById('cal-export-dropdown');
-  if(dd) dd.style.display=dd.style.display==='none'?'':'none';
+  if(!dd)return;
+  if(dd.style.display!=='none'){dd.style.display='none';return;}
+  // מיקום קבוע ביחס למסך — כדי שהתפריט לא ייחתך על ידי overflow:hidden בנייד
+  var btn=document.querySelector('.cal-export-btn');
+  if(btn){
+    var r=btn.getBoundingClientRect();
+    dd.style.setProperty('position','fixed','important');
+    dd.style.setProperty('top',(r.bottom+4)+'px','important');
+    dd.style.setProperty('right',Math.max(8,window.innerWidth-r.right)+'px','important');
+    dd.style.setProperty('left','auto','important');
+    dd.style.setProperty('margin-top','0','important');
+    dd.style.setProperty('z-index','9999','important');
+  }
+  dd.style.display='';
 }
 // === ייצוא יומן לאייפון ===
 var CAL_FEED_KEY='d755906eaa2f316bedcdbb2593955a85';
