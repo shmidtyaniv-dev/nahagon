@@ -16724,19 +16724,31 @@ const ACC_COLORS={inprogress:'var(--amber)',done:'var(--green)'};
 const ACC_FAULT_LABELS={self:'עצמי',third:'צד ג׳'};
 const ACC_FAULT_COLORS={self:'var(--amber)',third:'var(--red)'};
 
+var _accFaultFilter='all';
+function setAccFaultFilter(f){ _accFaultFilter=f; renderAccidents(); }
+
 function renderAccidents(){
-  const list=accidentsList;
-  const totalCount=list.length;
+  const totalCount=accidentsList.length;
+  const cntSelf=accidentsList.filter(function(a){return a.fault==='self';}).length;
+  const cntThird=accidentsList.filter(function(a){return a.fault==='third';}).length;
+  const list=(_accFaultFilter==='all')?accidentsList:accidentsList.filter(function(a){return a.fault===_accFaultFilter;});
   var html='<div class="viol-container">';
   // Header
   html+='<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:18px 22px;border-bottom:1px solid var(--bdr);gap:20px">';
   html+='<div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">';
   html+='<button class="btn btn-p btn-sm" onclick="openAccidentModal()" style="border-radius:8px">+ אירוע חדש</button></div>';
   html+='<div style="display:flex;align-items:center;gap:8px;justify-content:center"><h2 style="margin:0;font-size:17px;font-weight:700;color:var(--t1)">תאונות</h2><span class="viol-count">'+totalCount+'</span></div>';
-  html+='<div></div></div>';
+  // סינון לפי אשם
+  var _chip=function(key,label,count){
+    var on=(_accFaultFilter===key);
+    return '<button onclick="setAccFaultFilter(\''+key+'\')" style="border:1.5px solid '+(on?'var(--gd,#0F6E56)':'var(--bdr2,#ddd)')+';background:'+(on?'var(--gd,#0F6E56)':'transparent')+';color:'+(on?'#fff':'var(--t2,#555)')+';padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">'+label+' ('+count+')</button>';
+  };
+  html+='<div style="display:flex;align-items:center;gap:6px;justify-content:flex-start;flex-wrap:wrap">';
+  html+=_chip('all','הכל',totalCount)+_chip('self','עצמי',cntSelf)+_chip('third','צד ג׳',cntThird);
+  html+='</div></div>';
 
   if(!list.length){
-    html+='<div style="text-align:center;padding:40px 0;color:var(--t3);font-size:15px">אין אירועים</div></div>';
+    html+='<div style="text-align:center;padding:40px 0;color:var(--t3);font-size:15px">'+(totalCount?'אין אירועים מסוג זה':'אין אירועים')+'</div></div>';
     id('accidents-list').innerHTML=html;return;
   }
   // Grid header - סדר: נהג / רכב / תאריך / מס' אירוע / אשם / סטטוס / פעולות
