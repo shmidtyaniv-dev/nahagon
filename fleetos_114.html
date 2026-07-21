@@ -24199,16 +24199,30 @@ async function cancelScheduled(treatmentId) {
   if (!t) return;
   var cancelledDate = t.selectedDate; // לשחרור היום החסום
 
-  await db.collection('treatments').doc(t.id).update({
-    status: 'awaiting_choice',
-    selectedDate: null,
-    selectedDateAt: null,
-    approvedAt: null,
-    approvedChannel: null,
-    cancelledAt: new Date().toISOString(),
-    lastEmailSentAt: new Date().toISOString(),
-    emailsSent: (t.emailsSent || 0) + 1
-  });
+  // פתיחת חלון וואטסאפ מיידית (בתוך לחיצת המשתמש) כדי שחוסם החלונות בנייד לא יעצור אותו
+  var phone = (t.driverPhone || '').replace(/\D/g, '');
+  var waWin = null;
+  if (phone && window.location.protocol !== 'file:') {
+    try { waWin = window.open('', '_blank'); } catch (e) {}
+  }
+
+  try {
+    await db.collection('treatments').doc(t.id).update({
+      status: 'awaiting_choice',
+      selectedDate: null,
+      selectedDateAt: null,
+      approvedAt: null,
+      approvedChannel: null,
+      cancelledAt: new Date().toISOString(),
+      lastEmailSentAt: new Date().toISOString(),
+      emailsSent: (t.emailsSent || 0) + 1
+    });
+  } catch (err) {
+    console.error('[Treatments] שגיאה בביטול מועד:', err);
+    if (waWin) { try { waWin.close(); } catch (e) {} }
+    alert('שגיאה בביטול המועד - בדקו חיבור לאינטרנט ונסו שוב');
+    return;
+  }
 
   // הסר מהיומן הקיים
   if (typeof getFleetEvents === 'function' && typeof saveFleetEvents === 'function') {
@@ -24221,10 +24235,13 @@ async function cancelScheduled(treatmentId) {
   if (typeof renderCalendar === 'function') { try { renderCalendar(); } catch (e) {} }
 
   // שלח WhatsApp לנהג
-  var phone = (t.driverPhone || '').replace(/\D/g, '');
   var msg = buildTrtMessage('cancel', t);
+  var waUrl = 'https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg);
   if (phone) {
-    window.open('https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg), '_blank');
+    if (waWin) { waWin.location.href = waUrl; }
+    else { window.open(waUrl, '_blank'); }
+  } else if (waWin) {
+    try { waWin.close(); } catch (e) {}
   }
   showToast('המועד בוטל.' + (phone ? ' נפתח WhatsApp.' : ' לנהג אין טלפון - יש לעדכן ידנית.'));
 }
