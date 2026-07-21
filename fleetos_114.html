@@ -6275,7 +6275,8 @@ function saveSettings(obj){
   if(typeof db!=='undefined'&&db){
     var toSync=Object.assign({},s);
     delete toSync.moreB64; delete toSync.colB64;
-    db.collection('settings').doc('fleetSettings').set(toSync).catch(function(e){console.error('saveSettings Firestore:',e);});
+    // merge:true — כדי ששמירה ממכשיר חדש (לפני שההגדרות ירדו מהענן) לא תדרוס הגדרות קיימות
+    db.collection('settings').doc('fleetSettings').set(toSync,{merge:true}).catch(function(e){console.error('saveSettings Firestore:',e);});
   }
 }
 
@@ -17554,13 +17555,23 @@ function startAuthedApp(){
       registerSyncCollection('serviceBookings',
         function(){ return JSON.parse(localStorage.getItem('serviceBookings')||'[]'); },
         function(arr){ try{localStorage.setItem('serviceBookings',JSON.stringify(arr||[]));}catch(e){} _lastBookingIds = new Set((arr||[]).map(b=>String(b.id))); },
-        function(){
-          if(typeof renderScheduling==='function'){try{renderScheduling();}catch(e){}}
-          // Check for new driver bookings and show toast
-          var bks=JSON.parse(localStorage.getItem('serviceBookings')||'[]');
-          bks.forEach(function(b){if(b.status==='booked'&&!b._toasted){showToast('נהג קבע תור: '+fd(b.bookedDate));b._toasted=true;}});
-          try{localStorage.setItem('serviceBookings',JSON.stringify(bks));}catch(e){}
-        }
+        (function(){
+          var firstLoad=true;
+          return function(){
+            if(typeof renderScheduling==='function'){try{renderScheduling();}catch(e){}}
+            // Check for new driver bookings and show toast
+            var bks=JSON.parse(localStorage.getItem('serviceBookings')||'[]');
+            bks.forEach(function(b){
+              if(b.status==='booked'&&!b._toasted){
+                // בטעינה הראשונה במכשיר — לא מציפים בהודעות על תורים ישנים, רק מסמנים
+                if(!firstLoad)showToast('נהג קבע תור: '+fd(b.bookedDate));
+                b._toasted=true;
+              }
+            });
+            firstLoad=false;
+            try{localStorage.setItem('serviceBookings',JSON.stringify(bks));}catch(e){}
+          };
+        })()
       );
       // Handover forms (מסירה וקבלה)
       registerSyncCollection('hoForms2',
@@ -17625,6 +17636,20 @@ function startAuthedApp(){
           // Refresh templates (synced from Firebase)
           if(typeof initTrtTemplates==='function')try{initTrtTemplates();}catch(e){}
           if(typeof initRequestTemplates==='function')try{initRequestTemplates();}catch(e){}
+          // סנכרון מצב התראות (נקרא/נוקה) בין מכשירים — מונע "תחיית" התראות במחשב חדש
+          try{
+            if(typeof _readNotifications!=='undefined'){
+              var nChg=false;
+              (remote.notifReadIds||[]).forEach(function(nid){ if(_readNotifications.indexOf(nid)<0){_readNotifications.push(nid);nChg=true;} });
+              (remote.notifClearedIds||[]).forEach(function(nid){ if(_clearedNotifications.indexOf(nid)<0){_clearedNotifications.push(nid);nChg=true;} });
+              if(nChg){
+                localStorage.setItem('trt_read_notifications',JSON.stringify(_readNotifications));
+                localStorage.setItem('trt_cleared_notifications',JSON.stringify(_clearedNotifications));
+                if(typeof updateBellBadge==='function')try{updateBellBadge();}catch(e){}
+                if(typeof renderNotificationsPanel==='function')try{renderNotificationsPanel();}catch(e){}
+              }
+            }
+          }catch(e){}
         },function(e){console.error('fleetSettings listener:',e);});
       }
     }catch(e){ console.error('sync setup error:', e); }
@@ -24422,11 +24447,19 @@ function isNotificationRead(id) {
   return _readNotifications.indexOf(id) >= 0;
 }
 
+// סנכרון מצב "נקרא"/"נוקה" לענן — כדי שמכשיר חדש לא יציג התראות שכבר טופלו
+function _persistNotifState(){
+  if(typeof saveSettings==='function'){
+    try{ saveSettings({notifReadIds:_readNotifications.slice(-400), notifClearedIds:_clearedNotifications.slice(-400)}); }catch(e){}
+  }
+}
+
 function markNotificationRead(id) {
   // רק מסמן כנקרא — ההתראה נשארת ברשימה עד לחיצה על "נקה"
   if (_readNotifications.indexOf(id) < 0) {
     _readNotifications.push(id);
     localStorage.setItem('trt_read_notifications',JSON.stringify(_readNotifications));
+    _persistNotifState();
   }
   updateBellBadge();
   renderNotificationsPanel();
@@ -24439,6 +24472,7 @@ function markAllNotificationsRead() {
     if (_readNotifications.indexOf(n.id) < 0) _readNotifications.push(n.id);
   });
   localStorage.setItem('trt_read_notifications',JSON.stringify(_readNotifications));
+  _persistNotifState();
   updateBellBadge();
   renderNotificationsPanel();
 }
@@ -24451,6 +24485,7 @@ function clearAllNotifications() {
   });
   if (_clearedNotifications.length > 400) _clearedNotifications = _clearedNotifications.slice(-400);
   localStorage.setItem('trt_cleared_notifications',JSON.stringify(_clearedNotifications));
+  _persistNotifState();
   // התראות ק"מ נשמרות ב-localStorage נפרד — מחיקה בפועל
   localStorage.setItem('km_update_notifications', '[]');
   updateBellBadge();
