@@ -1846,7 +1846,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .trt-notif-list {
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
   max-height: 380px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 .trt-notif-item {
   padding: 10px 16px;
