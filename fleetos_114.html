@@ -12353,14 +12353,21 @@ function checkKmSelfReport(){
       });
     }catch(e){}
   }
-  // ניסיון 2: Firebase (אם אין ב-URL)
+  // ניסיון 2: Firebase (אם אין ב-URL) — נדרשת התחברות אנונימית לפני הקריאה
   if(!_kmrDriversList.length && db){
-    db.collection('publicDrivers').get().then(function(snap){
-      snap.forEach(function(doc){
-        var d=doc.data();
-        if(d.name) _kmrDriversList.push({name:d.name, plate:d.plate||''});
-      });
-    }).catch(function(){});
+    var _kmrLoadDrivers=function(){
+      db.collection('publicDrivers').get().then(function(snap){
+        snap.forEach(function(doc){
+          var d=doc.data();
+          if(d.name) _kmrDriversList.push({name:d.name, plate:d.plate||''});
+        });
+      }).catch(function(){});
+    };
+    if(typeof auth!=='undefined' && auth && !auth.currentUser){
+      auth.signInAnonymously().then(_kmrLoadDrivers).catch(_kmrLoadDrivers);
+    } else {
+      _kmrLoadDrivers();
+    }
   }
   setTimeout(function(){ var n=document.getElementById('kmsr-name'); if(n)n.focus(); },300);
   return true;

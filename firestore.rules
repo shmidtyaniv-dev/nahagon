@@ -76,6 +76,13 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
+    // רשימת נהגים ציבורית — להשלמה אוטומטית בטופס עדכון ק"מ
+    // (קריאה למשתמש מאומת כולל אנונימי; כתיבה רק למנהל)
+    match /publicDrivers/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
     // בקשות עדכון ק"מ שנשלחות לנהג
     match /kmRequests/{token} {
       allow get: if true;
