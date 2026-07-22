@@ -23654,6 +23654,7 @@ function renderPendingRow(t) {
     + noteTag
     + '</div>'
     + '<div class="trt-driver-meta">' + formatPlate(t.licensePlate) + ' · ' + t.vehicleModel + ' · בחר: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
+    + _trtNoteLine(t)
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
     + '<button class="trt-btn-action trt-btn-action-danger" onclick="rejectDate(\'' + t.id + '\')">דחה</button>'
@@ -23755,6 +23756,13 @@ function renderAwaitingChoiceList() {
     || '<div style="padding:32px;text-align:center;color:var(--t2)">אין נהגים ממתינים לבחירת תאריך</div>';
 }
 
+// שורת ההערה שהנהג השאיר — מוצגת מתחת לפרטי הרכב
+function _trtNoteLine(t) {
+  if (!t || !t.driverNote) return '';
+  var txt = typeof _esc === 'function' ? _esc(t.driverNote) : t.driverNote;
+  return '<div class="trt-driver-meta" style="margin-top:3px;color:var(--blue-dark);background:var(--blue-light);border-radius:6px;padding:4px 8px;display:inline-block;max-width:100%;white-space:normal;word-break:break-word">📝 ' + txt + '</div>';
+}
+
 // תגית סוג (טיפול/טסט) עם צבע מבחין — כחול לטיפול, ענבר לטסט
 function trtKindTag(t, txt) {
   var isTreatment = t.kind === 'treatment';
@@ -23844,6 +23852,7 @@ function renderScheduledRow(t) {
     + noteTag
     + '</div>'
     + '<div class="trt-driver-meta">' + formatPlate(t.licensePlate) + ' · ' + t.vehicleModel + ' · אושר ב-' + formatTreatmentDate(t.approvedAt) + ' ב' + (t.approvedChannel === 'whatsapp' ? 'וואטסאפ' : 'מייל') + '</div>'
+    + _trtNoteLine(t)
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
     + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">תזכורת 💬</button>'
