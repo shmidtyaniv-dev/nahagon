@@ -11920,9 +11920,31 @@ var _vehiclesListenerStarted=false;
 var _vehiclesLoaded=false;
 var _persistVehiclesTimer=null;
 
+// רכבים שהועברו לארכיון (הסרה מלאה) — אסור שיחזרו לענן משום מכשיר
+function _archivedVehicleIds(){
+  var s=new Set();
+  try{
+    // רק "הסרה מלאה" (archive_all) חוסמת — החלפת רכב/נהג ו-keep_driver משאירות
+    // את אותו מזהה רכב פעיל במערכת, ואסור לחסום אותו
+    (typeof archivedVehicles!=='undefined'?archivedVehicles:[]).forEach(function(r){
+      if(r && r.vehicleId!=null && r.action==='archive_all') s.add(String(r.vehicleId));
+    });
+  }catch(e){}
+  return s;
+}
+
+// מחיקה עצמית: רכב מארכיון שצץ בענן נמחק מיד (גם מהרשימה הציבורית)
+function _purgeArchivedFromCloud(id){
+  if(!db||id==null)return;
+  console.warn('[sync] רכב מארכיון נחסם ונמחק מהענן:',id);
+  db.collection('vehicles').doc(String(id)).delete().catch(function(){});
+  db.collection('publicDrivers').doc(String(id)).delete().catch(function(){});
+}
+
 // Save a single vehicle to Firestore (debounced)
 function persistVehicle(v){
   if(!db||!v||!v.id)return;
+  if(_archivedVehicleIds().has(String(v.id)))return; // רכב בארכיון — לא כותבים
   db.collection('vehicles').doc(String(v.id)).set(JSON.parse(JSON.stringify(v))).catch(function(e){console.error('persistVehicle error:',e);});
   // sync publicDrivers — רשימה ציבורית לאוטוקומפליט בטופס ק"מ
   if(v.driverName){
@@ -11993,10 +12015,16 @@ function startVehiclesListener(){
   if(!db||_vehiclesListenerStarted)return;
   _vehiclesListenerStarted=true;
   db.collection('vehicles').onSnapshot(function(snap){
+    var _archSet=_archivedVehicleIds();
     if(!_vehiclesLoaded){
       // Initial load - replace local array
       const arr=[];
-      snap.forEach(function(doc){arr.push(doc.data());});
+      snap.forEach(function(doc){
+        var d=doc.data();
+        // רכב שהועבר לארכיון לא נטען — ואם הוא בענן, נמחק משם
+        if(d&&d.id!==undefined&&_archSet.has(String(d.id))){ _purgeArchivedFromCloud(d.id); return; }
+        arr.push(d);
+      });
       if(arr.length){
         vehicles.length=0;
         arr.forEach(function(v){vehicles.push(v);});
@@ -12010,6 +12038,12 @@ function startVehiclesListener(){
       snap.docChanges().forEach(function(change){
         const data=change.doc.data();
         const idx=vehicles.findIndex(function(v){return String(v.id)===String(data.id);});
+        // רכב מארכיון שצץ מחדש — הסר מקומית ומהענן
+        if(data&&data.id!==undefined&&_archSet.has(String(data.id))){
+          if(idx>=0)vehicles.splice(idx,1);
+          if(change.type!=='removed')_purgeArchivedFromCloud(data.id);
+          return;
+        }
         if(change.type==='added' || change.type==='modified'){
           if(idx>=0){
             // Only update if different (avoids loops)
@@ -17619,7 +17653,21 @@ function startAuthedApp(){
           });
           try{localStorage.setItem('archivedVehicles',JSON.stringify(archivedVehicles));}catch(e){}
         },
-        function(){ if(typeof renderArchivePage==='function'){try{renderArchivePage();}catch(e){}} }
+        function(){
+          if(typeof renderArchivePage==='function'){try{renderArchivePage();}catch(e){}}
+          // הגנה: אם רכב שבארכיון עדיין קיים ברשימה המקומית — הסר אותו
+          try{
+            if(typeof _archivedVehicleIds==='function'&&typeof vehicles!=='undefined'){
+              var _as=_archivedVehicleIds(); var _rm=false;
+              for(var _i=vehicles.length-1;_i>=0;_i--){
+                if(vehicles[_i]&&vehicles[_i].id!==undefined&&_as.has(String(vehicles[_i].id))){
+                  vehicles.splice(_i,1);_rm=true;
+                }
+              }
+              if(_rm){ if(typeof renderV==='function')renderV(); if(typeof refresh==='function')refresh(); }
+            }
+          }catch(e){}
+        }
       );
       // Tasks — were in-memory only, now synced cross-device
       registerSyncCollection('tasks',
