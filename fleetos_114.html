@@ -2732,7 +2732,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div onclick="toggleDashSort('name')">נהג / חברה <span class="sort-icon" id="sort-name"></span></div>
           <div>רישוי</div>
           <div>דגם</div>
-          <div onclick="toggleDashSort('status')">סטטוס <span class="sort-icon" id="sort-status"></span></div>
+          <div onclick="toggleDashSort('km')">ק"מ נוכחי <span class="sort-icon" id="sort-km"></span></div>
           <div onclick="toggleDashSort('service')">טיפול הבא <span class="sort-icon" id="sort-service"></span></div>
           <div>מסמכים</div>
         </div>
@@ -9318,13 +9318,19 @@ function nextSvcCell(v){
   if(d<30)return'<span class="date-warn">'+s+'</span>';
   return'<span style="color:var(--t2)">'+s+'</span>';
 }
+function _dashKmCell(v){
+  var raw=v.currentKm||v.curKm;
+  var km=raw?parseInt(String(raw).replace(/[^0-9]/g,''))||0:0;
+  if(!km)return'<div class="muted">—</div>';
+  var upd=v.lastKmUpdate?'<div style="font-size:11px;color:var(--t2)">עודכן: '+fd(v.lastKmUpdate)+'</div>':'';
+  return'<div><div style="font-weight:600">'+km.toLocaleString()+' ק"מ</div>'+upd+'</div>';
+}
 function dRow(v){
-  var st=getVehicleStatus(v);
   return'<div class="v-table-row" onclick="openDet('+v.id+')">'
     +'<div class="driver-cell"><div class="driver-avatar" style="background:'+avatarColor(v.driver.name)+';color:#fff">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+v.driver.name+'</div></div>'+altBadge(v.id)+'</div>'
     +'<div>'+renderPlate(v.plate)+'</div>'
     +'<div class="muted">'+v.make+' '+v.model+'</div>'
-    +'<div>'+st.html+'</div>'
+    +_dashKmCell(v)
     +'<div>'+nextSvcCell(v)+'</div>'
     +'<div class="docs-cell">'+docsIcon(v.id)+'</div>'
     +'</div>';
@@ -9444,9 +9450,12 @@ function renderDash(){
     r.sort(function(a,b){var d=(a.driver.name||'').localeCompare(b.driver.name||'','he');return _dashSortDir==='asc'?d:-d;});
   } else if(_dashSort==='service'){
     r.sort(function(a,b){var da=calcNextSvc(a).date||'9999';var db=calcNextSvc(b).date||'9999';return _dashSortDir==='asc'?(da>db?1:da<db?-1:0):(da<db?1:da>db?-1:0);});
+  } else if(_dashSort==='km'){
+    var _kmOf=function(v){var raw=v.currentKm||v.curKm;return raw?parseInt(String(raw).replace(/[^0-9]/g,''))||0:0;};
+    r.sort(function(a,b){var d=_kmOf(a)-_kmOf(b);return _dashSortDir==='asc'?d:-d;});
   }
   // Update sort icons
-  ['name','status','service'].forEach(function(c){var el=document.getElementById('sort-'+c);if(el)el.textContent=_dashSort===c?(_dashSortDir==='asc'?'▲':'▼'):'';});
+  ['name','km','service'].forEach(function(c){var el=document.getElementById('sort-'+c);if(el)el.textContent=_dashSort===c?(_dashSortDir==='asc'?'▲':'▼'):'';});
   // Pagination
   var totalPages=Math.max(1,Math.ceil(r.length/_dashPerPage));
   if(_dashPage>totalPages)_dashPage=totalPages;
