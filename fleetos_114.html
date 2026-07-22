@@ -23791,11 +23791,19 @@ function renderAwaitingRow(t) {
     + '<span class="trt-driver-tag ' + tagClass + '">' + tagText + '</span>'
     + trtKindTag(t)
     + '</div>'
-    + '<div class="trt-driver-meta">נשלח: ' + formatTreatmentDate(t.lastEmailSentAt) + (t.treatmentType ? ' · ' + t.treatmentType : '') + '</div>'
+    + '<div class="trt-driver-meta">נשלח: ' + formatTreatmentDate(t.lastEmailSentAt) + (t.treatmentType ? ' · ' + t.treatmentType : '') + _trtTestDeadline(t) + '</div>'
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
     + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">קביעת מועד ↗</button>'
     + '</div></div>';
+}
+
+// בטסט — תוקף רישיון הרכב = המועד האחרון לקביעת הטסט
+function _trtTestDeadline(t) {
+  if (!t || t.kind !== 'test') return '';
+  var v = (typeof vehicles !== 'undefined' ? vehicles : []).find(function(x) { return String(x.id) === String(t.vehicleId); });
+  if (!v || !v.licenseExp) return '';
+  return ' · <span style="color:var(--red-dark);font-weight:600">עד ' + fd(v.licenseExp) + '</span>';
 }
 
 
