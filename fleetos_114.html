@@ -23708,10 +23708,10 @@ function renderAwaitingRow(t) {
     + '<span class="trt-driver-tag ' + tagClass + '">' + tagText + '</span>'
     + trtKindTag(t)
     + '</div>'
-    + '<div class="trt-driver-meta">' + formatPlate(t.licensePlate) + ' · ' + t.vehicleModel + ' · נשלח: ' + formatTreatmentDate(t.lastEmailSentAt) + ' · פוקע: ' + formatTreatmentDate(t.dueDate) + '</div>'
+    + '<div class="trt-driver-meta">נשלח: ' + formatTreatmentDate(t.lastEmailSentAt) + (t.treatmentType ? ' · ' + t.treatmentType : '') + '</div>'
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
-    + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">תזכורת ↗</button>'
+    + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">קביעת מועד ↗</button>'
     + '</div></div>';
 }
 
