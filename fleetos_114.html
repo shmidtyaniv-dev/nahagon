@@ -8460,9 +8460,14 @@ async function hoBuildCombinedPDF(takeForm, retForm){
         if(pageIdx >= pages.length){
           const plate = (retForm.vehicle?.plate||'').replace(/[^a-z0-9]/gi,'-');
           const ds = date2.replace(/\//g,'-');
-          pdf.save('טופס-מאוחד-' + plate + '-' + ds + '.pdf');
+          const pdfName = 'טופס-מאוחד-' + plate + '-' + ds + '.pdf';
+          pdf.save(pdfName);
           div.remove();
           showToast('PDF מאוחד הורד בהצלחה ✅');
+          const _allPh = (takePhotos||[]).concat(retPhotos||[]);
+          if(_allPh.length && typeof eobShowShareBar==='function'){
+            try{ eobShowShareBar(pdf.output('blob'), pdfName, _allPh); }catch(e){}
+          }
           return;
         }
         html2canvas(pages[pageIdx], {
@@ -8567,6 +8572,7 @@ async function hoDownloadPDF(){
 
   // Photos — טען מ-IndexedDB אם אין בטופס (backward compat)
   let photos = (f.photos&&f.photos.length) ? f.photos : await hoPhotoStore.load(f.id);
+  const allPhotos = (photos||[]).slice(); // כל התמונות — לשיתוף באיכות מלאה
   photos = photos.slice(0,6);
   let photosHTML = '';
   photos.forEach(function(p){
@@ -8686,9 +8692,13 @@ async function hoDownloadPDF(){
         pdf.addImage(canvas.toDataURL('image/jpeg',.92),'JPEG',0,0,imgW,imgH);
         const plate=(f.vehicle?.plate||'').replace(/[^a-z0-9]/gi,'-');
         const ds=date.replace(/\//g,'-');
-        pdf.save('טופס-' + (f.typeLabel||'').replace(/ /g,'-') + '-' + plate + '-' + ds + '.pdf');
+        const pdfName='טופס-' + (f.typeLabel||'').replace(/ /g,'-') + '-' + plate + '-' + ds + '.pdf';
+        pdf.save(pdfName);
         div.remove();
         showToast('PDF הורד בהצלחה ✅');
+        if(allPhotos.length && typeof eobShowShareBar==='function'){
+          try{ eobShowShareBar(pdf.output('blob'), pdfName, allPhotos); }catch(e){}
+        }
       }).catch(function(e){ div.remove(); showToast('שגיאה ביצירת PDF'); console.error(e); });
     });
   });
@@ -25351,6 +25361,11 @@ function _eobFinalizePdf(pdf, fileName, saveToDoc, v){
   } else {
     showToast('PDF הורד בהצלחה ✅');
   }
+
+  // אם צולמו תמונות נזק — הצע לשתף/לשמור אותן באיכות מלאה
+  if(_eobAttachments.length > 0){
+    try{ eobShowShareBar(pdf.output('blob'), fileName, _eobAttachments); }catch(e){}
+  }
 }
 
 function saveAndExportEobPDF(){
@@ -25596,6 +25611,83 @@ function renderEobAttachments(){
 function eobRemoveAttachment(idx){
   _eobAttachments.splice(idx, 1);
   renderEobAttachments();
+}
+
+// ── שיתוף התמונות המקוריות (איכות מלאה) יחד עם ה-PDF ──
+function _eobDataUrlToBlob(dataUrl){
+  var parts = dataUrl.split(',');
+  var mime = (parts[0].match(/data:([^;]+)/) || [])[1] || 'image/jpeg';
+  var bin = atob(parts[1]);
+  var arr = new Uint8Array(bin.length);
+  for(var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], {type: mime});
+}
+
+// ממיר רשימת תמונות (dataURL או {data,mtype}) לקבצים לשיתוף
+function _dmgPhotoFiles(photos){
+  return (photos || []).map(function(att, i){
+    var data = (typeof att === 'string') ? att : att.data;
+    var mtype = (typeof att === 'string') ? ((data.match(/^data:([^;]+)/) || [])[1] || 'image/jpeg') : (att.mtype || 'image/jpeg');
+    var ext = mtype.indexOf('png') >= 0 ? 'png' : 'jpg';
+    return new File([_eobDataUrlToBlob(data)], 'נזק-' + (i + 1) + '.' + ext, {type: mtype});
+  });
+}
+
+var _eobSharePhotos = [];
+
+function eobShowShareBar(pdfBlob, fileName, photos){
+  _eobSharePhotos = photos || [];
+  if(!_eobSharePhotos.length) return;
+  var ex = document.getElementById('eob-share-bar'); if(ex) ex.remove();
+  var canShare = !!(navigator.canShare && navigator.share);
+  var bar = document.createElement('div');
+  bar.id = 'eob-share-bar';
+  bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--card,#fff);border-top:1px solid var(--bdr,#ddd);box-shadow:0 -6px 20px rgba(0,0,0,.15);padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));direction:rtl';
+  bar.innerHTML = '<div style="font-size:13px;font-weight:600;color:var(--t1,#222);margin-bottom:10px;text-align:center">📷 יש ' + _eobSharePhotos.length + ' תמונות באיכות מלאה — לשתף גם אותן?</div>'
+    + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'
+    + (canShare ? '<button onclick="eobShareAll()" style="padding:11px 16px;background:var(--gd,#0F6E56);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📤 PDF + תמונות</button>' : '')
+    + '<button onclick="eobShareImagesOnly()" style="padding:11px 16px;background:#E6F1FB;color:#185FA5;border:1.5px solid #b6d7f2;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🖼 תמונות בלבד</button>'
+    + '<button onclick="document.getElementById(\'eob-share-bar\').remove()" style="padding:11px 14px;background:none;color:var(--t3,#888);border:none;font-size:13px;cursor:pointer;font-family:inherit">סגור</button>'
+    + '</div>';
+  document.body.appendChild(bar);
+  _eobSharePdfBlob = pdfBlob;
+  _eobSharePdfName = fileName;
+}
+
+var _eobSharePdfBlob = null;
+var _eobSharePdfName = '';
+
+function eobShareAll(){
+  try{
+    var files = _dmgPhotoFiles(_eobSharePhotos);
+    if(_eobSharePdfBlob) files.unshift(new File([_eobSharePdfBlob], _eobSharePdfName || 'form.pdf', {type: 'application/pdf'}));
+    if(navigator.canShare && navigator.canShare({files: files})){
+      navigator.share({files: files}).catch(function(){});
+    } else {
+      eobShareImagesOnly();
+    }
+  }catch(e){ showToast('השיתוף לא נתמך במכשיר זה'); }
+}
+
+function eobShareImagesOnly(){
+  try{
+    var files = _dmgPhotoFiles(_eobSharePhotos);
+    if(navigator.canShare && navigator.share && navigator.canShare({files: files})){
+      // באייפון: בחלון השיתוף אפשר ללחוץ "שמור תמונות" — נשמר ישירות לאלבום התמונות
+      navigator.share({files: files}).catch(function(){});
+    } else {
+      // מחשב: הורדה של כל תמונה כקובץ נפרד
+      files.forEach(function(f, i){
+        setTimeout(function(){
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(f);
+          a.download = f.name;
+          document.body.appendChild(a); a.click(); a.remove();
+        }, i * 350);
+      });
+      showToast('התמונות יורדות למחשב...');
+    }
+  }catch(e){ showToast('השיתוף לא נתמך במכשיר זה'); }
 }
 
 function eobAddSignaturePage(pdf, sigDataUrl, sigName, logoHTML, dateDisplay, driverName, clientName, plate, loadLib, callback){
