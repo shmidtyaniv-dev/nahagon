@@ -1726,6 +1726,20 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   }
   .trt-btn-action { padding: 8px 14px; font-size: 12px; min-height: 44px; }
 
+  /* מודאל "ממתין לבחירת תאריך" — כפתור אחד קטן, נשאר באותה שורה של הנהג */
+  #awaiting-choice-list .trt-driver-row { flex-wrap: nowrap; }
+  #awaiting-choice-list .trt-driver-actions {
+    width: auto;
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+  #awaiting-choice-list .trt-btn-action {
+    min-height: 0;
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+
   /* ערוצי שליחה */
   .trt-channel-options,
   .trt-channel-grid { grid-template-columns: 1fr; }
