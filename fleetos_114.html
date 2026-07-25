@@ -4502,6 +4502,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
                   <label id="ho-altcode-label" style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">קוד הרכב החלופי</label>
                   <input id="ho-altcode" type="text" placeholder="קוד הרכב (אם קיים)" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl">
                 </div>
+                <div id="ho-accident-row" style="margin-bottom:10px;display:none">
+                  <label style="font-size:11px;color:var(--t3);display:block;margin-bottom:4px">סיבת מסירה — שיוך לאירוע תאונה</label>
+                  <select id="ho-accident-link" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1);direction:rtl"></select>
+                </div>
                 <!-- fuel / electric toggle -->
                 <div style="margin-bottom:8px">
                   <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -7397,6 +7401,39 @@ function hoSetupAltFields(type, mode){
     if(codeRow) codeRow.style.display='none';
     if(codeInp) codeInp.value='';
   }
+  // שיוך לאירוע תאונה — רק במסירת חלופי/גישור
+  var accRow=document.getElementById('ho-accident-row');
+  if(accRow){
+    if((type==='loaner'||type==='bridge')&&mode==='take'){
+      accRow.style.display='block';
+      hoPopulateAccidentLink();
+    } else {
+      accRow.style.display='none';
+    }
+  }
+}
+
+// מילוי רשימת אירועי התאונה של הרכב בטופס מסירת חלופי,
+// כולל בחירה אוטומטית של האירוע הקרוב ביותר (עד 45 יום אחורה)
+function hoPopulateAccidentLink(){
+  var sel=document.getElementById('ho-accident-link');
+  if(!sel)return;
+  var vid=hoCurrentVid;
+  var accs=(typeof accidentsList!=='undefined'?accidentsList:[]).filter(function(a){
+    return String(a.vehicleId)===String(vid)&&a.date;
+  }).slice().sort(function(a,b){return (b.date>a.date)?1:-1;}).slice(0,8);
+  var now=new Date();
+  var best=null,bestDiff=Infinity;
+  accs.forEach(function(a){
+    var diff=(now-new Date(a.date))/86400000;
+    if(diff>=0&&diff<=45&&diff<bestDiff){best=a;bestDiff=diff;}
+  });
+  var html='<option value="">ללא שיוך — טיפול / אחר</option>';
+  accs.forEach(function(a){
+    var numTxt=a.num?(typeof _esc==='function'?_esc(String(a.num)):a.num):'';
+    html+='<option value="'+a.id+'"'+(best&&best.id===a.id?' selected':'')+'>תאונה '+numTxt+' · '+fd(a.date)+'</option>';
+  });
+  sel.innerHTML=html;
 }
 
 /* ── IndexedDB photo store (תמונות גדולות ב-IndexedDB במקום localStorage) ── */
@@ -8191,6 +8228,13 @@ function hoSaveForm(){
     notes: document.getElementById('ho-notes')?.value.trim()||'',
     sigName: document.getElementById('ho-sig-name')?.value.trim()||''
   };
+
+  // שיוך ידני לאירוע תאונה במסירת חלופי/גישור
+  if((hoFormType==='loaner'||hoFormType==='bridge')&&hoFormMode==='take'){
+    var _accSel=document.getElementById('ho-accident-link');
+    formData.linkedAccidentId=(_accSel&&_accSel.value)?Number(_accSel.value):null;
+    formData.accidentLinkSet=true; // הבחירה נעשתה במודע (גם אם "ללא שיוך")
+  }
 
   // If return — close the linked take form
   if(hoFormMode==='return'){
@@ -16788,6 +16832,83 @@ const ACC_FAULT_COLORS={self:'var(--amber)',third:'var(--red)'};
 var _accFaultFilter='all';
 function setAccFaultFilter(f){ _accFaultFilter=f; renderAccidents(); }
 
+// ── קישור תאונה ⇄ רכב חלופי ──
+// שיוך ידני (linkedAccidentId מטופס המסירה) גובר; אחרת שיוך אוטומטי לפי
+// אותו רכב + מסירה בטווח של עד 45 יום אחרי התאונה. טופס שסווג ידנית
+// (accidentLinkSet) לא משתתף בשיוך האוטומטי.
+function _accLoanerInfo(a){
+  var forms=(typeof hoForms2!=='undefined'?hoForms2:[]).filter(function(f){
+    return f&&(f.type==='loaner'||f.type==='bridge')&&f.mode==='take';
+  });
+  var pick=forms.find(function(f){return f.linkedAccidentId!=null&&Number(f.linkedAccidentId)===Number(a.id);})||null;
+  var manual=!!pick;
+  if(!pick&&a.date){
+    var cands=forms.filter(function(f){
+      if(f.accidentLinkSet)return false;
+      if(String(f.vehicleId)!==String(a.vehicleId))return false;
+      if(!f.date)return false;
+      var diff=(new Date(f.date)-new Date(a.date))/86400000;
+      return diff>=-2&&diff<=45;
+    });
+    cands.sort(function(x,y){return Math.abs(new Date(x.date)-new Date(a.date))-Math.abs(new Date(y.date)-new Date(a.date));});
+    pick=cands[0]||null;
+  }
+  if(!pick)return null;
+  var ret=pick.closed?hoForms2.find(function(f){return f&&f.linkedTakeId===pick.id;}):null;
+  return {form:pick,manual:manual,returned:!!pick.closed,retDate:ret?ret.date:null};
+}
+
+function _accLoanerTag(a){
+  var info=_accLoanerInfo(a);
+  if(!info)return '';
+  var f=info.form;
+  var lbl=f.type==='bridge'?'גישור':'חלופי';
+  var sub=info.returned?('הוחזר '+(info.retDate?fd(info.retDate):'')):'אצל הנהג';
+  var clr=info.returned?'#5F5E5A':'#854d0e';
+  var bg=info.returned?'#F1EFE8':'#FEF3C7';
+  var plateTxt=f.altPlate?(typeof _esc==='function'?_esc(f.altPlate):f.altPlate):'';
+  return '<div onclick="showAccLoanerMenu('+a.id+',event)" title="לחץ לפרטי הרכב החלופי" style="cursor:pointer;display:inline-block;margin-top:3px;padding:2px 8px;border-radius:9px;font-size:10px;font-weight:600;white-space:nowrap;color:'+clr+';background:'+bg+'">🚗 '+lbl+(plateTxt?' '+plateTxt:'')+' · '+sub+'</div>';
+}
+
+function showAccLoanerMenu(aid,ev){
+  if(ev){ev.stopPropagation();}
+  var a=accidentsList.find(function(x){return x.id===aid;});
+  if(!a)return;
+  var info=_accLoanerInfo(a);
+  if(!info)return;
+  closeAccStatusMenu();
+  var f=info.form;
+  var menu=document.createElement('div');
+  menu.id='acc-status-menu';
+  menu.style.cssText='position:fixed;z-index:10000;background:var(--bg2,#fff);border:1px solid var(--bdr2);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px;min-width:230px;direction:rtl';
+  menu.onclick=function(e){e.stopPropagation();};
+  var itemStyle='padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--t1)';
+  menu.innerHTML=
+    '<div style="padding:6px 12px 6px;font-size:11px;color:var(--t3)"><b>'+(f.type==='bridge'?'רכב גישור':'רכב חלופי')+(f.altPlate?' · '+(typeof _esc==='function'?_esc(f.altPlate):f.altPlate):'')+'</b><br>נמסר '+(f.date?fd(f.date):'—')+(info.returned?(' · הוחזר '+(info.retDate?fd(info.retDate):'')):' · עדיין אצל הנהג')+'<br>'+(info.manual?'שויך ידנית לאירוע זה':'שויך אוטומטית לפי רכב ותאריך')+'</div>'+
+    '<div style="border-top:1px solid var(--bdr);margin:2px 0 5px"></div>'+
+    '<div onclick="closeAccStatusMenu();hoLastForm=hoForms2.find(function(x){return x.id==='+f.id+'});hoViewFormContent()" style="'+itemStyle+'" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">📄 צפה בטופס המסירה</div>'+
+    '<div onclick="closeAccStatusMenu();accDetachLoaner('+aid+','+f.id+')" style="'+itemStyle+';color:var(--red-dark,#A32D2D)" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">✂ נתק שיוך — החלופי לא בגלל התאונה</div>';
+  document.body.appendChild(menu);
+  var r=(ev&&ev.target)?ev.target.getBoundingClientRect():{left:innerWidth/2,bottom:innerHeight/2,top:innerHeight/2};
+  var mw=menu.offsetWidth,mh=menu.offsetHeight;
+  var left=Math.min(Math.max(8,r.left-mw/2+40),innerWidth-mw-8);
+  var top=r.bottom+6;
+  if(top+mh>innerHeight-8)top=Math.max(8,r.top-mh-6);
+  menu.style.left=left+'px';menu.style.top=top+'px';
+  setTimeout(function(){document.addEventListener('click',closeAccStatusMenu);},0);
+}
+
+// ניתוק שיוך — מסמן שהחלופי לא קשור לתאונה (למשל נמסר בגלל טיפול)
+function accDetachLoaner(aid,formId){
+  var f=hoForms2.find(function(x){return x.id===formId;});
+  if(!f)return;
+  f.accidentLinkSet=true;
+  f.linkedAccidentId=null;
+  try{localStorage.setItem('hoForms2',JSON.stringify(hoForms2));}catch(e){}
+  try{syncPersistItem('hoForms2',Object.assign({},f,{photos:[]}));}catch(e){}
+  renderAccidents();
+}
+
 function renderAccidents(){
   const totalCount=accidentsList.length;
   const cntSelf=accidentsList.filter(function(a){return a.fault==='self';}).length;
@@ -16831,7 +16952,7 @@ function renderAccidents(){
     var garageHtml='<span onclick="showAccGarageMenu('+a.id+',event)" style="cursor:pointer" title="לחץ לשינוי סטטוס מוסך">'+getGarageStatusLabel(a)+'</span>';
     html+='<div class="viol-row viol-data-row acc-row" data-aid="'+a.id+'">';
     html+='<div class="viol-driver"><div class="viol-avatar" style="background:'+avatarColor(driverName)+'">'+inits(driverName)+'</div><span style="font-weight:500;font-size:14px">'+driverName+'</span></div>';
-    html+='<div class="viol-cell" data-label="רכב" style="text-align:center">'+plateHtml+'</div>';
+    html+='<div class="viol-cell" data-label="רכב" style="text-align:center"><div>'+plateHtml+_accLoanerTag(a)+'</div></div>';
     html+='<div class="viol-cell" data-label="תאריך" style="text-align:center"><span class="viol-muted">'+(a.date?fd(a.date):'—')+'</span></div>';
     html+='<div class="viol-cell" data-label="מס׳ אירוע" style="text-align:center"><span class="viol-mono" style="color:var(--gd)">'+(a.num||'—')+'</span></div>';
     html+='<div class="viol-cell" data-label="אשם" style="text-align:center">'+faultBadge+'</div>';
