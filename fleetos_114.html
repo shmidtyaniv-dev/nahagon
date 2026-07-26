@@ -3528,6 +3528,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               var h=+this.value;
               document.getElementById('logo-size-val').textContent=h+'px';
               try{var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');s.logoH=h;localStorage.setItem('fleetSettings',JSON.stringify(s));}catch(e){}
+              // סנכרון לענן בהשהיה קצרה (לא בכל תזוזת סליידר) — אחרת הענן דורס את הגובה הישן
+              clearTimeout(window._logoHSyncT);
+              window._logoHSyncT=setTimeout(function(){try{if(typeof saveSettings==='function')saveSettings({logoH:h});}catch(e){}},600);
               var pm=document.getElementById('prev-more');if(pm)pm.style.height=h+'px';
               var pc=document.getElementById('prev-col');if(pc)pc.style.height=h+'px';
               if(typeof initLogoSidebar==='function')try{initLogoSidebar();}catch(e){}
@@ -13874,9 +13877,7 @@ function openAdd(){
 
 function saveSystemName(){
   var val=document.getElementById('system-name-input')?.value.trim()||'מרכז הרכב של מור השקעות';
-  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  s.systemName=val;
-  localStorage.setItem('fleetSettings',JSON.stringify(s));
+  saveSettings({systemName:val}); // שמירה מקומית + סנכרון לענן (אחרת הענן דורס את השם הישן)
   var el=document.getElementById('topbar-system-name');
   if(el) el.textContent=val;
   showToast('✓ שם המערכת עודכן');
@@ -13922,11 +13923,12 @@ function showAttentionDetails(){
 }
 
 function saveThemeColors(){
-  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  s.themeTopbar=document.getElementById('theme-topbar-color')?.value||'#ffffff';
-  s.themeSidebar=document.getElementById('theme-sidebar-color')?.value||'#ffffff';
-  s.themeBg=document.getElementById('theme-bg-color')?.value||'#f5f5f0';
-  localStorage.setItem('fleetSettings',JSON.stringify(s));
+  // שמירה מקומית + סנכרון לענן (אחרת הענן דורס את הצבעים בערכים ישנים)
+  saveSettings({
+    themeTopbar:document.getElementById('theme-topbar-color')?.value||'#ffffff',
+    themeSidebar:document.getElementById('theme-sidebar-color')?.value||'#ffffff',
+    themeBg:document.getElementById('theme-bg-color')?.value||'#f5f5f0'
+  });
   showToast('✓ צבעים נשמרו');
 }
 function resetThemeColors(){
@@ -13940,6 +13942,11 @@ function resetThemeColors(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
   delete s.themeTopbar;delete s.themeSidebar;delete s.themeBg;
   localStorage.setItem('fleetSettings',JSON.stringify(s));
+  // מחיקה גם מהענן — אחרת המאזין בין-מכשירים מחזיר את הצבעים הישנים
+  if(typeof db!=='undefined'&&db&&typeof firebase!=='undefined'){
+    var _del=firebase.firestore.FieldValue.delete();
+    db.collection('settings').doc('fleetSettings').update({themeTopbar:_del,themeSidebar:_del,themeBg:_del}).catch(function(e){console.error('resetThemeColors Firestore:',e);});
+  }
   showToast('צבעים אופסו');
 }
 function applyThemeColors(){
