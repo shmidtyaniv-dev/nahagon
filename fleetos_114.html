@@ -23993,7 +23993,7 @@ function renderScheduledRow(t) {
     + trtKindTag(t, t.treatmentType || null)
     + noteTag
     + '</div>'
-    + '<div class="trt-driver-meta">' + formatPlate(t.licensePlate) + ' · ' + t.vehicleModel + ' · אושר ב-' + formatTreatmentDate(t.approvedAt) + ' ב' + (t.approvedChannel === 'whatsapp' ? 'וואטסאפ' : 'מייל') + '</div>'
+    + '<div class="trt-driver-meta">אושר ב-' + formatTreatmentDate(t.approvedAt) + ' ב' + (t.approvedChannel === 'whatsapp' ? 'וואטסאפ' : 'מייל') + '</div>'
     + _trtNoteLine(t)
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
