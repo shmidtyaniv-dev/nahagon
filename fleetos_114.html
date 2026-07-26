@@ -23007,10 +23007,10 @@ function showBookingSuccess(date){
 
     <div class="trt-modal-filters">
       <span class="trt-filter-label">סנן:</span>
-      <button class="mini-pill active" data-scheduled-filter="all">הכל</button>
-      <button class="mini-pill mini-pill-green" data-scheduled-filter="this-week">השבוע</button>
-      <button class="mini-pill" data-scheduled-filter="treatment">טיפולים</button>
-      <button class="mini-pill" data-scheduled-filter="test">טסטים</button>
+      <button class="mini-pill active" data-scheduled-filter="all" onclick="setScheduledFilter('all',this)">הכל</button>
+      <button class="mini-pill mini-pill-green" data-scheduled-filter="this-week" onclick="setScheduledFilter('this-week',this)">השבוע</button>
+      <button class="mini-pill" data-scheduled-filter="treatment" onclick="setScheduledFilter('treatment',this)">טיפולים</button>
+      <button class="mini-pill" data-scheduled-filter="test" onclick="setScheduledFilter('test',this)">טסטים</button>
     </div>
 
     <div class="trt-modal-list" id="scheduled-list">
@@ -23666,6 +23666,9 @@ function renderTreatments() {
   // אם מודל "ממתין לבחירת תאריך" פתוח — רענן את הרשימה (שומר על הסינון שנבחר)
   var awMod = document.getElementById('modal-awaiting-choice');
   if (awMod && awMod.style.display !== 'none' && typeof renderAwaitingChoiceList === 'function') renderAwaitingChoiceList();
+  // אם מודל "מועד נקבע" פתוח — רענן גם אותו (שומר על הסינון שנבחר)
+  var scMod = document.getElementById('modal-scheduled');
+  if (scMod && scMod.style.display !== 'none' && typeof renderScheduledList === 'function') renderScheduledList();
 }
 
 function filterTreatments(treatments) {
@@ -23944,10 +23947,30 @@ function _trtTestDeadline(t) {
 // ============================================================
 // 14. מודאל "מועד נקבע" (ירוק)
 // ============================================================
+var _scheduledFilter = 'all';
+
 function openScheduledModal() {
   var modal = document.getElementById('modal-scheduled');
+  if (!modal) return;
+  // איפוס הסינון בכל פתיחה
+  _scheduledFilter = 'all';
+  document.querySelectorAll('[data-scheduled-filter]').forEach(function(b) {
+    b.classList.toggle('active', b.getAttribute('data-scheduled-filter') === 'all');
+  });
+  renderScheduledList();
+  modal.style.display = 'flex';
+}
+
+function setScheduledFilter(filter, btn) {
+  _scheduledFilter = filter;
+  document.querySelectorAll('[data-scheduled-filter]').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderScheduledList();
+}
+
+function renderScheduledList() {
   var list = document.getElementById('scheduled-list');
-  if (!modal || !list) return;
+  if (!list) return;
 
   var scheduled = filterTreatments(TREATMENT_STATE.treatments)
     .filter(function(t) { return t.status === 'scheduled'; });
@@ -23955,9 +23978,19 @@ function openScheduledModal() {
 
   var el = document.getElementById('scheduled-modal-count'); if (el) el.textContent = scheduled.length;
 
-  list.innerHTML = scheduled.map(function(t) { return renderScheduledRow(t); }).join('')
+  var filtered = scheduled.filter(function(t) {
+    if (_scheduledFilter === 'this-week') {
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var d = parseTreatmentDate(t.selectedDate); d.setHours(0, 0, 0, 0);
+      var diff = daysBetween(today, d);
+      return diff >= 0 && diff <= 7;
+    }
+    if (_scheduledFilter === 'treatment' || _scheduledFilter === 'test') return t.kind === _scheduledFilter;
+    return true;
+  });
+
+  list.innerHTML = filtered.map(function(t) { return renderScheduledRow(t); }).join('')
     || '<div style="padding:32px;text-align:center;color:var(--t2)">אין מועדים שנקבעו</div>';
-  modal.style.display = 'flex';
 }
 
 function renderScheduledRow(t) {
