@@ -4802,8 +4802,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">סטטוס</label>
           <select id="viol-status" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer">
             <option value="sent">נשלחה הודעה לנהג</option>
-            <option value="waiting">ממתין אישור נהג</option>
-            <option value="done">טופל - הסבה באחריות הנהג</option>
+            <option value="waiting">ממתין לאישור מהנהג</option>
+            <option value="done">טופל - הנהג עודכן על קיום הדוח</option>
           </select>
         </div>
       </div>
@@ -9315,7 +9315,7 @@ function getVehicleStatus(v){
   // Violations badge(s)
   if(vc===1){
     var viol=openViols[0];
-    var vt=viol.status==='waiting'?'ממתין אישור נהג':'נשלחה הודעה לנהג';
+    var vt=viol.status==='waiting'?'ממתין לאישור מהנהג':'נשלחה הודעה לנהג';
     var vcol=viol.status==='waiting'?'#BA7517':'#185FA5';
     var vbg=viol.status==='waiting'?'#FAEEDA':'#E6F1FB';
     badges.push(_vsBadge(vt,vcol,vbg));
@@ -15288,7 +15288,7 @@ function persistViolationsList(){
 }
 var _violFileCache = {};
 let violIdSeq=10;
-const VIOL_STATUS={sent:'נשלחה הודעה לנהג',waiting:'ממתין אישור נהג',done:'טופל - הסבה באחריות הנהג'};
+const VIOL_STATUS={sent:'נשלחה הודעה לנהג',waiting:'ממתין לאישור מהנהג',done:'טופל - הנהג עודכן על קיום הדוח'};
 const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'};
 
 function renderViolations(){
@@ -15304,8 +15304,8 @@ function renderViolations(){
         <select id="viol-filter" onchange="renderViolations()" style="font-size:13px;padding:6px 12px;border:1px solid var(--bdr2);border-radius:8px;background:var(--card);color:var(--t1);font-family:inherit;cursor:pointer">
           <option value="all"${filter==='all'?' selected':''}>הכל</option>
           <option value="sent"${filter==='sent'?' selected':''}>נשלחה הודעה לנהג</option>
-          <option value="waiting"${filter==='waiting'?' selected':''}>ממתין אישור נהג</option>
-          <option value="done"${filter==='done'?' selected':''}>טופל - הסבה באחריות הנהג</option>
+          <option value="waiting"${filter==='waiting'?' selected':''}>ממתין לאישור מהנהג</option>
+          <option value="done"${filter==='done'?' selected':''}>טופל - הנהג עודכן על קיום הדוח</option>
         </select>
       </div>
       <div style="display:flex;align-items:center;gap:8px;justify-content:center">
@@ -15320,8 +15320,8 @@ function renderViolations(){
     id('violations-list').innerHTML=html;return;
   }
 
-  html+=`<div class="viol-row viol-header" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.9fr 1.1fr">
-    <div>שם הנהג</div><div>מס׳ דוח</div><div>רכב</div><div>מקור הדוח</div><div>תאריך עבירה</div><div>סוג טיפול</div><div>סטטוס</div><div style="text-align:center">פעולות</div>
+  html+=`<div class="viol-row viol-header" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 1.4fr 1.1fr">
+    <div>שם הנהג</div><div>מס׳ דוח</div><div>רכב</div><div>מקור הדוח</div><div>תאריך עבירה</div><div>סטטוס</div><div style="text-align:center">פעולות</div>
   </div>`;
 
   list.forEach(v=>{
@@ -15331,26 +15331,18 @@ function renderViolations(){
     const ini=driverName!=='—'?inits(driverName):'—';
     const logsCount=(v.logs||[]).length;
 
-    // Type badge (סוג טיפול) — מדיניות: עדכון הנהג בלבד, ההסבה באחריותו
-    let typeBadge='';
-    if(v.transferApprovedAt || v.paymentReceipt){
-      typeBadge=`<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#E1F5EE;color:#0F6E56;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>הוסבה בהצלחה</span>`;
-    } else {
-      typeBadge=`<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#EEEDFE;color:#3C3489;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>הסבה באחריות הנהג</span>`;
-    }
-
-    // Auto status based on workflow state
+    // סטטוס אחד מאוחד — לפי הסטטוס שנבחר (מתעדכן אוטומטית בשליחה/אישור)
     let autoStatus='', autoStyle='', autoDot='';
     if(v.paymentReceipt){
       autoStatus='שולם'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
     } else if(v.transferApprovedAt){
       autoStatus='נהג אישר הסבה'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-    } else if(v.noticeApprovedAt){
-      autoStatus='נהג אישר - טופל'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-    } else if(v.status==='done'){
-      autoStatus='טופל - הסבה באחריות הנהג'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-    } else if(v.noticeSentAt){
-      autoStatus='נשלחה הודעה לנהג'; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
+    } else if(v.noticeApprovedAt || v.status==='done'){
+      autoStatus=VIOL_STATUS.done; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
+    } else if(v.status==='waiting'){
+      autoStatus=VIOL_STATUS.waiting; autoStyle='background:#FCF3E3;color:#8A5A00'; autoDot='#E8A33D';
+    } else if(v.noticeSentAt || v.status==='sent'){
+      autoStatus=VIOL_STATUS.sent; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
     } else {
       autoStatus='טרם נשלח'; autoStyle='background:#F1EFE8;color:#444441'; autoDot='#888780';
     }
@@ -15361,7 +15353,7 @@ function renderViolations(){
       workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="עדכון על דוח">📢</button>`;
     }
 
-    html+=`<div class="viol-row viol-data-row" data-vid="${v.id}" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.9fr 1.1fr">
+    html+=`<div class="viol-row viol-data-row" data-vid="${v.id}" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 1.4fr 1.1fr">
       <div class="viol-driver">
         <div class="viol-avatar" style="background:${ac}">${ini}</div>
         <div><div class="viol-driver-name">${esc(driverName)}</div>${v.transferDate?`<div style="font-size:10px;color:#5F5E5A;margin-top:1px">הסבה: ${fd(v.transferDate)}</div>`:''}</div>
@@ -15370,7 +15362,6 @@ function renderViolations(){
       <div class="viol-cell" data-label="רכב"><span class="viol-mono">${veh?veh.plate:'—'}</span></div>
       <div class="viol-cell" data-label="מקור"><span class="viol-muted">${v.issuer||'—'}</span></div>
       <div class="viol-cell" data-label="תאריך"><span class="viol-muted">${fd(v.date)}</span></div>
-      <div class="viol-cell">${typeBadge}</div>
       <div class="viol-cell">
         <span onclick="openViolStatusMenu(event,${v.id})" title="לחץ לשינוי סטטוס" style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:500;${autoStyle};white-space:nowrap;cursor:pointer"><span style="width:6px;height:6px;border-radius:50%;background:${autoDot};flex-shrink:0"></span>${autoStatus}<span style="font-size:8px;opacity:.55">▼</span></span>
       </div>
@@ -16738,8 +16729,9 @@ function renderVehicleViolations(){
   function getAutoStatus(viol){
     if(viol.paymentReceipt) return {label:'שולם',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
     if(viol.transferApprovedAt) return {label:'נהג אישר הסבה',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
-    if(viol.noticeApprovedAt) return {label:'נהג אישר - טופל',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
-    if(viol.noticeSentAt) return {label:'נשלחה הודעה לנהג',style:'background:#E6F1FB;color:#185FA5',dot:'#378ADD'};
+    if(viol.noticeApprovedAt||viol.status==='done') return {label:VIOL_STATUS.done,style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
+    if(viol.status==='waiting') return {label:VIOL_STATUS.waiting,style:'background:#FCF3E3;color:#8A5A00',dot:'#E8A33D'};
+    if(viol.noticeSentAt||viol.status==='sent') return {label:VIOL_STATUS.sent,style:'background:#E6F1FB;color:#185FA5',dot:'#378ADD'};
     return {label:'טרם נשלח',style:'background:#F1EFE8;color:#444441',dot:'#888780'};
   }
 
