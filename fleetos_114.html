@@ -15345,6 +15345,8 @@ function renderViolations(){
       autoStatus='נהג אישר הסבה'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
     } else if(v.noticeApprovedAt){
       autoStatus='נהג אישר - טופל'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
+    } else if(v.status==='done'){
+      autoStatus='טופל - הסבה באחריות הנהג'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
     } else if(v.noticeSentAt){
       autoStatus='נשלחה הודעה לנהג'; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
     } else {
@@ -15353,7 +15355,7 @@ function renderViolations(){
 
     // Workflow button — ההסבה באחריות הנהג, אין יותר שלב הסבה מהמנהל
     let workflowBtn='';
-    if(!v.noticeApprovedAt){
+    if(!v.noticeApprovedAt && v.status!=='done'){
       workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="עדכון על דוח">📢</button>`;
     }
 
@@ -15368,7 +15370,7 @@ function renderViolations(){
       <div class="viol-cell" data-label="תאריך"><span class="viol-muted">${fd(v.date)}</span></div>
       <div class="viol-cell">${typeBadge}</div>
       <div class="viol-cell">
-        <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:500;${autoStyle};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:${autoDot};flex-shrink:0"></span>${autoStatus}</span>
+        <span onclick="openViolStatusMenu(event,${v.id})" title="לחץ לשינוי סטטוס" style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:500;${autoStyle};white-space:nowrap;cursor:pointer"><span style="width:6px;height:6px;border-radius:50%;background:${autoDot};flex-shrink:0"></span>${autoStatus}<span style="font-size:8px;opacity:.55">▼</span></span>
       </div>
       <div class="viol-actions" style="justify-content:center">
         ${workflowBtn}
@@ -15383,6 +15385,47 @@ function renderViolations(){
 
   html+=`</div>`;
   id('violations-list').innerHTML=html;
+}
+
+/* ── שינוי סטטוס ישירות מהטבלה (בלחיצה על תגית הסטטוס) ── */
+function openViolStatusMenu(ev,vid){
+  ev.stopPropagation();
+  var ex=document.getElementById('viol-status-menu'); if(ex){ex.remove();}
+  var v=violationsList.find(function(x){return x.id===vid;}); if(!v)return;
+  var menu=document.createElement('div');
+  menu.id='viol-status-menu';
+  menu.style.cssText='position:fixed;z-index:9999;background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:6px;min-width:210px;direction:rtl';
+  Object.keys(VIOL_STATUS).forEach(function(k){
+    var b=document.createElement('button');
+    b.style.cssText='display:block;width:100%;text-align:right;padding:10px 12px;border:none;background:'+(v.status===k?'#E1F5EE':'transparent')+';border-radius:7px;cursor:pointer;font-family:inherit;font-size:13px;color:#1A1A1A';
+    b.textContent=(v.status===k?'✓ ':'')+VIOL_STATUS[k];
+    b.onclick=function(e){e.stopPropagation();setViolStatusInline(vid,k);};
+    menu.appendChild(b);
+  });
+  document.body.appendChild(menu);
+  var r=menu.getBoundingClientRect();
+  var x=Math.min(ev.clientX,window.innerWidth-r.width-8);
+  var y=ev.clientY+10;
+  if(y+r.height>window.innerHeight-8)y=ev.clientY-r.height-10;
+  menu.style.left=Math.max(8,x)+'px';
+  menu.style.top=Math.max(8,y)+'px';
+  setTimeout(function(){
+    document.addEventListener('click',function h(){menu.remove();document.removeEventListener('click',h);});
+  },0);
+}
+
+function setViolStatusInline(vid,key){
+  var ex=document.getElementById('viol-status-menu'); if(ex)ex.remove();
+  var v=violationsList.find(function(x){return x.id===vid;}); if(!v)return;
+  if(v.status===key)return;
+  v.status=key;
+  if(!v.logs)v.logs=[];
+  v.logs.push({date:new Date().toLocaleDateString('he-IL'),text:'✏️ הסטטוס עודכן ידנית ל"'+(VIOL_STATUS[key]||key)+'"'});
+  try{syncPersistItem('violations',v);}catch(e){console.error(e);}
+  try{localStorage.setItem('violationsList',JSON.stringify(violationsList));}catch(e){}
+  renderViolations();
+  if(_currentVid&&typeof renderVcViolations==='function')renderVcViolations(_currentVid);
+  showToast('הסטטוס עודכן');
 }
 
 function uploadPaymentReceipt(vid){
