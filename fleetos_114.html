@@ -22197,6 +22197,12 @@ function saveSchedulingSettings(){
   var timeEl=document.getElementById('sched-daily-check-time');
   if(timeEl&&timeEl.value) s.schedDailyCheckTime=timeEl.value;
   localStorage.setItem('fleetSettings',JSON.stringify(s));
+  // סנכרון לענן (settings/fleetSettings) — בלעדיו המאזין בין-מכשירים דורס את הערכים בערכים ישנים מהענן
+  if(typeof db!=='undefined'&&db){
+    var _toSync=Object.assign({},s);
+    delete _toSync.moreB64; delete _toSync.colB64;
+    db.collection('settings').doc('fleetSettings').set(_toSync,{merge:true}).catch(function(e){console.error('saveSchedulingSettings Firestore:',e);});
+  }
   // שמור גם ל-Firestore settings/treatments
   if(typeof db!=='undefined'&&db){
     db.collection('settings').doc('treatments').set({
