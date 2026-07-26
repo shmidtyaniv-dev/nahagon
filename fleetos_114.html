@@ -1329,6 +1329,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .trt-driver-tag-note { color: var(--blue-dark); background: var(--blue-light); }
 
 .trt-driver-meta { font-size: 13px; color: var(--t2); }
+.trt-meta-choice { font-size: 15px; font-weight: 600; color: var(--t1); margin-top: 3px; letter-spacing: .1px; }
 .trt-driver-actions {
   display: flex;
   gap: 6px;
@@ -1786,6 +1787,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   .trt-driver-avatar { width: 32px; height: 32px; font-size: 12px; }
   .trt-driver-name { font-size: 15px; }
   .trt-driver-meta { font-size: 12.5px; }
+  .trt-meta-choice { font-size: 15px; }
   .trt-driver-tag { font-size: 11px; }
 
   .trt-notif-panel { top: 54px; }
@@ -16408,14 +16410,11 @@ function violSendEmail(token){
 }
 
 function _openOrDownload(url,name){
-  // base64 → download tag; Storage URL → open in new tab (browser handles download)
+  // הורדה אמיתית בכל מקרה (base64 או כתובת ענן) — כולל בנייד
   if(!url)return;
-  if(url.startsWith('data:')){
-    var a=document.createElement('a');a.href=url;a.download=name||'קובץ';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-  }else{
-    window.open(url,'_blank');
-  }
+  if(typeof downloadDocFile==='function'){downloadDocFile(url,name);return;}
+  var a=document.createElement('a');a.href=url;a.download=name||'קובץ';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 function violDownloadFile(vid){
   const v=violationsList.find(function(x){return x.id===vid;});
@@ -18252,13 +18251,42 @@ function viewDoc(vid,key){
     }).catch(function(e){console.error('viewDoc fallback:',e);showToast('שגיאה בטעינת הקובץ');});
   }).catch(function(e){console.error('viewDoc:',e);showToast('שגיאה בטעינת הקובץ');});
 }
+/* הורדת קובץ אמיתית — עובד גם בנייד; base64 ישירות, כתובת ענן דרך blob */
+function downloadDocFile(url,name,type){
+  if(!url){showToast('אין קובץ להורדה');return;}
+  var fname=name||'מסמך';
+  if(fname.indexOf('.')===-1){
+    var t=type||(url.indexOf('data:')===0?url.slice(5).split(/[;,]/)[0]:'');
+    var ext=t==='application/pdf'?'.pdf':t==='image/png'?'.png':(t==='image/jpeg'||t==='image/jpg')?'.jpg':'';
+    fname+=ext;
+  }
+  function trigger(href){
+    var a=document.createElement('a');a.href=href;a.download=fname;
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){try{document.body.removeChild(a);}catch(e){}},100);
+  }
+  if(url.indexOf('data:')===0){trigger(url);showToast('📥 הקובץ הורד');return;}
+  showToast('מוריד קובץ...');
+  fetch(url).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.blob();}).then(function(b){
+    var u=URL.createObjectURL(b);
+    trigger(u);
+    setTimeout(function(){URL.revokeObjectURL(u);},5000);
+    showToast('📥 הקובץ הורד');
+  }).catch(function(e){
+    console.error('downloadDocFile:',e);
+    window.open(url,'_blank');
+  });
+}
 function openDocViewer(dataUrl,type,name){
   const overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;flex-direction:column';
-  const hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#1A4A3A;flex-shrink:0';
-  const lbl=document.createElement('span');lbl.style.cssText='color:#fff;font-size:13px;font-weight:500';lbl.textContent=name;
-  const btn=document.createElement('button');btn.style.cssText='background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px';btn.textContent='×';btn.onclick=()=>document.body.removeChild(overlay);
-  hdr.appendChild(lbl);hdr.appendChild(btn);overlay.appendChild(hdr);
+  const hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:#1A4A3A;flex-shrink:0';
+  const lbl=document.createElement('span');lbl.style.cssText='color:#fff;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';lbl.textContent=name;
+  const dl=document.createElement('button');dl.style.cssText='background:rgba(255,255,255,.18);border:none;color:#fff;height:34px;padding:0 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;white-space:nowrap';dl.textContent='📥 הורדה';dl.onclick=function(){downloadDocFile(dataUrl,name,type);};
+  const btn=document.createElement('button');btn.style.cssText='background:rgba(255,255,255,.15);border:none;color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;flex-shrink:0';btn.textContent='×';btn.onclick=()=>document.body.removeChild(overlay);
+  const btns=document.createElement('div');btns.style.cssText='display:flex;align-items:center;gap:8px;flex-shrink:0';
+  btns.appendChild(dl);btns.appendChild(btn);
+  hdr.appendChild(lbl);hdr.appendChild(btns);overlay.appendChild(hdr);
   if(type&&type.startsWith('image/')){
     const wrap=document.createElement('div');wrap.style.cssText='flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:16px';
     const img=document.createElement('img');img.src=dataUrl;img.style.cssText='max-width:100%;max-height:100%;object-fit:contain';
@@ -23778,7 +23806,7 @@ function renderPendingRow(t) {
     + trtKindTag(t)
     + noteTag
     + '</div>'
-    + '<div class="trt-driver-meta">' + formatPlate(t.licensePlate) + ' · ' + t.vehicleModel + ' · בחר: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
+    + '<div class="trt-driver-meta trt-meta-choice">📅 בחר: ' + getHebrewDayName(t.selectedDate) + ' ' + formatTreatmentDateShort(t.selectedDate) + ' · ' + getAppointmentTime() + '</div>'
     + _trtNoteLine(t)
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
@@ -26222,17 +26250,8 @@ function ordersViewFile(idx){
   ordersLoad();
   var o = _orders[idx];
   if(!o || !o.fileData) return;
-  var w = window.open();
-  if(o.fileType && o.fileType.startsWith('image/')){
-    w.document.write('<html><body style="margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh"><img src="'+o.fileData+'" style="max-width:100%;max-height:100vh;object-fit:contain"></body></html>');
-  } else {
-    var byteString = atob(o.fileData.split(',')[1]);
-    var ab = new ArrayBuffer(byteString.length);
-    var ia = new Uint8Array(ab);
-    for(var i=0;i<byteString.length;i++) ia[i]=byteString.charCodeAt(i);
-    var blob = new Blob([ab], {type: o.fileType||'application/octet-stream'});
-    w.location.href = URL.createObjectURL(blob);
-  }
+  // צופה במסמך דרך הצפיין המרכזי — כולל כפתור הורדה
+  openDocViewer(o.fileData, o.fileType||'', o.fileName||'קובץ הזמנה');
 }
 
 function ordersDelete(idx){
