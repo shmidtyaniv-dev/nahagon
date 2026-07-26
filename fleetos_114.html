@@ -4757,33 +4757,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
       </div>
       <button onclick="closeModal('viol-ov')" style="background:rgba(255,255,255,.15);border:none;width:30px;height:30px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
-    <!-- Type selector -->
-    <div style="padding:22px 20px 0">
-      <label style="display:block;font-size:13px;font-weight:500;margin-bottom:8px;color:#1A1A1A">סוג הטיפול <span style="color:#E24B4A">*</span></label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="viol-type-selector">
-        <label id="viol-type-transfer-card" onclick="selectViolType('transfer')" style="position:relative;padding:14px;border:2px solid #1D9E75;background:#E1F5EE;border-radius:8px;cursor:pointer;transition:all .15s">
-          <input type="radio" name="viol-type" value="transfer" checked style="position:absolute;top:12px;left:12px;accent-color:#1D9E75">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-            <div style="width:34px;height:34px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
-            </div>
-            <span style="font-size:14px;font-weight:500;color:#0F6E56">הסבה באחריות הנהג</span>
-          </div>
-          <p style="margin:0;font-size:12px;color:#0F6E56;line-height:1.5">הנהג יגש למחלקת הרכש ויבצע הסבה מול הרשות — באחריותו בלבד</p>
-        </label>
-        <label id="viol-type-payment-card" onclick="selectViolType('payment')" style="position:relative;padding:14px;border:0.5px solid rgba(0,0,0,.15);background:#fff;border-radius:8px;cursor:pointer;transition:all .15s">
-          <input type="radio" name="viol-type" value="payment" style="position:absolute;top:12px;left:12px;accent-color:#1D9E75">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-            <div style="width:34px;height:34px;border-radius:8px;background:#F1EFE8;display:flex;align-items:center;justify-content:center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-            </div>
-            <span style="font-size:14px;font-weight:500;color:#1A1A1A">תשלום ישיר</span>
-          </div>
-          <p style="margin:0;font-size:12px;color:#5F5E5A;line-height:1.5">הנהג ישלם את הדוח בלי להסב אותו</p>
-        </label>
-      </div>
+    <!-- מדיניות: המערכת מיידעת את הנהג בלבד — ההסבה והתשלום באחריותו -->
+    <div style="padding:18px 20px 0">
+      <div style="background:#E1F5EE;border:1px solid #A7DFC9;border-radius:8px;padding:10px 14px;font-size:12px;color:#0F6E56;line-height:1.6">ℹ️ המערכת מיידעת את הנהג על קיום הדוח בלבד. ביצוע ההסבה מול הרשות — דרך מחלקת הרכש, באחריות הנהג בלבד.</div>
     </div>
-    <div style="margin:20px;border-top:0.5px solid rgba(0,0,0,.08)"></div>
+    <div style="margin:16px 20px;border-top:0.5px solid rgba(0,0,0,.08)"></div>
     <!-- Form body -->
     <div style="padding:0 20px">
       <input type="hidden" id="viol-edit-id">
@@ -15351,12 +15329,9 @@ function renderViolations(){
     const ini=driverName!=='—'?inits(driverName):'—';
     const logsCount=(v.logs||[]).length;
 
-    // Type badge (סוג טיפול)
-    const isPayment=v.processType==='payment';
+    // Type badge (סוג טיפול) — מדיניות: עדכון הנהג בלבד, ההסבה באחריותו
     let typeBadge='';
-    if(isPayment){
-      typeBadge=`<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#E6F1FB;color:#0C447C;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>תשלום ישיר</span>`;
-    } else if(v.transferApprovedAt || v.paymentReceipt){
+    if(v.transferApprovedAt || v.paymentReceipt){
       typeBadge=`<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#E1F5EE;color:#0F6E56;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>הוסבה בהצלחה</span>`;
     } else {
       typeBadge=`<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#EEEDFE;color:#3C3489;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>הסבה באחריות הנהג</span>`;
@@ -15366,36 +15341,20 @@ function renderViolations(){
     let autoStatus='', autoStyle='', autoDot='';
     if(v.paymentReceipt){
       autoStatus='שולם'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-    } else if(isPayment){
-      if(v.noticeApprovedAt){
-        autoStatus='נהג אישר ושילם'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-      } else if(v.noticeSentAt){
-        autoStatus='נשלח לתשלום'; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
-      } else {
-        autoStatus='טרם נשלח'; autoStyle='background:#F1EFE8;color:#444441'; autoDot='#888780';
-      }
+    } else if(v.transferApprovedAt){
+      autoStatus='נהג אישר הסבה'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
+    } else if(v.noticeApprovedAt){
+      autoStatus='נהג אישר - טופל'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
+    } else if(v.noticeSentAt){
+      autoStatus='נשלחה הודעה לנהג'; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
     } else {
-      if(v.transferApprovedAt){
-        autoStatus='נהג אישר הסבה'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-      } else if(v.noticeApprovedAt){
-        autoStatus='נהג אישר - טופל'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-      } else if(v.noticeSentAt){
-        autoStatus='נשלחה הודעה לנהג'; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
-      } else {
-        autoStatus='טרם נשלח'; autoStyle='background:#F1EFE8;color:#444441'; autoDot='#888780';
-      }
+      autoStatus='טרם נשלח'; autoStyle='background:#F1EFE8;color:#444441'; autoDot='#888780';
     }
 
     // Workflow button — ההסבה באחריות הנהג, אין יותר שלב הסבה מהמנהל
     let workflowBtn='';
-    if(isPayment){
-      if(!v.noticeSentAt){
-        workflowBtn=`<button onclick="sendViolPaymentToDriver(${v.id})" class="viol-icon-btn v-amber" title="שלח לתשלום">💳</button>`;
-      }
-    } else {
-      if(!v.noticeApprovedAt){
-        workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="עדכון על דוח">📢</button>`;
-      }
+    if(!v.noticeApprovedAt){
+      workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="עדכון על דוח">📢</button>`;
     }
 
     html+=`<div class="viol-row viol-data-row" data-vid="${v.id}" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.9fr 0.9fr 1.1fr">
@@ -15839,8 +15798,7 @@ function openViolationModal(editId){
     id('viol-status').value=v.status;id('viol-notes').value=v.notes||'';
   }else{
     id('viol-modal-title').textContent='פתיחת דוח תנועה';
-    const nextN='D-'+new Date().getFullYear()+'-'+(violationsList.length+1).toString().padStart(3,'0');
-    id('viol-num').value=nextN;id('viol-date').value=localDateStr();
+    id('viol-num').value='';id('viol-date').value=localDateStr();
     selectVehiclePicker('viol','');id('viol-status').value='sent';id('viol-notes').value='';
   }
   openModal('viol-ov');
@@ -15916,7 +15874,7 @@ function saveViolation(){
       date:id('viol-date').value,
       issuer,
       processType:processType,
-      status:processType==='payment'?'payment':id('viol-status').value,
+      status:id('viol-status').value,
       notes:id('viol-notes').value,
       fileData:fileData||null,
       fileType:fileType||null,
@@ -16013,7 +15971,7 @@ function saveViolation(){
   }
 }
 
-const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nעליך לגשת למחלקת הרכש ולדאוג לביצוע הסבת הדוח על שמך מול הרשות שהוציאה את הדוח.\n⚠️ חשוב: האחריות לביצוע ההסבה על שמך היא באחריותך בלבד.\n\n{תשלום}\n{קובץ}\nלאישור על קיום הדוח, חובה ללחוץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nעליך לגשת למחלקת הרכש ולדאוג לביצוע הסבת הדוח על שמך מול הרשות שהוציאה את הדוח.\n⚠️ חשוב: האחריות לביצוע ההסבה על שמך היא באחריותך בלבד.\n\n{קובץ}\nלאישור על קיום הדוח, חובה ללחוץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} הוסב על שמך.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאישור על הסבת הדוח על שמך, חובה ללחוץ כאן:\n{לינק}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום בקישור למעלה.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const VIOL_MSG_PAYMENT_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nעליך לשלם את הדוח.\n{תשלום}\n\nלאישור על קיום הדוח ותשלומו, חובה ללחוץ כאן:\n{לינק}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום בקישור למעלה.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
@@ -16227,7 +16185,7 @@ function sendViolToDriver(vid,stage){
   if(!v.logs)v.logs=[];
   const logText=stage==='transfer'
     ?'📤 נשלח עדכון נהג על הסבת הדוח על שמו'
-    :v.processType==='payment'?'💳 נשלח לנהג לתשלום ישיר':'📤 נשלח עדכון נהג על קיום הדוח';
+    :'📤 נשלח עדכון נהג על קיום הדוח';
   v.logs.push({date:sentDateStr,text:logText});
   const approveUrl=getViolApproveUrl(v[tokenField]);
 
@@ -16251,8 +16209,7 @@ function sendViolToDriver(vid,stage){
   const driverPhone=veh.driver.phone||'';
   const driverEmail=veh.driver.email||'';
   const s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  const isPaymentType=v.processType==='payment';
-  const tpl=stage==='transfer'?(s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT):isPaymentType?VIOL_MSG_PAYMENT_DEFAULT:(s.violMsgTemplate||VIOL_MSG_DEFAULT);
+  const tpl=stage==='transfer'?(s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT):(s.violMsgTemplate||VIOL_MSG_DEFAULT);
   const includeFileDefault=s.violIncludeFile!==false;
   const hasFile=!!(v.fileData||v._hasFile||_violFileCache[v.id]);
 
@@ -16263,9 +16220,8 @@ function sendViolToDriver(vid,stage){
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
 
-  // Payment link
-  const payInfo = getViolPaymentInfo(v.issuer);
-  const paymentLine = payInfo ? ('לתשלום הדוח באינטרנט:\n' + payInfo.url) : '';
+  // מדיניות: אין יותר קישורי תשלום בהודעות
+  const paymentLine = '';
   // Preview message (without file line - file handled separately)
   const previewData={driverName,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine:hasFile&&includeFileDefault?'הקובץ של הדוח מצורף.':'',paymentLine};
   const msgPreview=fillViolMsgTemplate(tpl,previewData);
@@ -16340,8 +16296,7 @@ function violSendWhatsApp(token){
   const attachFile=attachCb?attachCb.checked:false;
   const hasFile=!!(v.fileData||v._hasFile||_violFileCache[v.id]);
   const fileLine=attachFile&&hasFile?'* קובץ הדוח יישלח בנפרד':'';
-  const payInfo=getViolPaymentInfo(v.issuer);
-  const paymentLine=payInfo?('לתשלום הדוח באינטרנט:\n'+payInfo.url):'';
+  const paymentLine='';
   const msg=fillViolMsgTemplate(tpl,{driverName:veh.driver.name,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine,paymentLine});
 
   // Build WhatsApp URL - Israeli format
@@ -16385,8 +16340,7 @@ function violSendEmail(token){
   const attachFile=attachCb?attachCb.checked:false;
   const hasFileE=!!(v.fileData||v._hasFile||_violFileCache[v.id]);
   const fileLine=attachFile&&hasFileE?'* אנא צרף/י את קובץ הדוח המצורף למייל זה':'';
-  const payInfo=getViolPaymentInfo(v.issuer);
-  const paymentLine=payInfo?('לתשלום הדוח באינטרנט:\n'+payInfo.url):'';
+  const paymentLine='';
   const body=fillViolMsgTemplate(tpl,{driverName:veh.driver.name,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine,paymentLine});
   const subjectStr=stage==='transfer'?('הסבת דוח תנועה '+v.num+' על שמך — נדרש אישור'):('הודעה על דוח תנועה '+v.num+' — נדרש אישור קבלה');
   const subject=encodeURIComponent(subjectStr);
@@ -16534,12 +16488,6 @@ function renderApprovalPageInner(page,token,info,alreadyApproved){
         :'<div id="approve-action" style="text-align:center">'+
           '<div style="font-size:13px;color:#666;margin-bottom:14px;line-height:1.6">'+confirmText+'</div>'+
           '<button onclick="confirmViolApproval(\''+token+'\')" style="width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">'+buttonText+'</button></div>')+
-      '<div id="pay-receipt-section" style="margin-top:18px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px;text-align:center">'+
-        '<div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:8px">💳 שילמת את הדוח? צרף אישור תשלום</div>'+
-        '<label for="driver-pay-file" style="display:inline-block;padding:10px 20px;background:#16a34a;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">📤 העלה אישור תשלום</label>'+
-        '<input type="file" id="driver-pay-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="driverUploadReceipt(this,\''+token+'\')">'+
-        '<div id="driver-pay-status" style="margin-top:8px;font-size:12px"></div>'+
-      '</div>'+
       '<div style="text-align:center;margin-top:18px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
     '</div></div>';
 }
@@ -16746,13 +16694,7 @@ function renderVehicleViolations(){
 
   // Compute auto-status same as main list
   function getAutoStatus(viol){
-    const isPayment=viol.processType==='payment';
     if(viol.paymentReceipt) return {label:'שולם',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
-    if(isPayment){
-      if(viol.noticeApprovedAt) return {label:'נהג אישר ושילם',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
-      if(viol.noticeSentAt) return {label:'נשלח לתשלום',style:'background:#E6F1FB;color:#185FA5',dot:'#378ADD'};
-      return {label:'טרם נשלח',style:'background:#F1EFE8;color:#444441',dot:'#888780'};
-    }
     if(viol.transferApprovedAt) return {label:'נהג אישר הסבה',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
     if(viol.noticeApprovedAt) return {label:'נהג אישר - טופל',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
     if(viol.noticeSentAt) return {label:'נשלחה הודעה לנהג',style:'background:#E6F1FB;color:#185FA5',dot:'#378ADD'};
