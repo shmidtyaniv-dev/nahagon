@@ -6727,7 +6727,17 @@ function renderVcMissions(vid){
     </div>`).join('');
 }
 
+/* מעדכן את מונה הדוחות בכרטיס "נתוני נהג" + הבאדג' על לשונית דוחות תנועה */
+function refreshVehicleViolCounters(vid){
+  var n=violationsList.filter(function(x){return x.vehicleId===vid;}).length;
+  var vb=id('vc-viol-badge');
+  if(vb){if(n){vb.style.display='inline';vb.textContent=n;}else{vb.style.display='none';}}
+  var st=document.getElementById('vc-stat-viol-count');
+  if(st)st.textContent=n;
+}
+
 function renderVcViolations(vid){
+  refreshVehicleViolCounters(vid);
   const el=id('vc-violations-content');
   if(!el)return;
   const vViols=violationsList.filter(function(v){return v.vehicleId===vid;});
@@ -11616,7 +11626,7 @@ function openDet(vid){
       <div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px;text-align:right">נתוני נהג</div>
       ${statRow(
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>',
-        'דוחות תנועה', vViolations.length
+        'דוחות תנועה', `<span id="vc-stat-viol-count">${vViolations.length}</span>`
       )}
       ${statRow(
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E89B2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
@@ -16715,6 +16725,7 @@ function startViolApprovalsListener(){
 /* ── VEHICLE CARD VIOLATIONS ── */
 function renderVehicleViolations(){
   const v=vehicles.find(x=>x.id===_currentVid);if(!v)return;
+  if(typeof refreshVehicleViolCounters==='function')refreshVehicleViolCounters(v.id);
   const list=violationsList.filter(x=>x.vehicleId===v.id);
   const cont=id('vc-violations-content');if(!cont)return;
   if(!list.length){
