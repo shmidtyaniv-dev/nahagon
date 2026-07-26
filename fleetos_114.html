@@ -2581,7 +2581,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div class="mc" onclick="go('violations',q('[dp=violations]'))">
           <div class="stat-row">
             <div class="stat-text">
-              <div class="mc-lbl">דוחות להסבה</div>
+              <div class="mc-lbl">דוחות פתוחים</div>
               <div class="mc-val" style="color:#E89B2A" id="mv-violations">0</div>
               <div class="mc-sub" id="mv-violations-sub">ממתינים לטיפול</div>
               <div class="stat-value-empty" id="mv-violations-empty" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>✓ הכל בסדר</div>
@@ -3651,19 +3651,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div class="settings-template-item">
               <div class="settings-template-item-header">
                 <div class="settings-template-item-title">
-                  שלב 1 - עדכון על קיום הדוח
+                  הודעה לנהג על קיום הדוח (ההסבה באחריות הנהג)
                 </div>
               </div>
-              <textarea id="viol-msg-template" class="settings-template-textarea" rows="7" placeholder="שלום {נהג}..."></textarea>
-            </div>
-
-            <div class="settings-template-item">
-              <div class="settings-template-item-header">
-                <div class="settings-template-item-title">
-                  שלב 2 - עדכון על הסבת הדוח
-                </div>
-              </div>
-              <textarea id="viol-msg-transfer-template" class="settings-template-textarea" rows="7" placeholder="שלום {נהג}, הדוח הוסב על שמך..."></textarea>
+              <textarea id="viol-msg-template" class="settings-template-textarea" rows="9" placeholder="שלום {נהג}..."></textarea>
             </div>
 
             <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
@@ -4776,9 +4767,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <div style="width:34px;height:34px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
             </div>
-            <span style="font-size:14px;font-weight:500;color:#0F6E56">בקשה להסבה</span>
+            <span style="font-size:14px;font-weight:500;color:#0F6E56">הסבה באחריות הנהג</span>
           </div>
-          <p style="margin:0;font-size:12px;color:#0F6E56;line-height:1.5">הנהג יסב את הדוח על שמו וישלם</p>
+          <p style="margin:0;font-size:12px;color:#0F6E56;line-height:1.5">הנהג יגש למחלקת הרכש ויבצע הסבה מול הרשות — באחריותו בלבד</p>
         </label>
         <label id="viol-type-payment-card" onclick="selectViolType('payment')" style="position:relative;padding:14px;border:0.5px solid rgba(0,0,0,.15);background:#fff;border-radius:8px;cursor:pointer;transition:all .15s">
           <input type="radio" name="viol-type" value="payment" style="position:absolute;top:12px;left:12px;accent-color:#1D9E75">
@@ -4830,9 +4821,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
         <div id="viol-status-row">
           <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1A1A1A">סטטוס</label>
           <select id="viol-status" style="width:100%;height:40px;padding:0 12px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1A1A1A;cursor:pointer">
-            <option value="sent">נשלחה בקשה להסב</option>
-            <option value="waiting">ממתין אישור הסבה</option>
-            <option value="done">נהג עודכן - טופל</option>
+            <option value="sent">נשלחה הודעה לנהג</option>
+            <option value="waiting">ממתין אישור נהג</option>
+            <option value="done">טופל - הסבה באחריות הנהג</option>
           </select>
         </div>
       </div>
@@ -6765,7 +6756,7 @@ function renderVcViolations(vid){
     el.innerHTML='<div style="text-align:center;padding:28px 0;color:var(--t3);font-size:14px">אין דוחות תנועה לרכב זה</div>';
     return;
   }
-  el.innerHTML='<div class="tw" style="border-radius:var(--r)"><table><thead><tr><th>מ. דוח</th><th>מקור הדוח</th><th>תאריך הסבה</th><th>סטטוס</th><th>תיעודים</th><th></th></tr></thead><tbody>'+
+  el.innerHTML='<div class="tw" style="border-radius:var(--r)"><table><thead><tr><th>מ. דוח</th><th>מקור הדוח</th><th>תאריך העבירה</th><th>סטטוס</th><th>תיעודים</th><th></th></tr></thead><tbody>'+
     vViols.map(function(v){
       const logsCount=(v.logs||[]).length;
       return '<tr>'+
@@ -6781,8 +6772,7 @@ function renderVcViolations(vid){
           (v.noticeApprovedAt?'<span style="font-size:10px;color:#166534;background:#dcfce7;padding:2px 7px;border-radius:999px;white-space:nowrap" title="'+v.noticeApprovedAt+'">✅ הודעה אושרה</span>':'')+
           (v.transferSentAt&&!v.transferApprovedAt?'<span style="font-size:10px;color:#991b1b;background:#fee2e2;padding:2px 7px;border-radius:999px;white-space:nowrap" title="נשלח: '+v.transferSentAt+'">📤 נשלח הסבה</span>':'')+
           (v.transferApprovedAt?'<span style="font-size:10px;color:#166534;background:#dcfce7;padding:2px 7px;border-radius:999px;white-space:nowrap" title="'+v.transferApprovedAt+'">✅ הסבה אושרה</span>':'')+
-          (v.transferApprovedAt?'':
-            v.noticeApprovedAt?'<button onclick="sendViolTransferToDriver('+v.id+')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#991b1b;font-family:inherit">⚖️ הסבת דוח</button>':
+          (v.noticeApprovedAt?'':
             '<button onclick="sendViolNoticeToDriver('+v.id+')" style="background:#fef3c7;border:1px solid #fde68a;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#92400e;font-family:inherit">📢 עדכון על דוח</button>')+
           ((v.fileData||v._hasFile)?'<button onclick="viewViolationDoc('+v.id+')" style="background:var(--gd);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px">📄 צפה</button>':'')+
           (v.paymentReceipt?'<button onclick="viewPaymentReceipt('+v.id+')" style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-family:inherit">✅ שולם</button>':'')+
@@ -9345,7 +9335,7 @@ function getVehicleStatus(v){
   // Violations badge(s)
   if(vc===1){
     var viol=openViols[0];
-    var vt=viol.status==='waiting'?'ממתין להסבה':'נשלח להסבה';
+    var vt=viol.status==='waiting'?'ממתין אישור נהג':'נשלחה הודעה לנהג';
     var vcol=viol.status==='waiting'?'#BA7517':'#185FA5';
     var vbg=viol.status==='waiting'?'#FAEEDA':'#E6F1FB';
     badges.push(_vsBadge(vt,vcol,vbg));
@@ -13906,7 +13896,7 @@ function showAttentionDetails(){
   var violCount=(typeof violationsList!=='undefined'?violationsList:[]).filter(function(v){return v.status!=='done'&&v.status!=='closed';}).length;
   var items=[];
   if(accCount) items.push({icon:'⚠️',label:'תאונות פתוחות',count:accCount,color:'#E24B4A'});
-  if(violCount) items.push({icon:'📄',label:'דוחות להסבה',count:violCount,color:'#E89B2A'});
+  if(violCount) items.push({icon:'📄',label:'דוחות פתוחים',count:violCount,color:'#E89B2A'});
   if(missingDocsCount) items.push({icon:'📋',label:'רכבים עם מסמכים חסרים',count:missingDocsCount,color:'#378ADD'});
   if(altCount) items.push({icon:'👥',label:'נהגים על חלופי/גישור',count:altCount,color:'#1D9E75'});
   var ex=document.getElementById('attention-popup');if(ex)ex.remove();
@@ -15318,7 +15308,7 @@ function persistViolationsList(){
 }
 var _violFileCache = {};
 let violIdSeq=10;
-const VIOL_STATUS={sent:'נשלחה בקשה להסב',waiting:'ממתין אישור הסבה',done:'נהג עודכן - טופל'};
+const VIOL_STATUS={sent:'נשלחה הודעה לנהג',waiting:'ממתין אישור נהג',done:'טופל - הסבה באחריות הנהג'};
 const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'};
 
 function renderViolations(){
@@ -15333,9 +15323,9 @@ function renderViolations(){
         <button class="btn btn-p btn-sm" onclick="openViolationModal()" style="border-radius:8px">+ דוח חדש</button>
         <select id="viol-filter" onchange="renderViolations()" style="font-size:13px;padding:6px 12px;border:1px solid var(--bdr2);border-radius:8px;background:var(--card);color:var(--t1);font-family:inherit;cursor:pointer">
           <option value="all"${filter==='all'?' selected':''}>הכל</option>
-          <option value="sent"${filter==='sent'?' selected':''}>נשלחה בקשה להסב</option>
-          <option value="waiting"${filter==='waiting'?' selected':''}>ממתין אישור הסבה</option>
-          <option value="done"${filter==='done'?' selected':''}>נהג עודכן - טופל</option>
+          <option value="sent"${filter==='sent'?' selected':''}>נשלחה הודעה לנהג</option>
+          <option value="waiting"${filter==='waiting'?' selected':''}>ממתין אישור נהג</option>
+          <option value="done"${filter==='done'?' selected':''}>טופל - הסבה באחריות הנהג</option>
         </select>
       </div>
       <div style="display:flex;align-items:center;gap:8px;justify-content:center">
@@ -15369,7 +15359,7 @@ function renderViolations(){
     } else if(v.transferApprovedAt || v.paymentReceipt){
       typeBadge=`<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#E1F5EE;color:#0F6E56;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>הוסבה בהצלחה</span>`;
     } else {
-      typeBadge=`<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#EEEDFE;color:#3C3489;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>בקשה להסבה</span>`;
+      typeBadge=`<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#EEEDFE;color:#3C3489;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>הסבה באחריות הנהג</span>`;
     }
 
     // Auto status based on workflow state
@@ -15387,30 +15377,24 @@ function renderViolations(){
     } else {
       if(v.transferApprovedAt){
         autoStatus='נהג אישר הסבה'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-      } else if(v.transferSentAt){
-        autoStatus='נשלחה הסבה לנהג'; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
       } else if(v.noticeApprovedAt){
-        autoStatus='נהג אישר קיום הדוח'; autoStyle='background:#FAEEDA;color:#854F0B'; autoDot='#BA7517';
+        autoStatus='נהג אישר - טופל'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
       } else if(v.noticeSentAt){
-        autoStatus='נשלחה הודעה לנהג'; autoStyle='background:#FAEEDA;color:#854F0B'; autoDot='#BA7517';
+        autoStatus='נשלחה הודעה לנהג'; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
       } else {
         autoStatus='טרם נשלח'; autoStyle='background:#F1EFE8;color:#444441'; autoDot='#888780';
       }
     }
 
-    // Workflow button
+    // Workflow button — ההסבה באחריות הנהג, אין יותר שלב הסבה מהמנהל
     let workflowBtn='';
     if(isPayment){
       if(!v.noticeSentAt){
         workflowBtn=`<button onclick="sendViolPaymentToDriver(${v.id})" class="viol-icon-btn v-amber" title="שלח לתשלום">💳</button>`;
       }
     } else {
-      if(!v.transferApprovedAt){
-        if(v.noticeApprovedAt){
-          workflowBtn=`<button onclick="sendViolTransferToDriver(${v.id})" class="viol-icon-btn v-red" title="הסבת דוח">⚖️</button>`;
-        } else {
-          workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="עדכון על דוח">📢</button>`;
-        }
+      if(!v.noticeApprovedAt){
+        workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="עדכון על דוח">📢</button>`;
       }
     }
 
@@ -16029,7 +16013,7 @@ function saveViolation(){
   }
 }
 
-const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\n{תשלום}\n{קובץ}\nלאישור על קיום הדוח, חובה ללחוץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nעליך לגשת למחלקת הרכש ולדאוג לביצוע הסבת הדוח על שמך מול הרשות שהוציאה את הדוח.\n⚠️ חשוב: האחריות לביצוע ההסבה על שמך היא באחריותך בלבד.\n\n{תשלום}\n{קובץ}\nלאישור על קיום הדוח, חובה ללחוץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} הוסב על שמך.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאישור על הסבת הדוח על שמך, חובה ללחוץ כאן:\n{לינק}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום בקישור למעלה.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const VIOL_MSG_PAYMENT_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nעליך לשלם את הדוח.\n{תשלום}\n\nלאישור על קיום הדוח ותשלומו, חובה ללחוץ כאן:\n{לינק}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום בקישור למעלה.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
@@ -16133,10 +16117,11 @@ const TEST_MSG_DEFAULT='שלום {נהג},\n\nנקבע עבור רכב {רכב} 
 // Auto-migrate: always reset saved templates to use latest defaults (v2)
 (function(){
   var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
-  if(s._tplVersion!==5){
+  if(s._tplVersion!==6){
+    // v6: מדיניות חדשה — ההסבה באחריות הנהג. מאפסים לתבנית ברירת המחדל החדשה
     delete s.violMsgTemplate;
     delete s.violMsgTransferTemplate;
-    s._tplVersion=5;
+    s._tplVersion=6;
     localStorage.setItem('fleetSettings',JSON.stringify(s));
   }
 })();
@@ -16522,7 +16507,7 @@ function renderApprovalPageInner(page,token,info,alreadyApproved){
   const headerTitle=isTransfer?'אישור הסבת דוח תנועה':'אישור קבלת דוח תנועה';
   const confirmText=isTransfer
     ?'בלחיצה על הכפתור אני מאשר/ת שהדוח הוסב על שמי,<br>ואני אחראי/ת ליצור קשר עם הגורם המוציא ולשלם אותו.'
-    :'בלחיצה על הכפתור אני מאשר/ת שקיבלתי הודעה על קיום הדוח.';
+    :'בלחיצה על הכפתור אני מאשר/ת שקיבלתי הודעה על קיום הדוח,<br>וידוע לי שביצוע הסבת הדוח על שמי הוא באחריותי בלבד.';
   const buttonText=isTransfer?'✓ עודכנתי על הסבת הדוח על שמי':'✓ אני מאשר על קיום הדוח';
   const approvedTitleText=isTransfer?'הסבת הדוח אושרה':'הודעת הדוח אושרה';
 
@@ -16534,11 +16519,13 @@ function renderApprovalPageInner(page,token,info,alreadyApproved){
       '<div style="background:#f8f9f8;border-radius:10px;padding:14px 18px;margin-bottom:18px">'+
         '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">מספר דוח</span><span style="font-weight:600;font-size:14px;font-family:monospace;color:#1A4A3A">'+info.num+'</span></div>'+
         '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">רכב</span><span style="font-weight:600;font-size:14px">'+info.plate+'</span></div>'+
-        '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">תאריך הסבה</span><span style="font-weight:600;font-size:14px">'+fd(info.date)+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">תאריך העבירה</span><span style="font-weight:600;font-size:14px">'+fd(info.date)+'</span></div>'+
         '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee"><span style="color:#888;font-size:13px">מקור הדוח</span><span style="font-weight:600;font-size:14px">'+(info.issuer||'—')+'</span></div>'+
         '<div style="display:flex;justify-content:space-between;padding:6px 0"><span style="color:#888;font-size:13px">נהג</span><span style="font-weight:600;font-size:14px">'+info.driverName+'</span></div>'+
       '</div>'+
-      (isTransfer?'<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#991b1b;line-height:1.5">⚠️ <b>חשוב:</b> דוח זה הוסב על שמך. באחריותך ליצור קשר עם הגורם המוציא ולהסדיר את התשלום במועד.</div>':'')+
+      (isTransfer
+        ?'<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#991b1b;line-height:1.5">⚠️ <b>חשוב:</b> דוח זה הוסב על שמך. באחריותך ליצור קשר עם הגורם המוציא ולהסדיר את התשלום במועד.</div>'
+        :'<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#991b1b;line-height:1.5">⚠️ <b>חשוב:</b> עליך לגשת למחלקת הרכש ולבצע את הסבת הדוח על שמך מול הרשות שהוציאה את הדוח. האחריות לביצוע ההסבה היא שלך בלבד.</div>')+
       (alreadyApproved
         ?'<div style="text-align:center;padding:16px 0">'+
           '<div style="font-size:48px;margin-bottom:10px">✅</div>'+
@@ -16675,9 +16662,9 @@ function applyApprovalToViolation(v,token,info){
   }else{
     if(v.noticeToken===token && !v.noticeApprovedAt){
       v.noticeApprovedAt=info.approvedAt;
-      v.status='waiting'; // after first approval: "ממתין אישור הסבה"
+      v.status='done'; // אישור קיום הדוח = סוף טיפול. ההסבה באחריות הנהג בלבד
       if(!v.logs)v.logs=[];
-      v.logs.push({date:info.approvedAt,text:'✅ הנהג אישר קבלת הודעה על קיום הדוח'});
+      v.logs.push({date:info.approvedAt,text:'✅ הנהג אישר קיום הדוח — הטיפול הסתיים. ביצוע ההסבה מול הרשות באחריות הנהג בלבד'});
       _persistViol(v);
       return true;
     }
@@ -16686,9 +16673,9 @@ function applyApprovalToViolation(v,token,info){
   if(!info.stage && v.approvalToken===token && !v.approvedAt){
     v.approvedAt=info.approvedAt;
     v.noticeApprovedAt=info.approvedAt;
-    v.status='waiting';
+    v.status='done';
     if(!v.logs)v.logs=[];
-    v.logs.push({date:info.approvedAt,text:'✅ הנהג אישר קבלת הודעה על קיום הדוח'});
+    v.logs.push({date:info.approvedAt,text:'✅ הנהג אישר קיום הדוח — הטיפול הסתיים. ביצוע ההסבה מול הרשות באחריות הנהג בלבד'});
     _persistViol(v);
     return true;
   }
@@ -16704,6 +16691,18 @@ function syncViolApprovals(){
       if(v)applyApprovalToViolation(v,token,info);
     }
   });
+  // מדיניות חדשה (07.2026): ההסבה באחריות הנהג — דוח שהנהג אישר את קיומו נחשב טופל
+  var _polChanged=false;
+  (violationsList||[]).forEach(function(v){
+    if(v.status==='waiting'&&v.noticeApprovedAt){
+      v.status='done';
+      if(!v.logs)v.logs=[];
+      v.logs.push({date:new Date().toLocaleDateString('he-IL'),text:'ℹ️ עודכן אוטומטית לפי המדיניות החדשה: ההסבה באחריות הנהג — הדוח סומן כטופל'});
+      try{syncPersistItem('violations',v);}catch(e){}
+      _polChanged=true;
+    }
+  });
+  if(_polChanged){try{localStorage.setItem('violationsList',JSON.stringify(violationsList));}catch(e){}}
 }
 
 // Real-time listener - updates UI automatically when driver approves
@@ -16755,9 +16754,8 @@ function renderVehicleViolations(){
       return {label:'טרם נשלח',style:'background:#F1EFE8;color:#444441',dot:'#888780'};
     }
     if(viol.transferApprovedAt) return {label:'נהג אישר הסבה',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
-    if(viol.transferSentAt) return {label:'נשלחה הסבה לנהג',style:'background:#E6F1FB;color:#185FA5',dot:'#378ADD'};
-    if(viol.noticeApprovedAt) return {label:'נהג אישר קיום הדוח',style:'background:#FAEEDA;color:#854F0B',dot:'#BA7517'};
-    if(viol.noticeSentAt) return {label:'נשלחה הודעה לנהג',style:'background:#FAEEDA;color:#854F0B',dot:'#BA7517'};
+    if(viol.noticeApprovedAt) return {label:'נהג אישר - טופל',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
+    if(viol.noticeSentAt) return {label:'נשלחה הודעה לנהג',style:'background:#E6F1FB;color:#185FA5',dot:'#378ADD'};
     return {label:'טרם נשלח',style:'background:#F1EFE8;color:#444441',dot:'#888780'};
   }
 
@@ -22007,7 +22005,7 @@ function exportToExcel(type){
         'מספר רכב':veh?veh.plate:'',
         'שם הנהג':veh?veh.driver.name:'',
         'מקור הדוח':v.issuer||'',
-        'תאריך הסבה':v.date||'',
+        'תאריך העבירה':v.date||'',
         'סטטוס':(VIOL_STATUS[v.status]||v.status||''),
         'נשלח עדכון על דוח':v.noticeSentAt||'',
         'אושר עדכון על דוח':v.noticeApprovedAt||'',
