@@ -6,7 +6,7 @@
 //  כתובת: /api/busy-days  →  { dates: ["2026-07-20", ...] }
 // ============================================================
 
-const ICLOUD_URL = 'https://p158-caldav.icloud.com/published/2/MTM1NzQyOTIxNjEzNTc0Mjqu0cvm14n64dRVqpC75_REd6zje8e9aJFQVbZudUIsOtDQFIAl_i7H2NXD477ERGMZFDsrJnq7Jf2q22Flt_4';
+const ICLOUD_URL = 'https://p158-caldav.icloud.com/published/2/MTM1NzQyOTIxNjEzNTc0Mjqu0cvm14n64dRVqpC75_Rr3vAuCty6MSTz8woxjPGA0OSwujXARDzTvkon5avVxw6x7FnRAWsxPu_N6WSo1DM';
 const PAST_DAYS   = 7;    // כמה ימים אחורה עוד רלוונטיים
 const FUTURE_DAYS = 400;  // עד כמה קדימה
 
