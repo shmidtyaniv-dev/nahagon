@@ -3795,12 +3795,23 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <span class="sched-field-unit">ימים</span>
             </div>
           </div>
-          <div class="sched-field" style="margin-top:4px;margin-bottom:12px">
+          <div class="sched-field" style="margin-top:4px;margin-bottom:10px">
             <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:13px;line-height:1.5">
               <input type="checkbox" id="sched-test-monthly" style="width:17px;height:17px;margin-top:2px;flex-shrink:0;cursor:pointer">
               <span><b>מצב חודשי לטסטים</b> — כיבוי התראות יומיות ושליחת בקשות לנהגים. במקום זה: רשימת טסטים מרוכזת לכל חודש (כולל טסטים ב-10 הימים הראשונים של החודש הבא) והתראה אחת בפעמון כל 1 בחודש</span>
             </label>
           </div>
+          <div class="sched-grid-2col" style="margin-bottom:2px">
+            <div class="sched-field">
+              <span class="sched-field-label">רשימת טסטים — מתאריך</span>
+              <input type="date" id="sched-test-range-from" style="direction:ltr">
+            </div>
+            <div class="sched-field">
+              <span class="sched-field-label">רשימת טסטים — עד תאריך</span>
+              <input type="date" id="sched-test-range-to" style="direction:ltr">
+            </div>
+          </div>
+          <div style="font-size:11.5px;color:var(--t3);margin-bottom:14px">קובע אילו טסטים יופיעו ברשימה החודשית. השאר ריק — והרשימה תתעדכן אוטומטית: החודש הנוכחי + עד ה-10 בחודש הבא</div>
           <div class="sched-field" style="margin-bottom:16px;margin-top:10px">
             <span class="sched-field-label">שעת בדיקה יומית</span>
             <div style="direction:ltr;display:inline-block">
@@ -22211,6 +22222,10 @@ function saveSchedulingSettings(){
   // "טווח סריקה" אוחד עם ימי ההתראה: טסט לפי schedTestReminderDays, טיפול לפי schedReminderDays
   var monthlyEl=document.getElementById('sched-test-monthly');
   if(monthlyEl) s.schedTestMonthly=!!monthlyEl.checked;
+  var trFromEl=document.getElementById('sched-test-range-from');
+  if(trFromEl) s.schedTestListFrom=trFromEl.value||'';
+  var trToEl=document.getElementById('sched-test-range-to');
+  if(trToEl) s.schedTestListTo=trToEl.value||'';
   var hourEl=document.getElementById('sched-appointment-time');
   if(hourEl&&hourEl.value) s.schedAppointmentTime=hourEl.value; else s.schedAppointmentTime=s.schedAppointmentTime||'09:00';
   var drvRemEl=document.getElementById('sched-driver-reminder');
@@ -22234,6 +22249,8 @@ function saveSchedulingSettings(){
       scanRangeDaysTest:s.schedTestReminderDays||15,
       scanRangeDaysTreatment:s.schedReminderDays||15,
       testMonthlyMode:!!s.schedTestMonthly,
+      testListFrom:s.schedTestListFrom||'',
+      testListTo:s.schedTestListTo||'',
       // לגסי: מכשירים עם גרסה ישנה עדיין קוראים scanRangeDays — שומרים את הגדול מבין השניים
       scanRangeDays:Math.max(s.schedTestReminderDays||15,s.schedReminderDays||15),
       reminderIntervalDays:s.schedDriverReminder||5,
@@ -22249,7 +22266,10 @@ function saveSchedulingSettings(){
     TREATMENT_STATE.settings.scanRangeDaysTest=s.schedTestReminderDays||15;
     TREATMENT_STATE.settings.scanRangeDaysTreatment=s.schedReminderDays||15;
     TREATMENT_STATE.settings.testMonthlyMode=!!s.schedTestMonthly;
+    TREATMENT_STATE.settings.testListFrom=s.schedTestListFrom||'';
+    TREATMENT_STATE.settings.testListTo=s.schedTestListTo||'';
     if(typeof renderMonthlyTests==='function')renderMonthlyTests();
+    if(typeof renderTreatmentsHub==='function'){try{renderTreatmentsHub();}catch(e){}}
     TREATMENT_STATE.settings.scanRangeDays=Math.max(s.schedTestReminderDays||15,s.schedReminderDays||15);
     TREATMENT_STATE.settings.reminderIntervalDays=s.schedDriverReminder||5;
     TREATMENT_STATE.settings.maxTreatmentsPerDay=s.schedDailyCapacity||2;
@@ -22284,6 +22304,8 @@ function initSchedulingSettings(){
     var ts=TREATMENT_STATE.settings;
     var el;
     el=document.getElementById('sched-test-monthly');if(el)el.checked=!!ts.testMonthlyMode;
+    el=document.getElementById('sched-test-range-from');if(el)el.value=ts.testListFrom||'';
+    el=document.getElementById('sched-test-range-to');if(el)el.value=ts.testListTo||'';
     el=document.getElementById('sched-appointment-time');if(el)el.value=ts.appointmentTime||(String(ts.appointmentHour||9).padStart(2,'0')+':00');
     el=document.getElementById('sched-driver-reminder');if(el)el.value=ts.reminderIntervalDays||5;
     el=document.getElementById('sched-approval-sla');if(el)el.value=ts.approvalSlaDays||3;
@@ -22294,6 +22316,8 @@ function initSchedulingSettings(){
     var ls=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
     var el;
     el=document.getElementById('sched-test-monthly');if(el)el.checked=!!ls.schedTestMonthly;
+    el=document.getElementById('sched-test-range-from');if(el)el.value=ls.schedTestListFrom||'';
+    el=document.getElementById('sched-test-range-to');if(el)el.value=ls.schedTestListTo||'';
     el=document.getElementById('sched-appointment-time');if(el)el.value=ls.schedAppointmentTime||'09:00';
     el=document.getElementById('sched-driver-reminder');if(el)el.value=ls.schedDriverReminder||5;
     el=document.getElementById('sched-approval-sla');if(el)el.value=ls.schedApprovalSla||3;
@@ -23455,11 +23479,16 @@ async function autoCloseMonthlyModeTests(vehicle) {
 
 var HEB_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 
-// כל הרכבים שהטסט שלהם בחודש הנוכחי + 10 הימים הראשונים של החודש הבא (+ באיחור)
+// כל הרכבים שהטסט שלהם בטווח הרשימה (+ באיחור).
+// ברירת מחדל: החודש הנוכחי + 10 הימים הראשונים של החודש הבא.
+// אם הוגדר טווח ידני בהגדרות (testListFrom/testListTo) — הוא גובר.
 function getMonthlyTestVehicles() {
   var now = new Date(); now.setHours(0,0,0,0);
+  var _cfg = TREATMENT_STATE.settings || {};
   var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   var nextMonth10 = new Date(now.getFullYear(), now.getMonth() + 1, 10, 23, 59, 59);
+  if (_cfg.testListFrom) { var _f = parseTreatmentDate(_cfg.testListFrom); if (!isNaN(_f)) { _f.setHours(0,0,0,0); monthStart = _f; } }
+  if (_cfg.testListTo) { var _t = parseTreatmentDate(_cfg.testListTo); if (!isNaN(_t)) { _t.setHours(23,59,59,0); nextMonth10 = _t; } }
   var items = [];
   (vehicles || []).forEach(function(v) {
     if (!v.licenseExp) return;
@@ -24263,7 +24292,11 @@ function renderTreatmentsHub() {
   if (TRTHUB_TAB === 'monthly') {
     var _mtNow = new Date();
     var mtItems = (typeof getMonthlyTestVehicles === 'function') ? getMonthlyTestVehicles() : [];
-    if (sub) sub.textContent = 'טסטים לחודש ' + HEB_MONTHS[_mtNow.getMonth()] + ' ' + _mtNow.getFullYear() + ' (כולל עד ה-10 בחודש הבא) · להעברה לאחראי הטסטים. המערכת לא שולחת לנהגים — "עדכן מועד איסוף" שולח הודעה ידנית.';
+    var _mtCfg = TREATMENT_STATE.settings || {};
+    var _mtRangeTxt = (_mtCfg.testListFrom || _mtCfg.testListTo)
+      ? 'טווח מוגדר ידנית: ' + (_mtCfg.testListFrom ? formatTreatmentDate(_mtCfg.testListFrom) : 'תחילת החודש') + ' – ' + (_mtCfg.testListTo ? formatTreatmentDate(_mtCfg.testListTo) : 'ללא הגבלה') + ' (ניתן לשינוי בהגדרות)'
+      : 'טסטים לחודש ' + HEB_MONTHS[_mtNow.getMonth()] + ' ' + _mtNow.getFullYear() + ' (כולל עד ה-10 בחודש הבא)';
+    if (sub) sub.textContent = _mtRangeTxt + ' · להעברה לאחראי הטסטים. המערכת לא שולחת לנהגים — "עדכן מועד איסוף" שולח הודעה ידנית.';
     content.innerHTML = mtItems.map(trthubMonthlyRow).join('')
       || '<div style="text-align:center;padding:32px;color:var(--t2);font-size:13px">אין טסטים החודש 🎉</div>';
   } else if (TRTHUB_TAB === 'queue') {
