@@ -2647,7 +2647,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div class="treatments-title-block">
             <h3 class="treatments-title">טיפולים וטסטים</h3>
             <div class="treatments-subtitle">
-              <span>טווח סריקה: <span id="scan-range-display">30</span> יום קדימה</span>
+              <span>סריקה קדימה: טסט <span id="scan-range-test-display">15</span> · טיפול <span id="scan-range-svc-display">15</span> ימים</span>
               <span>·</span>
               <span><span id="total-drivers-count">0</span> נהגים בציר</span>
             </div>
@@ -3793,11 +3793,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <input type="number" id="sched-reminder-days" min="1" max="90" value="20">
               <span class="sched-field-unit">ימים</span>
             </div>
-          </div>
-          <div class="sched-field">
-            <span class="sched-field-label">טווח סריקה קדימה</span>
-            <input type="number" id="sched-scan-range" min="1" max="180" value="30">
-            <span class="sched-field-unit">ימים</span>
           </div>
           <div class="sched-field" style="margin-bottom:16px;margin-top:10px">
             <span class="sched-field-label">שעת בדיקה יומית</span>
@@ -22206,8 +22201,7 @@ function saveSchedulingSettings(){
   daysCbs.forEach(function(cb){if(cb.checked) days.push(parseInt(cb.value));});
   s.schedOpenDays=days;
   // שדות חדשים
-  var scanEl=document.getElementById('sched-scan-range');
-  if(scanEl) s.schedScanRange=parseInt(scanEl.value)||30;
+  // "טווח סריקה" אוחד עם ימי ההתראה: טסט לפי schedTestReminderDays, טיפול לפי schedReminderDays
   var hourEl=document.getElementById('sched-appointment-time');
   if(hourEl&&hourEl.value) s.schedAppointmentTime=hourEl.value; else s.schedAppointmentTime=s.schedAppointmentTime||'09:00';
   var drvRemEl=document.getElementById('sched-driver-reminder');
@@ -22228,7 +22222,10 @@ function saveSchedulingSettings(){
   // שמור גם ל-Firestore settings/treatments
   if(typeof db!=='undefined'&&db){
     db.collection('settings').doc('treatments').set({
-      scanRangeDays:s.schedScanRange||30,
+      scanRangeDaysTest:s.schedTestReminderDays||15,
+      scanRangeDaysTreatment:s.schedReminderDays||15,
+      // לגסי: מכשירים עם גרסה ישנה עדיין קוראים scanRangeDays — שומרים את הגדול מבין השניים
+      scanRangeDays:Math.max(s.schedTestReminderDays||15,s.schedReminderDays||15),
       reminderIntervalDays:s.schedDriverReminder||5,
       maxTreatmentsPerDay:s.schedDailyCapacity||2,
       openDays:s.schedOpenDays||[0,1,2,3,4],
@@ -22239,7 +22236,9 @@ function saveSchedulingSettings(){
   }
   // עדכון מיידי של הגדרות מערכת הטיפולים בזיכרון — בלי לחכות לטעינה מהענן
   if(typeof TREATMENT_STATE!=='undefined'&&TREATMENT_STATE.settings){
-    TREATMENT_STATE.settings.scanRangeDays=s.schedScanRange||30;
+    TREATMENT_STATE.settings.scanRangeDaysTest=s.schedTestReminderDays||15;
+    TREATMENT_STATE.settings.scanRangeDaysTreatment=s.schedReminderDays||15;
+    TREATMENT_STATE.settings.scanRangeDays=Math.max(s.schedTestReminderDays||15,s.schedReminderDays||15);
     TREATMENT_STATE.settings.reminderIntervalDays=s.schedDriverReminder||5;
     TREATMENT_STATE.settings.maxTreatmentsPerDay=s.schedDailyCapacity||2;
     TREATMENT_STATE.settings.openDays=s.schedOpenDays||[0,1,2,3,4];
@@ -22272,7 +22271,6 @@ function initSchedulingSettings(){
   if(typeof TREATMENT_STATE!=='undefined'){
     var ts=TREATMENT_STATE.settings;
     var el;
-    el=document.getElementById('sched-scan-range');if(el)el.value=ts.scanRangeDays||30;
     el=document.getElementById('sched-appointment-time');if(el)el.value=ts.appointmentTime||(String(ts.appointmentHour||9).padStart(2,'0')+':00');
     el=document.getElementById('sched-driver-reminder');if(el)el.value=ts.reminderIntervalDays||5;
     el=document.getElementById('sched-approval-sla');if(el)el.value=ts.approvalSlaDays||3;
@@ -22282,7 +22280,6 @@ function initSchedulingSettings(){
   }else{
     var ls=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
     var el;
-    el=document.getElementById('sched-scan-range');if(el)el.value=ls.schedScanRange||30;
     el=document.getElementById('sched-appointment-time');if(el)el.value=ls.schedAppointmentTime||'09:00';
     el=document.getElementById('sched-driver-reminder');if(el)el.value=ls.schedDriverReminder||5;
     el=document.getElementById('sched-approval-sla');if(el)el.value=ls.schedApprovalSla||3;
@@ -23287,8 +23284,11 @@ async function loadTreatmentSettings() {
       await db.collection('settings').doc('treatments').set(TREATMENT_SETTINGS_DEFAULTS);
     }
     _treatmentSettingsLoaded = true;
-    var rangeEl = document.getElementById('scan-range-display');
-    if (rangeEl) rangeEl.textContent = TREATMENT_STATE.settings.scanRangeDays;
+    var sset = TREATMENT_STATE.settings;
+    var rangeEl = document.getElementById('scan-range-test-display');
+    if (rangeEl) rangeEl.textContent = sset.scanRangeDaysTest || sset.scanRangeDays;
+    rangeEl = document.getElementById('scan-range-svc-display');
+    if (rangeEl) rangeEl.textContent = sset.scanRangeDaysTreatment || sset.scanRangeDays;
     var reminderEl = document.getElementById('reminder-days-display');
     if (reminderEl) reminderEl.textContent = TREATMENT_STATE.settings.reminderIntervalDays;
   } catch (err) {
@@ -23385,7 +23385,8 @@ async function autoCloseNotDueTreatments(vehicle, kind) {
       .where('kind', '==', kind)
       .get();
     var _today = new Date(); _today.setHours(0, 0, 0, 0);
-    var _range = (TREATMENT_STATE.settings && TREATMENT_STATE.settings.scanRangeDays) || 20;
+    var _s = TREATMENT_STATE.settings || {};
+    var _range = (kind === 'test' ? (_s.scanRangeDaysTest || _s.scanRangeDays) : (_s.scanRangeDaysTreatment || _s.scanRangeDays)) || 20;
     snap.forEach(async function(doc) {
       var d = doc.data();
       // סוגרים רק בקשות שהנהג עוד לא הגיב עליהן - לא נוגעים בבקשות שנבחר/אושר בהן תאריך
@@ -23419,7 +23420,9 @@ async function performLocalScan() {
   try {
     var today = new Date();
     today.setHours(0, 0, 0, 0);
-    var range = TREATMENT_STATE.settings.scanRangeDays;
+    // טווח נפרד לכל סוג — מאוחד עם ימי ההתראה בהגדרות (fallback לשדה הישן scanRangeDays)
+    var svcRange = TREATMENT_STATE.settings.scanRangeDaysTreatment || TREATMENT_STATE.settings.scanRangeDays;
+    var testRange = TREATMENT_STATE.settings.scanRangeDaysTest || TREATMENT_STATE.settings.scanRangeDays;
 
     for (var i = 0; i < TREATMENT_STATE.vehicles.length; i++) {
       var vehicle = TREATMENT_STATE.vehicles[i];
@@ -23448,7 +23451,7 @@ async function performLocalScan() {
         // טריגר גם לפי ק"מ: אם הרכב התקרב/עבר את ק"מ הטיפול הבא
         var _curKm = vehicle.currentKm || vehicle.curKm || 0;
         var kmDue = !!(_nxtSvc.km && _curKm && _curKm >= _nxtSvc.km - 1000);
-        if (daysUntilTreatment <= range || kmDue) {
+        if (daysUntilTreatment <= svcRange || kmDue) {
           await createTreatmentIfNotExists(vehicle, 'treatment', nextTreatmentDate);
         } else {
           // הטיפול הבא רחוק — סגור כל טיפול פתוח ישן (הרכב כבר טופל)
@@ -23467,7 +23470,7 @@ async function performLocalScan() {
       if (vehicle.licenseExp) {
         var testDueDate = parseTreatmentDate(vehicle.licenseExp);
         var daysUntilTest = daysBetween(today, testDueDate);
-        if (daysUntilTest <= range) {
+        if (daysUntilTest <= testRange) {
           await createTreatmentIfNotExists(vehicle, 'test', testDueDate);
         } else {
           // הרישיון חודש — סגור כל טסט פתוח עם תאריך ישן
