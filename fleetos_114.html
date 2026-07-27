@@ -3154,18 +3154,11 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <div class="page" id="page-treatments-hub">
   <div style="padding:16px;max-width:1000px">
-    <!-- רשימת טסטים חודשית (מצב חודשי) -->
-    <div id="monthly-tests-section" style="display:none;background:var(--card,#fff);border:1px solid var(--bdr,rgba(0,0,0,.1));border-radius:14px;padding:16px 18px;margin-bottom:16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px">
-        <div style="font-size:15px;font-weight:700">🗓️ טסטים לחודש <span id="monthly-tests-month"></span> · <span id="monthly-tests-count">0</span> רכבים</div>
-        <div style="font-size:12px;color:var(--t3,#888)">כולל טסטים עד ה-10 בחודש הבא · להעברה לאחראי הטסטים</div>
-      </div>
-      <div id="monthly-tests-list"></div>
-    </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px" id="trthub-tabs">
       <button class="btn btn-p" data-trthub-tab="queue" onclick="trthubSetTab('queue',this)">תור אישורים <span id="trthub-count-queue" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 8px;font-size:11px">0</span></button>
       <button class="btn btn-l" data-trthub-tab="awaiting" onclick="trthubSetTab('awaiting',this)">ממתינים לבחירת תאריך <span id="trthub-count-awaiting" style="background:rgba(0,0,0,.08);border-radius:10px;padding:1px 8px;font-size:11px">0</span></button>
       <button class="btn btn-l" data-trthub-tab="scheduled" onclick="trthubSetTab('scheduled',this)">מתוזמנים <span id="trthub-count-scheduled" style="background:rgba(0,0,0,.08);border-radius:10px;padding:1px 8px;font-size:11px">0</span></button>
+      <button class="btn btn-l" data-trthub-tab="monthly" id="trthub-tab-monthly" style="display:none" onclick="trthubSetTab('monthly',this)">🗓️ טסטים החודש <span id="trthub-count-monthly" style="background:rgba(0,0,0,.08);border-radius:10px;padding:1px 8px;font-size:11px">0</span></button>
       <button class="btn btn-l" data-trthub-tab="history" onclick="trthubSetTab('history',this)">היסטוריה</button>
     </div>
     <div id="trthub-subtitle" style="font-size:12px;color:var(--t2);margin-bottom:10px"></div>
@@ -23489,46 +23482,51 @@ function getMonthlyTestVehicles() {
   return items;
 }
 
+// מעדכן את הטאב "טסטים החודש" בלשונית טיפולים וטסטים (נראוּת + מונה)
 function renderMonthlyTests() {
-  var sec = document.getElementById('monthly-tests-section');
-  if (!sec) return;
-  if (!TREATMENT_STATE.settings.testMonthlyMode) { sec.style.display = 'none'; return; }
-  sec.style.display = 'block';
-  var now = new Date();
-  var mEl = document.getElementById('monthly-tests-month');
-  if (mEl) mEl.textContent = HEB_MONTHS[now.getMonth()] + ' ' + now.getFullYear();
-  var items = getMonthlyTestVehicles();
-  var cEl = document.getElementById('monthly-tests-count');
-  if (cEl) cEl.textContent = items.length;
-  var list = document.getElementById('monthly-tests-list');
-  if (!list) return;
-  if (!items.length) {
-    list.innerHTML = '<div style="padding:18px;text-align:center;color:var(--t2,#777);font-size:13px">אין טסטים החודש 🎉</div>';
-    return;
+  var tab = document.getElementById('trthub-tab-monthly');
+  if (!tab) return;
+  var on = !!(TREATMENT_STATE.settings && TREATMENT_STATE.settings.testMonthlyMode);
+  tab.style.display = on ? '' : 'none';
+  if (on) {
+    var c = document.getElementById('trthub-count-monthly');
+    if (c) c.textContent = getMonthlyTestVehicles().length;
+  } else if (typeof TRTHUB_TAB !== 'undefined' && TRTHUB_TAB === 'monthly') {
+    // המצב כובה בזמן שהטאב פתוח — חזרה לתור האישורים
+    trthubSetTab('queue', document.querySelector('#trthub-tabs [data-trthub-tab="queue"]'));
   }
-  list.innerHTML = items.map(function(it) {
-    var dayTag = it.overdue
-      ? '<span style="background:#FDE8E8;color:#B42318;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">באיחור ' + Math.abs(it.days) + ' ימים</span>'
-      : '<span style="background:' + (it.days <= 10 ? '#FAEEDA;color:#854F0B' : '#E6F1FB;color:#185FA5') + ';border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">בעוד ' + it.days + ' ימים</span>';
-    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 2px;border-top:1px solid var(--bdr,rgba(0,0,0,.07))">'
-      + '<div style="min-width:0">'
-      + '<div style="font-size:14px;font-weight:700">' + _esc(it.driver || '—') + ' <span style="font-weight:400;color:var(--t2,#777);font-size:12px">· ' + _esc(it.model) + ' · ' + _esc(formatPlate(it.plate)) + '</span></div>'
-      + '<div style="font-size:13px;margin-top:2px">📅 טסט עד <b>' + formatTreatmentDate(it.date) + '</b> ' + dayTag + '</div>'
-      + '</div>'
-      + '<button onclick="openMonthlyTestMsgModal(\'' + String(it.vid).replace(/'/g, "\\'") + '\')" style="background:#25d366;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">📲 עדכן נהג על מועד איסוף</button>'
-      + '</div>';
-  }).join('');
 }
 
-// מהפעמון: מעבר ללשונית טיפולים וטסטים וגלילה לרשימה החודשית
+// שורת רכב ברשימת הטסטים החודשית — באותו עיצוב של שאר השורות
+function trthubMonthlyRow(it) {
+  var dayTag, tagClass, avatarClass;
+  if (it.overdue) { dayTag = '⚠ באיחור ' + Math.abs(it.days) + ' ימים'; tagClass = 'trt-driver-tag-red'; avatarClass = 'trt-driver-avatar-red'; }
+  else if (it.days <= 10) { dayTag = 'בעוד ' + it.days + ' ימים'; tagClass = 'trt-driver-tag-amber'; avatarClass = 'trt-driver-avatar-amber'; }
+  else { dayTag = 'בעוד ' + it.days + ' ימים'; tagClass = 'trt-driver-tag-gray'; avatarClass = 'trt-driver-avatar-green'; }
+  var safeVid = String(it.vid).replace(/'/g, "\\'");
+  return '<div class="trt-driver-row" onclick="openVehicleCard(\'' + safeVid + '\')">'
+    + '<div class="trt-driver-avatar ' + avatarClass + '">' + _esc(getInitials(it.driver)) + '</div>'
+    + '<div class="trt-driver-info">'
+    + '<div class="trt-driver-info-row">'
+    + '<span class="trt-driver-name">' + _esc(it.driver || '—') + '</span>'
+    + '<span class="trt-driver-tag ' + tagClass + '">' + dayTag + '</span>'
+    + '</div>'
+    + '<div class="trt-driver-meta">' + _esc(formatPlate(it.plate)) + ' · ' + _esc(it.model) + ' · טסט עד ' + formatTreatmentDate(it.date) + '</div>'
+    + '</div>'
+    + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
+    + '<button class="trt-btn-action trt-btn-action-primary" onclick="openMonthlyTestMsgModal(\'' + safeVid + '\')">📲 עדכן מועד איסוף</button>'
+    + '</div></div>';
+}
+
+// מהפעמון: מעבר ללשונית טיפולים וטסטים ופתיחת טאב הטסטים החודשי
 function openMonthlyTestsSection() {
   try {
     var ni = document.querySelector('.ni[dp="treatments-hub"]');
     if (typeof go === 'function') go('treatments-hub', ni);
   } catch (e) {}
   setTimeout(function() {
-    var sec = document.getElementById('monthly-tests-section');
-    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var b = document.getElementById('trthub-tab-monthly');
+    if (b && b.style.display !== 'none') trthubSetTab('monthly', b);
   }, 250);
 }
 
@@ -24262,7 +24260,13 @@ function renderTreatmentsHub() {
   var sub = document.getElementById('trthub-subtitle');
   var sla = Number(TREATMENT_STATE.settings.approvalSlaDays) || 3;
 
-  if (TRTHUB_TAB === 'queue') {
+  if (TRTHUB_TAB === 'monthly') {
+    var _mtNow = new Date();
+    var mtItems = (typeof getMonthlyTestVehicles === 'function') ? getMonthlyTestVehicles() : [];
+    if (sub) sub.textContent = 'טסטים לחודש ' + HEB_MONTHS[_mtNow.getMonth()] + ' ' + _mtNow.getFullYear() + ' (כולל עד ה-10 בחודש הבא) · להעברה לאחראי הטסטים. המערכת לא שולחת לנהגים — "עדכן מועד איסוף" שולח הודעה ידנית.';
+    content.innerHTML = mtItems.map(trthubMonthlyRow).join('')
+      || '<div style="text-align:center;padding:32px;color:var(--t2);font-size:13px">אין טסטים החודש 🎉</div>';
+  } else if (TRTHUB_TAB === 'queue') {
     if (sub) sub.textContent = 'נהגים שבחרו תאריך וממתינים לאישור שלך. יעד מענה: עד ' + sla + ' ימים. "אשר ✓" מאשר בלחיצה אחת ופותח וואטסאפ עם הודעה מוכנה.';
     queue.sort(function(a, b) { return parseTreatmentDate(a.selectedDateAt) - parseTreatmentDate(b.selectedDateAt); });
     content.innerHTML = queue.map(trthubQueueRow).join('')
