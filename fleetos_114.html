@@ -22237,8 +22237,20 @@ function saveSchedulingSettings(){
       postTreatmentReminderDays:s.schedPostReminder||5
     },{merge:true}).catch(function(e){console.error('שגיאה בשמירת הגדרות טיפולים:',e);});
   }
-  // רענן את מערכת הטיפולים
+  // עדכון מיידי של הגדרות מערכת הטיפולים בזיכרון — בלי לחכות לטעינה מהענן
+  if(typeof TREATMENT_STATE!=='undefined'&&TREATMENT_STATE.settings){
+    TREATMENT_STATE.settings.scanRangeDays=s.schedScanRange||30;
+    TREATMENT_STATE.settings.reminderIntervalDays=s.schedDriverReminder||5;
+    TREATMENT_STATE.settings.maxTreatmentsPerDay=s.schedDailyCapacity||2;
+    TREATMENT_STATE.settings.openDays=s.schedOpenDays||[0,1,2,3,4];
+    TREATMENT_STATE.settings.appointmentTime=s.schedAppointmentTime||'09:00';
+    TREATMENT_STATE.settings.approvalSlaDays=s.schedApprovalSla||3;
+    TREATMENT_STATE.settings.postTreatmentReminderDays=s.schedPostReminder||5;
+  }
+  // רענן את מערכת הטיפולים והרץ סריקה מחדש — כדי שהשינוי ייכנס לתוקף מיד:
+  // בקשות שנכנסו לטווח ייפתחו, ובקשות שנפתחו מוקדם מדי ייסגרו
   if(typeof loadTreatmentSettings==='function'){loadTreatmentSettings();}
+  if(typeof performLocalScan==='function'){setTimeout(function(){try{performLocalScan();}catch(e){console.error('scan after settings save:',e);}},500);}
   showToast('✓ הגדרות לוח טיפולים נשמרו');
 }
 
@@ -23361,12 +23373,14 @@ async function autoCloseServicedTreatments(vehicle, lastSvcDate) {
   }
 }
 
-// סגירת בקשות "ממתין לבחירת תאריך" כשהטיפול כבר לא רלוונטי (למשל נוצרו בעקבות חישוב שגוי שתוקן)
-async function autoCloseNotDueTreatments(vehicle) {
+// סגירת בקשות "ממתין לבחירת תאריך" כשהטיפול כבר לא רלוונטי (למשל נוצרו בעקבות חישוב שגוי שתוקן,
+// או כשקיצרו את "טווח סריקה קדימה" והבקשה נפתחה מוקדם מדי). עובד גם על טסטים (kind='test').
+async function autoCloseNotDueTreatments(vehicle, kind) {
+  kind = kind || 'treatment';
   try {
     var snap = await db.collection('treatments')
       .where('vehicleId', '==', String(vehicle.id))
-      .where('kind', '==', 'treatment')
+      .where('kind', '==', kind)
       .get();
     var _today = new Date(); _today.setHours(0, 0, 0, 0);
     var _range = (TREATMENT_STATE.settings && TREATMENT_STATE.settings.scanRangeDays) || 20;
@@ -23453,6 +23467,8 @@ async function performLocalScan() {
         } else {
           // הרישיון חודש — סגור כל טסט פתוח עם תאריך ישן
           await autoCloseRenewedTestTreatments(vehicle, testDueDate);
+          // הטסט עוד רחוק מהטווח — סגור בקשות שנפתחו מוקדם מדי (למשל אחרי קיצור טווח הסריקה)
+          await autoCloseNotDueTreatments(vehicle, 'test');
         }
       }
     }
