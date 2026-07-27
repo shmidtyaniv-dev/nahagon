@@ -2659,15 +2659,6 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           </div>
         </div>
 
-        <!-- רשימת טסטים חודשית (מצב חודשי) -->
-        <div id="monthly-tests-section" style="display:none;background:var(--card,#fff);border:1px solid var(--bdr,rgba(0,0,0,.1));border-radius:14px;padding:16px 18px;margin-bottom:16px">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px">
-            <div style="font-size:15px;font-weight:700">🗓️ טסטים לחודש <span id="monthly-tests-month"></span> · <span id="monthly-tests-count">0</span> רכבים</div>
-            <div style="font-size:12px;color:var(--t3,#888)">כולל טסטים עד ה-10 בחודש הבא · להעברה לאחראי הטסטים</div>
-          </div>
-          <div id="monthly-tests-list"></div>
-        </div>
-
         <!-- 3 כרטיסי הסטטוס -->
         <div class="status-cards-grid">
 
@@ -3163,6 +3154,14 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <div class="page" id="page-treatments-hub">
   <div style="padding:16px;max-width:1000px">
+    <!-- רשימת טסטים חודשית (מצב חודשי) -->
+    <div id="monthly-tests-section" style="display:none;background:var(--card,#fff);border:1px solid var(--bdr,rgba(0,0,0,.1));border-radius:14px;padding:16px 18px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+        <div style="font-size:15px;font-weight:700">🗓️ טסטים לחודש <span id="monthly-tests-month"></span> · <span id="monthly-tests-count">0</span> רכבים</div>
+        <div style="font-size:12px;color:var(--t3,#888)">כולל טסטים עד ה-10 בחודש הבא · להעברה לאחראי הטסטים</div>
+      </div>
+      <div id="monthly-tests-list"></div>
+    </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px" id="trthub-tabs">
       <button class="btn btn-p" data-trthub-tab="queue" onclick="trthubSetTab('queue',this)">תור אישורים <span id="trthub-count-queue" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 8px;font-size:11px">0</span></button>
       <button class="btn btn-l" data-trthub-tab="awaiting" onclick="trthubSetTab('awaiting',this)">ממתינים לבחירת תאריך <span id="trthub-count-awaiting" style="background:rgba(0,0,0,.08);border-radius:10px;padding:1px 8px;font-size:11px">0</span></button>
@@ -23521,11 +23520,11 @@ function renderMonthlyTests() {
   }).join('');
 }
 
-// מהפעמון: מעבר לדשבורד וגלילה לרשימה החודשית
+// מהפעמון: מעבר ללשונית טיפולים וטסטים וגלילה לרשימה החודשית
 function openMonthlyTestsSection() {
   try {
-    var ni = document.querySelector('.ni[dp="dashboard"]');
-    if (typeof go === 'function') go('dashboard', ni);
+    var ni = document.querySelector('.ni[dp="treatments-hub"]');
+    if (typeof go === 'function') go('treatments-hub', ni);
   } catch (e) {}
   setTimeout(function() {
     var sec = document.getElementById('monthly-tests-section');
@@ -24246,6 +24245,7 @@ function trthubSetTab(tab, btn) {
 }
 
 function renderTreatmentsHub() {
+  if (typeof renderMonthlyTests === 'function') { try { renderMonthlyTests(); } catch(e) {} }
   var content = document.getElementById('trthub-content');
   if (!content) return;
   var all = (TREATMENT_STATE && TREATMENT_STATE.treatments) || [];
