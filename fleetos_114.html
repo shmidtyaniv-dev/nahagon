@@ -22997,7 +22997,6 @@ function showBookingSuccess(date){
     <div class="trt-modal-filters">
       <span class="trt-filter-label">סנן:</span>
       <button class="mini-pill active" data-awaiting-filter="all" onclick="setAwaitingFilter('all',this)">הכל · <span id="awaiting-all-count">0</span></button>
-      <button class="mini-pill mini-pill-red" data-awaiting-filter="late" onclick="setAwaitingFilter('late',this)">לא ענו <span id="awaiting-late-days">5</span>+ ימים · <span id="awaiting-late-count">0</span></button>
       <button class="mini-pill" data-awaiting-filter="treatment" onclick="setAwaitingFilter('treatment',this)">טיפולים</button>
       <button class="mini-pill" data-awaiting-filter="test" onclick="setAwaitingFilter('test',this)">טסטים</button>
     </div>
@@ -23904,18 +23903,10 @@ function renderAwaitingChoiceList() {
     .filter(function(t) { return t.status === 'awaiting_choice'; });
   awaiting.sort(function(a, b) { return daysSince(b.lastEmailSentAt) - daysSince(a.lastEmailSentAt); });
 
-  // סף "לא ענו" — לפי הגדרת ימי התזכורת (ברירת מחדל 5)
-  var lateDays = (TREATMENT_STATE.settings && TREATMENT_STATE.settings.reminderIntervalDays) || 5;
-
   var el;
   el = document.getElementById('awaiting-modal-count'); if (el) el.textContent = awaiting.length;
   el = document.getElementById('awaiting-all-count'); if (el) el.textContent = awaiting.length;
-  el = document.getElementById('awaiting-late-days'); if (el) el.textContent = lateDays;
-  el = document.getElementById('awaiting-late-count');
-  if (el) el.textContent = awaiting.filter(function(t) { return daysSince(t.lastEmailSentAt) >= lateDays; }).length;
-
   var filtered = awaiting.filter(function(t) {
-    if (_awaitingFilter === 'late') return daysSince(t.lastEmailSentAt) >= lateDays;
     if (_awaitingFilter === 'treatment' || _awaitingFilter === 'test') return t.kind === _awaitingFilter;
     return true;
   });
