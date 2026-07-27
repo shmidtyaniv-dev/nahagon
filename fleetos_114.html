@@ -2647,7 +2647,7 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
           <div class="treatments-title-block">
             <h3 class="treatments-title">טיפולים וטסטים</h3>
             <div class="treatments-subtitle">
-              <span>סריקה קדימה: טסט <span id="scan-range-test-display">15</span> · טיפול <span id="scan-range-svc-display">15</span> ימים</span>
+              <span>סריקה קדימה: טסט <span id="scan-range-test-display">15 ימים</span> · טיפול <span id="scan-range-svc-display">15 ימים</span></span>
               <span>·</span>
               <span><span id="total-drivers-count">0</span> נהגים בציר</span>
             </div>
@@ -2657,6 +2657,15 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
             <button class="filter-pill" data-filter="treatment">טיפולים · <span id="filter-treatment-count">0</span></button>
             <button class="filter-pill" data-filter="test">טסטים · <span id="filter-test-count">0</span></button>
           </div>
+        </div>
+
+        <!-- רשימת טסטים חודשית (מצב חודשי) -->
+        <div id="monthly-tests-section" style="display:none;background:var(--card,#fff);border:1px solid var(--bdr,rgba(0,0,0,.1));border-radius:14px;padding:16px 18px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+            <div style="font-size:15px;font-weight:700">🗓️ טסטים לחודש <span id="monthly-tests-month"></span> · <span id="monthly-tests-count">0</span> רכבים</div>
+            <div style="font-size:12px;color:var(--t3,#888)">כולל טסטים עד ה-10 בחודש הבא · להעברה לאחראי הטסטים</div>
+          </div>
+          <div id="monthly-tests-list"></div>
         </div>
 
         <!-- 3 כרטיסי הסטטוס -->
@@ -3793,6 +3802,12 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
               <input type="number" id="sched-reminder-days" min="1" max="90" value="20">
               <span class="sched-field-unit">ימים</span>
             </div>
+          </div>
+          <div class="sched-field" style="margin-top:4px;margin-bottom:12px">
+            <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:13px;line-height:1.5">
+              <input type="checkbox" id="sched-test-monthly" style="width:17px;height:17px;margin-top:2px;flex-shrink:0;cursor:pointer">
+              <span><b>מצב חודשי לטסטים</b> — כיבוי התראות יומיות ושליחת בקשות לנהגים. במקום זה: רשימת טסטים מרוכזת לכל חודש (כולל טסטים ב-10 הימים הראשונים של החודש הבא) והתראה אחת בפעמון כל 1 בחודש</span>
+            </label>
           </div>
           <div class="sched-field" style="margin-bottom:16px;margin-top:10px">
             <span class="sched-field-label">שעת בדיקה יומית</span>
@@ -22202,6 +22217,8 @@ function saveSchedulingSettings(){
   s.schedOpenDays=days;
   // שדות חדשים
   // "טווח סריקה" אוחד עם ימי ההתראה: טסט לפי schedTestReminderDays, טיפול לפי schedReminderDays
+  var monthlyEl=document.getElementById('sched-test-monthly');
+  if(monthlyEl) s.schedTestMonthly=!!monthlyEl.checked;
   var hourEl=document.getElementById('sched-appointment-time');
   if(hourEl&&hourEl.value) s.schedAppointmentTime=hourEl.value; else s.schedAppointmentTime=s.schedAppointmentTime||'09:00';
   var drvRemEl=document.getElementById('sched-driver-reminder');
@@ -22224,6 +22241,7 @@ function saveSchedulingSettings(){
     db.collection('settings').doc('treatments').set({
       scanRangeDaysTest:s.schedTestReminderDays||15,
       scanRangeDaysTreatment:s.schedReminderDays||15,
+      testMonthlyMode:!!s.schedTestMonthly,
       // לגסי: מכשירים עם גרסה ישנה עדיין קוראים scanRangeDays — שומרים את הגדול מבין השניים
       scanRangeDays:Math.max(s.schedTestReminderDays||15,s.schedReminderDays||15),
       reminderIntervalDays:s.schedDriverReminder||5,
@@ -22238,6 +22256,8 @@ function saveSchedulingSettings(){
   if(typeof TREATMENT_STATE!=='undefined'&&TREATMENT_STATE.settings){
     TREATMENT_STATE.settings.scanRangeDaysTest=s.schedTestReminderDays||15;
     TREATMENT_STATE.settings.scanRangeDaysTreatment=s.schedReminderDays||15;
+    TREATMENT_STATE.settings.testMonthlyMode=!!s.schedTestMonthly;
+    if(typeof renderMonthlyTests==='function')renderMonthlyTests();
     TREATMENT_STATE.settings.scanRangeDays=Math.max(s.schedTestReminderDays||15,s.schedReminderDays||15);
     TREATMENT_STATE.settings.reminderIntervalDays=s.schedDriverReminder||5;
     TREATMENT_STATE.settings.maxTreatmentsPerDay=s.schedDailyCapacity||2;
@@ -22271,6 +22291,7 @@ function initSchedulingSettings(){
   if(typeof TREATMENT_STATE!=='undefined'){
     var ts=TREATMENT_STATE.settings;
     var el;
+    el=document.getElementById('sched-test-monthly');if(el)el.checked=!!ts.testMonthlyMode;
     el=document.getElementById('sched-appointment-time');if(el)el.value=ts.appointmentTime||(String(ts.appointmentHour||9).padStart(2,'0')+':00');
     el=document.getElementById('sched-driver-reminder');if(el)el.value=ts.reminderIntervalDays||5;
     el=document.getElementById('sched-approval-sla');if(el)el.value=ts.approvalSlaDays||3;
@@ -22280,6 +22301,7 @@ function initSchedulingSettings(){
   }else{
     var ls=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
     var el;
+    el=document.getElementById('sched-test-monthly');if(el)el.checked=!!ls.schedTestMonthly;
     el=document.getElementById('sched-appointment-time');if(el)el.value=ls.schedAppointmentTime||'09:00';
     el=document.getElementById('sched-driver-reminder');if(el)el.value=ls.schedDriverReminder||5;
     el=document.getElementById('sched-approval-sla');if(el)el.value=ls.schedApprovalSla||3;
@@ -23286,9 +23308,10 @@ async function loadTreatmentSettings() {
     _treatmentSettingsLoaded = true;
     var sset = TREATMENT_STATE.settings;
     var rangeEl = document.getElementById('scan-range-test-display');
-    if (rangeEl) rangeEl.textContent = sset.scanRangeDaysTest || sset.scanRangeDays;
+    if (rangeEl) rangeEl.textContent = sset.testMonthlyMode ? 'מצב חודשי' : ((sset.scanRangeDaysTest || sset.scanRangeDays) + ' ימים');
     rangeEl = document.getElementById('scan-range-svc-display');
-    if (rangeEl) rangeEl.textContent = sset.scanRangeDaysTreatment || sset.scanRangeDays;
+    if (rangeEl) rangeEl.textContent = (sset.scanRangeDaysTreatment || sset.scanRangeDays) + ' ימים';
+    if (typeof renderMonthlyTests === 'function') { try { renderMonthlyTests(); } catch(e) {} }
     var reminderEl = document.getElementById('reminder-days-display');
     if (reminderEl) reminderEl.textContent = TREATMENT_STATE.settings.reminderIntervalDays;
   } catch (err) {
@@ -23411,6 +23434,142 @@ async function autoCloseNotDueTreatments(vehicle, kind) {
   }
 }
 
+// ============================================================
+// מצב חודשי לטסטים — רשימה מרוכזת במקום בקשות לנהגים
+// ============================================================
+// במצב חודשי לא שולחים בקשות טסט לנהגים — סוגרים בקשות פתוחות שהנהג טרם הגיב עליהן
+async function autoCloseMonthlyModeTests(vehicle) {
+  try {
+    var snap = await db.collection('treatments')
+      .where('vehicleId', '==', String(vehicle.id))
+      .where('kind', '==', 'test')
+      .get();
+    snap.forEach(async function(doc) {
+      var d = doc.data();
+      if (d.status !== 'awaiting_choice') return; // לא נוגעים במועדים שכבר נבחרו/אושרו
+      await db.collection('treatments').doc(doc.id).update({
+        status: 'closed',
+        closedReason: 'monthly_mode',
+        closedAt: new Date().toISOString()
+      });
+      var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === doc.id; });
+      if (local) local.status = 'closed';
+      console.log('[Treatments] מצב חודשי — בקשת טסט נסגרה:', doc.id);
+    });
+  } catch (err) {
+    console.error('[Treatments] שגיאה בסגירת טסט (מצב חודשי):', err);
+  }
+}
+
+var HEB_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+// כל הרכבים שהטסט שלהם בחודש הנוכחי + 10 הימים הראשונים של החודש הבא (+ באיחור)
+function getMonthlyTestVehicles() {
+  var now = new Date(); now.setHours(0,0,0,0);
+  var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  var nextMonth10 = new Date(now.getFullYear(), now.getMonth() + 1, 10, 23, 59, 59);
+  var items = [];
+  (vehicles || []).forEach(function(v) {
+    if (!v.licenseExp) return;
+    if (v.status === 'waiting_vehicle') return;
+    var exp = parseTreatmentDate(v.licenseExp); exp.setHours(0,0,0,0);
+    var overdue = exp < now;
+    if (!overdue && (exp < monthStart || exp > nextMonth10)) return;
+    items.push({
+      vid: v.id,
+      driver: (v.driver && v.driver.name) || '',
+      phone: (v.driver && v.driver.phone) || '',
+      plate: v.plate || '',
+      model: v.model || v.name || '',
+      date: v.licenseExp,
+      days: daysBetween(now, exp),
+      overdue: overdue
+    });
+  });
+  items.sort(function(a, b) { return a.days - b.days; });
+  return items;
+}
+
+function renderMonthlyTests() {
+  var sec = document.getElementById('monthly-tests-section');
+  if (!sec) return;
+  if (!TREATMENT_STATE.settings.testMonthlyMode) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  var now = new Date();
+  var mEl = document.getElementById('monthly-tests-month');
+  if (mEl) mEl.textContent = HEB_MONTHS[now.getMonth()] + ' ' + now.getFullYear();
+  var items = getMonthlyTestVehicles();
+  var cEl = document.getElementById('monthly-tests-count');
+  if (cEl) cEl.textContent = items.length;
+  var list = document.getElementById('monthly-tests-list');
+  if (!list) return;
+  if (!items.length) {
+    list.innerHTML = '<div style="padding:18px;text-align:center;color:var(--t2,#777);font-size:13px">אין טסטים החודש 🎉</div>';
+    return;
+  }
+  list.innerHTML = items.map(function(it) {
+    var dayTag = it.overdue
+      ? '<span style="background:#FDE8E8;color:#B42318;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">באיחור ' + Math.abs(it.days) + ' ימים</span>'
+      : '<span style="background:' + (it.days <= 10 ? '#FAEEDA;color:#854F0B' : '#E6F1FB;color:#185FA5') + ';border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">בעוד ' + it.days + ' ימים</span>';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 2px;border-top:1px solid var(--bdr,rgba(0,0,0,.07))">'
+      + '<div style="min-width:0">'
+      + '<div style="font-size:14px;font-weight:700">' + _esc(it.driver || '—') + ' <span style="font-weight:400;color:var(--t2,#777);font-size:12px">· ' + _esc(it.model) + ' · ' + _esc(formatPlate(it.plate)) + '</span></div>'
+      + '<div style="font-size:13px;margin-top:2px">📅 טסט עד <b>' + formatTreatmentDate(it.date) + '</b> ' + dayTag + '</div>'
+      + '</div>'
+      + '<button onclick="openMonthlyTestMsgModal(\'' + String(it.vid).replace(/'/g, "\\'") + '\')" style="background:#25d366;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">📲 עדכן נהג על מועד איסוף</button>'
+      + '</div>';
+  }).join('');
+}
+
+// מהפעמון: מעבר לדשבורד וגלילה לרשימה החודשית
+function openMonthlyTestsSection() {
+  try {
+    var ni = document.querySelector('.ni[dp="dashboard"]');
+    if (typeof go === 'function') go('dashboard', ni);
+  } catch (e) {}
+  setTimeout(function() {
+    var sec = document.getElementById('monthly-tests-section');
+    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 250);
+}
+
+// מודאל קטן: הקלדת מועד איסוף ושליחה לנהג בוואטסאפ
+function openMonthlyTestMsgModal(vid) {
+  var it = getMonthlyTestVehicles().find(function(x) { return String(x.vid) === String(vid); });
+  if (!it) { showToast('הרכב לא נמצא'); return; }
+  var ex = document.getElementById('monthly-test-msg-modal'); if (ex) ex.remove();
+  var wrap = document.createElement('div');
+  wrap.id = 'monthly-test-msg-modal';
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  wrap.innerHTML = '<div style="background:#fff;border-radius:14px;padding:20px;max-width:360px;width:100%;direction:rtl;box-shadow:0 12px 40px rgba(0,0,0,.25)">'
+    + '<div style="font-size:15px;font-weight:700;margin-bottom:4px">עדכון מועד איסוף לטסט</div>'
+    + '<div style="font-size:13px;color:var(--t2,#777);margin-bottom:14px">' + _esc(it.driver || '') + ' · ' + _esc(formatPlate(it.plate)) + ' · טסט עד ' + formatTreatmentDate(it.date) + '</div>'
+    + '<label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">באיזה תאריך הרכב ייאסף?</label>'
+    + '<input type="date" id="monthly-test-pickup-date" style="width:100%;padding:10px;border:1px solid rgba(0,0,0,.15);border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box;margin-bottom:16px">'
+    + '<div style="display:flex;gap:8px">'
+    + '<button onclick="document.getElementById(\'monthly-test-msg-modal\').remove()" style="flex:1;background:#f1f1ee;color:#333;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">בטל</button>'
+    + '<button onclick="sendMonthlyTestMsg(\'' + String(vid).replace(/'/g, "\\'") + '\')" style="flex:2;background:#25d366;color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">📲 שלח בוואטסאפ</button>'
+    + '</div></div>';
+  wrap.addEventListener('click', function(e) { if (e.target === wrap) wrap.remove(); });
+  document.body.appendChild(wrap);
+}
+
+function sendMonthlyTestMsg(vid) {
+  var it = getMonthlyTestVehicles().find(function(x) { return String(x.vid) === String(vid); });
+  if (!it) return;
+  var dEl = document.getElementById('monthly-test-pickup-date');
+  var pickup = dEl && dEl.value;
+  if (!pickup) { showToast('נא להקליד תאריך איסוף'); return; }
+  var msg = 'שלום ' + (it.driver || '').split(' ')[0] + ',\n'
+    + 'רכב ' + formatPlate(it.plate) + ' מיועד לטסט רישוי (בתוקף עד ' + formatTreatmentDate(it.date) + ').\n'
+    + '🚗 הרכב ייאסף לטסט ביום ' + getHebrewDayName(pickup) + ' ' + formatTreatmentDate(pickup) + '.\n'
+    + 'נא לוודא שהרכב פנוי לאיסוף מהמקום הקבוע. תודה!';
+  var phone = String(it.phone || '').replace(/[^0-9]/g, '').replace(/^0/, '972');
+  var url = phone ? 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg) : 'https://wa.me/?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+  var mod = document.getElementById('monthly-test-msg-modal'); if (mod) mod.remove();
+}
+
 async function performLocalScan() {
   // בלי הגדרות אמיתיות מהענן אין לסרוק — סריקה עם ברירת המחדל (30 יום)
   // פותחת מחדש בקשות שנסגרו כי הטווח קוצר (פינג-פונג)
@@ -23467,7 +23626,10 @@ async function performLocalScan() {
       }
 
       // === טסט: ישירות מתאריך פקיעת הרישיון ===
-      if (vehicle.licenseExp) {
+      if (TREATMENT_STATE.settings.testMonthlyMode) {
+        // מצב חודשי: לא שולחים בקשות טסט לנהגים — רק סוגרים בקשות פתוחות
+        await autoCloseMonthlyModeTests(vehicle);
+      } else if (vehicle.licenseExp) {
         var testDueDate = parseTreatmentDate(vehicle.licenseExp);
         var daysUntilTest = daysBetween(today, testDueDate);
         if (daysUntilTest <= testRange) {
@@ -23697,6 +23859,7 @@ function renderTreatments() {
   updateTrtProgressBar(stats);
   updateFilterCounts();
   renderPendingApprovalList(filtered);
+  if (typeof renderMonthlyTests === 'function') renderMonthlyTests();
   if (typeof updateBellBadge === 'function') updateBellBadge();
   // סנכרון הכרטיסייה המאוחדת + תג בתפריט הצד
   if (typeof updateTreatmentsNavBadge === 'function') updateTreatmentsNavBadge();
@@ -24803,6 +24966,25 @@ function clearAllNotifications() {
 function getTreatmentNotifications() {
   var notifications = [];
   if (!TREATMENT_STATE || !TREATMENT_STATE.treatments) return notifications;
+
+  // מצב חודשי לטסטים: התראה מרוכזת אחת לחודש (במקום התראות יומיות)
+  if (TREATMENT_STATE.settings && TREATMENT_STATE.settings.testMonthlyMode && typeof getMonthlyTestVehicles === 'function') {
+    var _mt = getMonthlyTestVehicles();
+    if (_mt.length) {
+      var _n = new Date();
+      notifications.push({
+        id: 'monthlytests_' + _n.getFullYear() + '-' + String(_n.getMonth() + 1).padStart(2, '0'),
+        type: 'monthly_tests',
+        dotClass: 'trt-notif-dot-amber',
+        title: '🗓️ רשימת טסטים לחודש <b>' + HEB_MONTHS[_n.getMonth()] + '</b>',
+        detail: _mt.length + ' רכבים ברשימה · להעברה לאחראי הטסטים',
+        actionText: 'לרשימה',
+        actionClass: 'primary',
+        actionFn: 'openMonthlyTestsSection()',
+        time: new Date(_n.getFullYear(), _n.getMonth(), 1).toISOString()
+      });
+    }
+  }
 
   TREATMENT_STATE.treatments.forEach(function(t) {
     if (t.status === 'closed') return;
