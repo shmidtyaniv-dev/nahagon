@@ -22246,6 +22246,7 @@ function saveSchedulingSettings(){
     TREATMENT_STATE.settings.appointmentTime=s.schedAppointmentTime||'09:00';
     TREATMENT_STATE.settings.approvalSlaDays=s.schedApprovalSla||3;
     TREATMENT_STATE.settings.postTreatmentReminderDays=s.schedPostReminder||5;
+    if(typeof _treatmentSettingsLoaded!=='undefined')_treatmentSettingsLoaded=true; // הערכים עכשיו אמיתיים — מותר לסרוק
   }
   // רענן את מערכת הטיפולים והרץ סריקה מחדש — כדי שהשינוי ייכנס לתוקף מיד:
   // בקשות שנכנסו לטווח ייפתחו, ובקשות שנפתחו מוקדם מדי ייסגרו
@@ -23276,6 +23277,7 @@ async function initTreatmentsSystem() {
 // ============================================================
 // 4. טעינת הגדרות מ-Firestore
 // ============================================================
+var _treatmentSettingsLoaded = false; // הסריקה לא רצה לפני שההגדרות האמיתיות נטענו מהענן (אחרת רצה עם ברירת מחדל 30 יום)
 async function loadTreatmentSettings() {
   try {
     var doc = await db.collection('settings').doc('treatments').get();
@@ -23284,6 +23286,7 @@ async function loadTreatmentSettings() {
     } else {
       await db.collection('settings').doc('treatments').set(TREATMENT_SETTINGS_DEFAULTS);
     }
+    _treatmentSettingsLoaded = true;
     var rangeEl = document.getElementById('scan-range-display');
     if (rangeEl) rangeEl.textContent = TREATMENT_STATE.settings.scanRangeDays;
     var reminderEl = document.getElementById('reminder-days-display');
@@ -23408,6 +23411,9 @@ async function autoCloseNotDueTreatments(vehicle, kind) {
 }
 
 async function performLocalScan() {
+  // בלי הגדרות אמיתיות מהענן אין לסרוק — סריקה עם ברירת המחדל (30 יום)
+  // פותחת מחדש בקשות שנסגרו כי הטווח קוצר (פינג-פונג)
+  if (!_treatmentSettingsLoaded) return;
   if (_scanInProgress) return;
   _scanInProgress = true;
   try {
