@@ -6002,6 +6002,17 @@ var _currentLogId = null;
 function fd(d){if(!d)return'—';var _d=String(d).length===10?new Date(d+'T12:00:00'):new Date(d);return _d.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'})}
 function fds(d){if(!d)return'';var _d=String(d).length===10?new Date(d+'T12:00:00'):new Date(d);return _d.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})}
 function addY(d,y){const dt=new Date(d);dt.setFullYear(dt.getFullYear()+y);return localDateStr(dt)}
+// פטור טסט בשנה הראשונה: רכב חדש (isNew) פטור מטסט בשנתו הראשונה על הכביש.
+// תוקף רישיון שנופל עד ~18 חודשים מהמסירה = מועד "השנה הראשונה" → פטור מטסט
+// (הטסט האמיתי הראשון הוא בשנתיים, ולכן 18 חודשים מפריד בבטחה בין השניים).
+function isFirstYearTestExempt(v){
+  if(!v||!v.isNew||!v.delivery||!v.licenseExp)return false;
+  var d=new Date(String(v.delivery).slice(0,10)+'T12:00:00');
+  var exp=new Date(String(v.licenseExp).slice(0,10)+'T12:00:00');
+  if(isNaN(d)||isNaN(exp))return false;
+  d.setMonth(d.getMonth()+18);
+  return exp<=d;
+}
 function dys(d){if(!d)return 9999;return Math.ceil((new Date(d)-NOW)/86400000)}
 function fkm(n){return Number(n).toLocaleString('he-IL')}
 // המרת תאריך ISO (YYYY-MM-DD) לפורמט ישראלי (DD/MM/YYYY)
@@ -9787,15 +9798,15 @@ function getSvcItems(){
     if(nxt.date && nxt.date<=limitStr && nxt.date>=todayStr){
       items.push({vid:v.id,type:'svc',driver:drv.name||'',company:drv.company||drv.address||'',plate:v.plate,detail:(nxt.km?fkm(nxt.km)+' ק"מ':'')+(v.plate?' · '+v.plate:''),date:nxt.date});
     }
-    // Test within threshold (license expiry)
-    if(v.licenseExp && v.licenseExp<=limitStr && v.licenseExp>=todayStr){
+    // Test within threshold (license expiry) — רכב בשנה ראשונה פטור מטסט
+    if(v.licenseExp && !isFirstYearTestExempt(v) && v.licenseExp<=limitStr && v.licenseExp>=todayStr){
       items.push({vid:v.id,type:'test',driver:drv.name||'',company:drv.company||drv.address||'',plate:v.plate,detail:'טסט'+(v.plate?' · '+v.plate:''),date:v.licenseExp});
     }
     // Overdue items
     if(nxt.date && nxt.date<todayStr){
       items.push({vid:v.id,type:'svc',driver:drv.name||'',company:drv.company||drv.address||'',plate:v.plate,detail:'באיחור'+(v.plate?' · '+v.plate:''),date:nxt.date,overdue:true});
     }
-    if(v.licenseExp && v.licenseExp<todayStr){
+    if(v.licenseExp && !isFirstYearTestExempt(v) && v.licenseExp<todayStr){
       items.push({vid:v.id,type:'test',driver:drv.name||'',company:drv.company||drv.address||'',plate:v.plate,detail:'טסט באיחור'+(v.plate?' · '+v.plate:''),date:v.licenseExp,overdue:true});
     }
   });
@@ -17665,7 +17676,7 @@ function refresh(){
   const today = new Date(); today.setHours(0,0,0,0);
   (vehicles||[]).forEach(function(v){
     // Vehicle license (test) - within testReminderDays
-    if(v.licenseExp && typeof isWithin30Days==='function' && isWithin30Days(v.licenseExp, testDaysThreshold)){
+    if(v.licenseExp && !isFirstYearTestExempt(v) && typeof isWithin30Days==='function' && isWithin30Days(v.licenseExp, testDaysThreshold)){
       testCount++;
     }
     // Annual service — אותו חישוב בדיוק כמו בכרטיס הרכב (calcNextSvc = מקור אמת אחד)
@@ -23436,7 +23447,8 @@ async function autoCloseNotDueTreatments(vehicle, kind) {
 // מצב חודשי לטסטים — רשימה מרוכזת במקום בקשות לנהגים
 // ============================================================
 // במצב חודשי לא שולחים בקשות טסט לנהגים — סוגרים בקשות פתוחות שהנהג טרם הגיב עליהן
-async function autoCloseMonthlyModeTests(vehicle) {
+async function autoCloseMonthlyModeTests(vehicle, reason) {
+  reason = reason || 'monthly_mode';
   try {
     var snap = await db.collection('treatments')
       .where('vehicleId', '==', String(vehicle.id))
@@ -23447,12 +23459,12 @@ async function autoCloseMonthlyModeTests(vehicle) {
       if (d.status !== 'awaiting_choice') return; // לא נוגעים במועדים שכבר נבחרו/אושרו
       await db.collection('treatments').doc(doc.id).update({
         status: 'closed',
-        closedReason: 'monthly_mode',
+        closedReason: reason,
         closedAt: new Date().toISOString()
       });
       var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === doc.id; });
       if (local) local.status = 'closed';
-      console.log('[Treatments] מצב חודשי — בקשת טסט נסגרה:', doc.id);
+      console.log('[Treatments] בקשת טסט נסגרה (' + reason + '):', doc.id);
     });
   } catch (err) {
     console.error('[Treatments] שגיאה בסגירת טסט (מצב חודשי):', err);
@@ -23475,6 +23487,7 @@ function getMonthlyTestVehicles() {
   (vehicles || []).forEach(function(v) {
     if (!v.licenseExp) return;
     if (v.status === 'waiting_vehicle') return;
+    if (typeof isFirstYearTestExempt === 'function' && isFirstYearTestExempt(v)) return; // שנה ראשונה — פטור מטסט
     var exp = parseTreatmentDate(v.licenseExp); exp.setHours(0,0,0,0);
     var overdue = exp < now;
     if (!overdue && (exp < monthStart || exp > nextMonth10)) return;
@@ -23663,7 +23676,10 @@ async function performLocalScan() {
       }
 
       // === טסט: ישירות מתאריך פקיעת הרישיון ===
-      if (TREATMENT_STATE.settings.testMonthlyMode) {
+      if (typeof isFirstYearTestExempt === 'function' && isFirstYearTestExempt(vehicle)) {
+        // רכב בשנה הראשונה על הכביש — פטור מטסט: לא פותחים בקשה וסוגרים בקשות פתוחות
+        await autoCloseMonthlyModeTests(vehicle, 'first_year_exempt');
+      } else if (TREATMENT_STATE.settings.testMonthlyMode) {
         // מצב חודשי: לא שולחים בקשות טסט לנהגים — רק סוגרים בקשות פתוחות
         await autoCloseMonthlyModeTests(vehicle);
       } else if (vehicle.licenseExp) {
@@ -24374,7 +24390,7 @@ function trthubQueueRow(t) {
 }
 
 function trthubHistoryRow(t) {
-  var reasonLabels = { auto_renewed: 'טסט חודש', auto_serviced: 'טופל', auto_not_due: 'לא רלוונטי עוד' };
+  var reasonLabels = { auto_renewed: 'טסט חודש', auto_serviced: 'טופל', auto_not_due: 'לא רלוונטי עוד', monthly_mode: 'מצב חודשי', first_year_exempt: 'שנה ראשונה — פטור מטסט' };
   var reason = t.actualDate ? ('בוצע ב-' + formatTreatmentDate(t.actualDate)) : (reasonLabels[t.closedReason] || 'נסגר');
   return '<div class="trt-driver-row" onclick="openVehicleCard(\'' + String(t.vehicleId).replace(/'/g, "\\'") + '\')" style="opacity:.75">'
     + '<div class="trt-driver-avatar trt-driver-avatar-green" style="filter:grayscale(.5)">' + _esc(getInitials(t.driverName)) + '</div>'
@@ -25041,6 +25057,30 @@ function getTreatmentNotifications() {
         time: new Date(_n.getFullYear(), _n.getMonth(), 1).toISOString()
       });
     }
+  }
+
+  // רכב בשנה ראשונה — פטור מטסט, אבל צריך לחדש רישיון רכב ולעדכן תוקף
+  if (typeof isFirstYearTestExempt === 'function') {
+    var _fyRange = Number(TREATMENT_STATE.settings && (TREATMENT_STATE.settings.scanRangeDaysTest || TREATMENT_STATE.settings.scanRangeDays)) || 15;
+    var _fyToday = new Date(); _fyToday.setHours(0, 0, 0, 0);
+    (typeof vehicles !== 'undefined' ? vehicles : []).forEach(function(v) {
+      if (v.status === 'waiting_vehicle') return;
+      if (!isFirstYearTestExempt(v)) return;
+      var _fyExp = parseTreatmentDate(v.licenseExp); _fyExp.setHours(0, 0, 0, 0);
+      var _fyDays = daysBetween(_fyToday, _fyExp);
+      if (_fyDays > _fyRange) return;
+      notifications.push({
+        id: 'firstyear_' + v.id + '_' + String(v.licenseExp).slice(0, 10),
+        type: 'first_year_license',
+        dotClass: _fyDays < 0 ? 'trt-notif-dot-red' : 'trt-notif-dot-amber',
+        title: '🆕 <b>' + _esc((v.driver && v.driver.name) || '') + '</b> — רכב בשנה ראשונה, פטור מטסט',
+        detail: _esc(formatPlate(v.plate || '')) + ' · רישיון עד ' + formatTreatmentDateShort(v.licenseExp) + ' · יש לחדש רישיון רכב ולעדכן את התוקף במערכת',
+        actionText: 'לרכב',
+        actionClass: 'primary',
+        actionFn: "openVehicleCard('" + String(v.id).replace(/'/g, "\\'") + "')",
+        time: String(v.licenseExp).slice(0, 10) + 'T08:00:00'
+      });
+    });
   }
 
   TREATMENT_STATE.treatments.forEach(function(t) {
