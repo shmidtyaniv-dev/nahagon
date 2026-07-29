@@ -1756,21 +1756,18 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   .trt-personal-note-input { font-size: 16px; }
   .trt-approve-summary { font-size: 13px; }
 
-  /* פעמון — בנייד ההתראות נפתחות על מסך מלא (חלונית צפה נשברת ב-iOS) */
+  /* פעמון — בנייד חלונית צפה מקובעת מתחת לכותרת, עם גלילה פנימית */
   .trt-bell-wrap { position: static; }
   .trt-notif-panel {
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
+    top: 60px !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: auto !important;
     width: auto !important;
-    height: 100dvh !important;
-    max-height: none !important;
-    border-radius: 0 !important;
+    max-height: 72dvh !important;
     z-index: 3000 !important;
   }
-  .trt-notif-header { padding: 16px; }
   .trt-notif-close { display: inline-flex !important; }
   .trt-notif-list { max-height: none; }
   .trt-notif-item { padding: 8px 12px; min-height: 40px; gap: 8px; }
@@ -2477,7 +2474,7 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
       </button>
       <div class="trt-notif-panel" id="trt-notifications-panel" style="display:none">
         <div class="trt-notif-header">
-          <span class="trt-notif-header-title">התראות</span>
+          <span class="trt-notif-header-title" id="trt-notif-header-title">התראות</span>
           <div style="display:flex;gap:12px;align-items:center">
             <button class="trt-notif-mark-read" onclick="markAllNotificationsRead()">סמן הכל כנקרא</button>
             <button class="trt-notif-mark-read" onclick="clearAllNotifications()" style="color:#dc2626">נקה</button>
@@ -25292,6 +25289,10 @@ function renderNotificationsPanel() {
   var list = document.getElementById('trt-notif-list');
   if (!list) return;
   var notifications = getTreatmentNotifications();
+
+  // מונה ליד הכותרת — כמה התראות יש
+  var titleEl = document.getElementById('trt-notif-header-title');
+  if (titleEl) titleEl.textContent = notifications.length > 0 ? 'התראות (' + notifications.length + ')' : 'התראות';
 
   if (notifications.length === 0) {
     list.innerHTML = '<div class="trt-notif-empty">אין התראות חדשות</div>';
