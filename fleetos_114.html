@@ -1767,7 +1767,8 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
     max-height: 62vh !important;
     border-radius: 14px !important;
   }
-  .trt-notif-list { max-height: none; }
+  /* גובה מפורש כדי שהגלילה הפנימית תעבוד ב-iOS (flex בלבד לא מספיק) */
+  .trt-notif-list { max-height: calc(62vh - 50px); }
   .trt-notif-item { padding: 8px 12px; min-height: 40px; gap: 8px; }
   .trt-notif-content { flex: 0 1 auto; }
   .trt-notif-title { margin-bottom: 1px; }
@@ -1871,7 +1872,10 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
   max-height: 380px;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y;
 }
+/* כשחלונית ההתראות פתוחה בנייד — נועלים את גלילת הדף שמאחור */
+body.notif-open, body.notif-open .content { overflow: hidden !important; }
 .trt-notif-item {
   padding: 10px 16px;
   border-bottom: 0.5px solid var(--bdr);
@@ -11512,6 +11516,7 @@ function renderFamilyRows(vid){
 function openVehicleFromNotif(vid, plate, driverName){
   var panel=document.getElementById('trt-notifications-panel');
   if(panel) panel.style.display='none';
+  document.body.classList.remove('notif-open');
   var v=null;
   if(vid) v=vehicles.find(function(x){ return String(x.id)===String(vid); });
   if(!v && plate) v=vehicles.find(function(x){ return (x.plate||'').replace(/[^0-9]/g,'')===String(plate).replace(/[^0-9]/g,''); });
@@ -25244,9 +25249,18 @@ function toggleNotificationsPanel() {
   if (panel.style.display === 'none') {
     renderNotificationsPanel();
     panel.style.display = 'flex';
+    // בנייד: נעילת גלילת הדף כדי שהחלקה תגלול את ההתראות ולא את הדשבורד
+    if (window.innerWidth <= 768) document.body.classList.add('notif-open');
   } else {
     panel.style.display = 'none';
+    document.body.classList.remove('notif-open');
   }
+}
+
+function closeNotificationsPanel() {
+  var panel = document.getElementById('trt-notifications-panel');
+  if (panel) panel.style.display = 'none';
+  document.body.classList.remove('notif-open');
 }
 
 function renderNotificationsPanel() {
@@ -25268,7 +25282,7 @@ function renderNotificationsPanel() {
       + '<div class="trt-notif-detail">' + n.detail + '</div>'
       + '<div class="trt-notif-time">' + getRelativeTime(n.time) + '</div>'
       + '</div>'
-      + '<button class="trt-notif-action ' + n.actionClass + '" onclick="event.stopPropagation();markNotificationRead(\'' + n.id + '\');' + n.actionFn + '">' + n.actionText + '</button>'
+      + '<button class="trt-notif-action ' + n.actionClass + '" onclick="event.stopPropagation();markNotificationRead(\'' + n.id + '\');closeNotificationsPanel();' + n.actionFn + '">' + n.actionText + '</button>'
       + '</div>';
   }).join('');
 }
@@ -25279,6 +25293,7 @@ document.addEventListener('click', function(e) {
   var wrap = document.getElementById('trt-bell-wrap');
   if (panel && panel.style.display !== 'none' && wrap && !wrap.contains(e.target)) {
     panel.style.display = 'none';
+    document.body.classList.remove('notif-open');
   }
 });
 
