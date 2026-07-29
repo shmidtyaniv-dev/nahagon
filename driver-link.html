@@ -613,9 +613,11 @@
         const isOpenDay = (SETTINGS.openDays || [0,1,2,3,4]).includes(weekDay);
         // הגנה: אם ההגדרה 0 או לא תקינה — ברירת מחדל 2 (אחרת כל הימים ייראו תפוסים)
         const maxPerDay = Math.max(1, Number(SETTINGS.maxTreatmentsPerDay) || 2);
-        const isFull = countTreatmentsOnDate(date) >= maxPerDay;
+        // טסט: יניב לא לוקח את הרכב בעצמו — היומן מוצג פנוי לגמרי (בלי ימים תפוסים/מלאים)
+        const isTest = TREATMENT.kind === 'test';
+        const isFull = !isTest && countTreatmentsOnDate(date) >= maxPerDay;
         const iso = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-        const isBlocked = BLOCKED_DAYS.has(iso);
+        const isBlocked = !isTest && BLOCKED_DAYS.has(iso);
 
         if (isToday) cls = 'today';
         else if (isPast || isFuture) cls = 'past';
@@ -649,6 +651,7 @@
 
     function countTreatmentsOnDate(date) {
       return SCHEDULED_TREATMENTS.filter(function(t) {
+        if ((t.kind || 'treatment') === 'test') return false; // טסטים לא תופסים מקום במכסה היומית
         if (!t.selectedDate) return false;
         var sd = new Date(t.selectedDate);
         sd.setHours(0,0,0,0);

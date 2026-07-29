@@ -24661,6 +24661,8 @@ async function addTreatmentToCalendar(treatment) {
 async function blockDayForApprovedTreatment(treatment) {
   try {
     if (!treatment.selectedDate) return;
+    // טסט לא חוסם יום — יניב לא לוקח את הרכב לטסט בעצמו
+    if (treatment.kind === 'test') return;
     var iso = localDateStr(parseTreatmentDate(treatment.selectedDate));
     if (!iso || _blockedDays.has(iso)) return;
     _blockedDays.add(iso);
