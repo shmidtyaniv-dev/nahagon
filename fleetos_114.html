@@ -6105,6 +6105,7 @@ function calcNextSvc(v){
   // Try historyLog first (most recent service entry)
   let lastSvcDate = null;
   let lastSvcKm = v.serviceKm || 0;
+  let lastSvcTypeKm = 0; // הק"מ שכתוב בסוג הטיפול שבוצע (למשל "טיפול 60,000 ק"מ")
   if(v.historyLog && v.historyLog.length){
     const services = v.historyLog.filter(h=>h.kind==='service');
     if(services.length){
@@ -6117,6 +6118,8 @@ function calcNextSvc(v){
           // אם הק"מ בכרטיס הרכב (serviceKm) עודכן ידנית לערך גבוה יותר - הוא הקובע
           if(parsed) lastSvcKm = Math.max(lastSvcKm, parsed);
         }
+        const tkm = parseInt(String(latest.serviceType||'').replace(/[^0-9]/g,''));
+        if(tkm>=10000 && tkm<500000) lastSvcTypeKm = tkm;
       }
     }
   }
@@ -6133,7 +6136,9 @@ function calcNextSvc(v){
     };
   }
   if(!lastSvcDate || !lastSvcKm) return {km:null,date:null,type:null};
-  const nextKm = lastSvcKm + 15000;
+  // הטיפול הבא במדרגה עגולה: לפי סוג הטיפול שבוצע (60,000 → 75,000),
+  // ואם אין — עיגול למדרגת 15,000 הקרובה (לא סתם ק"מ אחרון + 15,000)
+  const nextKm = lastSvcTypeKm ? lastSvcTypeKm + 15000 : Math.ceil((lastSvcKm + 15000) / 15000) * 15000;
   const d = new Date(lastSvcDate);
   d.setFullYear(d.getFullYear()+1);
   return{
@@ -24952,9 +24957,15 @@ async function markTreatmentDoneQuick(treatmentId) {
     if (t.kind === 'treatment') {
       svcKm = (v && parseInt(String(v.currentKm).replace(/[^0-9]/g, ''))) || 0;
       vehicleUpdate.lastService = doneDate;
-      if (svcKm) {
-        vehicleUpdate.serviceKm = svcKm;
-        nextType = 'טיפול ' + (svcKm + 15000).toLocaleString('he-IL') + ' ק"מ';
+      if (svcKm) vehicleUpdate.serviceKm = svcKm;
+      // הטיפול הבא — לפי סוג הטיפול שבוצע (למשל "טיפול 60,000" → 75,000).
+      // אם אין מספר בסוג — עיגול למדרגת 15,000 הקרובה (לא סתם ק"מ נוכחי + 15,000)
+      var typeKm = parseInt(String(doneType).replace(/[^0-9]/g, '')) || 0;
+      var nextKm = 0;
+      if (typeKm >= 10000) nextKm = typeKm + 15000;
+      else if (svcKm) nextKm = Math.ceil((svcKm + 15000) / 15000) * 15000;
+      if (nextKm) {
+        nextType = 'טיפול ' + nextKm.toLocaleString('he-IL') + ' ק"מ';
         vehicleUpdate.nextServiceType = nextType;
         vehicleUpdate.nextTreatmentType = nextType;
       }
