@@ -567,6 +567,12 @@
       document.getElementById('sla-display').textContent = SETTINGS.approvalSlaDays || 3;
       document.getElementById('sla-success').textContent = SETTINGS.approvalSlaDays || 3;
 
+      // טסט: אין שדה הערות — לא רלוונטי כמו בטיפול
+      if (TREATMENT.kind === 'test') {
+        var notesSec = document.querySelector('.notes-section');
+        if (notesSec) notesSec.style.display = 'none';
+      }
+
       if (TREATMENT.selectedDate) {
         SELECTED_DATE = new Date(TREATMENT.selectedDate);
       }
@@ -584,10 +590,15 @@
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       const today = new Date(); today.setHours(0,0,0,0);
-      // הנהג לא מוגבל לתאריך היעד — תאריך היעד הוא המלצה בלבד.
-      // ניתן לבחור כל יום עד שנה קדימה.
-      const maxDate = new Date(today);
+      // טיפול: תאריך היעד הוא המלצה בלבד — ניתן לבחור כל יום עד שנה קדימה.
+      // טסט: אסור לבחור יום אחרי המועד האחרון (תוקף רישיון הרכב).
+      let maxDate = new Date(today);
       maxDate.setDate(maxDate.getDate() + 365);
+      if (TREATMENT.kind === 'test' && TREATMENT.dueDate) {
+        const due = new Date(TREATMENT.dueDate);
+        due.setHours(0,0,0,0);
+        if (!isNaN(due.getTime()) && due >= today) maxDate = due;
+      }
 
       const grid = document.getElementById('calendar-grid');
       grid.innerHTML = '';
