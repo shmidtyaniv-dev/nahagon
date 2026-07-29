@@ -5600,14 +5600,19 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
 @media(max-width:900px){
 .viol-row{grid-template-columns:1fr!important}
 .viol-header{display:none}
-.viol-data-row{display:block!important;border-top:1px solid var(--bdr);padding:14px 16px;text-align:right}
-.viol-data-row .viol-driver{margin-bottom:10px}
+/* דוחות/רשימות בנייד — כל רשומה ככרטיס נפרד */
+.viol-data-row{display:block!important;padding:12px 14px;text-align:right;margin:10px 12px;border:1px solid var(--bdr2);border-radius:12px;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.07)}
+.viol-data-row .viol-driver{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--bdr)}
 .viol-data-row .viol-cell{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.04)}
 .viol-data-row .viol-cell[data-label]::after{content:attr(data-label);font-size:11px;color:#888;font-weight:400;order:1}
 .viol-data-row .viol-cell>*{order:0}
 .viol-data-row .viol-actions{display:flex;justify-content:center!important;flex-wrap:wrap;margin-top:12px;gap:8px}
-.viol-top-bar{grid-template-columns:1fr!important;gap:10px!important;text-align:center}
+/* כותרת דוחות בנייד — כותרת למעלה, כפתור+סינון בשורה אחת מתחתיה */
+.viol-top-bar{display:flex!important;flex-direction:column;align-items:stretch!important;gap:10px!important;padding:14px 16px!important;text-align:center}
 .viol-top-bar>div{justify-content:center!important}
+.viol-top-bar>div:nth-child(1){order:2;display:flex;flex-wrap:wrap;gap:8px}
+.viol-top-bar>div:nth-child(2){order:1}
+.viol-top-bar>div:nth-child(3){display:none}
 }
 @media(max-width:600px){
 #viol-type-selector{grid-template-columns:1fr!important}
@@ -24304,7 +24309,7 @@ function renderScheduledRow(t) {
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
     + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">תזכורת 💬</button>'
     + '<button class="trt-btn-action trt-btn-action-danger" onclick="cancelScheduled(\'' + t.id + '\')">בטל</button>'
-    + '<button class="trt-btn-action trt-btn-action-primary" ' + (canMarkDone ? '' : 'disabled') + ' onclick="openMarkDoneModal(\'' + t.id + '\')">בוצע ✓</button>'
+    + '<button class="trt-btn-action trt-btn-action-primary" ' + (canMarkDone ? '' : 'disabled') + ' onclick="markTreatmentDoneQuick(\'' + t.id + '\')">בוצע ✓</button>'
     + '</div></div>';
 }
 
@@ -24897,8 +24902,75 @@ async function unblockDayForCancelledTreatment(treatmentId, selectedDate) {
 }
 
 // ============================================================
-// 21. מודאל "סגירת טיפול"
+// 21. סגירת טיפול
 // ============================================================
+// סגירה מהירה בלחיצת "בוצע" — בלי מודאל: נשמר תאריך+שעה בציר הזמן,
+// וסוג הטיפול הבא מחושב אוטומטית (ק"מ נוכחי + 15,000)
+async function markTreatmentDoneQuick(treatmentId) {
+  var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
+  if (!t) return;
+
+  var now = new Date();
+  var doneDate = now.toISOString().slice(0, 10);
+  var timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  var dateHeb = doneDate.split('-').reverse().join('.');
+  var doneType = t.treatmentType || (t.kind === 'test' ? 'טסט רישוי' : 'טיפול');
+
+  try {
+    await db.collection('treatments').doc(t.id).update({
+      status: 'closed',
+      closedAt: now.toISOString(),
+      actualDate: doneDate,
+      actualType: doneType
+    });
+
+    var v = (vehicles || []).find(function(x) { return String(x.id) === String(t.vehicleId); });
+    var vehicleUpdate = {};
+    var svcKm = 0;
+    var nextType = '';
+    if (t.kind === 'treatment') {
+      svcKm = (v && parseInt(String(v.currentKm).replace(/[^0-9]/g, ''))) || 0;
+      vehicleUpdate.lastService = doneDate;
+      if (svcKm) {
+        vehicleUpdate.serviceKm = svcKm;
+        nextType = 'טיפול ' + (svcKm + 15000).toLocaleString('he-IL') + ' ק"מ';
+        vehicleUpdate.nextServiceType = nextType;
+        vehicleUpdate.nextTreatmentType = nextType;
+      }
+    } else {
+      // טסט בוצע — הרישיון חודש לשנה קדימה מיום הביצוע
+      var _newExp = new Date(doneDate);
+      _newExp.setFullYear(_newExp.getFullYear() + 1);
+      vehicleUpdate.licenseExp = _newExp.toISOString().slice(0, 10);
+    }
+
+    if (v) {
+      Object.assign(v, vehicleUpdate);
+      // רישום בציר הזמן של הרכב — עם תאריך ושעה של הביצוע
+      if (!v.historyLog) v.historyLog = [];
+      v.historyLog.push({
+        id: 'h' + Date.now(),
+        kind: t.kind === 'test' ? 'test' : 'service',
+        serviceType: doneType,
+        desc: 'בוצע ב-' + dateHeb + ' בשעה ' + timeStr,
+        km: svcKm ? svcKm.toLocaleString('he-IL') : '',
+        createdAt: now.toISOString(),
+        source: 'treatment'
+      });
+      if (typeof persistVehicle === 'function') persistVehicle(v);
+      if (typeof openDet === 'function' && typeof _currentVid !== 'undefined' && String(_currentVid) === String(v.id)) { try { openDet(v.id); } catch (e) {} }
+      if (typeof renderV === 'function') { try { renderV(); } catch (e) {} }
+    } else {
+      await db.collection('vehicles').doc(String(t.vehicleId)).update(vehicleUpdate);
+    }
+
+    showToast('הטיפול נסגר וכרטיס הרכב עודכן' + (nextType ? ' · הבא: ' + nextType : ''));
+  } catch (err) {
+    console.error('שגיאה בסגירה מהירה של טיפול:', err);
+    alert('שגיאה בסגירת הטיפול. נסה שוב.');
+  }
+}
+
 function openMarkDoneModal(treatmentId) {
   var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
   if (!t) return;
@@ -25160,7 +25232,7 @@ function getTreatmentNotifications() {
           detail: 'הטיפול היה ב-' + formatTreatmentDateShort(t.selectedDate) + ' · ' + _esc(formatPlate(t.licensePlate || '')),
           actionText: 'בוצע ✓',
           actionClass: 'primary',
-          actionFn: "openMarkDoneModal('" + String(t.id).replace(/'/g, "\\'") + "')",
+          actionFn: "markTreatmentDoneQuick('" + String(t.id).replace(/'/g, "\\'") + "')",
           time: t.selectedDate,
           treatmentId: t.id
         });
