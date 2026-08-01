@@ -6136,9 +6136,11 @@ function calcNextSvc(v){
     };
   }
   if(!lastSvcDate || !lastSvcKm) return {km:null,date:null,type:null};
-  // הטיפול הבא במדרגה עגולה: לפי סוג הטיפול שבוצע (60,000 → 75,000),
-  // ואם אין — עיגול למדרגת 15,000 הקרובה (לא סתם ק"מ אחרון + 15,000)
-  const nextKm = lastSvcTypeKm ? lastSvcTypeKm + 15000 : Math.ceil((lastSvcKm + 15000) / 15000) * 15000;
+  // הטיפול הבא במדרגה עגולה: הבסיס הוא הגבוה מבין המספר בסוג הטיפול שבוצע
+  // לבין מדרגת ה-15,000 הקרובה לק"מ הטיפול האחרון — מגן מרישום היסטוריה ישן/שגוי
+  // (למשל serviceKm=45,000 אבל ברישום כתוב "טיפול 30,000" — הבסיס יהיה 45,000)
+  const roundedSvcKm = Math.round(lastSvcKm / 15000) * 15000;
+  const nextKm = Math.max(lastSvcTypeKm, roundedSvcKm) + 15000;
   const d = new Date(lastSvcDate);
   d.setFullYear(d.getFullYear()+1);
   return{
@@ -12041,6 +12043,8 @@ function _purgeArchivedFromCloud(id){
 function persistVehicle(v){
   if(!db||!v||!v.id)return;
   if(_archivedVehicleIds().has(String(v.id)))return; // רכב בארכיון — לא כותבים
+  // מונה גרסה — מגן מדריסה של טאב ישן (ראה startVehiclesListener)
+  v._rev=(Number(v._rev)||0)+1;
   db.collection('vehicles').doc(String(v.id)).set(JSON.parse(JSON.stringify(v))).catch(function(e){console.error('persistVehicle error:',e);});
   // sync publicDrivers — רשימה ציבורית לאוטוקומפליט בטופס ק"מ
   if(v.driverName){
@@ -12142,6 +12146,13 @@ function startVehiclesListener(){
         }
         if(change.type==='added' || change.type==='modified'){
           if(idx>=0){
+            // הגנה מדריסה: אם טאב/מכשיר ישן כתב גרסה נמוכה משלנו — נשמור את שלנו ונכתוב חזרה
+            var localRev=Number(vehicles[idx]._rev)||0, remoteRev=Number(data._rev)||0;
+            if(remoteRev && localRev>remoteRev){
+              console.warn('[sync] נחסמה דריסה מגרסה ישנה לרכב',data.id,'(מקומי',localRev,'> ענן',remoteRev,')');
+              persistVehicle(vehicles[idx]);
+              return;
+            }
             // Only update if different (avoids loops)
             if(JSON.stringify(vehicles[idx])!==JSON.stringify(data)){
               vehicles[idx]=data;
@@ -24961,9 +24972,10 @@ async function markTreatmentDoneQuick(treatmentId) {
       // הטיפול הבא — לפי סוג הטיפול שבוצע (למשל "טיפול 60,000" → 75,000).
       // אם אין מספר בסוג — עיגול למדרגת 15,000 הקרובה (לא סתם ק"מ נוכחי + 15,000)
       var typeKm = parseInt(String(doneType).replace(/[^0-9]/g, '')) || 0;
-      var nextKm = 0;
-      if (typeKm >= 10000) nextKm = typeKm + 15000;
-      else if (svcKm) nextKm = Math.ceil((svcKm + 15000) / 15000) * 15000;
+      if (typeKm < 10000) typeKm = 0;
+      var roundedKm = svcKm ? Math.round(svcKm / 15000) * 15000 : 0;
+      var baseKm = Math.max(typeKm, roundedKm);
+      var nextKm = baseKm ? baseKm + 15000 : 0;
       if (nextKm) {
         nextType = 'טיפול ' + nextKm.toLocaleString('he-IL') + ' ק"מ';
         vehicleUpdate.nextServiceType = nextType;
