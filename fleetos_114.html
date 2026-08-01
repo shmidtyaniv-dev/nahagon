@@ -25484,6 +25484,8 @@ function buildTrtMessage(templateKey, t) {
   var link = window.location.origin + '/driver-link.html?id=' + t.id;
   // אם בתבנית כתוב "{תאריך} בשעה" — המילה כבר כלולה בתאריך, מסירים כפילות
   tpl = tpl.replace(/\{תאריך\}\s*בשעה/g, '{תאריך}');
+  // תיקון תבניות ישנות: "לקבוע טיפול לרכב" קשיח → {סוג} (שלא ייכתב "טיפול" בהודעת טסט)
+  tpl = tpl.replace(/לקבוע טיפול לרכב/g, 'לקבוע {סוג} לרכב');
   return tpl
     .replace(/\{נהג\}/g, (t.driverName || '').split(' ')[0])
     .replace(/\{שעה\}/g, getAppointmentTime())
