@@ -12179,7 +12179,8 @@ function startVehiclesListener(){
     // Hook: refresh treatments system when vehicles change
     if(typeof TREATMENT_STATE!=='undefined'){ TREATMENT_STATE.vehicles=vehicles||[]; }
     if(typeof performLocalScan==='function'){ try{performLocalScan();}catch(e){console.error('[Treatments] scan error:',e);} }
-    if(_currentVid){
+    var _vcPage=document.getElementById('page-vehicle-card');
+    if(_currentVid && _vcPage && _vcPage.classList.contains('active')){
       const stillExists=vehicles.find(function(v){return v.id===_currentVid;});
       if(stillExists){
         // Detect which vehicle-card tab is currently active to preserve user context
@@ -17678,6 +17679,8 @@ document.addEventListener('click',e=>{
 /* ── NAV ── */
 const PT={dashboard:'דשבורד',vehicles:'רכבים ונהגים','vehicle-card':'כרטיס רכב',tasks:'משימות',violations:'דוחות תנועה',accidents:'תאונות',orders:'הזמנות חדשות',archive:'ארכיון',calendar:'יומן',scheduling:'לוח טיפולים',forms:'טפסים דיגיטליים',reminders:'תזכורות',settings:'הגדרות','km-reports':'עדכוני ק"מ','treatments-hub':'טיפולים וטסטים'};
 function go(name,el){
+  // עוזבים את כרטיס הרכב — לאפס את הרכב הנוכחי, אחרת סנכרון מהענן יפתח את הכרטיס מחדש ו"יתקע" את הניווט
+  if(name!=='vehicle-card')_currentVid=null;
   // Reset ALL vc-tab-panels when navigating away from vehicle card
   document.querySelectorAll('.vc-tab-panel').forEach(function(p){p.style.display='none';});
 
