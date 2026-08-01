@@ -12116,7 +12116,9 @@ function startVehiclesListener(){
   _vehiclesListenerStarted=true;
   db.collection('vehicles').onSnapshot(function(snap){
     var _archSet=_archivedVehicleIds();
+    var _changed=false; // האם משהו באמת השתנה — רק אז מציירים מחדש (אחרת לחיצות "נבלעות")
     if(!_vehiclesLoaded){
+      _changed=true;
       // Initial load - replace local array
       const arr=[];
       snap.forEach(function(doc){
@@ -12140,7 +12142,7 @@ function startVehiclesListener(){
         const idx=vehicles.findIndex(function(v){return String(v.id)===String(data.id);});
         // רכב מארכיון שצץ מחדש — הסר מקומית ומהענן
         if(data&&data.id!==undefined&&_archSet.has(String(data.id))){
-          if(idx>=0)vehicles.splice(idx,1);
+          if(idx>=0){vehicles.splice(idx,1);_changed=true;}
           if(change.type!=='removed')_purgeArchivedFromCloud(data.id);
           return;
         }
@@ -12149,22 +12151,31 @@ function startVehiclesListener(){
             // הגנה מדריסה: אם טאב/מכשיר ישן כתב גרסה נמוכה משלנו — נשמור את שלנו ונכתוב חזרה
             var localRev=Number(vehicles[idx]._rev)||0, remoteRev=Number(data._rev)||0;
             if(remoteRev && localRev>remoteRev){
-              console.warn('[sync] נחסמה דריסה מגרסה ישנה לרכב',data.id,'(מקומי',localRev,'> ענן',remoteRev,')');
-              persistVehicle(vehicles[idx]);
+              // בלם: כתיבה חוזרת לכל היותר פעם ב-15 שניות לרכב — מונע פינג-פונג אינסופי מול טאב ישן
+              window._revBlockTs=window._revBlockTs||{};
+              var _nowTs=Date.now();
+              if(!window._revBlockTs[data.id] || _nowTs-window._revBlockTs[data.id]>15000){
+                window._revBlockTs[data.id]=_nowTs;
+                console.warn('[sync] נחסמה דריסה מגרסה ישנה לרכב',data.id,'(מקומי',localRev,'> ענן',remoteRev,')');
+                persistVehicle(vehicles[idx]);
+              }
               return;
             }
             // Only update if different (avoids loops)
             if(JSON.stringify(vehicles[idx])!==JSON.stringify(data)){
               vehicles[idx]=data;
+              _changed=true;
             }
           }else{
             vehicles.push(data);
+            _changed=true;
           }
         }else if(change.type==='removed'){
-          if(idx>=0)vehicles.splice(idx,1);
+          if(idx>=0){vehicles.splice(idx,1);_changed=true;}
         }
       });
     }
+    if(!_changed)return; // שום דבר לא השתנה בפועל — לא מציירים מחדש ולא נוגעים במסך
     // Refresh UI
     if(typeof refresh==='function')refresh();
     if(typeof renderV==='function')renderV();
