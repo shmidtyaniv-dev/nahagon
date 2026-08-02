@@ -5710,15 +5710,22 @@ let storage=null;
 try{
   firebase.initializeApp(firebaseConfig);
   db=firebase.firestore();
+  // long-polling אוטומטי — מונע ערוץ תקוע בדפדפני נייד (ספארי/דפדפן פנימי של וואטסאפ)
+  try{ db.settings({experimentalAutoDetectLongPolling:true, merge:true}); }catch(e){ console.warn('db.settings:',e); }
+  // בדפים ציבוריים (טפסי נהגים) לא מפעילים זיכרון מקומי — הוא מיותר שם ועלול לתקוע כתיבות בנייד
+  var _pubPg=false;
+  try{ var _pp=new URLSearchParams(location.search); _pubPg=!!(_pp.get('a')||_pp.get('approve')||_pp.has('km')||_pp.get('du')||_pp.get('docupload')||_pp.get('book')||_pp.get('payment')||_pp.get('lic')); }catch(e){}
   // זיכרון מקומי — הנתונים נשמרים במכשיר והמסך נטען מיד, העדכונים מגיעים ברקע.
   // מאיץ משמעותית את הכניסה בנייד (בלי זה כל הנתונים יורדים מהענן בכל פתיחה).
-  try{
-    db.enablePersistence({synchronizeTabs:true}).then(function(){
-      console.log('✅ זיכרון מקומי פעיל');
-    }).catch(function(e){
-      console.warn('⚠️ זיכרון מקומי לא זמין:', e && e.code);
-    });
-  }catch(e){ console.warn('⚠️ enablePersistence:', e); }
+  if(!_pubPg){
+    try{
+      db.enablePersistence({synchronizeTabs:true}).then(function(){
+        console.log('✅ זיכרון מקומי פעיל');
+      }).catch(function(e){
+        console.warn('⚠️ זיכרון מקומי לא זמין:', e && e.code);
+      });
+    }catch(e){ console.warn('⚠️ enablePersistence:', e); }
+  }
   auth=firebase.auth();
   storage=firebase.storage();
   console.log('✅ Firebase מחובר');
@@ -12624,15 +12631,13 @@ function submitKmSelfReport(){
   btn.disabled=true; btn.textContent='שולח...';
   statusEl.innerHTML='';
   function _doSubmit(){
-    if(!db){ statusEl.innerHTML='<span style="color:#dc2626">שגיאה בחיבור, נסה שוב</span>'; btn.disabled=false; btn.textContent='שלח עדכון ק"מ'; return; }
-    publicWriteWithRetry(function(){
-      return db.collection('kmReports').add({
-        driverName: name,
-        vehicleNum: plate || null,
-        km: km,
-        submittedAt: new Date().toISOString(),
-        status: 'pending'
-      });
+    // שליחה ב-REST (fetch רגיל) — לא דרך ערוץ ה-SDK שנתקע בדפדפני נייד בלי שגיאה
+    publicRestCreate('kmReports', {
+      driverName: name,
+      vehicleNum: plate || null,
+      km: km,
+      submittedAt: new Date().toISOString(),
+      status: 'pending'
     }).then(function(){
       var wrap=document.getElementById('km-self-report-page');
       if(wrap) wrap.innerHTML=
@@ -12651,8 +12656,8 @@ function submitKmSelfReport(){
       statusEl.innerHTML='<span style="color:#dc2626">שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב</span>';
     });
   }
-  if(auth && !auth.currentUser){ auth.signInAnonymously().then(_doSubmit).catch(_doSubmit); }
-  else _doSubmit();
+  // אין המתנה ל-signInAnonymously של ה-SDK (עלול להיתקע בנייד) — publicRestCreate דואג לאימות בעצמו
+  _doSubmit();
 }
 
 /* ── Admin: טעינה ורינדור ── */
@@ -12940,12 +12945,25 @@ function checkKmRequest(){
     return true;
   }
   function _doKmLoad(){
-    db.collection('kmRequests').doc(token).get().then(function(snap){
-    if(!snap.exists){
+    // קריאה ב-REST (fetch רגיל) — לא דרך ערוץ ה-SDK שנתקע בדפדפני נייד
+    _publicIdToken().then(function(idTok){
+      return fetch(_FS_REST_BASE+'/kmRequests/'+encodeURIComponent(token),{headers:{'Authorization':'Bearer '+idTok}});
+    }).then(function(r){
+      if(r.status===404) return null;
+      if(!r.ok) throw new Error('REST '+r.status);
+      return r.json();
+    }).then(function(doc){
+    if(!doc){
       page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">❌</div><div style="font-size:16px;font-weight:600;color:#991b1b">קישור לא תקין</div></div>';
       return;
     }
-    var req=snap.data();
+    var _f=doc.fields||{};
+    var req={
+      driverName:(_f.driverName&&_f.driverName.stringValue)||'',
+      plate:(_f.plate&&_f.plate.stringValue)||'',
+      status:(_f.status&&_f.status.stringValue)||'',
+      vid:_f.vid?Number(_f.vid.integerValue||_f.vid.doubleValue||_f.vid.stringValue)||0:0
+    };
     if(req.status==='done'){
       page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600;color:#166534">ק"מ כבר עודכן, תודה!</div></div>';
       return;
@@ -12972,12 +12990,8 @@ function checkKmRequest(){
       page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:16px;color:#991b1b">שגיאה בטעינה</div></div>';
     });
   }
-  // נייד/ציבורי: כניסה אנונימית לפני גישה ל-Firestore
-  if(auth && !auth.currentUser){
-    auth.signInAnonymously().then(_doKmLoad).catch(_doKmLoad);
-  } else {
-    _doKmLoad();
-  }
+  // הטעינה ב-REST — אין צורך להמתין לכניסה אנונימית (שעלולה להיתקע בנייד)
+  _doKmLoad();
   return true;
 }
 
@@ -12997,6 +13011,48 @@ function publicWriteWithRetry(writeFn){
   });
 }
 
+// ── כתיבה ציבורית דרך REST (fetch רגיל) — עוקף לגמרי את ערוץ ה-SDK שנתקע בדפדפני נייד ──
+var _FS_REST_BASE='https://firestore.googleapis.com/v1/projects/'+firebaseConfig.projectId+'/databases/(default)/documents';
+function _publicIdToken(){
+  // קודם מנסים את המשתמש המחובר (כולל אנונימי); אם אין — הרשמה אנונימית ישירה ב-REST
+  var p;
+  try{ p=(auth && auth.currentUser) ? auth.currentUser.getIdToken() : Promise.reject(new Error('no user')); }
+  catch(e){ p=Promise.reject(e); }
+  return p.catch(function(){
+    return fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+firebaseConfig.apiKey,{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({returnSecureToken:true})
+    }).then(function(r){return r.json();}).then(function(d){
+      if(!d.idToken) throw new Error('anon auth failed');
+      return d.idToken;
+    });
+  });
+}
+function _toFsFields(obj){
+  var f={};
+  Object.keys(obj).forEach(function(k){
+    var v=obj[k];
+    if(v===null||v===undefined) f[k]={nullValue:null};
+    else if(typeof v==='boolean') f[k]={booleanValue:v};
+    else if(typeof v==='number') f[k]=Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+    else f[k]={stringValue:String(v)};
+  });
+  return f;
+}
+// יצירת מסמך ב-REST. docId אופציונלי. 409 (כבר קיים) נחשב הצלחה — שליחה כפולה של אותו טוקן.
+function publicRestCreate(collection, obj, docId){
+  return _publicIdToken().then(function(tok){
+    var url=_FS_REST_BASE+'/'+collection+(docId?('?documentId='+encodeURIComponent(docId)):'');
+    return fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
+      body:JSON.stringify({fields:_toFsFields(obj)})
+    }).then(function(r){
+      if(r.ok || r.status===409) return true;
+      return r.text().then(function(t){ throw new Error('REST '+r.status+': '+t); });
+    });
+  });
+}
+
 function submitKmUpdate(token, vid){
   var input=document.getElementById('km-pub-input');
   var km=parseInt((input.value||'').replace(/[^0-9,]/g,'').replace(/,/g,''));
@@ -13007,12 +13063,10 @@ function submitKmUpdate(token, vid){
   }
   var btn=document.getElementById('km-pub-btn');
   btn.disabled=true;btn.textContent='שולח...';btn.style.background='#9ca3af';
-  publicWriteWithRetry(function(){
-    return db.collection('kmUpdates').doc(token).set({
-      vid:vid, km:km, updatedAt:new Date().toISOString()
-    });
-  }).then(function(){
-    db.collection('kmRequests').doc(token).update({status:'done'}).catch(function(){});
+  publicRestCreate('kmUpdates', {
+    vid:vid, km:km, updatedAt:new Date().toISOString()
+  }, token).then(function(){
+    try{ db.collection('kmRequests').doc(token).update({status:'done'}).catch(function(){}); }catch(e){}
     var page=document.getElementById('km-page');
     if(page){
       page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1)">'+
