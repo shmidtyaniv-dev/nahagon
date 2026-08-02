@@ -12047,11 +12047,15 @@ function _purgeArchivedFromCloud(id){
 }
 
 // Save a single vehicle to Firestore (debounced)
+// חתימת תוכן רכב (בלי _rev) — לזיהוי "שינוי אמיתי" מול שינוי גרסה בלבד
+var _persistedVehHash={};
+function _vehHash(v){ try{ var c=JSON.parse(JSON.stringify(v)); delete c._rev; return JSON.stringify(c); }catch(e){ return null; } }
 function persistVehicle(v){
   if(!db||!v||!v.id)return;
   if(_archivedVehicleIds().has(String(v.id)))return; // רכב בארכיון — לא כותבים
   // מונה גרסה — מגן מדריסה של טאב ישן (ראה startVehiclesListener)
   v._rev=(Number(v._rev)||0)+1;
+  var _h=_vehHash(v); if(_h)_persistedVehHash[String(v.id)]=_h;
   db.collection('vehicles').doc(String(v.id)).set(JSON.parse(JSON.stringify(v))).catch(function(e){console.error('persistVehicle error:',e);});
   // sync publicDrivers — רשימה ציבורית לאוטוקומפליט בטופס ק"מ
   if(v.driverName){
@@ -12065,7 +12069,12 @@ function persistVehicle(v){
 // Save all vehicles (for bulk operations)
 function persistAllVehicles(){
   if(!db)return;
-  vehicles.forEach(function(v){persistVehicle(v);});
+  vehicles.forEach(function(v){
+    // כותבים רק רכב שתוכנו באמת השתנה — חוסך אלפי כתיבות ומונע לולאת סנכרון בין טאבים
+    var _h=_vehHash(v);
+    if(_h && _persistedVehHash[String(v.id)]===_h) return;
+    persistVehicle(v);
+  });
 }
 
 // Debounced save
@@ -12136,7 +12145,10 @@ function startVehiclesListener(){
       });
       if(arr.length){
         vehicles.length=0;
-        arr.forEach(function(v){vehicles.push(v);});
+        arr.forEach(function(v){
+          vehicles.push(v);
+          var _h0=_vehHash(v); if(_h0)_persistedVehHash[String(v.id)]=_h0; // מה שהגיע מהענן — לא צריך להיכתב חזרה
+        });
       }
       _vehiclesLoaded=true;
       loadVehicleDocsStore();
@@ -12170,11 +12182,19 @@ function startVehiclesListener(){
             }
             // Only update if different (avoids loops)
             if(JSON.stringify(vehicles[idx])!==JSON.stringify(data)){
-              vehicles[idx]=data;
-              _changed=true;
+              var _hL=_vehHash(vehicles[idx]), _hR=_vehHash(data);
+              if(_hL===_hR){
+                // רק מונה הגרסה (_rev) השתנה — מאמצים אותו בשקט, בלי ציור מחדש ובלי כתיבה חוזרת (שובר לולאת פינג-פונג)
+                if(remoteRev>localRev) vehicles[idx]._rev=remoteRev;
+              }else{
+                vehicles[idx]=data;
+                if(_hR)_persistedVehHash[String(data.id)]=_hR;
+                _changed=true;
+              }
             }
           }else{
             vehicles.push(data);
+            var _hN=_vehHash(data); if(_hN)_persistedVehHash[String(data.id)]=_hN;
             _changed=true;
           }
         }else if(change.type==='removed'){
@@ -12653,7 +12673,8 @@ function submitKmSelfReport(){
     }).catch(function(e){
       console.error('km self-report error:',e);
       btn.disabled=false; btn.textContent='שלח עדכון ק"מ';
-      statusEl.innerHTML='<span style="color:#dc2626">שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב</span>';
+      var _is429=String(e&&e.message||'').indexOf('429')>=0;
+      statusEl.innerHTML='<span style="color:#dc2626">'+(_is429?'המערכת עמוסה כרגע — נסו שוב בעוד כמה דקות':'שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב')+'</span>';
     });
   }
   // אין המתנה ל-signInAnonymously של ה-SDK (עלול להיתקע בנייד) — publicRestCreate דואג לאימות בעצמו
