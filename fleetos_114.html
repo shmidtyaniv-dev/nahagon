@@ -12880,9 +12880,14 @@ function _applyKmReportToVehicle(reportId, vehicle, km, navigateAfter){
     desc:'עדכון ק"מ עצמי: '+Number(km).toLocaleString('he-IL')+' ק"מ',
     createdAt: now, source:'driver'
   });
+  // חובה להעלות את מונה הגרסה (_rev) — אחרת ההגנה מדריסה בטאבים אחרים תבטל את העדכון
+  var _vi0=vehicles.findIndex(function(v){return String(v.id)===vid;});
+  var _vObj=_vi0>=0?vehicles[_vi0]:vehicle;
+  _vObj._rev=(Number(_vObj._rev)||0)+1;
   db.collection('vehicles').doc(vid).update({
     currentKm: km,
-    historyLog: historyLog
+    historyLog: historyLog,
+    _rev: _vObj._rev
   }).then(function(){
     var vi=vehicles.findIndex(function(v){return String(v.id)===vid;});
     if(vi>=0){ vehicles[vi].currentKm=km; vehicles[vi].historyLog=historyLog; }
