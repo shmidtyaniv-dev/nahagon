@@ -23909,6 +23909,16 @@ async function performLocalScan() {
 // בדיקה ב-Firestore ישירות לפני יצירה (מונע כפילויות)
 async function createTreatmentIfNotExists(vehicle, kind, dueDate) {
   try {
+    // הגנת עומק לפטור שנה ראשונה: גם אם עותק הרכב בטאב הזה ישן (בלי דגל isNew),
+    // בודקים מול נתוני הרכב העדכניים בענן לפני יצירת בקשת טסט — רכב פטור לעולם
+    // לא מקבל בקשה ולא נשלחת הודעה לנהג (יניב מעדכן את הרישיון בעצמו)
+    if (kind === 'test' && typeof isFirstYearTestExempt === 'function') {
+      if (isFirstYearTestExempt(vehicle)) return;
+      try {
+        var _vSnap = await db.collection('vehicles').doc(String(vehicle.id)).get();
+        if (_vSnap.exists && isFirstYearTestExempt(_vSnap.data())) return;
+      } catch (e) { console.error('[Treatments] בדיקת פטור מול הענן נכשלה:', e); }
+    }
     var existingQuery = await db.collection('treatments')
       .where('vehicleId', '==', String(vehicle.id))
       .where('kind', '==', kind)
