@@ -12491,6 +12491,7 @@ function checkKmSelfReport(){
   // הסתר את האפליקציה, הצג טופס עצמאי
   document.querySelector('.app').style.display='none';
   document.documentElement.style.visibility='visible';
+  try{ _startKmQueueFlusher(); }catch(e){} // שליחה אוטומטית של עדכונים שנשמרו בטלפון מפעם קודמת
   var wrap=document.createElement('div');
   wrap.id='km-self-report-page';
   wrap.className='kmr-pub-wrap';
@@ -12650,31 +12651,38 @@ function submitKmSelfReport(){
   }
   btn.disabled=true; btn.textContent='שולח...';
   statusEl.innerHTML='';
+  function _showKmSuccess(extraNote){
+    var wrap=document.getElementById('km-self-report-page');
+    if(wrap) wrap.innerHTML=
+      '<div class="kmr-pub-card">'+
+        '<div class="kmr-pub-header"><h1>מרכז הרכב של מור</h1></div>'+
+        '<div class="kmr-pub-body kmr-success">'+
+          '<div style="font-size:56px;margin-bottom:12px">✅</div>'+
+          '<div style="font-size:20px;font-weight:700;color:#166534;margin-bottom:6px">תודה, '+name+'!</div>'+
+          '<div style="font-size:15px;color:#374151">ק"מ עודכן: <strong>'+km.toLocaleString('he-IL')+'</strong></div>'+
+          (extraNote?('<div id="km-queued-note" style="font-size:12px;color:#6b7280;margin-top:10px">'+extraNote+'</div>'):'')+
+          '<div style="font-size:12px;color:#9ca3af;margin-top:20px">מרכז הרכב של מור בית השקעות</div>'+
+        '</div>'+
+      '</div>';
+  }
   function _doSubmit(){
     // שליחה ב-REST (fetch רגיל) — לא דרך ערוץ ה-SDK שנתקע בדפדפני נייד בלי שגיאה
-    publicRestCreate('kmReports', {
+    var payload={
       driverName: name,
       vehicleNum: plate || null,
       km: km,
       submittedAt: new Date().toISOString(),
       status: 'pending'
-    }).then(function(){
-      var wrap=document.getElementById('km-self-report-page');
-      if(wrap) wrap.innerHTML=
-        '<div class="kmr-pub-card">'+
-          '<div class="kmr-pub-header"><h1>מרכז הרכב של מור</h1></div>'+
-          '<div class="kmr-pub-body kmr-success">'+
-            '<div style="font-size:56px;margin-bottom:12px">✅</div>'+
-            '<div style="font-size:20px;font-weight:700;color:#166534;margin-bottom:6px">תודה, '+name+'!</div>'+
-            '<div style="font-size:15px;color:#374151">ק"מ עודכן: <strong>'+km.toLocaleString('he-IL')+'</strong></div>'+
-            '<div style="font-size:12px;color:#9ca3af;margin-top:20px">מרכז הרכב של מור בית השקעות</div>'+
-          '</div>'+
-        '</div>';
+    };
+    publicRestCreate('kmReports', payload).then(function(){
+      _showKmSuccess('');
     }).catch(function(e){
       console.error('km self-report error:',e);
-      btn.disabled=false; btn.textContent='שלח עדכון ק"מ';
-      var _is429=String(e&&e.message||'').indexOf('429')>=0;
-      statusEl.innerHTML='<span style="color:#dc2626">'+(_is429?'המערכת עמוסה כרגע — נסו שוב בעוד כמה דקות':'שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב')+'</span>';
+      // הענן חסום/אין רשת — שומרים בטלפון של הנהג ושולחים אוטומטית אחר כך.
+      // הנהג רואה ✅ רגיל — מבחינתו הכל בסדר, אין צורך לשלוח שוב.
+      _kmQueueAdd('kmReports', payload);
+      _startKmQueueFlusher();
+      _showKmSuccess('העדכון נקלט ויועבר למערכת אוטומטית');
     });
   }
   // אין המתנה ל-signInAnonymously של ה-SDK (עלול להיתקע בנייד) — publicRestCreate דואג לאימות בעצמו
@@ -12961,6 +12969,7 @@ function checkKmRequest(){
   // Hide app, show km update page
   document.querySelector('.app').style.display='none';
   document.documentElement.style.visibility='visible';
+  try{ _startKmQueueFlusher(); }catch(e){} // שליחה אוטומטית של עדכונים שנשמרו בטלפון מפעם קודמת
   var page=document.createElement('div');
   page.id='km-page';
   page.style.cssText='min-height:100vh;background:#f2f5f2;display:flex;align-items:center;justify-content:center;direction:rtl;font-family:Heebo,Arial,sans-serif;padding:16px';
@@ -13079,6 +13088,36 @@ function publicRestCreate(collection, obj, docId){
   });
 }
 
+/* ── תור שליחות ממתינות (נשמר בטלפון של הנהג) ──
+   כשהענן חסום (מכסת גוגל/רשת), העדכון נשמר ב-localStorage ונשלח אוטומטית:
+   כל 60 שניות כל עוד הדף פתוח, וגם בכניסה הבאה לקישור. docId קבוע → 409=כבר נשלח=הצלחה, אין כפילויות. */
+function _kmQueueGet(){ try{ return JSON.parse(localStorage.getItem('pendingKmQueue')||'[]'); }catch(e){ return []; } }
+function _kmQueueSet(q){ try{ localStorage.setItem('pendingKmQueue',JSON.stringify(q)); }catch(e){} }
+function _kmQueueAdd(collection,obj,docId){
+  var q=_kmQueueGet();
+  var d=docId||('q-'+Date.now()+'-'+Math.floor(Math.random()*1e6));
+  if(!q.some(function(x){return x.d===d;})) q.push({c:collection,o:obj,d:d});
+  _kmQueueSet(q);
+}
+var _kmFlushBusy=false;
+function _flushPendingKm(){
+  if(_kmFlushBusy) return;
+  var q=_kmQueueGet(); if(!q.length) return;
+  _kmFlushBusy=true;
+  var it=q[0];
+  publicRestCreate(it.c,it.o,it.d).then(function(){
+    var q2=_kmQueueGet().filter(function(x){return x.d!==it.d;});
+    _kmQueueSet(q2);
+    _kmFlushBusy=false;
+    if(q2.length){ _flushPendingKm(); }
+    else{ var el=document.getElementById('km-queued-note'); if(el) el.textContent='העדכון הועבר למערכת ✓'; }
+  }).catch(function(){ _kmFlushBusy=false; });
+}
+function _startKmQueueFlusher(){
+  try{ _flushPendingKm(); }catch(e){}
+  if(!window._kmFlushTimer) window._kmFlushTimer=setInterval(function(){ try{_flushPendingKm();}catch(e){} },60000);
+}
+
 function submitKmUpdate(token, vid){
   var input=document.getElementById('km-pub-input');
   var km=parseInt((input.value||'').replace(/[^0-9,]/g,'').replace(/,/g,''));
@@ -13089,23 +13128,27 @@ function submitKmUpdate(token, vid){
   }
   var btn=document.getElementById('km-pub-btn');
   btn.disabled=true;btn.textContent='שולח...';btn.style.background='#9ca3af';
-  publicRestCreate('kmUpdates', {
-    vid:vid, km:km, updatedAt:new Date().toISOString()
-  }, token).then(function(){
-    try{ db.collection('kmRequests').doc(token).update({status:'done'}).catch(function(){}); }catch(e){}
+  function _showKmUpdSuccess(extraNote){
     var page=document.getElementById('km-page');
     if(page){
       page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.1)">'+
         '<div style="font-size:48px;margin-bottom:12px">✅</div>'+
         '<div style="font-size:18px;font-weight:600;color:#166534;margin-bottom:6px">ק"מ עודכן בהצלחה!</div>'+
         '<div style="font-size:14px;color:#666">'+km.toLocaleString('he-IL')+' ק"מ</div>'+
+        (extraNote?('<div id="km-queued-note" style="font-size:12px;color:#6b7280;margin-top:10px">'+extraNote+'</div>'):'')+
         '<div style="margin-top:16px;color:#ccc;font-size:11px">תודה! מרכז הרכב של מור</div></div>';
     }
+  }
+  var _updPayload={vid:vid, km:km, updatedAt:new Date().toISOString()};
+  publicRestCreate('kmUpdates', _updPayload, token).then(function(){
+    try{ db.collection('kmRequests').doc(token).update({status:'done'}).catch(function(){}); }catch(e){}
+    _showKmUpdSuccess('');
   }).catch(function(e){
     console.error('submitKmUpdate error:',e);
-    btn.disabled=false;btn.textContent='שלח עדכון ק"מ';btn.style.background='#16a34a';
-    var st=document.getElementById('km-pub-status');
-    if(st){st.textContent='שגיאה בשליחה - בדקו חיבור לאינטרנט ונסו שוב';st.style.color='#dc2626';}
+    // הענן חסום/אין רשת — שומרים בטלפון ושולחים אוטומטית אחר כך; docId=token מונע כפילות
+    _kmQueueAdd('kmUpdates', _updPayload, token);
+    _startKmQueueFlusher();
+    _showKmUpdSuccess('העדכון נקלט ויועבר למערכת אוטומטית');
   });
 }
 
