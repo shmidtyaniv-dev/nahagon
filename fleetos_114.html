@@ -6041,14 +6041,15 @@ function fd(d){if(!d)return'—';var _d=String(d).length===10?new Date(d+'T12:00
 function fds(d){if(!d)return'';var _d=String(d).length===10?new Date(d+'T12:00:00'):new Date(d);return _d.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})}
 function addY(d,y){const dt=new Date(d);dt.setFullYear(dt.getFullYear()+y);return localDateStr(dt)}
 // פטור טסט בשנה הראשונה: רכב חדש (isNew) פטור מטסט בשנתו הראשונה על הכביש.
-// תוקף רישיון שנופל עד ~18 חודשים מהמסירה = מועד "השנה הראשונה" → פטור מטסט
-// (הטסט האמיתי הראשון הוא בשנתיים, ולכן 18 חודשים מפריד בבטחה בין השניים).
+// פטור רק אם תוקף הרישיון פוקע בתוך 12 החודשים הראשונים מהמסירה — אז יניב מעדכן
+// את הרישיון בעצמו בלי טסט. רישיון שפוקע אחרי תום השנה הראשונה = חייב טסט
+// (דוגמה: נמסר 03.08.2025, רישיון עד 20.08.2026 → השנה הראשונה כבר נגמרה → טסט).
 function isFirstYearTestExempt(v){
   if(!v||!v.isNew||!v.delivery||!v.licenseExp)return false;
   var d=new Date(String(v.delivery).slice(0,10)+'T12:00:00');
   var exp=new Date(String(v.licenseExp).slice(0,10)+'T12:00:00');
   if(isNaN(d)||isNaN(exp))return false;
-  d.setMonth(d.getMonth()+18);
+  d.setFullYear(d.getFullYear()+1);
   return exp<=d;
 }
 function dys(d){if(!d)return 9999;return Math.ceil((new Date(d)-NOW)/86400000)}
