@@ -2868,7 +2868,7 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
       </div>
       <!-- רשימת דיווחים -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-size:13px;font-weight:600;color:var(--t2)" id="kmr-list-title">דיווחים אחרונים</div>
+        <div style="font-size:13px;font-weight:600;color:var(--t2)" id="kmr-list-title">דיווחים החודש (מתאפס כל 1 בחודש)</div>
         <button onclick="resetKmReports()" style="padding:5px 12px;border:1px solid #fca5a5;border-radius:7px;background:#fff5f5;font-size:12px;font-family:inherit;cursor:pointer;color:#dc2626">איפוס דיווחים</button>
       </div>
       <div id="kmr-list"></div>
@@ -9626,26 +9626,19 @@ function renderDash(){
     var subEl=document.getElementById('mv-deal-end-sub');
     if(subEl) subEl.textContent=soon.length>0?('מסתיימות עד '+_months+' חודשים'):'אין עסקאות שמסתיימות בקרוב';
   })();
-  // Update no-km-update KPI
+  // Update no-km-update KPI — מתאפס כל 1 בחודש: כל רכב עם נהג שלא עדכן החודש נספר
   (function(){
-    var _days=getNoKmDays();
-    var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-_days);
-    var cutoffStr=cutoff.toISOString().substring(0,10);
+    var monthStart=_kmMonthStartStr();
     var noKm=(vehicles||[]).filter(function(v){
       var dn=v.driverName||(v.driver&&v.driver.name)||'';
       if(!dn) return false; // רק רכבים עם נהג
       var last=v.lastKmUpdate||'';
-      if(last) return last < cutoffStr; // עדכן בעבר — בדוק אם מעל 30 יום
-      // מעולם לא עדכן — בדוק תאריך כניסה למערכת (מסירה או id)
-      var entryStr=v.delivery||'';
-      if(!entryStr && v.id){ try{ entryStr=new Date(Number(v.id)).toISOString().substring(0,10); }catch(e){} }
-      if(!entryStr) return true; // אין מידע → תמיד ספור
-      return entryStr < cutoffStr; // ספור רק אם עברו 30+ יום מהכניסה
+      return !last || last < monthStart; // לא עדכן מתחילת החודש הנוכחי
     });
     var cnt=noKm.length;
     updateStatCard('mv-no-km','mv-no-km-sub','mv-no-km-empty','mc-no-km',cnt);
     var sub=document.getElementById('mv-no-km-sub');
-    if(sub) sub.textContent=cnt>0?'לא עדכנו '+_days+' יום אחרון':'כולם עדכנו';
+    if(sub) sub.textContent=cnt>0?'לא עדכנו החודש':'כולם עדכנו החודש';
   })();
   // Update greeting header
   updateDashGreeting();
@@ -10219,32 +10212,25 @@ function updateDashGreeting(){
   var pillEl=document.getElementById('dash-vehicle-count-val');
   if(pillEl) pillEl.textContent=pct+'% מהציר תקין \u00B7 '+total+' רכבים פעילים';
 }
-/* מספר ימים לסריקת נהגים שלא עדכנו ק"מ — ניתן להגדרה */
-function getNoKmDays(){
-  var d=parseInt(localStorage.getItem('no_km_days'));
-  return (d&&d>0)?d:30;
+/* איפוס חודשי — כל 1 בחודש הספירה מתחילה מחדש מכל הרכבים עם נהג */
+function _kmMonthStartStr(){
+  var n=new Date();
+  return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-01';
 }
-function setNoKmDays(val){
-  var d=parseInt(val);
-  if(!d||d<1) d=30;
-  localStorage.setItem('no_km_days', String(d));
-  if(typeof renderDash==='function') renderDash();
-  showNoKmUpdateModal();
+function _kmReportInMonth(r){
+  if(!r||!r.submittedAt) return false;
+  var d=new Date(r.submittedAt);
+  if(isNaN(d)) return false;
+  var n=new Date();
+  return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();
 }
 function showNoKmUpdateModal(){
-  var _days=getNoKmDays();
-  var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-_days);
-  var cutoffStr=cutoff.toISOString().substring(0,10);
+  var monthStart=_kmMonthStartStr();
   var noKm=(vehicles||[]).filter(function(v){
     var dn=v.driverName||(v.driver&&v.driver.name)||'';
     if(!dn) return false;
     var last=v.lastKmUpdate||'';
-    if(last) return last < cutoffStr;
-    // מעולם לא עדכן — בדוק תאריך כניסה למערכת
-    var entryStr=v.delivery||'';
-    if(!entryStr && v.id){ try{ entryStr=new Date(Number(v.id)).toISOString().substring(0,10); }catch(e){} }
-    if(!entryStr) return true;
-    return entryStr < cutoffStr;
+    return !last || last < monthStart; // לא עדכן מתחילת החודש הנוכחי
   }).sort(function(a,b){
     var an=a.driverName||(a.driver&&a.driver.name)||'';
     var bn=b.driverName||(b.driver&&b.driver.name)||'';
@@ -10257,7 +10243,7 @@ function showNoKmUpdateModal(){
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
   ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
   var rows=noKm.length===0
-    ? '<div style="text-align:center;padding:24px;color:var(--t3)">כל הנהגים עדכנו ק"מ ב-'+_days+' הימים האחרונים ✓</div>'
+    ? '<div style="text-align:center;padding:24px;color:var(--t3)">כל הנהגים עדכנו ק"מ החודש ✓</div>'
     : noKm.map(function(v){
         var dn=v.driverName||(v.driver&&v.driver.name)||'';
         var last=v.lastKmUpdate ? new Date(v.lastKmUpdate).toLocaleDateString('he-IL') : 'מעולם לא';
@@ -10277,11 +10263,7 @@ function showNoKmUpdateModal(){
       '<div style="padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">'+
         '<div>'+
           '<div style="font-size:16px;font-weight:700;color:var(--t1)">נהגים שלא עדכנו ק"מ</div>'+
-          '<div style="font-size:12px;color:var(--t3);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">'+
-            '<span>סריקה אחורה:</span>'+
-            '<input type="number" id="no-km-days-inp" value="'+_days+'" min="1" max="365" style="width:56px;padding:3px 6px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;font-family:inherit;text-align:center;background:var(--card);color:var(--t1)" onkeydown="if(event.key===\'Enter\')setNoKmDays(this.value)" onchange="setNoKmDays(this.value)">'+
-            '<span>ימים · '+noKm.length+' נהגים</span>'+
-          '</div>'+
+          '<div style="font-size:12px;color:var(--t3);margin-top:2px">מתאפס כל 1 בחודש · '+noKm.length+' נהגים לא עדכנו החודש</div>'+
         '</div>'+
         '<button onclick="document.getElementById(\'no-km-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3);padding:4px">✕</button>'+
       '</div>'+
@@ -12728,7 +12710,7 @@ function startKmReportsListener(){
 }
 
 function _updateKmReportsBadge(){
-  var pending=_kmReportsCache.filter(function(r){ return r.status==='pending'||r.status==='unmatched'||r.status==='multi'; }).length;
+  var pending=_kmReportsCache.filter(function(r){ return _kmReportInMonth(r)&&(r.status==='pending'||r.status==='unmatched'||r.status==='multi'); }).length;
   var el=document.getElementById('nb-km-reports');
   if(el){ el.textContent=pending; el.style.display=pending>0?'':'none'; }
 }
@@ -12746,9 +12728,10 @@ function renderKmReports(){
   var link=location.origin+location.pathname+'?km';
   var linkEl=document.getElementById('kmr-link-display');
   if(linkEl) linkEl.textContent=link;
-  // ספירות
-  var total=_kmReportsCache.length;
-  var matched=_kmReportsCache.filter(function(r){return r.status==='matched';}).length;
+  // ספירות — רק דיווחים מהחודש הנוכחי (איפוס אוטומטי כל 1 בחודש)
+  var monthReports=_kmReportsCache.filter(_kmReportInMonth);
+  var total=monthReports.length;
+  var matched=monthReports.filter(function(r){return r.status==='matched';}).length;
   var unmatched=total-matched;
   var tEl=document.getElementById('kmr-total'); if(tEl)tEl.textContent=total;
   var mEl=document.getElementById('kmr-matched'); if(mEl)mEl.textContent=matched;
@@ -12756,9 +12739,9 @@ function renderKmReports(){
   // רשימה
   var list=document.getElementById('kmr-list');
   if(!list) return;
-  if(!_kmReportsCache.length){ list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);font-size:14px">אין דיווחים עדיין</div>'; return; }
+  if(!monthReports.length){ list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);font-size:14px">אין דיווחים החודש עדיין</div>'; return; }
   var html='';
-  _kmReportsCache.forEach(function(r){
+  monthReports.forEach(function(r){
     var badgeCls=r.status==='matched'?'matched':(r.status==='multi'?'pending':'unmatched');
     var badgeTxt=r.status==='matched'?'שויך ✓':(r.status==='multi'?'כמה התאמות':'לא שויך');
     var date=r.submittedAt ? new Date(r.submittedAt).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
