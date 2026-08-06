@@ -12138,6 +12138,8 @@ function startVehiclesListener(){
       setTimeout(cleanGarbledDriverData,500);
       // סנכרן lastKmUpdate מ-kmUpdates — מונע race condition עם startKmUpdatesListener
       setTimeout(syncKmUpdateDates,800);
+      // חדש אוטומטית רישיון רכב שתוקפו עבר
+      setTimeout(autoRenewLicenseExps,1000);
     }else{
       // Subsequent updates - merge carefully (only apply changes from other devices)
       snap.docChanges().forEach(function(change){
@@ -12380,6 +12382,30 @@ function startPaymentReceiptsListener(){
       }
     });
   });
+}
+
+// חידוש אוטומטי של תוקף רישיון רכב — אם עבר, מוסיף שנה עד שיהיה עתידי
+function autoRenewLicenseExps(){
+  if(!_vehiclesLoaded) return;
+  var today=localDateStr();
+  var changed=false;
+  vehicles.forEach(function(v){
+    if(!v.licenseExp||v.status==='waiting_vehicle') return;
+    if(v.licenseExp>=today) return; // עדיין תקין — לא נוגע
+    // תוקף עבר — חדש +1 שנה עד שיהיה עתידי
+    var d=new Date(v.licenseExp+'T12:00:00');
+    while(localDateStr(d)<today) d.setFullYear(d.getFullYear()+1);
+    var newExp=localDateStr(d);
+    v.licenseExp=newExp;
+    if(!v.historyLog) v.historyLog=[];
+    v.historyLog.push({id:'h'+Date.now()+'_lic',kind:'note',desc:'חידוש רישיון רכב אוטומטי → תוקף חדש: '+newExp.split('-').reverse().join('/'),createdAt:new Date().toISOString(),source:'auto'});
+    changed=true;
+    try{persistVehicle(v);}catch(e){}
+  });
+  if(changed){
+    try{renderV();}catch(e){}
+    try{if(_currentVid) openDet(_currentVid);}catch(e){}
+  }
 }
 
 // סנכרן lastKmUpdate מ-kmUpdates — רץ פעם אחת אחרי טעינת הרכבים
@@ -25384,7 +25410,7 @@ function getTreatmentNotifications() {
         type: 'first_year_license',
         dotClass: _fyDays < 0 ? 'trt-notif-dot-red' : 'trt-notif-dot-amber',
         title: '🆕 <b>' + _esc((v.driver && v.driver.name) || '') + '</b> — רכב בשנה ראשונה, פטור מטסט',
-        detail: _esc(formatPlate(v.plate || '')) + ' · רישיון עד ' + formatTreatmentDateShort(v.licenseExp) + ' · יש לחדש רישיון רכב ולעדכן את התוקף במערכת',
+        detail: _esc(formatPlate(v.plate || '')) + ' · רישיון עד ' + formatTreatmentDateShort(v.licenseExp),
         actionText: 'לרכב',
         actionClass: 'primary',
         actionFn: "openVehicleCard('" + String(v.id).replace(/'/g, "\\'") + "')",
