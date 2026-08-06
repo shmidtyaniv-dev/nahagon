@@ -12463,9 +12463,9 @@ function startKmUpdatesListener(){
             },{merge:true});
           }catch(e){}
         }
-        // תמיד לעדכן lastKmUpdate כשנהג שולח (גם אם הק"מ לא גבוה יותר)
+        // עדכן lastKmUpdate רק אם התאריך החדש גדול מהנוכחי (מונע דריסה ע"י מסמכים ישנים)
         var newDate=d.updatedAt?d.updatedAt.split('T')[0]:localDateStr();
-        v.lastKmUpdate=newDate;
+        if(!v.lastKmUpdate||newDate>v.lastKmUpdate) v.lastKmUpdate=newDate;
         if(v.currentKm>=d.km){
           try{ if(typeof persistVehicle==='function') persistVehicle(v); else if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }catch(e){}
           try{ if(_currentVid===v.id) openDet(v.id); }catch(e){}
