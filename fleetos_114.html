@@ -12407,9 +12407,16 @@ function startKmUpdatesListener(){
             },{merge:true});
           }catch(e){}
         }
-        if(v.currentKm>=d.km) return; // already higher
+        // תמיד לעדכן lastKmUpdate כשנהג שולח (גם אם הק"מ לא גבוה יותר)
+        var newDate=d.updatedAt?d.updatedAt.split('T')[0]:localDateStr();
+        v.lastKmUpdate=newDate;
+        if(v.currentKm>=d.km){
+          try{ if(typeof persistVehicle==='function') persistVehicle(v); else if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }catch(e){}
+          try{ if(_currentVid===v.id) openDet(v.id); }catch(e){}
+          try{ renderV(); }catch(e){}
+          return;
+        }
         v.currentKm=d.km;
-        v.lastKmUpdate=d.updatedAt?d.updatedAt.split('T')[0]:localDateStr();
         if(!v.historyLog) v.historyLog=[];
         v.historyLog.push({id:'h'+Date.now(),kind:'km',desc:'עדכון ק"מ מנהג: '+Number(d.km).toLocaleString('he-IL')+' ק"מ',createdAt:d.updatedAt||new Date().toISOString(),source:'driver'});
         try{ if(typeof persistVehicle==='function') persistVehicle(v); }catch(e){ if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }
