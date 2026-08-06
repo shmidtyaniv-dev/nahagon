@@ -12919,7 +12919,7 @@ function renderLicReports(){
     var date=r.updatedAt ? new Date(r.updatedAt).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
     var licDate=r.licenseExp ? r.licenseExp.split('-').reverse().join('/') : '—';
     var family=[]; try{ if(r.familyMembersJson) family=JSON.parse(r.familyMembersJson); }catch(e){}
-    var familyHtml=family.length ? '<div style="margin-top:4px;font-size:11px;color:var(--t3)">בני משפחה: '+family.map(function(f){ return _esc(f.name)+' ('+f.licenseExp.split('-').reverse().join('/')+')'; }).join(', ')+'</div>' : '';
+    var familyHtml=family.length ? '<div style="margin-top:4px;font-size:11px;color:var(--t3)">בני משפחה: '+family.filter(function(f){return f&&f.name;}).map(function(f){ return _esc(f.name)+(f.licenseExp?' ('+f.licenseExp.split('-').reverse().join('/')+')':''); }).join(', ')+'</div>' : '';
     var v=vehicles.find(function(x){ return String(x.id)===String(r.vid); });
     var plate=v?v.plate:(r.plate||'');
     var nameHtml=v
@@ -13397,6 +13397,10 @@ function checkFamilyLicenseRequest(){
             '<input type="text" id="flic-name" placeholder="שם פרטי + שם משפחה" autocomplete="off" oninput="flicAcSearch(this.value)" style="width:100%;padding:12px 14px;border:2px solid #ddd;border-radius:8px;font-size:15px;font-family:inherit;box-sizing:border-box;direction:rtl" onfocus="this.style.borderColor=\'#7DC242\'" onblur="setTimeout(function(){var d=document.getElementById(\'flic-ac-drop\');if(d)d.style.display=\'none\';},200)">'+
             '<div id="flic-ac-drop" style="display:none;position:absolute;right:0;left:0;top:100%;background:#fff;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px;z-index:99;box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:180px;overflow-y:auto"></div>'+
           '</div>'+
+          '<div id="flic-plate-display" style="display:none;margin-top:8px;padding:8px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px">'+
+            '<span style="font-size:11px;color:#166534;display:block;margin-bottom:2px">מספר רכב</span>'+
+            '<span id="flic-plate-val" style="font-size:16px;font-weight:700;color:#1A4A3A;letter-spacing:1px;direction:ltr;display:inline-block"></span>'+
+          '</div>'+
         '</div>'+
         '<div style="margin-bottom:20px">'+
           '<label style="font-size:13px;color:#555;display:block;margin-bottom:6px"><span style="color:#dc2626">*</span> תוקף רישיון נהיגה</label>'+
@@ -13462,7 +13466,12 @@ function flicAcSearch(val){
   var drop = document.getElementById('flic-ac-drop');
   if(!drop) return;
   var q = (val||'').trim().toLowerCase();
-  if(!q || q.length < 1){ drop.style.display = 'none'; return; }
+  if(!q || q.length < 1){
+    drop.style.display = 'none';
+    _flicVid = null;
+    var pd = document.getElementById('flic-plate-display'); if(pd) pd.style.display = 'none';
+    return;
+  }
   if(!_flicDriversList.length){ drop.style.display = 'none'; return; }
   _flicCurrentMatches = _flicDriversList.filter(function(d){
     return d.name.toLowerCase().includes(q);
@@ -13492,8 +13501,14 @@ function flicAcPick(idx){
   _flicVid = d.vid;
   var nameEl = document.getElementById('flic-name');
   var drop = document.getElementById('flic-ac-drop');
+  var plateDisplay = document.getElementById('flic-plate-display');
+  var plateVal = document.getElementById('flic-plate-val');
   if(nameEl){ nameEl.value = d.name; nameEl.style.borderColor = '#7DC242'; }
   if(drop) drop.style.display = 'none';
+  if(plateDisplay && plateVal){
+    if(d.plate){ plateVal.textContent = d.plate; plateDisplay.style.display = 'block'; }
+    else { plateDisplay.style.display = 'none'; }
+  }
   setTimeout(function(){ var dt = document.getElementById('flic-date'); if(dt) dt.focus(); }, 50);
 }
 
@@ -13582,6 +13597,14 @@ function flicSubmitAll(){
     return;
   }
   if(errEl3) errEl3.style.display = 'none';
+  if(!_flicVid){
+    var errFallback = document.getElementById('flic-step1-err');
+    if(errFallback){ errFallback.textContent = 'נא לבחור שם מהרשימה'; errFallback.style.display = 'block'; }
+    document.getElementById('flic-step1').style.display = 'block';
+    document.getElementById('flic-step2').style.display = 'none';
+    document.getElementById('flic-step3').style.display = 'none';
+    return;
+  }
   var btn = document.getElementById('flic-submit-btn');
   if(btn){ btn.disabled = true; btn.textContent = 'שולח...'; btn.style.background = '#9ca3af'; }
   var docId = 'flic-' + Date.now().toString(36);
@@ -13618,7 +13641,14 @@ function flicSubmitAll(){
 function copyFamilyLicenseLink(){
   var base = (location.protocol === 'file:' ? 'https://nahagon.vercel.app/fleetos_114.html' : location.origin + location.pathname).replace(/[?#].*$/, '');
   var url = base + '?flic=1';
-  navigator.clipboard.writeText(url).then(function(){ showToast('✅ קישור רישיון הועתק ללוח'); });
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){ showToast('✅ קישור רישיון הועתק ללוח'); }).catch(function(){ _flicCopyFallback(url); });
+  } else { _flicCopyFallback(url); }
+}
+function _flicCopyFallback(url){
+  var ta=document.createElement('textarea'); ta.value=url; ta.style.cssText='position:fixed;opacity:0';
+  document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  showToast('✅ קישור רישיון הועתק ללוח');
 }
 
 function submitLicenseUpdate(token, vid){
