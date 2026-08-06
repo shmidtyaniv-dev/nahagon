@@ -12136,6 +12136,8 @@ function startVehiclesListener(){
       loadVehicleDocsStore();
       // Run once after initial load to fix any garbled data from iOS rotation bug
       setTimeout(cleanGarbledDriverData,500);
+      // סנכרן lastKmUpdate מ-kmUpdates — מונע race condition עם startKmUpdatesListener
+      setTimeout(syncKmUpdateDates,800);
     }else{
       // Subsequent updates - merge carefully (only apply changes from other devices)
       snap.docChanges().forEach(function(change){
@@ -12378,6 +12380,34 @@ function startPaymentReceiptsListener(){
       }
     });
   });
+}
+
+// סנכרן lastKmUpdate מ-kmUpdates — רץ פעם אחת אחרי טעינת הרכבים
+// פותר race condition: kmUpdates listener עשוי לירות לפני שהרכבים נטענו
+function syncKmUpdateDates(){
+  if(!db||!_vehiclesLoaded) return;
+  db.collection('kmUpdates').get().then(function(snap){
+    var changed=false;
+    snap.forEach(function(doc){
+      var d=doc.data();
+      if(!d.km||!d.vid||!d.updatedAt) return;
+      var newDate=d.updatedAt.split('T')[0];
+      var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
+      if(!v) return;
+      // עדכן רק אם תאריך העדכון חדש יותר מהשמור
+      if(!v.lastKmUpdate||newDate>v.lastKmUpdate){
+        v.lastKmUpdate=newDate;
+        // עדכן גם km אם גבוה יותר
+        if(d.km>v.currentKm) v.currentKm=d.km;
+        changed=true;
+        try{persistVehicle(v);}catch(e){}
+      }
+    });
+    if(changed){
+      try{renderV();}catch(e){}
+      try{if(_currentVid){var v2=vehicles.find(function(x){return x.id===_currentVid;});if(v2)openDet(_currentVid);}}catch(e){}
+    }
+  }).catch(function(e){console.error('syncKmUpdateDates error:',e);});
 }
 
 function startKmUpdatesListener(){
