@@ -2398,6 +2398,12 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
       <span class="sb-badge warning" id="nb-km-reports" style="display:none"></span>
     </div>
 
+    <div class="ni" dp="lic-reports" onclick="go('lic-reports',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h7"/></svg>
+      <span>עדכוני רישיון</span>
+      <span class="sb-badge warning" id="nb-lic-reports" style="display:none"></span>
+    </div>
+
     <div class="sb-nav-group-title">כלים</div>
     <div class="ni" dp="forms" onclick="go('forms',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
@@ -2872,6 +2878,28 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
         <button onclick="resetKmReports()" style="padding:5px 12px;border:1px solid #fca5a5;border-radius:7px;background:#fff5f5;font-size:12px;font-family:inherit;cursor:pointer;color:#dc2626">איפוס דיווחים</button>
       </div>
       <div id="kmr-list"></div>
+    </div>
+
+    <!-- LIC REPORTS PAGE -->
+    <div class="page" id="page-lic-reports">
+      <div class="sh" style="margin-bottom:16px">
+        <h2>עדכוני רישיון</h2>
+        <span class="sp"></span>
+        <button class="btn" onclick="copyFamilyLicenseLink()" style="gap:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          שלח קישור
+        </button>
+      </div>
+      <div class="kmr-summary" id="licr-summary">
+        <div class="kmr-stat"><div class="kmr-stat-val" id="licr-total">0</div><div class="kmr-stat-lbl">דיווחים שהתקבלו</div></div>
+        <div class="kmr-stat"><div class="kmr-stat-val" id="licr-with-family" style="color:#16a34a">0</div><div class="kmr-stat-lbl">כולל בני משפחה</div></div>
+        <div class="kmr-stat"><div class="kmr-stat-val" id="licr-no-family" style="color:#6b7280">0</div><div class="kmr-stat-lbl">ללא בני משפחה</div></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600;color:var(--t2)">דיווחים שהתקבלו</div>
+        <button onclick="resetLicReports()" style="padding:5px 12px;border:1px solid #fca5a5;border-radius:7px;background:#fff5f5;font-size:12px;font-family:inherit;cursor:pointer;color:#dc2626">איפוס דיווחים</button>
+      </div>
+      <div id="licr-list"></div>
     </div>
 
     <!-- FORMS PAGE -->
@@ -12854,6 +12882,69 @@ function renderKmReports(){
   });
 }
 
+/* ── LIC REPORTS — עדכוני רישיון ── */
+var _licReportsCache=[];
+var _licReportsListenerStarted=false;
+
+function startLicReportsListener(){
+  if(!db||_licReportsListenerStarted) return;
+  _licReportsListenerStarted=true;
+  db.collection('licenseUpdates').onSnapshot(function(snap){
+    _licReportsCache=[];
+    snap.forEach(function(doc){
+      var d=doc.data(); d.id=doc.id;
+      _licReportsCache.push(d);
+    });
+    _licReportsCache.sort(function(a,b){ return (b.updatedAt||'').localeCompare(a.updatedAt||''); });
+    var pg=document.getElementById('page-lic-reports');
+    if(pg&&pg.classList.contains('active')) renderLicReports();
+    // badge
+    var badge=document.getElementById('nb-lic-reports');
+    if(badge){ badge.textContent=_licReportsCache.length; badge.style.display=_licReportsCache.length?'':'none'; }
+  });
+}
+
+function renderLicReports(){
+  startLicReportsListener();
+  var list=document.getElementById('licr-list');
+  if(!list) return;
+  var total=_licReportsCache.length;
+  var withFamily=_licReportsCache.filter(function(r){ return r.familyMembersJson&&r.familyMembersJson!=='[]'&&r.familyMembersJson!==''; }).length;
+  var el=document.getElementById('licr-total'); if(el) el.textContent=total;
+  el=document.getElementById('licr-with-family'); if(el) el.textContent=withFamily;
+  el=document.getElementById('licr-no-family'); if(el) el.textContent=total-withFamily;
+  if(!total){ list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);font-size:14px">אין דיווחים עדיין</div>'; return; }
+  var html='';
+  _licReportsCache.forEach(function(r){
+    var date=r.updatedAt ? new Date(r.updatedAt).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    var licDate=r.licenseExp ? r.licenseExp.split('-').reverse().join('/') : '—';
+    var family=[]; try{ if(r.familyMembersJson) family=JSON.parse(r.familyMembersJson); }catch(e){}
+    var familyHtml=family.length ? '<div style="margin-top:4px;font-size:11px;color:var(--t3)">בני משפחה: '+family.map(function(f){ return _esc(f.name)+' ('+f.licenseExp.split('-').reverse().join('/')+')'; }).join(', ')+'</div>' : '';
+    var v=vehicles.find(function(x){ return String(x.id)===String(r.vid); });
+    var plate=v?v.plate:(r.plate||'');
+    var nameHtml=v
+      ? '<span style="cursor:pointer;color:var(--gd);text-decoration:underline" onclick="openVehicleFromNotif(\''+String(v.id)+'\',\''+plate.replace(/'/g,'')+'\')">'+_esc(r.driverName||'')+'</span>'
+      : _esc(r.driverName||'');
+    html+='<div class="kmr-row">'+
+      '<div class="kmr-row-info">'+
+        '<div class="kmr-row-name">'+nameHtml+(plate?' <span style="color:var(--t3);font-size:12px">· '+plate+'</span>':'')+' <span style="font-size:12px;color:var(--t2)">— רישיון עד '+licDate+'</span></div>'+
+        familyHtml+
+        '<div class="kmr-row-meta">'+(date?'· '+date:'')+'</div>'+
+      '</div>'+
+      '<span class="kmr-badge matched">עודכן ✓</span>'+
+    '</div>';
+  });
+  list.innerHTML=html;
+}
+
+function resetLicReports(){
+  if(!db) return;
+  if(!confirm('למחוק את כל הדיווחים?')) return;
+  var batch=db.batch();
+  _licReportsCache.forEach(function(r){ batch.delete(db.collection('licenseUpdates').doc(r.id)); });
+  batch.commit().then(function(){ showToast('הדיווחים אופסו ✓'); }).catch(function(){ showToast('שגיאה באיפוס — נסה שוב'); });
+}
+
 function resetKmReports(){
   if(!db) return;
   if(!confirm('למחוק את כל הדיווחים ולהתחיל מחדש?')) return;
@@ -18162,6 +18253,7 @@ function go(name,el){
   if(name==='accidents')renderAccidents();
   if(name==='orders')renderOrders();
   if(name==='km-reports')renderKmReports();
+  if(name==='lic-reports')renderLicReports();
   if(name==='calendar')renderCalendar();
   if(name==='forms')renderForms();
   if(name==='reminders')renderReminders();
@@ -18225,6 +18317,7 @@ function startAuthedApp(){
   startViolApprovalsListener();
   if(typeof startFormSubmissionsListener==='function')startFormSubmissionsListener();
   if(typeof startKmReportsListener==='function')startKmReportsListener();
+  if(typeof startLicReportsListener==='function')startLicReportsListener();
   if(typeof startBlockedDaysListener==='function')startBlockedDaysListener();
   // Start vehicles real-time sync with Firestore
   if(typeof startVehiclesListener==='function')startVehiclesListener();
