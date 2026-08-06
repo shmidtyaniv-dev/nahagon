@@ -7126,6 +7126,10 @@ function sendLicenseRequest(vid){
         '<button onclick="licReqSendEmail()" style="flex:1;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><span style="font-size:18px">✉️</span> מייל</button>'+
       '</div>'+
       '<button onclick="licReqCopy()" style="width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--t2)">📋 העתק קישור</button>'+
+      '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr)">'+
+        '<div style="font-size:11px;color:var(--t3);margin-bottom:6px;text-align:center">קישור לכל הקבוצה (כולל בני משפחה)</div>'+
+        '<button onclick="copyFamilyLicenseLink();document.getElementById(\'lic-req-modal\')?.remove();" style="width:100%;background:#f0fdf4;border:1.5px solid #7DC242;border-radius:8px;padding:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#1A4A3A">👨‍👩‍👧 העתק קישור לקבוצה</button>'+
+      '</div>'+
     '</div>';
   document.body.appendChild(m);
 }
@@ -12518,7 +12522,24 @@ function startLicenseUpdatesListener(){
         if(!v.driver) v.driver={};
         v.driver.licenseExp=d.licenseExp;
         if(!v.historyLog) v.historyLog=[];
-        v.historyLog.push({id:'h'+Date.now(),kind:'license',desc:'עדכון רישיון נהיגה מנהג: '+d.licenseExp.split('-').reverse().join('/'),createdAt:d.updatedAt||new Date().toISOString(),source:'driver'});
+        var _histDesc='עדכון רישיון נהיגה מנהג: '+d.licenseExp.split('-').reverse().join('/');
+        // טיפול בבני משפחה מטופס קבוצתי (?flic)
+        var _familyJson = d.familyMembersJson || '';
+        var _familyArr = [];
+        if(_familyJson){ try{ _familyArr = JSON.parse(_familyJson); }catch(e){} }
+        // תמיכה גם בשדה familyMembers ישן (מסד נתונים)
+        if(!_familyArr.length && d.familyMembers && d.familyMembers.length){ _familyArr = d.familyMembers; }
+        if(_familyArr.length){
+          if(!v.family) v.family=[];
+          _familyArr.forEach(function(fm){
+            if(!fm.name||!fm.licenseExp) return;
+            var existing=v.family.findIndex(function(f){ return f.name.trim().toLowerCase()===fm.name.trim().toLowerCase(); });
+            if(existing>=0){ v.family[existing].licenseExp=fm.licenseExp; }
+            else { v.family.push({name:fm.name.trim(),rel:'',id:'',licenseExp:fm.licenseExp}); }
+          });
+          _histDesc+=' (כולל '+_familyArr.length+' בני משפחה)';
+        }
+        v.historyLog.push({id:'h'+Date.now(),kind:'license',desc:_histDesc,createdAt:d.updatedAt||new Date().toISOString(),source:'driver'});
         try{ if(typeof persistVehicle==='function') persistVehicle(v); }catch(e){ if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }
         try{ if(_currentVid===v.id) openDet(v.id); }catch(e){}
         try{ renderV(); }catch(e){}
@@ -13252,6 +13273,261 @@ function checkLicenseRequest(){
     _doLicLoad();
   }
   return true;
+}
+
+/* ══════════════════════════════════════════
+   FAMILY LICENSE UPDATE — טופס קבוצתי (?flic=1)
+   ══════════════════════════════════════════ */
+var _flicVid = null;
+var _flicDriversList = [];
+var _flicCurrentMatches = [];
+var _flicAcIndex = -1;
+
+function checkFamilyLicenseRequest(){
+  var params = new URLSearchParams(location.search);
+  if(!params.has('flic')) return false;
+  document.querySelector('.app').style.display = 'none';
+  document.documentElement.style.visibility = 'visible';
+  var page = document.createElement('div');
+  page.id = 'flic-page';
+  page.style.cssText = 'min-height:100vh;background:#f2f5f2;display:flex;align-items:flex-start;justify-content:center;direction:rtl;font-family:Heebo,Arial,sans-serif;padding:16px;box-sizing:border-box';
+  page.innerHTML =
+    '<div style="background:#fff;border-radius:16px;padding:0;max-width:440px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.1);overflow:hidden;margin-top:24px">'+
+      '<div style="background:#1A4A3A;padding:18px 24px;text-align:center">'+
+        '<div style="color:#7DC242;font-size:18px;font-weight:700;margin-bottom:2px">מרכז הרכב של מור</div>'+
+        '<div style="color:rgba(255,255,255,.7);font-size:12px">עדכון תוקף רישיון נהיגה</div>'+
+      '</div>'+
+      '<!-- STEP 1 -->'+
+      '<div id="flic-step1" style="padding:24px">'+
+        '<div style="font-size:15px;font-weight:700;color:#1A4A3A;margin-bottom:18px;text-align:center">פרטי הנהג</div>'+
+        '<div style="margin-bottom:16px">'+
+          '<label style="font-size:13px;color:#555;display:block;margin-bottom:6px"><span style="color:#dc2626">*</span> שם מלא</label>'+
+          '<div style="position:relative">'+
+            '<input type="text" id="flic-name" placeholder="שם פרטי + שם משפחה" autocomplete="off" oninput="flicAcSearch(this.value)" style="width:100%;padding:12px 14px;border:2px solid #ddd;border-radius:8px;font-size:15px;font-family:inherit;box-sizing:border-box;direction:rtl" onfocus="this.style.borderColor=\'#7DC242\'" onblur="setTimeout(function(){var d=document.getElementById(\'flic-ac-drop\');if(d)d.style.display=\'none\';},200)">'+
+            '<div id="flic-ac-drop" style="display:none;position:absolute;right:0;left:0;top:100%;background:#fff;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px;z-index:99;box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:180px;overflow-y:auto"></div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="margin-bottom:20px">'+
+          '<label style="font-size:13px;color:#555;display:block;margin-bottom:6px"><span style="color:#dc2626">*</span> תוקף רישיון נהיגה</label>'+
+          '<input type="date" id="flic-date" style="width:100%;padding:12px 14px;border:2px solid #ddd;border-radius:8px;font-size:15px;font-family:inherit;box-sizing:border-box" onfocus="this.style.borderColor=\'#7DC242\'" onblur="this.style.borderColor=\'#ddd\'">'+
+        '</div>'+
+        '<div id="flic-step1-err" style="color:#dc2626;font-size:13px;text-align:center;margin-bottom:10px;display:none"></div>'+
+        '<button onclick="flicStep1Next()" style="width:100%;padding:14px;background:#1A4A3A;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">המשך</button>'+
+      '</div>'+
+      '<!-- STEP 2 -->'+
+      '<div id="flic-step2" style="display:none;padding:24px">'+
+        '<div style="font-size:15px;font-weight:700;color:#1A4A3A;margin-bottom:20px;text-align:center">האם יש בני משפחה שנוהגים על הרכב?</div>'+
+        '<div style="display:flex;gap:12px">'+
+          '<button onclick="flicNoFamily()" style="flex:1;padding:16px;background:#f4f4f4;color:#333;border:2px solid #ddd;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">לא</button>'+
+          '<button onclick="flicYesFamily()" style="flex:1;padding:16px;background:#1A4A3A;color:#fff;border:2px solid #1A4A3A;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">כן</button>'+
+        '</div>'+
+      '</div>'+
+      '<!-- STEP 3 -->'+
+      '<div id="flic-step3" style="display:none;padding:24px">'+
+        '<div style="font-size:15px;font-weight:700;color:#1A4A3A;margin-bottom:4px;text-align:center">בני משפחה נוהגים</div>'+
+        '<div style="font-size:12px;color:#888;text-align:center;margin-bottom:16px">נא להזין שם ותוקף רישיון עבור כל בן/בת משפחה</div>'+
+        '<div id="flic-family-list"></div>'+
+        '<button onclick="flicAddFamilyRow()" style="width:100%;padding:10px;background:#f0fdf4;color:#1A4A3A;border:2px dashed #7DC242;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px;margin-bottom:16px">+ הוסף בן/בת משפחה נוסף/ת</button>'+
+        '<div id="flic-step3-err" style="color:#dc2626;font-size:13px;text-align:center;margin-bottom:10px;display:none"></div>'+
+        '<button onclick="flicSubmitAll()" id="flic-submit-btn" style="width:100%;padding:14px;background:#1A4A3A;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">שלח עדכון</button>'+
+      '</div>'+
+      '<!-- SUCCESS -->'+
+      '<div id="flic-success" style="display:none;padding:40px 24px;text-align:center">'+
+        '<div style="font-size:56px;margin-bottom:16px">✅</div>'+
+        '<div style="font-size:20px;font-weight:700;color:#166534;margin-bottom:8px">תודה! הנתונים עודכנו בהצלחה</div>'+
+        '<div style="font-size:14px;color:#6b7280;margin-top:8px">מרכז הרכב של מור בית השקעות</div>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(page);
+  // סגור dropdown בלחיצה מחוץ
+  document.addEventListener('click', function(e){
+    var drop = document.getElementById('flic-ac-drop');
+    var inp = document.getElementById('flic-name');
+    if(drop && inp && !inp.contains(e.target) && !drop.contains(e.target)) drop.style.display = 'none';
+  });
+  flicLoadDrivers();
+  setTimeout(function(){ var n = document.getElementById('flic-name'); if(n) n.focus(); }, 300);
+  return true;
+}
+
+function flicLoadDrivers(){
+  var _doLoad = function(){
+    if(!db) return;
+    db.collection('publicDrivers').get().then(function(snap){
+      snap.forEach(function(doc){
+        var d = doc.data();
+        if(d.name) _flicDriversList.push({name: d.name, plate: d.plate||'', vid: doc.id});
+      });
+    }).catch(function(){});
+  };
+  if(typeof auth !== 'undefined' && auth && !auth.currentUser){
+    auth.signInAnonymously().then(_doLoad).catch(_doLoad);
+  } else {
+    _doLoad();
+  }
+}
+
+function flicAcSearch(val){
+  var drop = document.getElementById('flic-ac-drop');
+  if(!drop) return;
+  var q = (val||'').trim().toLowerCase();
+  if(!q || q.length < 1){ drop.style.display = 'none'; return; }
+  if(!_flicDriversList.length){ drop.style.display = 'none'; return; }
+  _flicCurrentMatches = _flicDriversList.filter(function(d){
+    return d.name.toLowerCase().includes(q);
+  }).slice(0, 6);
+  if(!_flicCurrentMatches.length){ drop.style.display = 'none'; return; }
+  _flicAcIndex = -1;
+  drop.innerHTML = _flicCurrentMatches.map(function(d, i){
+    var safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var hi = d.name.replace(new RegExp('('+safe+')', 'gi'), '<mark style="background:#dcfce7;color:#166534;border-radius:2px">$1</mark>');
+    return '<div class="flic-ac-item" data-idx="'+i+'" style="padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background=\'#f0fdf4\'" onmouseout="this.style.background=\'\'">'+
+      '<span>'+hi+'</span>'+
+      (d.plate ? '<span style="font-size:12px;color:#888;direction:ltr">'+d.plate+'</span>' : '')+
+    '</div>';
+  }).join('');
+  drop.querySelectorAll('.flic-ac-item').forEach(function(el){
+    el.addEventListener('mousedown', function(e){
+      e.preventDefault();
+      flicAcPick(parseInt(el.dataset.idx));
+    });
+  });
+  drop.style.display = 'block';
+}
+
+function flicAcPick(idx){
+  var d = _flicCurrentMatches[idx];
+  if(!d) return;
+  _flicVid = d.vid;
+  var nameEl = document.getElementById('flic-name');
+  var drop = document.getElementById('flic-ac-drop');
+  if(nameEl){ nameEl.value = d.name; nameEl.style.borderColor = '#7DC242'; }
+  if(drop) drop.style.display = 'none';
+  setTimeout(function(){ var dt = document.getElementById('flic-date'); if(dt) dt.focus(); }, 50);
+}
+
+function flicStep1Next(){
+  var nameEl = document.getElementById('flic-name');
+  var dateEl = document.getElementById('flic-date');
+  var errEl = document.getElementById('flic-step1-err');
+  var name = (nameEl ? nameEl.value : '').trim();
+  var date = dateEl ? dateEl.value : '';
+  if(!_flicVid || !name){
+    if(errEl){ errEl.textContent = 'נא לבחור שם מהרשימה'; errEl.style.display = 'block'; }
+    if(nameEl) nameEl.focus();
+    return;
+  }
+  if(!date){
+    if(errEl){ errEl.textContent = 'נא לבחור תאריך תוקף רישיון'; errEl.style.display = 'block'; }
+    if(dateEl) dateEl.focus();
+    return;
+  }
+  if(errEl) errEl.style.display = 'none';
+  document.getElementById('flic-step1').style.display = 'none';
+  document.getElementById('flic-step2').style.display = 'block';
+}
+
+function flicNoFamily(){
+  flicSubmitAll();
+}
+
+function flicYesFamily(){
+  document.getElementById('flic-step2').style.display = 'none';
+  var step3 = document.getElementById('flic-step3');
+  step3.style.display = 'block';
+  var list = document.getElementById('flic-family-list');
+  list.innerHTML = '';
+  flicAddFamilyRow();
+}
+
+function flicAddFamilyRow(){
+  var list = document.getElementById('flic-family-list');
+  if(!list) return;
+  var row = document.createElement('div');
+  row.className = 'flic-family-row';
+  row.style.cssText = 'background:#f8f9f8;border-radius:10px;padding:12px 14px;margin-bottom:10px;position:relative';
+  row.innerHTML =
+    '<button onclick="flicRemoveFamilyRow(this)" style="position:absolute;left:10px;top:10px;background:none;border:none;font-size:18px;color:#9ca3af;cursor:pointer;line-height:1" title="הסר">×</button>'+
+    '<div style="margin-bottom:10px">'+
+      '<label style="font-size:12px;color:#666;display:block;margin-bottom:4px"><span style="color:#dc2626">*</span> שם בן/בת משפחה</label>'+
+      '<input type="text" placeholder="שם מלא" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box;direction:rtl" onfocus="this.style.borderColor=\'#7DC242\'" onblur="this.style.borderColor=\'#ddd\'">'+
+    '</div>'+
+    '<div>'+
+      '<label style="font-size:12px;color:#666;display:block;margin-bottom:4px"><span style="color:#dc2626">*</span> תוקף רישיון נהיגה</label>'+
+      '<input type="date" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;box-sizing:border-box" onfocus="this.style.borderColor=\'#7DC242\'" onblur="this.style.borderColor=\'#ddd\'">'+
+    '</div>';
+  list.appendChild(row);
+}
+
+function flicRemoveFamilyRow(btn){
+  var row = btn.closest('.flic-family-row');
+  if(row) row.remove();
+}
+
+function flicSubmitAll(){
+  var nameEl = document.getElementById('flic-name');
+  var dateEl = document.getElementById('flic-date');
+  var driverName = nameEl ? nameEl.value.trim() : '';
+  var driverDate = dateEl ? dateEl.value : '';
+  // אסוף בני משפחה
+  var familyMembers = [];
+  var rows = document.querySelectorAll('.flic-family-row');
+  var errEl3 = document.getElementById('flic-step3-err');
+  var valid = true;
+  rows.forEach(function(row){
+    var inputs = row.querySelectorAll('input');
+    var nm = inputs[0] ? inputs[0].value.trim() : '';
+    var dt = inputs[1] ? inputs[1].value : '';
+    if(!nm || !dt){
+      valid = false;
+      if(inputs[0] && !nm) inputs[0].style.borderColor = '#dc2626';
+      if(inputs[1] && !dt) inputs[1].style.borderColor = '#dc2626';
+    } else {
+      familyMembers.push({name: nm, licenseExp: dt});
+    }
+  });
+  if(!valid){
+    if(errEl3){ errEl3.textContent = 'נא למלא שם ותאריך עבור כל בן/בת משפחה'; errEl3.style.display = 'block'; }
+    return;
+  }
+  if(errEl3) errEl3.style.display = 'none';
+  var btn = document.getElementById('flic-submit-btn');
+  if(btn){ btn.disabled = true; btn.textContent = 'שולח...'; btn.style.background = '#9ca3af'; }
+  var docId = 'flic-' + Date.now().toString(36);
+  // שמור familyMembers כ-JSON string (publicRestCreate תומכת רק בסקלרים)
+  var payload = {
+    vid: String(_flicVid),
+    licenseExp: driverDate,
+    driverName: driverName,
+    familyMembersJson: familyMembers.length ? JSON.stringify(familyMembers) : '',
+    updatedAt: new Date().toISOString()
+  };
+  function _doWrite(){
+    if(db){
+      return publicWriteWithRetry(function(){
+        return db.collection('licenseUpdates').doc(docId).set(payload);
+      });
+    } else {
+      return publicRestCreate('licenseUpdates', payload, docId);
+    }
+  }
+  _doWrite().then(function(){
+    document.getElementById('flic-step1').style.display = 'none';
+    document.getElementById('flic-step2').style.display = 'none';
+    document.getElementById('flic-step3').style.display = 'none';
+    document.getElementById('flic-success').style.display = 'block';
+  }).catch(function(e){
+    console.error('flicSubmitAll error:', e);
+    if(btn){ btn.disabled = false; btn.textContent = 'שלח עדכון'; btn.style.background = '#1A4A3A'; }
+    var errEl = document.getElementById('flic-step3-err') || document.getElementById('flic-step1-err');
+    if(errEl){ errEl.textContent = 'שגיאה בשליחה — בדקו חיבור לאינטרנט ונסו שוב'; errEl.style.display = 'block'; }
+  });
+}
+
+function copyFamilyLicenseLink(){
+  var base = (location.protocol === 'file:' ? 'https://nahagon.vercel.app/fleetos_114.html' : location.origin + location.pathname).replace(/[?#].*$/, '');
+  var url = base + '?flic=1';
+  navigator.clipboard.writeText(url).then(function(){ showToast('✅ קישור רישיון הועתק ללוח'); });
 }
 
 function submitLicenseUpdate(token, vid){
@@ -17935,7 +18211,8 @@ var _isPublicPage = checkViolApproval()
   || (typeof checkFormFillPage==='function' && checkFormFillPage())
   || (typeof checkServiceBooking==='function' && checkServiceBooking())
   || (typeof checkKmRequest==='function' && checkKmRequest())
-  || (typeof checkLicenseRequest==='function' && checkLicenseRequest());
+  || (typeof checkLicenseRequest==='function' && checkLicenseRequest())
+  || (typeof checkFamilyLicenseRequest==='function' && checkFamilyLicenseRequest());
 
 // כל המאזינים והטעינות האמיתיות - מופעלים רק אחרי אימות מוצלח
 var _authedAppStarted = false;
