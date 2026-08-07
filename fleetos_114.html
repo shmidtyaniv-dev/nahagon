@@ -6073,8 +6073,10 @@ function addY(d,y){const dt=new Date(d);dt.setFullYear(dt.getFullYear()+y);retur
 // ויניב מעדכן את הרישיון בעצמו בלי טסט. מהיום שבו נגמרה השנה הראשונה הפטור
 // פוקע אוטומטית, וטסט ייפתח כרגיל כשתוקף הרישיון יתקרב.
 function isFirstYearTestExempt(v){
-  if(!v||!v.delivery)return false;
-  var d=new Date(String(v.delivery).slice(0,10)+'T12:00:00');
+  if(!v)return false;
+  var deliveryDate=v.delivery||v.periodFrom||'';
+  if(!deliveryDate)return false;
+  var d=new Date(String(deliveryDate).slice(0,10)+'T12:00:00');
   if(isNaN(d))return false;
   d.setFullYear(d.getFullYear()+1);
   return new Date()<d;
@@ -24008,23 +24010,22 @@ async function autoCloseRenewedTestTreatments(vehicle, newDueDate) {
       .where('kind', '==', 'test')
       .get();
     var newDateDay = newDueDate.toISOString().slice(0, 10);
-    snap.forEach(async function(doc) {
-      var d = doc.data();
-      if (d.status === 'closed') return;
+    for(var _i=0;_i<snap.docs.length;_i++){
+      var _doc=snap.docs[_i];
+      var d=_doc.data();
+      if(d.status === 'closed') continue;
       var storedDateDay = (d.dueDate || '').slice(0, 10);
-      // תאריך שונה → הרישיון חודש, סגור את הטיפול הישן
       if (storedDateDay !== newDateDay) {
-        await db.collection('treatments').doc(doc.id).update({
+        await db.collection('treatments').doc(_doc.id).update({
           status: 'closed',
           closedReason: 'auto_renewed',
           closedAt: new Date().toISOString()
         });
-        // עדכן local state
-        var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === doc.id; });
+        var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === _doc.id; });
         if (local) local.status = 'closed';
-        console.log('[Treatments] סגירה אוטומטית — טסט חודש:', doc.id);
+        console.log('[Treatments] סגירה אוטומטית — טסט חודש:', _doc.id);
       }
-    });
+    }
   } catch(err) {
     console.error('[Treatments] שגיאה בסגירת טסט:', err);
   }
@@ -24037,21 +24038,24 @@ async function autoCloseServicedTreatments(vehicle, lastSvcDate) {
       .where('kind', '==', 'treatment')
       .get();
     var lastSvc = new Date(lastSvcDate);
-    snap.forEach(async function(doc) {
-      var d = doc.data();
-      if (d.status === 'closed') return;
+    for(var _i=0;_i<snap.docs.length;_i++){
+      var _doc=snap.docs[_i];
+      var d=_doc.data();
+      if(d.status === 'closed') continue;
       // אם תאריך הטיפול האחרון חדש יותר מתאריך יצירת הרשומה — הרכב טופל אחרי שנשלחה הבקשה
       // משתמשים ב-createdAt האמיתי; lastEmailSentAt מתעדכן בכל תזכורת ידנית ולכן לא אמין כאן
       var createdAt = d.createdAt ? new Date(d.createdAt) : (d.lastEmailSentAt ? new Date(d.lastEmailSentAt) : null);
       if (!createdAt || lastSvc >= createdAt) {
-        await db.collection('treatments').doc(doc.id).update({
+        await db.collection('treatments').doc(_doc.id).update({
           status: 'closed',
           closedReason: 'auto_serviced',
           closedAt: new Date().toISOString()
         });
-        console.log('[Treatments] סגירה אוטומטית — טיפול בוצע:', doc.id);
+        var local=(TREATMENT_STATE.treatments||[]).find(function(t){return t.id===_doc.id;});
+        if(local) local.status='closed';
+        console.log('[Treatments] סגירה אוטומטית — טיפול בוצע:', _doc.id);
       }
-    });
+    }
   } catch (err) {
     console.error('[Treatments] שגיאה בסגירה אוטומטית:', err);
   }
@@ -24069,25 +24073,23 @@ async function autoCloseNotDueTreatments(vehicle, kind) {
     var _today = new Date(); _today.setHours(0, 0, 0, 0);
     var _s = TREATMENT_STATE.settings || {};
     var _range = (kind === 'test' ? (_s.scanRangeDaysTest || _s.scanRangeDays) : (_s.scanRangeDaysTreatment || _s.scanRangeDays)) || 20;
-    snap.forEach(async function(doc) {
-      var d = doc.data();
-      // סוגרים רק בקשות שהנהג עוד לא הגיב עליהן - לא נוגעים בבקשות שנבחר/אושר בהן תאריך
-      if (d.status !== 'awaiting_choice') return;
-      // בטיחות: אם תאריך היעד של הבקשה עצמה עדיין בטווח הסריקה — היא רלוונטית, לא סוגרים.
-      // מונע פינג-פונג בין מכשירים עם נתוני רכב לא מסונכרנים (יצירה→סגירה→יצירה...)
-      if (d.dueDate) {
-        var _du = daysBetween(_today, parseTreatmentDate(d.dueDate));
-        if (_du >= -30 && _du <= _range) return;
+    for(var _i=0;_i<snap.docs.length;_i++){
+      var _doc=snap.docs[_i];
+      var d=_doc.data();
+      if(d.status !== 'awaiting_choice') continue;
+      if(d.dueDate){
+        var _du=daysBetween(_today,parseTreatmentDate(d.dueDate));
+        if(_du>=-30&&_du<=_range) continue;
       }
-      await db.collection('treatments').doc(doc.id).update({
+      await db.collection('treatments').doc(_doc.id).update({
         status: 'closed',
         closedReason: 'auto_not_due',
         closedAt: new Date().toISOString()
       });
-      var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === doc.id; });
-      if (local) local.status = 'closed';
-      console.log('[Treatments] סגירה אוטומטית — הבקשה אינה רלוונטית עוד:', doc.id);
-    });
+      var local=(TREATMENT_STATE.treatments||[]).find(function(t){return t.id===_doc.id;});
+      if(local) local.status='closed';
+      console.log('[Treatments] סגירה אוטומטית — הבקשה אינה רלוונטית עוד:',_doc.id);
+    }
   } catch (err) {
     console.error('[Treatments] שגיאה בסגירת בקשה לא רלוונטית:', err);
   }
@@ -24104,18 +24106,19 @@ async function autoCloseMonthlyModeTests(vehicle, reason) {
       .where('vehicleId', '==', String(vehicle.id))
       .where('kind', '==', 'test')
       .get();
-    snap.forEach(async function(doc) {
-      var d = doc.data();
-      if (d.status !== 'awaiting_choice') return; // לא נוגעים במועדים שכבר נבחרו/אושרו
-      await db.collection('treatments').doc(doc.id).update({
+    for(var _i=0;_i<snap.docs.length;_i++){
+      var _doc=snap.docs[_i];
+      var d=_doc.data();
+      if(d.status !== 'awaiting_choice') continue; // לא נוגעים במועדים שכבר נבחרו/אושרו
+      await db.collection('treatments').doc(_doc.id).update({
         status: 'closed',
         closedReason: reason,
         closedAt: new Date().toISOString()
       });
-      var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === doc.id; });
+      var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === _doc.id; });
       if (local) local.status = 'closed';
-      console.log('[Treatments] בקשת טסט נסגרה (' + reason + '):', doc.id);
-    });
+      console.log('[Treatments] בקשת טסט נסגרה (' + reason + '):', _doc.id);
+    }
   } catch (err) {
     console.error('[Treatments] שגיאה בסגירת טסט (מצב חודשי):', err);
   }
