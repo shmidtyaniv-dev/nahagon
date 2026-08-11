@@ -13142,10 +13142,10 @@ function _renderDlicExpiry(){
       : r.daysLeft === 0
         ? '<span style="color:#dc2626;font-weight:700;font-size:12px">פג היום!</span>'
         : '<span style="color:'+dotColor+';font-size:12px">עוד '+r.daysLeft+' ימים</span>';
-    return '<div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--bdr);transition:background .1s" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">'+
+    return '<div onclick="document.getElementById(\'dlic-expiry-modal\').remove();openVehicleFromNotif(\''+String(r.vid)+'\',\'\')" style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--bdr);transition:background .1s;cursor:pointer" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">'+
       '<div style="width:8px;height:8px;border-radius:50%;background:'+dotColor+';flex-shrink:0"></div>'+
       '<div style="flex:1;min-width:0">'+
-        '<div style="font-size:14px;font-weight:600;color:var(--t1)">'+_esc(r.name)+'</div>'+
+        '<div style="font-size:14px;font-weight:600;color:var(--gd)">'+_esc(r.name)+'</div>'+
         '<div style="font-size:12px;color:var(--t3);margin-top:1px">'+_esc(r.plate)+(r.type!=='נהג'?' · <span style="color:#7c3aed">'+_esc(r.type)+'</span>':'')+'</div>'+
       '</div>'+
       '<div style="text-align:left;flex-shrink:0">'+
