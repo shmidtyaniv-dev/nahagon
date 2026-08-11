@@ -2894,7 +2894,18 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
         <div class="kmr-stat"><div class="kmr-stat-val" id="licr-total">0</div><div class="kmr-stat-lbl">דיווחים שהתקבלו</div></div>
         <div class="kmr-stat"><div class="kmr-stat-val" id="licr-with-family" style="color:#16a34a">0</div><div class="kmr-stat-lbl">כולל בני משפחה</div></div>
         <div class="kmr-stat"><div class="kmr-stat-val" id="licr-no-family" style="color:#6b7280">0</div><div class="kmr-stat-lbl">ללא בני משפחה</div></div>
+        <div class="kmr-stat" style="cursor:pointer" onclick="toggleLicPendingSection()"><div class="kmr-stat-val" id="licr-not-reported-count" style="color:#dc2626">0</div><div class="kmr-stat-lbl">לא דיווחו</div></div>
       </div>
+
+      <!-- חלון לא דיווחו עדיין -->
+      <div id="licr-pending-section" style="margin-bottom:16px;border:1.5px solid #fca5a5;border-radius:12px;overflow:hidden;display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff5f5;cursor:pointer" onclick="toggleLicPendingSection()">
+          <div style="font-size:13px;font-weight:700;color:#dc2626">⏳ לא דיווחו עדיין — <span id="licr-pending-label">0 נהגים</span></div>
+          <span id="licr-pending-chevron" style="font-size:12px;color:#dc2626;transition:transform .2s">▲</span>
+        </div>
+        <div id="licr-pending-list" style="background:#fff"></div>
+      </div>
+
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="font-size:13px;font-weight:600;color:var(--t2)">דיווחים שהתקבלו</div>
         <button onclick="resetLicReports()" style="padding:5px 12px;border:1px solid #fca5a5;border-radius:7px;background:#fff5f5;font-size:12px;font-family:inherit;cursor:pointer;color:#dc2626">איפוס דיווחים</button>
@@ -12915,6 +12926,48 @@ function renderLicReports(){
   var el=document.getElementById('licr-total'); if(el) el.textContent=total;
   el=document.getElementById('licr-with-family'); if(el) el.textContent=withFamily;
   el=document.getElementById('licr-no-family'); if(el) el.textContent=total-withFamily;
+
+  // ── חלון לא דיווחו עדיין ──
+  var reportedVids=_licReportsCache.map(function(r){ return String(r.vid); });
+  var notReported=(vehicles||[]).filter(function(v){
+    var dn=v.driverName||(v.driver&&v.driver.name)||'';
+    if(!dn) return false;
+    return reportedVids.indexOf(String(v.id))<0;
+  }).sort(function(a,b){
+    var an=a.driverName||(a.driver&&a.driver.name)||'';
+    var bn=b.driverName||(b.driver&&b.driver.name)||'';
+    return an.localeCompare(bn,'he');
+  });
+  var nrCount=notReported.length;
+  var nrCountEl=document.getElementById('licr-not-reported-count'); if(nrCountEl) nrCountEl.textContent=nrCount;
+  var nrLabel=document.getElementById('licr-pending-label'); if(nrLabel) nrLabel.textContent=nrCount+' נהגים';
+  var nrSection=document.getElementById('licr-pending-section');
+  if(nrSection && nrCount>0 && nrSection.style.display==='none'){
+    nrSection.style.display='block';
+  }
+  var nrList=document.getElementById('licr-pending-list');
+  if(nrList){
+    if(!nrCount){
+      nrList.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3);font-size:13px">כל הנהגים דיווחו ✓</div>';
+    } else {
+      nrList.innerHTML=notReported.map(function(v){
+        var dn=v.driverName||(v.driver&&v.driver.name)||'';
+        var ph=(v.driverPhone||v.driver?.phone||'').replace(/[^0-9]/g,'');
+        var waBtn=ph
+          ? '<button onclick="sendLicenseRequestDirect('+v.id+',this)" style="flex-shrink:0;padding:7px 12px;border:1px solid #25d366;border-radius:8px;background:#f0fdf4;color:#166534;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px"><span style="font-size:15px">💬</span> שלח</button>'
+          : '<span style="font-size:11px;color:#dc2626;flex-shrink:0">אין טלפון</span>';
+        return '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bdr)" onmouseover="this.style.background=\'#fef2f2\'" onmouseout="this.style.background=\'\'">'+
+          '<div onclick="openVehicleFromNotif(\''+String(v.id)+'\',\'\')" style="flex:1;cursor:pointer;min-width:0">'+
+            '<div style="font-size:14px;font-weight:600;color:var(--t1)">'+_esc(dn)+'</div>'+
+            '<div style="font-size:12px;color:var(--t3)">'+_esc(v.plate||'')+(ph?' · '+ph:'')+'</div>'+
+          '</div>'+
+          waBtn+
+        '</div>';
+      }).join('');
+    }
+  }
+
+  // ── דיווחים שהתקבלו ──
   if(!total){ list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);font-size:14px">אין דיווחים עדיין</div>'; return; }
   var html='';
   _licReportsCache.forEach(function(r){
@@ -12937,6 +12990,34 @@ function renderLicReports(){
     '</div>';
   });
   list.innerHTML=html;
+}
+
+function toggleLicPendingSection(){
+  var sec=document.getElementById('licr-pending-section');
+  var chev=document.getElementById('licr-pending-chevron');
+  if(!sec) return;
+  var open=sec.style.display!=='none';
+  sec.style.display=open?'none':'block';
+  if(chev) chev.style.transform=open?'rotate(180deg)':'';
+}
+
+function sendLicenseRequestDirect(vid, btn){
+  var v=vehicles.find(function(x){ return x.id===vid; });
+  if(!v){ showToast('רכב לא נמצא'); return; }
+  var driverName=v.driverName||v.driver?.name||'';
+  var driverPhone=(v.driverPhone||v.driver?.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'972');
+  if(!driverPhone){ showToast('אין מספר טלפון לנהג'); return; }
+  var token='LIC-'+vid+'-'+Date.now().toString(36).slice(-5);
+  if(db){
+    db.collection('licenseRequests').doc(token).set({
+      vid:vid, plate:v.plate||'', driverName:driverName,
+      createdAt:new Date().toISOString(), status:'pending'
+    }).catch(function(e){ console.error('licenseRequest save error:',e); });
+  }
+  var licUrl=location.origin+'/?lic='+token;
+  var waMsg='שלום '+driverName+', נא לעדכן תוקף רישיון הנהיגה שלך עבור רכב '+(v.plate||'')+'.\nלעדכון: '+licUrl;
+  window.open('https://wa.me/'+driverPhone+'?text='+encodeURIComponent(waMsg),'_blank');
+  if(btn){ btn.innerHTML='✓ נשלח'; btn.style.background='var(--bg2)'; btn.style.color='var(--green-dark)'; btn.style.borderColor='var(--green-dark)'; btn.disabled=true; btn.style.cursor='default'; }
 }
 
 function resetLicReports(){
