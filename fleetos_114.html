@@ -13034,7 +13034,11 @@ function sendLicenseRequestDirect(vid, btn){
   var licUrl=location.origin+'/?lic='+token;
   var waMsg='שלום '+driverName+', נא לעדכן תוקף רישיון הנהיגה שלך עבור רכב '+(v.plate||'')+'.\nלעדכון: '+licUrl;
   window.open('https://wa.me/'+driverPhone+'?text='+encodeURIComponent(waMsg),'_blank');
-  if(btn){ btn.innerHTML='✓ נשלח'; btn.style.background='#f8fafc'; btn.style.color='var(--green-dark)'; btn.style.borderColor='var(--green-dark)'; btn.disabled=true; btn.style.cursor='default'; }
+  if(btn){
+    var origHtml=btn.innerHTML;
+    btn.innerHTML='✓ נשלח'; btn.style.background='#f8fafc'; btn.style.color='var(--green-dark)'; btn.style.borderColor='var(--green-dark)'; btn.disabled=true;
+    setTimeout(function(){ btn.innerHTML=origHtml; btn.style.background='#f0fdf4'; btn.style.color='#166534'; btn.style.borderColor='#25d366'; btn.disabled=false; btn.style.cursor='pointer'; }, 2500);
+  }
 }
 
 function resetLicReports(){
@@ -13499,11 +13503,9 @@ function checkFamilyLicenseRequest(){
         '<div style="color:#7DC242;font-size:18px;font-weight:700;margin-bottom:2px">מרכז הרכב של מור</div>'+
         '<div style="color:rgba(255,255,255,.7);font-size:12px">עדכון תוקף רישיון נהיגה</div>'+
       '</div>'+
-      '<!-- STEP 1 -->'+
-      '<div id="flic-step1" style="padding:24px">'+
-        '<div style="font-size:15px;font-weight:700;color:#1A4A3A;margin-bottom:18px;text-align:center">פרטי הנהג</div>'+
+      '<div id="flic-form" style="padding:20px">'+
         '<div style="margin-bottom:16px">'+
-          '<label style="font-size:13px;color:#555;display:block;margin-bottom:6px"><span style="color:#dc2626">*</span> שם מלא</label>'+
+          '<label style="font-size:13px;color:#555;font-weight:600;display:block;margin-bottom:6px"><span style="color:#dc2626">*</span> שם מלא</label>'+
           '<div style="position:relative">'+
             '<input type="text" id="flic-name" placeholder="שם פרטי + שם משפחה" autocomplete="off" oninput="flicAcSearch(this.value)" style="width:100%;padding:12px 14px;border:2px solid #ddd;border-radius:8px;font-size:15px;font-family:inherit;box-sizing:border-box;direction:rtl" onfocus="this.style.borderColor=\'#7DC242\'" onblur="setTimeout(function(){var d=document.getElementById(\'flic-ac-drop\');if(d)d.style.display=\'none\';},200)">'+
             '<div id="flic-ac-drop" style="display:none;position:absolute;right:0;left:0;top:100%;background:#fff;border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px;z-index:99;box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:180px;overflow-y:auto"></div>'+
@@ -13513,31 +13515,17 @@ function checkFamilyLicenseRequest(){
             '<span id="flic-plate-val" style="font-size:16px;font-weight:700;color:#1A4A3A;letter-spacing:1px;direction:ltr;display:inline-block"></span>'+
           '</div>'+
         '</div>'+
-        '<div style="margin-bottom:20px">'+
-          '<label style="font-size:13px;color:#555;display:block;margin-bottom:6px"><span style="color:#dc2626">*</span> תוקף רישיון נהיגה</label>'+
+        '<div style="margin-bottom:18px">'+
+          '<label style="font-size:13px;color:#555;font-weight:600;display:block;margin-bottom:6px"><span style="color:#dc2626">*</span> תוקף רישיון נהיגה</label>'+
           '<input type="date" id="flic-date" style="width:100%;padding:12px 14px;border:2px solid #ddd;border-radius:8px;font-size:15px;font-family:inherit;box-sizing:border-box" onfocus="this.style.borderColor=\'#7DC242\'" onblur="this.style.borderColor=\'#ddd\'">'+
         '</div>'+
+        '<div style="margin-bottom:6px;font-size:13px;font-weight:600;color:#555">בני משפחה שנוהגים על הרכב (אם יש)</div>'+
+        '<div id="flic-family-list" style="margin-bottom:8px"></div>'+
+        '<button onclick="flicAddFamilyRow()" style="width:100%;padding:9px;background:#f0fdf4;color:#1A4A3A;border:2px dashed #7DC242;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:18px">+ הוסף בן/בת משפחה</button>'+
         '<div id="flic-step1-err" style="color:#dc2626;font-size:13px;text-align:center;margin-bottom:10px;display:none"></div>'+
-        '<button onclick="flicStep1Next()" style="width:100%;padding:14px;background:#1A4A3A;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">המשך</button>'+
+        '<button onclick="flicSubmitAll()" id="flic-submit-btn" style="width:100%;padding:14px;background:#1A4A3A;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">שלח עדכון רישיון</button>'+
+        '<div style="text-align:center;margin-top:14px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
       '</div>'+
-      '<!-- STEP 2 -->'+
-      '<div id="flic-step2" style="display:none;padding:24px">'+
-        '<div style="font-size:15px;font-weight:700;color:#1A4A3A;margin-bottom:20px;text-align:center">האם יש בני משפחה שנוהגים על הרכב?</div>'+
-        '<div style="display:flex;gap:12px">'+
-          '<button onclick="flicNoFamily()" style="flex:1;padding:16px;background:#f4f4f4;color:#333;border:2px solid #ddd;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">לא</button>'+
-          '<button onclick="flicYesFamily()" style="flex:1;padding:16px;background:#1A4A3A;color:#fff;border:2px solid #1A4A3A;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">כן</button>'+
-        '</div>'+
-      '</div>'+
-      '<!-- STEP 3 -->'+
-      '<div id="flic-step3" style="display:none;padding:24px">'+
-        '<div style="font-size:15px;font-weight:700;color:#1A4A3A;margin-bottom:4px;text-align:center">בני משפחה נוהגים</div>'+
-        '<div style="font-size:12px;color:#888;text-align:center;margin-bottom:16px">נא להזין שם ותוקף רישיון עבור כל בן/בת משפחה</div>'+
-        '<div id="flic-family-list"></div>'+
-        '<button onclick="flicAddFamilyRow()" style="width:100%;padding:10px;background:#f0fdf4;color:#1A4A3A;border:2px dashed #7DC242;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px;margin-bottom:16px">+ הוסף בן/בת משפחה נוסף/ת</button>'+
-        '<div id="flic-step3-err" style="color:#dc2626;font-size:13px;text-align:center;margin-bottom:10px;display:none"></div>'+
-        '<button onclick="flicSubmitAll()" id="flic-submit-btn" style="width:100%;padding:14px;background:#1A4A3A;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">שלח עדכון</button>'+
-      '</div>'+
-      '<!-- SUCCESS -->'+
       '<div id="flic-success" style="display:none;padding:40px 24px;text-align:center">'+
         '<div style="font-size:56px;margin-bottom:16px">✅</div>'+
         '<div style="font-size:20px;font-weight:700;color:#166534;margin-bottom:8px">תודה! הנתונים עודכנו בהצלחה</div>'+
@@ -13623,39 +13611,6 @@ function flicAcPick(idx){
   setTimeout(function(){ var dt = document.getElementById('flic-date'); if(dt) dt.focus(); }, 50);
 }
 
-function flicStep1Next(){
-  var nameEl = document.getElementById('flic-name');
-  var dateEl = document.getElementById('flic-date');
-  var errEl = document.getElementById('flic-step1-err');
-  var name = (nameEl ? nameEl.value : '').trim();
-  var date = dateEl ? dateEl.value : '';
-  if(!_flicVid || !name){
-    if(errEl){ errEl.textContent = 'נא לבחור שם מהרשימה'; errEl.style.display = 'block'; }
-    if(nameEl) nameEl.focus();
-    return;
-  }
-  if(!date){
-    if(errEl){ errEl.textContent = 'נא לבחור תאריך תוקף רישיון'; errEl.style.display = 'block'; }
-    if(dateEl) dateEl.focus();
-    return;
-  }
-  if(errEl) errEl.style.display = 'none';
-  document.getElementById('flic-step1').style.display = 'none';
-  document.getElementById('flic-step2').style.display = 'block';
-}
-
-function flicNoFamily(){
-  flicSubmitAll();
-}
-
-function flicYesFamily(){
-  document.getElementById('flic-step2').style.display = 'none';
-  var step3 = document.getElementById('flic-step3');
-  step3.style.display = 'block';
-  var list = document.getElementById('flic-family-list');
-  list.innerHTML = '';
-  flicAddFamilyRow();
-}
 
 function flicAddFamilyRow(){
   var list = document.getElementById('flic-family-list');
@@ -13686,40 +13641,45 @@ function flicSubmitAll(){
   var dateEl = document.getElementById('flic-date');
   var driverName = nameEl ? nameEl.value.trim() : '';
   var driverDate = dateEl ? dateEl.value : '';
+  var errEl = document.getElementById('flic-step1-err');
+  if(!driverName){
+    if(errEl){ errEl.textContent = 'נא לבחור שם מהרשימה'; errEl.style.display = 'block'; }
+    if(nameEl) nameEl.style.borderColor = '#dc2626';
+    return;
+  }
+  if(!driverDate){
+    if(errEl){ errEl.textContent = 'נא לבחור תאריך תוקף הרישיון'; errEl.style.display = 'block'; }
+    if(dateEl) dateEl.style.borderColor = '#dc2626';
+    return;
+  }
+  if(!_flicVid){
+    if(errEl){ errEl.textContent = 'נא לבחור שם מהרשימה'; errEl.style.display = 'block'; }
+    return;
+  }
   // אסוף בני משפחה
   var familyMembers = [];
   var rows = document.querySelectorAll('.flic-family-row');
-  var errEl3 = document.getElementById('flic-step3-err');
-  var valid = true;
+  var validFam = true;
   rows.forEach(function(row){
     var inputs = row.querySelectorAll('input');
     var nm = inputs[0] ? inputs[0].value.trim() : '';
     var dt = inputs[1] ? inputs[1].value : '';
     if(!nm || !dt){
-      valid = false;
+      validFam = false;
       if(inputs[0] && !nm) inputs[0].style.borderColor = '#dc2626';
       if(inputs[1] && !dt) inputs[1].style.borderColor = '#dc2626';
     } else {
       familyMembers.push({name: nm, licenseExp: dt});
     }
   });
-  if(!valid){
-    if(errEl3){ errEl3.textContent = 'נא למלא שם ותאריך עבור כל בן/בת משפחה'; errEl3.style.display = 'block'; }
+  if(!validFam){
+    if(errEl){ errEl.textContent = 'נא למלא שם ותאריך עבור כל בן/בת משפחה'; errEl.style.display = 'block'; }
     return;
   }
-  if(errEl3) errEl3.style.display = 'none';
-  if(!_flicVid){
-    var errFallback = document.getElementById('flic-step1-err');
-    if(errFallback){ errFallback.textContent = 'נא לבחור שם מהרשימה'; errFallback.style.display = 'block'; }
-    document.getElementById('flic-step1').style.display = 'block';
-    document.getElementById('flic-step2').style.display = 'none';
-    document.getElementById('flic-step3').style.display = 'none';
-    return;
-  }
+  if(errEl) errEl.style.display = 'none';
   var btn = document.getElementById('flic-submit-btn');
   if(btn){ btn.disabled = true; btn.textContent = 'שולח...'; btn.style.background = '#9ca3af'; }
   var docId = 'flic-' + Date.now().toString(36);
-  // שמור familyMembers כ-JSON string (publicRestCreate תומכת רק בסקלרים)
   var payload = {
     vid: String(_flicVid),
     licenseExp: driverDate,
@@ -13737,14 +13697,12 @@ function flicSubmitAll(){
     }
   }
   _doWrite().then(function(){
-    document.getElementById('flic-step1').style.display = 'none';
-    document.getElementById('flic-step2').style.display = 'none';
-    document.getElementById('flic-step3').style.display = 'none';
+    var form = document.getElementById('flic-form');
+    if(form) form.style.display = 'none';
     document.getElementById('flic-success').style.display = 'block';
   }).catch(function(e){
     console.error('flicSubmitAll error:', e);
-    if(btn){ btn.disabled = false; btn.textContent = 'שלח עדכון'; btn.style.background = '#1A4A3A'; }
-    var errEl = document.getElementById('flic-step3-err') || document.getElementById('flic-step1-err');
+    if(btn){ btn.disabled = false; btn.textContent = 'שלח עדכון רישיון'; btn.style.background = '#1A4A3A'; }
     if(errEl){ errEl.textContent = 'שגיאה בשליחה — בדקו חיבור לאינטרנט ונסו שוב'; errEl.style.display = 'block'; }
   });
 }
