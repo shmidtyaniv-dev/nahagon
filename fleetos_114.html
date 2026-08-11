@@ -12183,6 +12183,8 @@ function startVehiclesListener(){
       setTimeout(syncKmUpdateDates,800);
       // חדש אוטומטית רישיון רכב שתוקפו עבר
       setTimeout(autoRenewLicenseExps,1000);
+      // תקן race condition: עדכוני רישיון שהגיעו לפני שהרכבים נטענו
+      setTimeout(_applyPendingLicUpdates,1200);
     }else{
       // Subsequent updates - merge carefully (only apply changes from other devices)
       snap.docChanges().forEach(function(change){
@@ -12546,6 +12548,60 @@ function startKmUpdatesListener(){
   });
 }
 
+// בופר לעדכוני רישיון שהגיעו לפני שהרכבים נטענו (race condition)
+var _licPendingUpdates=[];
+
+// פונקציה מרכזית: מחיל עדכון רישיון יחיד על הרכב המתאים
+function _applyOneLicUpdate(d, showToastMsg){
+  if(!d||!d.licenseExp||!d.vid) return false;
+  var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
+  if(!v) return false;
+  if(!v.driver) v.driver={};
+  v.driver.licenseExp=d.licenseExp;
+  if(!v.historyLog) v.historyLog=[];
+  var _histDesc='עדכון רישיון נהיגה מנהג: '+d.licenseExp.split('-').reverse().join('/');
+  // טיפול בבני משפחה
+  var _familyJson=d.familyMembersJson||'';
+  var _familyArr=[];
+  if(_familyJson){try{_familyArr=JSON.parse(_familyJson);}catch(e){}}
+  if(!_familyArr.length&&d.familyMembers&&d.familyMembers.length){_familyArr=d.familyMembers;}
+  if(_familyArr.length){
+    if(!v.family)v.family=[];
+    _familyArr.forEach(function(fm){
+      if(!fm.name||!fm.licenseExp)return;
+      var existing=v.family.findIndex(function(f){return f.name.trim().toLowerCase()===fm.name.trim().toLowerCase();});
+      if(existing>=0){v.family[existing].licenseExp=fm.licenseExp;}
+      else{v.family.push({name:fm.name.trim(),rel:'',id:'',licenseExp:fm.licenseExp});}
+    });
+    _histDesc+=' (כולל '+_familyArr.length+' בני משפחה)';
+  }
+  // הוסף לוג היסטוריה רק אם לא קיים כבר
+  var _alreadyLogged=(v.historyLog||[]).some(function(h){return h.source==='driver'&&h.kind==='license'&&h.desc===_histDesc;});
+  if(!_alreadyLogged) v.historyLog.push({id:'h'+Date.now(),kind:'license',desc:_histDesc,createdAt:d.updatedAt||new Date().toISOString(),source:'driver'});
+  try{if(typeof persistVehicle==='function')persistVehicle(v);}catch(e){if(typeof persistVehiclesDebounced==='function')persistVehiclesDebounced();}
+  try{if(_currentVid===v.id)openDet(v.id);}catch(e){}
+  try{renderV();}catch(e){}
+  if(showToastMsg) showToast('🪪 רישיון נהיגה עודכן לרכב '+v.plate);
+  return true;
+}
+
+// מחיל את כל העדכונים הממתינים + מה שב-_licReportsCache (נגד race condition)
+function _applyPendingLicUpdates(){
+  // עבד בופר ממתין
+  var _pending=_licPendingUpdates.slice();
+  _licPendingUpdates=[];
+  _pending.forEach(function(d){_applyOneLicUpdate(d,false);});
+  // גם מה שב-cache (מונע פספוס גם אם הבופר לא עודכן)
+  (_licReportsCache||[]).forEach(function(d){
+    if(!d.licenseExp||!d.vid)return;
+    var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
+    if(!v||!v.driver)return;
+    if(v.driver.licenseExp===d.licenseExp)return; // כבר מעודכן
+    console.log('[licFix] מחיל עדכון רישיון לרכב',d.vid,'מ',v.driver.licenseExp,'ל',d.licenseExp);
+    _applyOneLicUpdate(d,false);
+  });
+}
+
 function startLicenseUpdatesListener(){
   if(!db) return;
   var _licInitialLoad = true;
@@ -12556,33 +12612,16 @@ function startLicenseUpdatesListener(){
       if(change.type==='added'||change.type==='modified'){
         var d=change.doc.data();
         if(!d.licenseExp||!d.vid) return;
-        var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
-        if(!v) return;
-        if(!v.driver) v.driver={};
-        v.driver.licenseExp=d.licenseExp;
-        if(!v.historyLog) v.historyLog=[];
-        var _histDesc='עדכון רישיון נהיגה מנהג: '+d.licenseExp.split('-').reverse().join('/');
-        // טיפול בבני משפחה מטופס קבוצתי (?flic)
-        var _familyJson = d.familyMembersJson || '';
-        var _familyArr = [];
-        if(_familyJson){ try{ _familyArr = JSON.parse(_familyJson); }catch(e){} }
-        // תמיכה גם בשדה familyMembers ישן (מסד נתונים)
-        if(!_familyArr.length && d.familyMembers && d.familyMembers.length){ _familyArr = d.familyMembers; }
-        if(_familyArr.length){
-          if(!v.family) v.family=[];
-          _familyArr.forEach(function(fm){
-            if(!fm.name||!fm.licenseExp) return;
-            var existing=v.family.findIndex(function(f){ return f.name.trim().toLowerCase()===fm.name.trim().toLowerCase(); });
-            if(existing>=0){ v.family[existing].licenseExp=fm.licenseExp; }
-            else { v.family.push({name:fm.name.trim(),rel:'',id:'',licenseExp:fm.licenseExp}); }
-          });
-          _histDesc+=' (כולל '+_familyArr.length+' בני משפחה)';
+        if(!_vehiclesLoaded){
+          // רכבים עוד לא נטענו — שמור לטיפול מאוחר
+          _licPendingUpdates.push(d);
+          return;
         }
-        v.historyLog.push({id:'h'+Date.now(),kind:'license',desc:_histDesc,createdAt:d.updatedAt||new Date().toISOString(),source:'driver'});
-        try{ if(typeof persistVehicle==='function') persistVehicle(v); }catch(e){ if(typeof persistVehiclesDebounced==='function') persistVehiclesDebounced(); }
-        try{ if(_currentVid===v.id) openDet(v.id); }catch(e){}
-        try{ renderV(); }catch(e){}
-        if(!isFirst) showToast('🪪 רישיון נהיגה עודכן לרכב '+v.plate);
+        var applied=_applyOneLicUpdate(d, !isFirst);
+        if(!applied && isFirst){
+          // רכב לא נמצא בטעינה ראשונה — שמור לניסיון מאוחר
+          _licPendingUpdates.push(d);
+        }
       }
     });
   });
