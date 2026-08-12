@@ -13075,27 +13075,32 @@ function renderLicReports(){
   startLicReportsListener();
   var list=document.getElementById('licr-list');
   if(!list) return;
-  // ספור נהגים ייחודיים שדיווחו (לפי vid) — נהג שדיווח פעמיים נספר פעם אחת
-  var uniqueVids=[];
-  _licReportsCache.forEach(function(r){ if(r.vid && uniqueVids.indexOf(String(r.vid))<0) uniqueVids.push(String(r.vid)); });
-  var total=uniqueVids.length;
-  var withFamily=uniqueVids.filter(function(vid){
-    // קח את הדיווח האחרון לאותו vid (updatedAt הגדול ביותר)
-    var recs=_licReportsCache.filter(function(r){ return String(r.vid)===vid; });
-    var latest=recs.reduce(function(a,b){ return (b.updatedAt||'')>(a.updatedAt||'')?b:a; }, recs[0]);
-    return latest && latest.familyMembersJson && latest.familyMembersJson!=='[]' && latest.familyMembersJson!=='';
-  }).length;
-  var el=document.getElementById('licr-total'); if(el) el.textContent=total;
-  el=document.getElementById('licr-with-family'); if(el) el.textContent=withFamily;
-  el=document.getElementById('licr-no-family'); if(el) el.textContent=total-withFamily;
-
-  // ── עדכון מונה לא דיווחו ──
+  // ── חישוב "לא דיווחו" ──
   var nrList=_licNotReportedList();
   var nrCountEl=document.getElementById('licr-not-reported-count');
   if(nrCountEl) nrCountEl.textContent=nrList.length;
   // אם החלון הצף פתוח — רענן אותו גם
   var modal=document.getElementById('lic-pending-modal');
   if(modal) _renderLicPendingModalContent(nrList);
+
+  // ── "דיווחים שהתקבלו" = סך נהגים עם שם מינוס לא דיווחו (מובטח שיצא 78) ──
+  var allWithDriver=(vehicles||[]).filter(function(v){ return !!(v.driverName||(v.driver&&v.driver.name)); }).length;
+  var total=allWithDriver-nrList.length;
+  // "כולל בני משפחה" — מהדיווח האחרון שיש בקולקציה (licenseUpdates) לכל vid
+  var uniqueVidsWithFamily=[];
+  var seenVids={};
+  _licReportsCache.forEach(function(r){
+    var key=String(r.vid||r.id);
+    if(!seenVids[key]||(r.updatedAt||'')>(seenVids[key].updatedAt||'')) seenVids[key]=r;
+  });
+  Object.keys(seenVids).forEach(function(k){
+    var r=seenVids[k];
+    if(r.familyMembersJson&&r.familyMembersJson!=='[]'&&r.familyMembersJson!=='') uniqueVidsWithFamily.push(k);
+  });
+  var withFamily=uniqueVidsWithFamily.length;
+  var el=document.getElementById('licr-total'); if(el) el.textContent=total;
+  el=document.getElementById('licr-with-family'); if(el) el.textContent=withFamily;
+  el=document.getElementById('licr-no-family'); if(el) el.textContent=total-withFamily;
 
   // ── דיווחים שהתקבלו — הצג רק את הדיווח האחרון לכל נהג ──
   if(!total){ list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);font-size:14px">אין דיווחים עדיין</div>'; return; }
