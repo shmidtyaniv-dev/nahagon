@@ -2867,10 +2867,14 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
       <!-- kmr-link-display hidden (used by JS only) -->
       <span id="kmr-link-display" style="display:none"></span>
       <!-- סיכום -->
-      <div class="kmr-summary" id="kmr-summary">
+      <div class="kmr-summary" id="kmr-summary" style="grid-template-columns:repeat(4,1fr)">
         <div class="kmr-stat"><div class="kmr-stat-val" id="kmr-total">0</div><div class="kmr-stat-lbl">דיווחים שהתקבלו</div></div>
         <div class="kmr-stat"><div class="kmr-stat-val" id="kmr-matched" style="color:#16a34a">0</div><div class="kmr-stat-lbl">שויכו לרכב</div></div>
         <div class="kmr-stat"><div class="kmr-stat-val" id="kmr-unmatched" style="color:#dc2626">0</div><div class="kmr-stat-lbl">ממתינים לשיוך</div></div>
+        <div class="kmr-stat" style="cursor:pointer;border-color:#fca5a5;background:#fff5f5" onclick="showKmPendingModal()">
+          <div class="kmr-stat-val" id="kmr-not-reported-count" style="color:#dc2626">0</div>
+          <div class="kmr-stat-lbl" style="color:#dc2626">לא דיווחו ↗</div>
+        </div>
       </div>
       <!-- רשימת דיווחים -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -12993,6 +12997,12 @@ function renderKmReports(){
   var tEl=document.getElementById('kmr-total'); if(tEl)tEl.textContent=total;
   var mEl=document.getElementById('kmr-matched'); if(mEl)mEl.textContent=matched;
   var uEl=document.getElementById('kmr-unmatched'); if(uEl)uEl.textContent=unmatched;
+  // לא דיווחו — רכבים עם נהג שאין להם דיווח מאושר החודש
+  var nrEl=document.getElementById('kmr-not-reported-count');
+  if(nrEl) nrEl.textContent=_kmNotReportedList().length;
+  // אם החלון הצף פתוח — רענן גם אותו
+  var kmPendingModal=document.getElementById('km-pending-modal');
+  if(kmPendingModal) _renderKmPendingModalContent(_kmNotReportedList());
   // רשימה
   var list=document.getElementById('kmr-list');
   if(!list) return;
@@ -13309,6 +13319,92 @@ function _renderDlicExpiry(){
       waBtn+
     '</div>';
   }).join('');
+}
+
+/* ── לא דיווחו ק"מ — מודאל ממתינים ── */
+function _kmNotReportedList(){
+  // רכבים שיש להם נהג ואין להם דיווח ק"מ מאושר (matched) החודש הנוכחי
+  var reportedVids = new Set(
+    _kmReportsCache
+      .filter(function(r){ return _kmReportInMonth(r) && r.status==='matched' && r.matchedVehicleId; })
+      .map(function(r){ return String(r.matchedVehicleId); })
+  );
+  return (vehicles||[]).filter(function(v){
+    var dn=v.driverName||(v.driver&&v.driver.name)||'';
+    if(!dn) return false;
+    return !reportedVids.has(String(v.id));
+  }).sort(function(a,b){
+    var an=a.driverName||(a.driver&&a.driver.name)||'';
+    var bn=b.driverName||(b.driver&&b.driver.name)||'';
+    return an.localeCompare(bn,'he');
+  });
+}
+
+function _renderKmPendingModalContent(notReported){
+  var titleEl=document.getElementById('km-pending-modal-title');
+  if(titleEl) titleEl.textContent='⏳ לא דיווחו ק"מ החודש — '+notReported.length+' נהגים';
+  var bodyEl=document.getElementById('km-pending-modal-body');
+  if(!bodyEl) return;
+  if(!notReported.length){
+    bodyEl.innerHTML='<div style="text-align:center;padding:32px;color:var(--t3);font-size:14px">כל הנהגים דיווחו החודש ✓</div>';
+    return;
+  }
+  bodyEl.innerHTML=notReported.map(function(v){
+    var dn=v.driverName||(v.driver&&v.driver.name)||'';
+    var ph=(v.driverPhone||v.driver?.phone||'').replace(/[^0-9]/g,'');
+    var waBtn=ph
+      ? '<button onclick="sendKmRequestDirect('+v.id+',this)" style="flex-shrink:0;padding:8px 14px;border:1.5px solid #25d366;border-radius:9px;background:#f0fdf4;color:#166534;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px"><span style="font-size:16px">💬</span> שלח</button>'
+      : '<span style="font-size:11px;color:#dc2626;flex-shrink:0">אין טלפון</span>';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--bdr);transition:background .12s" onmouseover="this.style.background=\'#fef2f2\'" onmouseout="this.style.background=\'\'">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:14px;font-weight:600;color:var(--t1)">'+_esc(dn)+'</div>'+
+        '<div style="font-size:12px;color:var(--t3);margin-top:2px">'+_esc(v.plate||'')+(ph?' · '+ph:'')+'</div>'+
+      '</div>'+
+      waBtn+
+    '</div>';
+  }).join('');
+}
+
+function showKmPendingModal(){
+  var ex=document.getElementById('km-pending-modal'); if(ex) ex.remove();
+  var notReported=_kmNotReportedList();
+  var ov=document.createElement('div');
+  ov.id='km-pending-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML=
+    '<div style="background:#fff;border-radius:16px;width:100%;max-width:460px;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">'+
+      '<div style="padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;background:#fff5f5;flex-shrink:0">'+
+        '<div id="km-pending-modal-title" style="font-size:15px;font-weight:700;color:#dc2626"></div>'+
+        '<button onclick="document.getElementById(\'km-pending-modal\').remove()" style="background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer;line-height:1;padding:0 4px">×</button>'+
+      '</div>'+
+      '<div id="km-pending-modal-body" style="overflow-y:auto;flex:1"></div>'+
+    '</div>';
+  document.body.appendChild(ov);
+  _renderKmPendingModalContent(notReported);
+}
+
+function sendKmRequestDirect(vid, btn){
+  var v=vehicles.find(function(x){ return x.id===vid; });
+  if(!v){ showToast('רכב לא נמצא'); return; }
+  var driverName=v.driverName||v.driver?.name||'';
+  var driverPhone=(v.driverPhone||v.driver?.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'972');
+  if(!driverPhone){ showToast('אין מספר טלפון לנהג'); return; }
+  var token='KM-'+vid+'-'+Date.now().toString(36).slice(-5);
+  if(db){
+    db.collection('kmRequests').doc(token).set({
+      vid:vid, plate:v.plate||'', driverName:driverName,
+      createdAt:new Date().toISOString(), status:'pending'
+    }).catch(function(e){ console.error('kmRequest save error:',e); });
+  }
+  var kmUrl=location.origin+'/?km='+token;
+  var waMsg=fillRequestTemplate(getKmMsgTemplate(),{driverName:driverName,plate:v.plate||'',link:kmUrl});
+  window.open('https://wa.me/'+driverPhone+'?text='+encodeURIComponent(waMsg),'_blank');
+  if(btn){
+    var origHtml=btn.innerHTML;
+    btn.innerHTML='✓ נשלח'; btn.style.background='#f8fafc'; btn.style.color='var(--green-dark)'; btn.style.borderColor='var(--green-dark)'; btn.disabled=true;
+    setTimeout(function(){ btn.innerHTML=origHtml; btn.style.background='#f0fdf4'; btn.style.color='#166534'; btn.style.borderColor='#25d366'; btn.disabled=false; btn.style.cursor='pointer'; }, 2500);
+  }
 }
 
 function resetKmReports(){
