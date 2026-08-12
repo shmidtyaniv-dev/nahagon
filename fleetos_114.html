@@ -3698,6 +3698,7 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
             <button class="settings-templates-tab active" onclick="setTemplatesSubTab('violations')">דוחות תנועה</button>
             <button class="settings-templates-tab" onclick="setTemplatesSubTab('service')">טיפול וטסט</button>
             <button class="settings-templates-tab" onclick="setTemplatesSubTab('requests')">בקשות לנהג</button>
+            <button class="settings-templates-tab" onclick="setTemplatesSubTab('lic-expiry')">פקיעת רישיון</button>
           </div>
 
           <!-- Sub-tab: Violations -->
@@ -3814,6 +3815,33 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
               <button class="settings-btn settings-btn-primary" onclick="saveRequestTemplates()">שמור תבניות</button>
             </div>
             <span id="req-msg-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
+          </div>
+
+          <!-- Sub-tab: License Expiry WA messages -->
+          <div class="settings-templates-content" data-templates-tab="lic-expiry" style="display:none">
+            <div class="settings-template-vars-info">
+              משתנים זמינים: <b>{נהג}</b> — שם הנהג הראשי, <b>{תאריך}</b> — תאריך פקיעת הרישיון, <b>{שם_בן_משפחה}</b> — שם בן/בת המשפחה (בתבנית משפחה בלבד), <b>{רכב}</b> — מספר הרכב
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">הודעה לנהג — פקיעת רישיון שלו</div>
+              </div>
+              <textarea id="lic-expiry-driver-template" class="settings-template-textarea" rows="7" placeholder="שלום {נהג}..."></textarea>
+            </div>
+
+            <div class="settings-template-item">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">הודעה לנהג — פקיעת רישיון בן/בת משפחה</div>
+              </div>
+              <textarea id="lic-expiry-family-template" class="settings-template-textarea" rows="7" placeholder="שלום {נהג}, תוקף רישיון של {שם_בן_משפחה}..."></textarea>
+            </div>
+
+            <div class="settings-btn-row">
+              <button class="settings-btn settings-btn-secondary" onclick="resetLicExpiryTemplates()">שחזר ברירת מחדל</button>
+              <button class="settings-btn settings-btn-primary" onclick="saveLicExpiryTemplates()">שמור תבניות</button>
+            </div>
+            <span id="lic-expiry-tpl-saved" style="font-size:12px;color:var(--green);opacity:0;transition:opacity .3s"></span>
           </div>
 
         </div>
@@ -6589,6 +6617,7 @@ function initSettingsPage(){
   if(typeof updateRepPreview==='function') try{updateRepPreview();}catch(e){}
   if(typeof initSchedulingSettings==='function') initSchedulingSettings();
   if(typeof initRequestTemplates==='function') initRequestTemplates();
+  if(typeof initLicExpiryTemplates==='function') initLicExpiryTemplates();
 }
 
 function applyLogoSettings(){
@@ -6980,6 +7009,61 @@ function initRequestTemplates(){
   var docEl=document.getElementById('doc-msg-template');
   if(kmEl) kmEl.value=getKmMsgTemplate();
   if(docEl) docEl.value=getDocMsgTemplate();
+}
+
+/* ── תבניות הודעה לפקיעת רישיון נהיגה ── */
+var LIC_EXPIRY_DRIVER_DEFAULT =
+  'שלום {נהג}, תוקף רישיון הנהיגה שלך עומד לפוג בתאריך {תאריך}.\n'+
+  'עליך לחדש אותו בהקדם.\n\n'+
+  'על פי החוק, נהיגה ברישיון שלא בתוקף אסורה לחלוטין.\n'+
+  'חשוב לדעת: במקרה של תאונה עם רישיון פג תוקף — הביטוח לא יחול.\n\n'+
+  'נא לעדכן אותי בתוקף הרישיון החדש לאחר החידוש.\nתודה 🚗\nמרכז הרכב של מור';
+
+var LIC_EXPIRY_FAMILY_DEFAULT =
+  'שלום {נהג}, תוקף רישיון הנהיגה של {שם_בן_משפחה} עומד לפוג בתאריך {תאריך}.\n'+
+  'יש לחדש אותו בהקדם.\n\n'+
+  'על פי החוק, נהיגה ברישיון שלא בתוקף אסורה לחלוטין.\n'+
+  'חשוב לדעת: במקרה של תאונה עם רישיון פג תוקף — הביטוח לא יחול.\n\n'+
+  'נא לעדכן אותי בתוקף הרישיון החדש לאחר החידוש.\nתודה 🚗\nמרכז הרכב של מור';
+
+function getLicExpiryDriverTemplate(){
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  return s.licExpiryDriverTemplate||LIC_EXPIRY_DRIVER_DEFAULT;
+}
+function getLicExpiryFamilyTemplate(){
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  return s.licExpiryFamilyTemplate||LIC_EXPIRY_FAMILY_DEFAULT;
+}
+function fillLicExpiryTemplate(tpl, data){
+  return (tpl||'')
+    .replace(/\{נהג\}/g, data.mainDriverName||'')
+    .replace(/\{שם_בן_משפחה\}/g, data.familyName||'')
+    .replace(/\{תאריך\}/g, data.expDisplay||'')
+    .replace(/\{רכב\}/g, data.plate||'')
+    .trim();
+}
+function saveLicExpiryTemplates(){
+  var driverEl=document.getElementById('lic-expiry-driver-template');
+  var familyEl=document.getElementById('lic-expiry-family-template');
+  var obj={};
+  if(driverEl) obj.licExpiryDriverTemplate=driverEl.value;
+  if(familyEl) obj.licExpiryFamilyTemplate=familyEl.value;
+  saveSettings(obj);
+  var el=document.getElementById('lic-expiry-tpl-saved');
+  if(el){el.textContent='✓ נשמר';el.style.opacity='1';setTimeout(function(){el.style.opacity='0';},2000);}
+}
+function resetLicExpiryTemplates(){
+  var driverEl=document.getElementById('lic-expiry-driver-template');
+  var familyEl=document.getElementById('lic-expiry-family-template');
+  if(driverEl) driverEl.value=LIC_EXPIRY_DRIVER_DEFAULT;
+  if(familyEl) familyEl.value=LIC_EXPIRY_FAMILY_DEFAULT;
+  saveLicExpiryTemplates();
+}
+function initLicExpiryTemplates(){
+  var driverEl=document.getElementById('lic-expiry-driver-template');
+  var familyEl=document.getElementById('lic-expiry-family-template');
+  if(driverEl) driverEl.value=getLicExpiryDriverTemplate();
+  if(familyEl) familyEl.value=getLicExpiryFamilyTemplate();
 }
 
 var _kmReqData={};
@@ -13193,20 +13277,18 @@ function _renderDlicExpiry(){
       : r.daysLeft === 0
         ? '<span style="color:#dc2626;font-weight:700;font-size:12px">פג היום!</span>'
         : '<span style="color:'+dotColor+';font-size:12px">עוד '+r.daysLeft+' ימים</span>';
-    // הודעת WhatsApp
+    // הודעת WhatsApp — מתבנית ההגדרות
     var waMsg = '';
     if(r.isFamily){
-      waMsg = 'שלום '+r.mainDriverName+', תוקף רישיון הנהיגה של '+r.name+' עומד לפוג בתאריך '+expDisplay+'.\n'+
-        'על פי החוק, נהיגה ברישיון שלא בתוקף אסורה לחלוטין.\n'+
-        'חשוב לדעת: במקרה של תאונה עם רישיון פג תוקף — הביטוח לא יחול.\n'+
-        'נא לחדש את הרישיון בהקדם ולעדכן אותי בתוקף החדש.\n'+
-        'תודה, מרכז הרכב של מור 🚗';
+      var _tpl = (typeof getLicExpiryFamilyTemplate==='function') ? getLicExpiryFamilyTemplate() : LIC_EXPIRY_FAMILY_DEFAULT;
+      waMsg = (typeof fillLicExpiryTemplate==='function')
+        ? fillLicExpiryTemplate(_tpl, {mainDriverName:r.mainDriverName, familyName:r.name, expDisplay:expDisplay, plate:r.plate})
+        : _tpl;
     } else {
-      waMsg = 'שלום '+r.name+', תוקף רישיון הנהיגה שלך עומד לפוג בתאריך '+expDisplay+'.\n'+
-        'על פי החוק, נהיגה ברישיון שלא בתוקף אסורה לחלוטין.\n'+
-        'חשוב לדעת: במקרה של תאונה עם רישיון פג תוקף — הביטוח לא יחול.\n'+
-        'נא לחדש את הרישיון בהקדם ולעדכן אותי בתוקף החדש.\n'+
-        'תודה, מרכז הרכב של מור 🚗';
+      var _tpl = (typeof getLicExpiryDriverTemplate==='function') ? getLicExpiryDriverTemplate() : LIC_EXPIRY_DRIVER_DEFAULT;
+      waMsg = (typeof fillLicExpiryTemplate==='function')
+        ? fillLicExpiryTemplate(_tpl, {mainDriverName:r.name, expDisplay:expDisplay, plate:r.plate})
+        : _tpl;
     }
     var waUrl = r.phone ? 'https://wa.me/'+r.phone+'?text='+encodeURIComponent(waMsg) : '';
     var waBtn = waUrl
