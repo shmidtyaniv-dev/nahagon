@@ -13075,29 +13075,39 @@ function renderLicReports(){
   startLicReportsListener();
   var list=document.getElementById('licr-list');
   if(!list) return;
-  var total=_licReportsCache.length;
-  var withFamily=_licReportsCache.filter(function(r){ return r.familyMembersJson&&r.familyMembersJson!=='[]'&&r.familyMembersJson!==''; }).length;
+  // ספור נהגים ייחודיים שדיווחו (לפי vid) — נהג שדיווח פעמיים נספר פעם אחת
+  var uniqueVids=[];
+  _licReportsCache.forEach(function(r){ if(r.vid && uniqueVids.indexOf(String(r.vid))<0) uniqueVids.push(String(r.vid)); });
+  var total=uniqueVids.length;
+  var withFamily=uniqueVids.filter(function(vid){
+    // קח את הדיווח האחרון לאותו vid (updatedAt הגדול ביותר)
+    var recs=_licReportsCache.filter(function(r){ return String(r.vid)===vid; });
+    var latest=recs.reduce(function(a,b){ return (b.updatedAt||'')>(a.updatedAt||'')?b:a; }, recs[0]);
+    return latest && latest.familyMembersJson && latest.familyMembersJson!=='[]' && latest.familyMembersJson!=='';
+  }).length;
   var el=document.getElementById('licr-total'); if(el) el.textContent=total;
   el=document.getElementById('licr-with-family'); if(el) el.textContent=withFamily;
   el=document.getElementById('licr-no-family'); if(el) el.textContent=total-withFamily;
 
   // ── עדכון מונה לא דיווחו ──
-  var reportedVids=_licReportsCache.map(function(r){ return String(r.vid); });
-  var notReported=(vehicles||[]).filter(function(v){
-    var dn=v.driverName||(v.driver&&v.driver.name)||'';
-    if(!dn) return false;
-    return reportedVids.indexOf(String(v.id))<0;
-  });
+  var nrList=_licNotReportedList();
   var nrCountEl=document.getElementById('licr-not-reported-count');
-  if(nrCountEl) nrCountEl.textContent=notReported.length;
+  if(nrCountEl) nrCountEl.textContent=nrList.length;
   // אם החלון הצף פתוח — רענן אותו גם
   var modal=document.getElementById('lic-pending-modal');
-  if(modal) _renderLicPendingModalContent(notReported);
+  if(modal) _renderLicPendingModalContent(nrList);
 
-  // ── דיווחים שהתקבלו ──
+  // ── דיווחים שהתקבלו — הצג רק את הדיווח האחרון לכל נהג ──
   if(!total){ list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);font-size:14px">אין דיווחים עדיין</div>'; return; }
-  var html='';
+  // בנה רשימה של דיווח אחרון בלבד לכל vid
+  var latestByVid={};
   _licReportsCache.forEach(function(r){
+    var key=String(r.vid||r.id);
+    if(!latestByVid[key]||(r.updatedAt||'')>(latestByVid[key].updatedAt||'')) latestByVid[key]=r;
+  });
+  var dedupedReports=Object.values(latestByVid).sort(function(a,b){ return (b.updatedAt||'').localeCompare(a.updatedAt||''); });
+  var html='';
+  dedupedReports.forEach(function(r){
     var date=r.updatedAt ? new Date(r.updatedAt).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
     var licDate=r.licenseExp ? r.licenseExp.split('-').reverse().join('/') : '—';
     var family=[]; try{ if(r.familyMembersJson) family=JSON.parse(r.familyMembersJson); }catch(e){}
