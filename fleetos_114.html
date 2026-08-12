@@ -13122,10 +13122,14 @@ function renderLicReports(){
 }
 
 function _licNotReportedList(){
+  var today=new Date().toISOString().slice(0,10);
   var reportedVids=_licReportsCache.map(function(r){ return String(r.vid); });
   return (vehicles||[]).filter(function(v){
     var dn=v.driverName||(v.driver&&v.driver.name)||'';
     if(!dn) return false;
+    // אם יש תוקף רישיון נהיגה בכרטיס הרכב — לא צריך לשלוח קישור
+    var exp=v.driver&&v.driver.licenseExp;
+    if(exp && exp>today) return false;
     return reportedVids.indexOf(String(v.id))<0;
   }).sort(function(a,b){
     var an=a.driverName||(a.driver&&a.driver.name)||'';
