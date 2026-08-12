@@ -13156,11 +13156,12 @@ function _renderDlicExpiry(){
   var rows = [];
   (vehicles||[]).forEach(function(v){
     var drv = v.driverName||(v.driver&&v.driver.name)||'';
+    var mainPhone = ((v.driverPhone||(v.driver&&v.driver.phone)||'').replace(/[^0-9]/g,'')||'').replace(/^0/,'972');
     var dlicExp = v.driver&&v.driver.licenseExp ? v.driver.licenseExp : '';
     if(drv && dlicExp){
       if(dlicExp <= limitStr){
         var daysLeft = Math.round((new Date(dlicExp+'T12:00:00') - today) / 86400000);
-        rows.push({name:drv, plate:v.plate||'', exp:dlicExp, daysLeft:daysLeft, type:'נהג', vid:v.id});
+        rows.push({name:drv, plate:v.plate||'', exp:dlicExp, daysLeft:daysLeft, isFamily:false, mainDriverName:drv, phone:mainPhone, vid:v.id});
       }
     }
     // בני משפחה
@@ -13168,7 +13169,7 @@ function _renderDlicExpiry(){
       if(f && f.name && f.licenseExp){
         if(f.licenseExp <= limitStr){
           var daysLeft = Math.round((new Date(f.licenseExp+'T12:00:00') - today) / 86400000);
-          rows.push({name:f.name, plate:v.plate||'', exp:f.licenseExp, daysLeft:daysLeft, type:'בן משפחה של '+drv, vid:v.id});
+          rows.push({name:f.name, plate:v.plate||'', exp:f.licenseExp, daysLeft:daysLeft, isFamily:true, mainDriverName:drv, phone:mainPhone, vid:v.id});
         }
       }
     });
@@ -13192,16 +13193,38 @@ function _renderDlicExpiry(){
       : r.daysLeft === 0
         ? '<span style="color:#dc2626;font-weight:700;font-size:12px">פג היום!</span>'
         : '<span style="color:'+dotColor+';font-size:12px">עוד '+r.daysLeft+' ימים</span>';
+    // הודעת WhatsApp
+    var waMsg = '';
+    if(r.isFamily){
+      waMsg = 'שלום '+r.mainDriverName+', תוקף רישיון הנהיגה של '+r.name+' עומד לפוג בתאריך '+expDisplay+'.\n'+
+        'על פי החוק, נהיגה ברישיון שלא בתוקף אסורה לחלוטין.\n'+
+        'חשוב לדעת: במקרה של תאונה עם רישיון פג תוקף — הביטוח לא יחול.\n'+
+        'נא לחדש את הרישיון בהקדם ולעדכן אותי בתוקף החדש.\n'+
+        'תודה, מרכז הרכב של מור 🚗';
+    } else {
+      waMsg = 'שלום '+r.name+', תוקף רישיון הנהיגה שלך עומד לפוג בתאריך '+expDisplay+'.\n'+
+        'על פי החוק, נהיגה ברישיון שלא בתוקף אסורה לחלוטין.\n'+
+        'חשוב לדעת: במקרה של תאונה עם רישיון פג תוקף — הביטוח לא יחול.\n'+
+        'נא לחדש את הרישיון בהקדם ולעדכן אותי בתוקף החדש.\n'+
+        'תודה, מרכז הרכב של מור 🚗';
+    }
+    var waUrl = r.phone ? 'https://wa.me/'+r.phone+'?text='+encodeURIComponent(waMsg) : '';
+    var waBtn = waUrl
+      ? '<button onclick="event.stopPropagation();window.open(\''+waUrl.replace(/'/g,"\\'")+'\')" style="flex-shrink:0;background:#25d366;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:#fff;font-family:inherit" title="שלח התראה בווצאפ">'+
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.116 1.524 5.847L.057 23.477a.5.5 0 0 0 .606.619l5.79-1.519A11.93 11.93 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.938 9.938 0 0 1-5.13-1.424l-.36-.214-3.733.979.997-3.648-.235-.374A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>'+
+          'שלח</button>'
+      : '';
     return '<div onclick="document.getElementById(\'dlic-expiry-modal\').remove();openVehicleFromNotif(\''+String(r.vid)+'\',\'\')" style="display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--bdr);transition:background .1s;cursor:pointer" onmouseover="this.style.background=\'var(--bg)\'" onmouseout="this.style.background=\'\'">'+
       '<div style="width:8px;height:8px;border-radius:50%;background:'+dotColor+';flex-shrink:0"></div>'+
       '<div style="flex:1;min-width:0">'+
         '<div style="font-size:14px;font-weight:600;color:var(--gd)">'+_esc(r.name)+'</div>'+
-        '<div style="font-size:12px;color:var(--t3);margin-top:1px">'+_esc(r.plate)+(r.type!=='נהג'?' · <span style="color:#7c3aed">'+_esc(r.type)+'</span>':'')+'</div>'+
+        '<div style="font-size:12px;color:var(--t3);margin-top:1px">'+_esc(r.plate)+(r.isFamily?' · <span style="color:#7c3aed">בן משפחה של '+_esc(r.mainDriverName)+'</span>':'')+'</div>'+
       '</div>'+
-      '<div style="text-align:left;flex-shrink:0">'+
+      '<div style="text-align:left;flex-shrink:0;margin-left:4px">'+
         '<div style="font-size:13px;font-weight:700;color:var(--t1)">'+expDisplay+'</div>'+
         daysLabel+
       '</div>'+
+      waBtn+
     '</div>';
   }).join('');
 }
