@@ -12582,20 +12582,32 @@ function startKmUpdatesListener(){
         var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
         if(!v) return;
         // רשום גם בעמוד "עדכוני ק"מ" (kmReports) - עם ID קבוע למניעת כפילויות
-        if(!isFirst){
-          try{
-            db.collection('kmReports').doc('upd-'+change.doc.id).set({
-              driverName: (v.driver&&v.driver.name)||v.driverName||'נהג',
-              vehicleNum: v.plate||null,
-              km: d.km,
-              submittedAt: d.updatedAt||new Date().toISOString(),
-              status: 'matched',
-              matchedVehicleId: String(v.id),
-              matchedPlate: v.plate||'',
-              source: 'personal_link'
-            },{merge:true});
-          }catch(e){}
-        }
+        // כתוב רשומת kmReports — תמיד (גם בטעינה ראשונה), merge:true מונע דריסת מידע קיים
+        try{
+          var _kmRepName = d.driverName || (v.driver&&v.driver.name)||v.driverName||'נהג';
+          var _kmRepDoc={
+            driverName: _kmRepName,
+            vehicleNum: v.plate||null,
+            km: d.km,
+            submittedAt: d.updatedAt||new Date().toISOString(),
+            status: 'matched',
+            matchedVehicleId: String(v.id),
+            matchedPlate: v.plate||'',
+            source: 'personal_link'
+          };
+          if(isFirst){
+            // בטעינה ראשונה — כתוב רק אם הרשומה עוד לא קיימת (מניע כתיבות מיותרות)
+            db.collection('kmReports').doc('upd-'+change.doc.id).get().then(function(snap){
+              if(!snap.exists) db.collection('kmReports').doc('upd-'+change.doc.id).set(_kmRepDoc);
+              else if(!snap.data().driverName || snap.data().driverName==='נהג'){
+                // רשומה קיימת אך ללא שם — עדכן שם
+                db.collection('kmReports').doc('upd-'+change.doc.id).update({driverName:_kmRepName});
+              }
+            }).catch(function(){});
+          } else {
+            db.collection('kmReports').doc('upd-'+change.doc.id).set(_kmRepDoc,{merge:true});
+          }
+        }catch(e){}
         // הגשה בזמן אמת — תמיד עדכן תאריך. טעינה ראשונית — קח רק את המקסימום (מניעת דריסה ע"י מסמכים ישנים)
         var newDate=d.updatedAt?d.updatedAt.split('T')[0]:localDateStr();
         if(!isFirst || !v.lastKmUpdate || newDate>v.lastKmUpdate) v.lastKmUpdate=newDate;
@@ -13619,6 +13631,8 @@ function checkKmRequest(){
       status:(_f.status&&_f.status.stringValue)||'',
       vid:_f.vid?Number(_f.vid.integerValue||_f.vid.doubleValue||_f.vid.stringValue)||0:0
     };
+    // שמור context לשימוש ב-submitKmUpdate (כולל שם הנהג)
+    window._kmPersonalReqCtx={token:token, vid:req.vid, driverName:req.driverName, plate:req.plate};
     if(req.status==='done'){
       page.innerHTML='<div style="background:#fff;border-radius:16px;padding:30px;max-width:400px;width:100%;text-align:center"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600;color:#166534">ק"מ כבר עודכן, תודה!</div></div>';
       return;
@@ -13759,7 +13773,8 @@ function submitKmUpdate(token, vid){
         '<div style="margin-top:16px;color:#ccc;font-size:11px">תודה! מרכז הרכב של מור</div></div>';
     }
   }
-  var _updPayload={vid:vid, km:km, updatedAt:new Date().toISOString()};
+  var _ctx=window._kmPersonalReqCtx||{};
+  var _updPayload={vid:vid, km:km, updatedAt:new Date().toISOString(), driverName:_ctx.driverName||'', plate:_ctx.plate||''};
   publicRestCreate('kmUpdates', _updPayload, token).then(function(){
     try{ db.collection('kmRequests').doc(token).update({status:'done'}).catch(function(){}); }catch(e){}
     _showKmUpdSuccess('');
