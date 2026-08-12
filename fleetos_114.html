@@ -12557,7 +12557,10 @@ function _applyOneLicUpdate(d, showToastMsg){
   var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
   if(!v) return false;
   if(!v.driver) v.driver={};
+  // בדוק שהעדכון הנוכחי אחרון יותר ממה שכבר יש ברכב
+  if(d.updatedAt && v.driver._licUpdatedAt && d.updatedAt <= v.driver._licUpdatedAt) return false;
   v.driver.licenseExp=d.licenseExp;
+  if(d.updatedAt) v.driver._licUpdatedAt=d.updatedAt; // שמור timestamp לצורך השוואה עתידית
   if(!v.historyLog) v.historyLog=[];
   var _histDesc='עדכון רישיון נהיגה מנהג: '+d.licenseExp.split('-').reverse().join('/');
   // טיפול בבני משפחה
@@ -12587,17 +12590,25 @@ function _applyOneLicUpdate(d, showToastMsg){
 
 // מחיל את כל העדכונים הממתינים + מה שב-_licReportsCache (נגד race condition)
 function _applyPendingLicUpdates(){
-  // עבד בופר ממתין
+  // מאחד בופר ממתין + cache — ולכל רכב בוחר רק את העדכון הכי אחרון (לפי updatedAt)
   var _pending=_licPendingUpdates.slice();
   _licPendingUpdates=[];
-  _pending.forEach(function(d){_applyOneLicUpdate(d,false);});
-  // גם מה שב-cache (מונע פספוס גם אם הבופר לא עודכן)
-  (_licReportsCache||[]).forEach(function(d){
+  var allUpdates=_pending.concat(_licReportsCache||[]);
+  // קיבוץ לפי vid — מנצח updatedAt הגדול ביותר
+  var latestByVid={};
+  allUpdates.forEach(function(d){
     if(!d.licenseExp||!d.vid)return;
-    var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
+    var key=String(d.vid);
+    if(!latestByVid[key]||(d.updatedAt||'')>(latestByVid[key].updatedAt||'')){
+      latestByVid[key]=d;
+    }
+  });
+  Object.keys(latestByVid).forEach(function(vid){
+    var d=latestByVid[vid];
+    var v=vehicles.find(function(x){return String(x.id)===vid;});
     if(!v||!v.driver)return;
     if(v.driver.licenseExp===d.licenseExp)return; // כבר מעודכן
-    console.log('[licFix] מחיל עדכון רישיון לרכב',d.vid,'מ',v.driver.licenseExp,'ל',d.licenseExp);
+    console.log('[licFix] מחיל עדכון רישיון לרכב',vid,'מ',v.driver.licenseExp,'ל',d.licenseExp,'(updatedAt:',d.updatedAt,')');
     _applyOneLicUpdate(d,false);
   });
 }
