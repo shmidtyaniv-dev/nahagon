@@ -24821,7 +24821,7 @@ async function performLocalScan() {
         var daysUntilTreatment = daysBetween(today, nextTreatmentDate);
         // טריגר גם לפי ק"מ: אם הרכב התקרב/עבר את ק"מ הטיפול הבא
         var _curKm = vehicle.currentKm || vehicle.curKm || 0;
-        var kmDue = !!(_nxtSvc.km && _curKm && _curKm >= _nxtSvc.km - 1000);
+        var kmDue = !!(_nxtSvc.km && _curKm && _curKm >= _nxtSvc.km - 1500);
         if (daysUntilTreatment <= svcRange || kmDue) {
           await createTreatmentIfNotExists(vehicle, 'treatment', nextTreatmentDate);
         } else {
