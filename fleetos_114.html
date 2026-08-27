@@ -10343,17 +10343,33 @@ function updateDashGreeting(){
   var pillEl=document.getElementById('dash-vehicle-count-val');
   if(pillEl) pillEl.textContent=pct+'% מהציר תקין \u00B7 '+total+' רכבים פעילים';
 }
-/* איפוס חודשי — כל 1 בחודש הספירה מתחילה מחדש מכל הרכבים עם נהג */
-function _kmMonthStartStr(){
-  var n=new Date();
-  return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-01';
-}
-function _kmReportInMonth(r){
+/* ── סינון לפי timestamp איפוס ── */
+function _kmReportAfterReset(r){
+  if(!_kmReportsLastReset) return true; // לא אופס עדיין — מציג הכל
   if(!r||!r.submittedAt) return false;
-  var d=new Date(r.submittedAt);
-  if(isNaN(d)) return false;
-  var n=new Date();
-  return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();
+  return r.submittedAt >= _kmReportsLastReset;
+}
+
+/* ── מאזין ל-timestamp איפוס (מסונכרן בין כל המכשירים) ── */
+function startKmResetListener(){
+  if(!db) return;
+  db.collection('settings').doc('kmResetTime').onSnapshot(function(snap){
+    _kmReportsLastReset = (snap.exists && snap.data().resetAt) ? snap.data().resetAt : null;
+    _updateKmReportsBadge();
+    var pg=document.getElementById('page-km-reports');
+    if(pg&&pg.classList.contains('active')) renderKmReports();
+    // נקה גם התראות ק"מ מ-localStorage שהן לפני האיפוס
+    if(_kmReportsLastReset){
+      var kmNotifs=JSON.parse(localStorage.getItem('km_update_notifications')||'[]');
+      var before=kmNotifs.length;
+      kmNotifs=kmNotifs.filter(function(n){ return !n.time||n.time>=_kmReportsLastReset; });
+      if(kmNotifs.length!==before){
+        localStorage.setItem('km_update_notifications',JSON.stringify(kmNotifs));
+        if(typeof updateBellBadge==='function') try{updateBellBadge();}catch(e){}
+        if(typeof renderNotificationsPanel==='function') try{renderNotificationsPanel();}catch(e){}
+      }
+    }
+  });
 }
 function showNoKmUpdateModal(){
   var monthStart=_kmMonthStartStr();
@@ -12949,6 +12965,7 @@ var _kmReportsCache=[];
 var _kmReportsListenerActive=false;
 var _kmNotifMap={}; // id → {vid,plate,driverName}
 var _kmReportsIsInit=true; // flag נפרד — לא על boolean
+var _kmReportsLastReset=null; // ISO timestamp — מסונכרן ב-Firestore, מסנן דיווחים לפני האיפוס
 
 function startKmReportsListener(){
   if(!db||_kmReportsListenerActive) return;
@@ -12996,7 +13013,7 @@ function startKmReportsListener(){
 }
 
 function _updateKmReportsBadge(){
-  var pending=_kmReportsCache.filter(function(r){ return (r.status==='pending'||r.status==='unmatched'||r.status==='multi'); }).length;
+  var pending=_kmReportsCache.filter(function(r){ return _kmReportAfterReset(r)&&(r.status==='pending'||r.status==='unmatched'||r.status==='multi'); }).length;
   var el=document.getElementById('nb-km-reports');
   if(el){ el.textContent=pending; el.style.display=pending>0?'':'none'; }
 }
@@ -13014,8 +13031,8 @@ function renderKmReports(){
   var link=location.origin+location.pathname+'?km';
   var linkEl=document.getElementById('kmr-link-display');
   if(linkEl) linkEl.textContent=link;
-  // ספירות — כל הדיווחים (ללא סינון חודשי)
-  var monthReports=_kmReportsCache.slice();
+  // ספירות — דיווחים מאחרי תאריך האיפוס האחרון
+  var monthReports=_kmReportsCache.filter(_kmReportAfterReset);
   var total=monthReports.length;
   var matched=monthReports.filter(function(r){return r.status==='matched';}).length;
   var unmatched=total-matched;
@@ -13368,7 +13385,7 @@ function _kmNotReportedList(){
   // רכבים שיש להם נהג ואין להם דיווח ק"מ מאושר (matched) החודש הנוכחי
   var reportedVids = new Set(
     _kmReportsCache
-      .filter(function(r){ return r.status==='matched' && r.matchedVehicleId; })
+      .filter(function(r){ return _kmReportAfterReset(r) && r.status==='matched' && r.matchedVehicleId; })
       .map(function(r){ return String(r.matchedVehicleId); })
   );
   return (vehicles||[]).filter(function(v){
@@ -13451,17 +13468,11 @@ function sendKmRequestDirect(vid, btn){
 
 function resetKmReports(){
   if(!db) return;
-  if(!confirm('למחוק את כל הדיווחים ולהתחיל מחדש?')) return;
-  var batch=db.batch();
-  _kmReportsCache.forEach(function(r){
-    batch.delete(db.collection('kmReports').doc(r.id));
-  });
-  batch.commit().then(function(){
-    // נקה גם התראות ק"מ מ-localStorage
-    var kmNotifs=JSON.parse(localStorage.getItem('km_update_notifications')||'[]');
-    kmNotifs=kmNotifs.filter(function(n){ return n.id.indexOf('kmr-')<0; });
-    localStorage.setItem('km_update_notifications',JSON.stringify(kmNotifs));
-    try{ updateBellBadge(); }catch(e){}
+  if(!confirm('לאפס את הדיווחים ולהתחיל מחדש?')) return;
+  // שומרים timestamp של האיפוס ב-Firestore — מסונכרן לכל המכשירים דרך startKmResetListener
+  // (לא מוחקים מסמכים — kmUpdates listener מייצר אותם מחדש בכל טעינה ממילא)
+  var resetAt=new Date().toISOString();
+  db.collection('settings').doc('kmResetTime').set({resetAt:resetAt}).then(function(){
     showToast('הדיווחים אופסו ✓');
   }).catch(function(){ showToast('שגיאה באיפוס — נסה שוב'); });
 }
@@ -18871,6 +18882,7 @@ function startAuthedApp(){
   startViolApprovalsListener();
   if(typeof startFormSubmissionsListener==='function')startFormSubmissionsListener();
   if(typeof startKmReportsListener==='function')startKmReportsListener();
+  if(typeof startKmResetListener==='function')startKmResetListener();
   if(typeof startLicReportsListener==='function')startLicReportsListener();
   if(typeof startBlockedDaysListener==='function')startBlockedDaysListener();
   // Start vehicles real-time sync with Firestore
