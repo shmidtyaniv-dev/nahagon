@@ -12977,6 +12977,19 @@ function startKmReportsListener(){
         // שיוך אוטומטי
         if(d.status==='pending' && vehicles.length) _autoMatchKmReport(d);
       }
+      // סנכרון מחיקה — מנקה התראות מ-localStorage בכל המכשירים כשדיווח נמחק
+      if(ch.type==='removed'){
+        var removedNotifId='kmr-'+ch.doc.id;
+        var removedUpdId='km_update_'+ch.doc.id;
+        var kmNotifs=JSON.parse(localStorage.getItem('km_update_notifications')||'[]');
+        var before=kmNotifs.length;
+        kmNotifs=kmNotifs.filter(function(n){ return n.id!==removedNotifId&&n.id!==removedUpdId; });
+        if(kmNotifs.length!==before){
+          localStorage.setItem('km_update_notifications',JSON.stringify(kmNotifs));
+          if(typeof updateBellBadge==='function') try{updateBellBadge();}catch(e){}
+          if(typeof renderNotificationsPanel==='function') try{renderNotificationsPanel();}catch(e){}
+        }
+      }
     });
     _kmReportsIsInit=false;
   });
