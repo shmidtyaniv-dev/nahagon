@@ -2878,7 +2878,7 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
       </div>
       <!-- רשימת דיווחים -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-size:13px;font-weight:600;color:var(--t2)" id="kmr-list-title">דיווחים החודש (מתאפס כל 1 בחודש)</div>
+        <div style="font-size:13px;font-weight:600;color:var(--t2)" id="kmr-list-title">דיווחים</div>
         <button onclick="resetKmReports()" style="padding:5px 12px;border:1px solid #fca5a5;border-radius:7px;background:#fff5f5;font-size:12px;font-family:inherit;cursor:pointer;color:#dc2626">איפוס דיווחים</button>
       </div>
       <div id="kmr-list"></div>
@@ -12983,7 +12983,7 @@ function startKmReportsListener(){
 }
 
 function _updateKmReportsBadge(){
-  var pending=_kmReportsCache.filter(function(r){ return _kmReportInMonth(r)&&(r.status==='pending'||r.status==='unmatched'||r.status==='multi'); }).length;
+  var pending=_kmReportsCache.filter(function(r){ return (r.status==='pending'||r.status==='unmatched'||r.status==='multi'); }).length;
   var el=document.getElementById('nb-km-reports');
   if(el){ el.textContent=pending; el.style.display=pending>0?'':'none'; }
 }
@@ -13001,8 +13001,8 @@ function renderKmReports(){
   var link=location.origin+location.pathname+'?km';
   var linkEl=document.getElementById('kmr-link-display');
   if(linkEl) linkEl.textContent=link;
-  // ספירות — רק דיווחים מהחודש הנוכחי (איפוס אוטומטי כל 1 בחודש)
-  var monthReports=_kmReportsCache.filter(_kmReportInMonth);
+  // ספירות — כל הדיווחים (ללא סינון חודשי)
+  var monthReports=_kmReportsCache.slice();
   var total=monthReports.length;
   var matched=monthReports.filter(function(r){return r.status==='matched';}).length;
   var unmatched=total-matched;
@@ -13018,7 +13018,7 @@ function renderKmReports(){
   // רשימה
   var list=document.getElementById('kmr-list');
   if(!list) return;
-  if(!monthReports.length){ list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);font-size:14px">אין דיווחים החודש עדיין</div>'; return; }
+  if(!monthReports.length){ list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t3);font-size:14px">אין דיווחים עדיין</div>'; return; }
   var html='';
   monthReports.forEach(function(r){
     var badgeCls=r.status==='matched'?'matched':(r.status==='multi'?'pending':'unmatched');
@@ -13355,7 +13355,7 @@ function _kmNotReportedList(){
   // רכבים שיש להם נהג ואין להם דיווח ק"מ מאושר (matched) החודש הנוכחי
   var reportedVids = new Set(
     _kmReportsCache
-      .filter(function(r){ return _kmReportInMonth(r) && r.status==='matched' && r.matchedVehicleId; })
+      .filter(function(r){ return r.status==='matched' && r.matchedVehicleId; })
       .map(function(r){ return String(r.matchedVehicleId); })
   );
   return (vehicles||[]).filter(function(v){
