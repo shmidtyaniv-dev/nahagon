@@ -9763,19 +9763,20 @@ function renderDash(){
     var subEl=document.getElementById('mv-deal-end-sub');
     if(subEl) subEl.textContent=soon.length>0?('מסתיימות עד '+_months+' חודשים'):'אין עסקאות שמסתיימות בקרוב';
   })();
-  // Update no-km-update KPI — מתאפס כל 1 בחודש: כל רכב עם נהג שלא עדכן החודש נספר
+  // Update no-km-update KPI — מתאפס לפי איפוס ידני (_kmReportsLastReset)
   (function(){
-    var monthStart=_kmMonthStartStr();
+    var resetDate=_kmReportsLastReset?_kmReportsLastReset.split('T')[0]:null;
     var noKm=(vehicles||[]).filter(function(v){
       var dn=v.driverName||(v.driver&&v.driver.name)||'';
       if(!dn) return false; // רק רכבים עם נהג
       var last=v.lastKmUpdate||'';
-      return !last || last < monthStart; // לא עדכן מתחילת החודש הנוכחי
+      if(resetDate) return !last || last < resetDate; // לא עדכן מאז האיפוס האחרון
+      return !last; // לפני איפוס ראשון — רק מי שמעולם לא עדכן
     });
     var cnt=noKm.length;
     updateStatCard('mv-no-km','mv-no-km-sub','mv-no-km-empty','mc-no-km',cnt);
     var sub=document.getElementById('mv-no-km-sub');
-    if(sub) sub.textContent=cnt>0?'לא עדכנו החודש':'כולם עדכנו החודש';
+    if(sub) sub.textContent=cnt>0?'לא עדכנו מאז האיפוס':'כולם עדכנו';
   })();
   // Update greeting header
   updateDashGreeting();
@@ -10379,12 +10380,13 @@ function startKmResetListener(){
   });
 }
 function showNoKmUpdateModal(){
-  var monthStart=_kmMonthStartStr();
+  var resetDate=_kmReportsLastReset?_kmReportsLastReset.split('T')[0]:null;
   var noKm=(vehicles||[]).filter(function(v){
     var dn=v.driverName||(v.driver&&v.driver.name)||'';
     if(!dn) return false;
     var last=v.lastKmUpdate||'';
-    return !last || last < monthStart; // לא עדכן מתחילת החודש הנוכחי
+    if(resetDate) return !last || last < resetDate;
+    return !last;
   }).sort(function(a,b){
     var an=a.driverName||(a.driver&&a.driver.name)||'';
     var bn=b.driverName||(b.driver&&b.driver.name)||'';
