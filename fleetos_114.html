@@ -9789,6 +9789,7 @@ function renderDash(){
   var nbAcc=document.getElementById('nb-accidents');
   if(nbAcc){if(accCount>0){nbAcc.textContent=accCount;nbAcc.style.display='';}else nbAcc.style.display='none';}
 }
+function _kmMonthStartStr(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01';}
 function updateStatCard(valId,subId,emptyId,cardId,count){
   var valEl=document.getElementById(valId);
   var subEl=document.getElementById(subId);
