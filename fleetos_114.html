@@ -458,6 +458,9 @@ tbody td{padding:6px 10px;font-size:12px;color:var(--t1);vertical-align:middle}
   .mobile-search-bar{display:flex!important;align-items:center;gap:8px;padding:8px 14px;background:var(--card);border-bottom:0.5px solid var(--bdr);position:sticky;top:54px;z-index:99}
   .mobile-search-bar input{flex:1;border:none;background:transparent;font-size:16px;font-family:inherit;color:var(--t1);outline:none}
   .mobile-search-bar input::placeholder{color:var(--t3)}
+  /* כפתור ניקוי חיפוש — מובייל */
+  #mobile-srch-inp:placeholder-shown + #mob-srch-clear{display:none!important}
+  #mob-srch-clear{display:flex}
   /* תוצאות חיפוש - מיקום מובייל */
   #global-search-results{position:fixed!important;top:108px!important;right:10px!important;left:10px!important;width:auto!important}
   .metrics{grid-template-columns:1fr 1fr;gap:6px}
@@ -840,6 +843,9 @@ body{font-family:'Heebo',system-ui,sans-serif;background:var(--bg);color:var(--t
 .vehicles-title{margin:0;font-size:15px;font-weight:600}
 .vehicles-count{display:none}
 .vehicles-controls{display:flex;align-items:center;gap:8px}
+/* כפתור ניקוי חיפוש — דסקטופ */
+#srch-inp:placeholder-shown + #srch-clear{display:none!important}
+#srch-clear{display:flex}
 .dash-search-wrap{display:flex;align-items:center;gap:6px;background:var(--bg2);border-radius:8px;padding:5px 12px;min-width:200px}
 .dash-search-wrap svg{color:var(--t2);flex-shrink:0}
 .dash-search-input{border:none;background:transparent;font-size:12px;font-family:inherit;color:var(--t1);outline:none;width:100%}
@@ -2453,8 +2459,8 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
       <!-- שורת חיפוש -->
       <div style="position:relative;width:320px">
         <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="חיפוש: רכב, נהג, יצרן..." id="srch-inp" oninput="globalSearch(this.value);document.getElementById('srch-clear').style.display=this.value?'flex':'none';var m=document.getElementById('mobile-srch-inp');if(m)m.value=this.value;" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 32px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
-        <button id="srch-clear" onclick="document.getElementById('srch-inp').value='';document.getElementById('srch-inp').focus();globalSearch('');document.getElementById('srch-clear').style.display='none';var m=document.getElementById('mobile-srch-inp');if(m){m.value='';document.getElementById('mob-srch-clear').style.display='none';}" style="display:none;position:absolute;left:8px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;background:#bbb;border:none;cursor:pointer;align-items:center;justify-content:center;padding:0">
+        <input type="text" placeholder="חיפוש: רכב, נהג, יצרן..." id="srch-inp" oninput="globalSearch(this.value);document.getElementById('srch-clear').style.display=this.value?'flex':'none';var m=document.getElementById('mobile-srch-inp');if(m)m.value=this.value;" onfocus="globalSearch(this.value);document.getElementById('srch-clear').style.display=this.value?'flex':'none';" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off" style="width:100%;height:36px;padding:0 36px 0 32px;border:0.5px solid rgba(0,0,0,.15);border-radius:8px;background:#fff;font-size:13px;font-family:inherit;color:#1A1A1A;outline:none">
+        <button id="srch-clear" onclick="document.getElementById('srch-inp').value='';document.getElementById('srch-inp').focus();globalSearch('');var m=document.getElementById('mobile-srch-inp');if(m)m.value='';" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;background:#bbb;border:none;cursor:pointer;align-items:center;justify-content:center;padding:0">
           <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="10" height="10"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
         <div id="global-search-results" style="display:none;position:absolute;top:100%;right:0;width:420px;margin-top:6px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.18);max-height:70vh;overflow-y:auto;z-index:500;direction:rtl"></div>
@@ -2498,8 +2504,8 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
   <!-- שורת חיפוש מובייל - מוצגת רק מתחת ל-768px -->
   <div class="mobile-search-bar" id="mobile-search-bar">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F5E5A" stroke-width="2" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="mobile-srch-inp" placeholder="חיפוש: רכב, נהג, יצרן..." oninput="document.getElementById('srch-inp').value=this.value;globalSearch(this.value);document.getElementById('mob-srch-clear').style.display=this.value?'flex':'none';document.getElementById('srch-clear').style.display=this.value?'flex':'none';" onfocus="globalSearch(this.value)" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off">
-    <button id="mob-srch-clear" onclick="document.getElementById('mobile-srch-inp').value='';document.getElementById('srch-inp').value='';document.getElementById('mobile-srch-inp').focus();globalSearch('');this.style.display='none';document.getElementById('srch-clear').style.display='none';" style="display:none;flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#bbb;border:none;cursor:pointer;align-items:center;justify-content:center;padding:0">
+    <input type="text" id="mobile-srch-inp" placeholder="חיפוש: רכב, נהג, יצרן..." oninput="document.getElementById('srch-inp').value=this.value;globalSearch(this.value);document.getElementById('mob-srch-clear').style.display=this.value?'flex':'none';document.getElementById('srch-clear').style.display=this.value?'flex':'none';" onfocus="globalSearch(this.value);document.getElementById('mob-srch-clear').style.display=this.value?'flex':'none';" onblur="setTimeout(closeGlobalSearch,220)" autocomplete="off">
+    <button id="mob-srch-clear" onclick="document.getElementById('mobile-srch-inp').value='';document.getElementById('srch-inp').value='';document.getElementById('mobile-srch-inp').focus();globalSearch('');document.getElementById('srch-clear').style.display='none';" style="flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#bbb;border:none;cursor:pointer;align-items:center;justify-content:center;padding:0">
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" width="10" height="10"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
     <!-- כפתור סינון מאוחד מובייל -->
@@ -18812,7 +18818,7 @@ function go(name,el){
   if(window.innerWidth<=768){const sb=document.querySelector('.sb');if(sb)sb.classList.remove('open');}
   id('page-title').textContent=PT[name]||name;
   if(name==='vehicles')renderV();
-  if(name==='dashboard')renderDash();
+  if(name==='dashboard'){var _si=id('srch-inp'),_mi=id('mobile-srch-inp');if(_si)_si.value='';if(_mi)_mi.value='';if(typeof globalSearch==='function')globalSearch('');renderDash();}
   if(name==='tasks')renderTasks();
   if(name==='violations')renderViolations();
   if(name==='accidents')renderAccidents();
