@@ -11896,7 +11896,10 @@ function openDet(vid){
 
   // Row 2: Deal period + KM + Next service (3 columns)
   var kmUpdateAgo='';
-  if(v.lastKmUpdate){var diffDays=Math.round((new Date()-new Date(v.lastKmUpdate))/86400000);kmUpdateAgo='עודכן לפני '+diffDays+' ימים · '+fd(v.lastKmUpdate);}
+  // מצא את תאריך העדכון האחרון — מ-lastKmUpdate או מ-_kmReportsCache (הכי עדכני מביניהם)
+  var _kmLastDate=v.lastKmUpdate||'';
+  try{if(Array.isArray(_kmReportsCache)){_kmReportsCache.filter(function(r){return String(r.matchedVehicleId)===String(vid);}).forEach(function(r){var d=r.submittedAt?r.submittedAt.split('T')[0]:'';if(d>_kmLastDate)_kmLastDate=d;});}}catch(e){}
+  if(_kmLastDate){var diffDays=Math.round((new Date()-new Date(_kmLastDate))/86400000);kmUpdateAgo='עודכן לפני '+diffDays+' ימים · '+fd(_kmLastDate);}
   id('vc-summary-cards2').style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px';
   var oldTitle=document.getElementById('vc-row2-title');if(oldTitle)oldTitle.remove();
   id('vc-summary-cards2').insertAdjacentHTML('beforebegin','<div style="font-size:13px;font-weight:500;color:var(--t2);margin-bottom:10px;letter-spacing:.02em" id="vc-row2-title">עסקה וטיפולים</div>');
