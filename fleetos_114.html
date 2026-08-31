@@ -9766,12 +9766,18 @@ function renderDash(){
   // Update no-km-update KPI — מתאפס לפי איפוס ידני (_kmReportsLastReset)
   (function(){
     var resetDate=_kmReportsLastReset?_kmReportsLastReset.split('T')[0]:null;
+    // בנה מפה של vid → תאריך עדכון אחרון מ-kmReportsCache (מדויק יותר מ-lastKmUpdate)
+    var _kmCacheMap={};
+    try{if(Array.isArray(_kmReportsCache)){_kmReportsCache.forEach(function(r){var vid=String(r.matchedVehicleId||'');if(!vid)return;var d=r.submittedAt?r.submittedAt.split('T')[0]:'';if(d&&(!_kmCacheMap[vid]||d>_kmCacheMap[vid]))_kmCacheMap[vid]=d;});}}catch(e){}
     var noKm=(vehicles||[]).filter(function(v){
       var dn=v.driverName||(v.driver&&v.driver.name)||'';
       if(!dn) return false; // רק רכבים עם נהג
+      // קח את התאריך הכי עדכני בין lastKmUpdate ל-kmReportsCache
       var last=v.lastKmUpdate||'';
-      if(resetDate) return !last || last < resetDate; // לא עדכן מאז האיפוס האחרון
-      return !last; // לפני איפוס ראשון — רק מי שמעולם לא עדכן
+      var fromCache=_kmCacheMap[String(v.id)]||'';
+      if(fromCache>last) last=fromCache;
+      if(resetDate) return !last || last < resetDate;
+      return !last;
     });
     var cnt=noKm.length;
     updateStatCard('mv-no-km','mv-no-km-sub','mv-no-km-empty','mc-no-km',cnt);
@@ -10381,10 +10387,14 @@ function startKmResetListener(){
 }
 function showNoKmUpdateModal(){
   var resetDate=_kmReportsLastReset?_kmReportsLastReset.split('T')[0]:null;
+  var _kmCacheMap={};
+  try{if(Array.isArray(_kmReportsCache)){_kmReportsCache.forEach(function(r){var vid=String(r.matchedVehicleId||'');if(!vid)return;var d=r.submittedAt?r.submittedAt.split('T')[0]:'';if(d&&(!_kmCacheMap[vid]||d>_kmCacheMap[vid]))_kmCacheMap[vid]=d;});}}catch(e){}
   var noKm=(vehicles||[]).filter(function(v){
     var dn=v.driverName||(v.driver&&v.driver.name)||'';
     if(!dn) return false;
     var last=v.lastKmUpdate||'';
+    var fromCache=_kmCacheMap[String(v.id)]||'';
+    if(fromCache>last) last=fromCache;
     if(resetDate) return !last || last < resetDate;
     return !last;
   }).sort(function(a,b){
