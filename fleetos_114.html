@@ -6228,9 +6228,15 @@ function calcNextSvc(v){
     };
   }
   if(!lastSvcDate || !lastSvcKm) return {km:null,date:null,type:null};
-  // הטיפול הבא במדרגה עגולה לפי מרווח הרכב
-  const roundedSvcKm = Math.round(lastSvcKm / svcIntervalKm) * svcIntervalKm;
-  const nextKm = Math.max(lastSvcTypeKm, roundedSvcKm) + svcIntervalKm;
+  // הטיפול הבא במדרגה עגולה לפי מרווח הרכב.
+  // זיקר: ceil — כי serviceKm עשוי להיות מעט מתחת לאבן הדרך האמיתית (למשל 45k → אבן 60k → הבא 80k)
+  // רגיל: round — מגן מרישום ק"מ שגוי
+  const roundedSvcKm = zikar
+    ? Math.ceil(lastSvcKm / svcIntervalKm) * svcIntervalKm
+    : Math.round(lastSvcKm / svcIntervalKm) * svcIntervalKm;
+  const nextKm = zikar
+    ? roundedSvcKm + svcIntervalKm
+    : Math.max(lastSvcTypeKm, roundedSvcKm) + svcIntervalKm;
   const d = new Date(lastSvcDate);
   d.setFullYear(d.getFullYear()+svcIntervalYears);
   return{
