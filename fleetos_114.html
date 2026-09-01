@@ -6183,9 +6183,17 @@ function plateInputFmt(el){
   el.value=out;
 }
 
-// Auto-calculate next service (1 year from last service). Prefer historyLog over lastService field.
+// Auto-calculate next service. Prefer historyLog over lastService field.
+// זיקר X: כל 20,000 ק"מ או שנתיים (במקום 15,000 ק"מ / שנה)
+function isZikarVehicle(v){
+  return v && typeof (v.make||'') === 'string' && /זיקר|zikar/i.test(v.make);
+}
 function calcNextSvc(v){
   if(!v) return {km:null,date:null,type:null};
+  // קביעת מרווח הטיפול לפי סוג הרכב
+  const zikar = isZikarVehicle(v);
+  const svcIntervalKm    = zikar ? 20000 : 15000;
+  const svcIntervalYears = zikar ? 2     : 1;
   // Try historyLog first (most recent service entry)
   let lastSvcDate = null;
   let lastSvcKm = v.serviceKm || 0;
@@ -6209,24 +6217,22 @@ function calcNextSvc(v){
   }
   // Fallback to vehicle.lastService field
   if(!lastSvcDate && v.lastService) lastSvcDate = v.lastService;
-  // NEW VEHICLE: no service history yet - use delivery date + 1 year, 15,000 km as first service
+  // NEW VEHICLE: no service history yet - use delivery date + interval, first interval km as first service
   if(!lastSvcDate && v.isNew && v.delivery){
     const d = new Date(v.delivery);
-    d.setFullYear(d.getFullYear()+1);
+    d.setFullYear(d.getFullYear()+svcIntervalYears);
     return {
-      km: 15000,
+      km: svcIntervalKm,
       date: localDateStr(d),
       type: 'טיפול ראשון'
     };
   }
   if(!lastSvcDate || !lastSvcKm) return {km:null,date:null,type:null};
-  // הטיפול הבא במדרגה עגולה: הבסיס הוא הגבוה מבין המספר בסוג הטיפול שבוצע
-  // לבין מדרגת ה-15,000 הקרובה לק"מ הטיפול האחרון — מגן מרישום היסטוריה ישן/שגוי
-  // (למשל serviceKm=45,000 אבל ברישום כתוב "טיפול 30,000" — הבסיס יהיה 45,000)
-  const roundedSvcKm = Math.round(lastSvcKm / 15000) * 15000;
-  const nextKm = Math.max(lastSvcTypeKm, roundedSvcKm) + 15000;
+  // הטיפול הבא במדרגה עגולה לפי מרווח הרכב
+  const roundedSvcKm = Math.round(lastSvcKm / svcIntervalKm) * svcIntervalKm;
+  const nextKm = Math.max(lastSvcTypeKm, roundedSvcKm) + svcIntervalKm;
   const d = new Date(lastSvcDate);
-  d.setFullYear(d.getFullYear()+1);
+  d.setFullYear(d.getFullYear()+svcIntervalYears);
   return{
     km:nextKm,
     date:localDateStr(d),
