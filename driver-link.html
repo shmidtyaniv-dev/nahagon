@@ -492,8 +492,15 @@
           approvalSlaDays: 3
         };
 
-        const scheduled = await db.collection('treatments').where('status', '==', 'scheduled').get();
-        SCHEDULED_TREATMENTS = scheduled.docs.map(d => ({ id: d.id, ...d.data() }));
+        // סופרים גם pending_approval (נהג כבר בחר תאריך, ממתין לאישור) — כדי לא לאפשר כפל הזמנות
+        const [scheduledSnap, pendingSnap] = await Promise.all([
+          db.collection('treatments').where('status', '==', 'scheduled').get(),
+          db.collection('treatments').where('status', '==', 'pending_approval').get()
+        ]);
+        SCHEDULED_TREATMENTS = [
+          ...scheduledSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+          ...pendingSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+        ];
 
         renderForm();
       } catch (err) {

@@ -15787,9 +15787,12 @@ function saveLicenseExp(vid){
     db.collection('vehicles').doc(String(v.id)).update({licenseExp:dateVal}).then(function(){
       showToast('✅ תוקף רישיון עודכן ל-'+fd(dateVal));
       refresh();openDet(vid);
+      // סנכרון טיפולים: סגור התראות ישנות ופתח/סגור לפי התאריך החדש
+      setTimeout(function(){if(typeof performLocalScan==='function')try{performLocalScan();}catch(e){}},800);
     }).catch(function(e){showToast('שגיאה: '+e.message);});
   } else {
     refresh();openDet(vid);
+    setTimeout(function(){if(typeof performLocalScan==='function')try{performLocalScan();}catch(e){}},800);
   }
 }
 
@@ -25550,11 +25553,48 @@ function renderScheduledRow(t) {
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
     + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">תזכורת 💬</button>'
+    + '<button class="trt-btn-action" onclick="openChangeTreatmentDateModal(\'' + t.id + '\')" style="color:#185FA5;border-color:#185FA5">📅 שנה מועד</button>'
     + '<button class="trt-btn-action trt-btn-action-danger" onclick="cancelScheduled(\'' + t.id + '\')">בטל</button>'
     + '<button class="trt-btn-action trt-btn-action-primary" ' + (canMarkDone ? '' : 'disabled') + ' onclick="markTreatmentDoneQuick(\'' + t.id + '\')">בוצע ✓</button>'
     + '</div></div>';
 }
 
+/* ── שינוי מועד טיפול מתוזמן (ידני ע"י יניב) ── */
+function openChangeTreatmentDateModal(trtId) {
+  var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === trtId; });
+  if (!t) return;
+  var ex = document.getElementById('change-trt-date-modal'); if (ex) ex.remove();
+  var wrap = document.createElement('div');
+  wrap.id = 'change-trt-date-modal';
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
+  wrap.onclick = function(e){ if(e.target===wrap) wrap.remove(); };
+  wrap.innerHTML = '<div style="background:var(--card);border-radius:12px;width:100%;max-width:340px;overflow:hidden" onclick="event.stopPropagation()">'
+    + '<div style="background:#185FA5;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">'
+    + '<span style="color:#fff;font-size:15px;font-weight:500">📅 שינוי מועד טיפול</span>'
+    + '<button onclick="document.getElementById(\'change-trt-date-modal\').remove()" style="background:rgba(255,255,255,.15);border:none;width:28px;height:28px;border-radius:6px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+    + '</div>'
+    + '<div style="padding:18px">'
+    + '<div style="font-size:12px;color:var(--t2);margin-bottom:14px">' + _esc(t.driverName||'') + ' · ' + _esc(formatPlate(t.licensePlate||'')) + '<br>מועד נוכחי: <strong>' + formatTreatmentDate(t.selectedDate) + '</strong></div>'
+    + '<div style="margin-bottom:16px"><label style="font-size:12px;color:var(--t3);display:block;margin-bottom:4px">מועד חדש</label><input type="date" id="change-trt-date-input" value="' + (t.selectedDate||'').substring(0,10) + '" style="width:100%;padding:9px 10px;border:1.5px solid var(--bdr2);border-radius:7px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--t1)"></div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button onclick="document.getElementById(\'change-trt-date-modal\').remove()" style="flex:1;padding:10px;background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">ביטול</button>'
+    + '<button onclick="saveChangedTreatmentDate(\'' + trtId + '\')" style="flex:2;padding:10px;background:#185FA5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">עדכן מועד</button>'
+    + '</div></div></div>';
+  document.body.appendChild(wrap);
+}
+async function saveChangedTreatmentDate(trtId) {
+  var newDate = document.getElementById('change-trt-date-input').value;
+  if (!newDate) { showToast('יש לבחור תאריך'); return; }
+  var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === trtId; });
+  if (!t) return;
+  try {
+    await db.collection('treatments').doc(trtId).update({ selectedDate: newDate, manualDateOverride: true });
+    t.selectedDate = newDate;
+    document.getElementById('change-trt-date-modal').remove();
+    showToast('✅ מועד עודכן ל-' + formatTreatmentDate(newDate));
+    renderTreatments();
+  } catch(e) { showToast('שגיאה: ' + e.message); }
+}
 
 // ============================================================
 // 14ב. כרטיסיית "טיפולים וטסטים" — מרכז שליטה מאוחד
