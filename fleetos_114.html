@@ -25587,9 +25587,52 @@ async function saveChangedTreatmentDate(trtId) {
   if (!newDate) { showToast('יש לבחור תאריך'); return; }
   var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === trtId; });
   if (!t) return;
+  var oldDate = t.selectedDate;
   try {
     await db.collection('treatments').doc(trtId).update({ selectedDate: newDate, manualDateOverride: true });
     t.selectedDate = newDate;
+
+    // 1. עדכן אירוע יומן קיים (נוצר באישור המקורי)
+    if (typeof getFleetEvents === 'function' && typeof saveFleetEvents === 'function') {
+      var events = getFleetEvents();
+      var evId = 'trt-' + trtId;
+      var idx = events.findIndex(function(e){ return e.id === evId; });
+      if (idx >= 0) {
+        events[idx].date = localDateStr(parseTreatmentDate(newDate));
+        saveFleetEvents(events);
+      } else {
+        // אירוע לא קיים — צור אותו (למקרה שנוצר לפני הגרסה הנוכחית)
+        events.push({
+          id: evId,
+          type: t.kind === 'treatment' ? 'service' : 'test',
+          enhType: t.kind === 'treatment' ? 'service' : 'test',
+          title: (t.kind === 'treatment' ? 'איסוף טיפול ל' : 'איסוף לטסט ל') + '-' + t.driverName,
+          vehicleId: parseInt(t.vehicleId) || null,
+          date: localDateStr(parseTreatmentDate(newDate)),
+          time: getAppointmentTime(),
+          desc: formatPlate(t.licensePlate) + ' · ' + t.vehicleModel,
+          status: 'planned',
+          treatmentId: trtId,
+          createdAt: new Date().toISOString()
+        });
+        saveFleetEvents(events);
+      }
+      if (typeof renderCalendar === 'function') try { renderCalendar(); } catch(e) {}
+    }
+
+    // 2. שחרר יום ישן + חסום יום חדש (טיפולים בלבד, לא טסט)
+    if (t.kind !== 'test') {
+      await unblockDayForCancelledTreatment(trtId, oldDate);
+      // חסום יום חדש
+      var newIso = localDateStr(parseTreatmentDate(newDate));
+      if (newIso && !_blockedDays.has(newIso)) {
+        _blockedDays.add(newIso);
+        _blockedDaysInfo[newIso] = { date: newIso, source: 'treatment_approval', treatmentId: trtId, driverName: t.driverName || '' };
+        await db.collection('blockedDays').doc(newIso).set({ date: newIso, source: 'treatment_approval', treatmentId: trtId, driverName: t.driverName || '', createdAt: new Date().toISOString() });
+        try { localStorage.setItem('blockedDays', JSON.stringify(Array.from(_blockedDays))); localStorage.setItem('blockedDaysInfo', JSON.stringify(_blockedDaysInfo)); } catch(e) {}
+      }
+    }
+
     document.getElementById('change-trt-date-modal').remove();
     showToast('✅ מועד עודכן ל-' + formatTreatmentDate(newDate));
     renderTreatments();
