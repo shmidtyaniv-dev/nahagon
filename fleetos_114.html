@@ -26701,6 +26701,7 @@ function renderNotificationsPanel() {
   var list = document.getElementById('trt-notif-list');
   if (!list) return;
   var notifications = getTreatmentNotifications();
+  notifications.sort(function(a, b){ return new Date(b.time||0) - new Date(a.time||0); });
 
   // מונה ליד הכותרת — כמה התראות יש
   var titleEl = document.getElementById('trt-notif-header-title');
