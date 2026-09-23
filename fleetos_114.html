@@ -25777,7 +25777,8 @@ async function quickApproveTreatment(treatmentId, btn) {
       status: 'scheduled',
       approvedAt: new Date().toISOString(),
       approvedChannel: 'whatsapp',
-      approvedMessage: msg
+      approvedMessage: msg,
+      driverNote: t.driverNote || ''
     });
     if (waWin) {
       waWin.location.href = 'https://wa.me/972' + phone.replace(/^0/, '') + '?text=' + encodeURIComponent(msg);
@@ -25922,7 +25923,8 @@ async function confirmApproval() {
       status: 'scheduled',
       approvedAt: new Date().toISOString(),
       approvedChannel: channel,
-      approvedMessage: customMessage
+      approvedMessage: customMessage,
+      driverNote: t.driverNote || ''
     });
     await sendApprovalMessage(t, channel, customMessage, waWin);
     await addTreatmentToCalendar(t);
