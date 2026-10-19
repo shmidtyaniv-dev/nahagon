@@ -19873,7 +19873,7 @@ function checkViolDeclPage(){
           '<span>בעל רישיון נהיגה מספר </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block">'+licNum+'</span>'+
           '<span> מצהיר בזאת, כי כלי רכב מספר רישוי </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block">'+plate+'</span><br>'+
           '<span>היה ברשותי מתאריך </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600">'+since+'</span>'+
-          '<span> ועד ולרבות היום</span><br><br>'+
+          '<span> ועד היום כולל</span><br><br>'+
           '<span>הנני מתחייב בזאת להופיע בבית משפט או לחילופין לשלם את הקנס/ות אשר הוטל/ו עלי</span><br>'+
           '<span>במהלך התקופה הנדונה.</span><br><br>'+
           '<span>בהמשך לאמור לעיל הנני מאשר בזאת הסבה מידית של דוח תנועה מספר </span>'+
@@ -20172,7 +20172,7 @@ function viewViolDeclSubmission(sub){
         '<div style="background:#f8faf8;border:1px solid #d1e8d1;border-radius:8px;padding:16px;margin-bottom:16px">'+
           '<span>אני החתום מטה </span>'+fv(sub.driverName)+' <span>ת.ז מספר</span> '+fv(r.id||'')+
           '<br><span>בעל רישיון נהיגה מספר </span>'+fv(sub.licNum||'')+'<span> מצהיר בזאת, כי כלי רכב מספר רישוי </span>'+fv(sub.plate||'')+
-          '<br><span>היה ברשותי מתאריך </span>'+fv(sub.since||'')+'<span> ועד ולרבות היום</span>'+
+          '<br><span>היה ברשותי מתאריך </span>'+fv(sub.since||'')+'<span> ועד היום כולל</span>'+
           '<br><br><span>הנני מתחייב בזאת להופיע בבית משפט או לחילופין לשלם את הקנס/ות אשר הוטל/ו עלי במהלך התקופה הנדונה.</span>'+
           '<br><br><span>בהמשך לאמור לעיל הנני מאשר בזאת הסבה מידית של דוח תנועה מספר </span>'+fv(sub.reportNum||'')+' <span>על שמי.</span>'+
         '</div>'+
@@ -20288,7 +20288,7 @@ function downloadViolDeclPdf(sub){
       '<div style="font-size:14px;line-height:2.2;margin-bottom:20px">'+
         'אני החתום מטה <u><strong>'+fv(sub.driverName)+'</strong></u> ת.ז מספר <u><strong>'+fv(r.id||sub.driverName)+'</strong></u><br>'+
         'בעל רישיון נהיגה מספר <u><strong>'+fv(sub.licNum)+'</strong></u> מצהיר בזאת, כי כלי רכב מספר רישוי <u><strong>'+fv(sub.plate)+'</strong></u><br>'+
-        'היה ברשותי מתאריך <u><strong>'+fv(sub.since)+'</strong></u> ועד ולרבות היום<br><br>'+
+        'היה ברשותי מתאריך <u><strong>'+fv(sub.since)+'</strong></u> ועד היום כולל<br><br>'+
         'הנני מתחייב בזאת להופיע בבית משפט או לחילופין לשלם את הקנס/ות אשר הוטל/ו עלי<br>'+
         'במהלך התקופה הנדונה.<br><br>'+
         'בהמשך לאמור לעיל הנני מאשר בזאת הסבה מידית של דוח תנועה מספר <u><strong>'+fv(sub.reportNum)+'</strong></u> על שמי.'+
