@@ -20303,7 +20303,7 @@ function viewViolDeclSubmission(sub){
         '<div style="font-size:15px;font-weight:700;color:#1A4A3A;text-align:center;text-decoration:underline;margin-bottom:20px">הנדון: הצהרת נהג הרכב בזמן ביצוע העבירה</div>'+
         '<div style="background:#f8faf8;border:1px solid #d1e8d1;border-radius:8px;padding:16px;margin-bottom:16px">'+
           '<span>אני החתום מטה </span>'+fv(sub.driverName)+' <span>ת.ז מספר</span> '+fv(r.id||'')+
-          '<br><span>בעל רישיון נהיגה מספר </span>'+fv(sub.licNum||'')+'<span> מצהיר בזאת, כי כלי רכב מספר רישוי </span>'+fv(sub.plate||'')+
+          '<br><span>בעל רישיון נהיגה מספר </span>'+fv(r.licenseNum||sub.licNum||'')+'<span> מצהיר בזאת, כי כלי רכב מספר רישוי </span>'+fv(sub.plate||'')+
           '<br><span>היה ברשותי מתאריך </span>'+fv(sub.since||'')+'<span> ועד היום כולל</span>'+
           '<br><br><span>הנני מתחייב בזאת להופיע בבית משפט או לחילופין לשלם את הקנס/ות אשר הוטל/ו עלי במהלך התקופה הנדונה.</span>'+
           '<br><br><span>בהמשך לאמור לעיל הנני מאשר בזאת הסבה מידית של דוח תנועה מספר </span>'+fv(sub.reportNum||'')+' <span>על שמי.</span>'+
@@ -20311,6 +20311,7 @@ function viewViolDeclSubmission(sub){
         '<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;margin-bottom:16px">'+
           '<span style="color:#666">שם מלא:</span><span style="font-weight:500">'+(r.name||'—')+'</span>'+
           '<span style="color:#666">מס׳ ת.ז:</span><span style="font-weight:500;direction:ltr;text-align:right">'+(r.id||'—')+'</span>'+
+          '<span style="color:#666">מס׳ רישיון:</span><span style="font-weight:500;direction:ltr;text-align:right">'+(r.licenseNum||sub.licNum||'—')+'</span>'+
           '<span style="color:#666">מייל:</span><span style="font-weight:500;direction:ltr;text-align:right">'+(r.email||'—')+'</span>'+
           '<span style="color:#666">טלפון:</span><span style="font-weight:500;direction:ltr;text-align:right">'+(r.phone||'—')+'</span>'+
         '</div>'+
