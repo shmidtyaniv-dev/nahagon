@@ -19967,6 +19967,8 @@ function submitViolDecl(){
     formDate:params.get('d')||'',
     driverName:params.get('dn')||'',
     plate:params.get('pl')||'',
+    licNum:params.get('ln')||'',
+    since:params.get('si')||'',
     reportNum:params.get('rn')||'',
     responses:{name:name,id:fid,address:addr,email:(id('vd-f-email')||{}).value||'',phone:phone},
     signatures:{main:_violDeclSig},
@@ -20125,6 +20127,12 @@ function viewSubmission(subId){
     renderSubmissionPdf(template,sub);
   };
 
+  // טיפול מיוחד בטופס הצהרת נהג בזמן עבירה (תבנית מובנית)
+  if(tid==='viol-decl-builtin'){
+    viewViolDeclSubmission(sub);
+    return;
+  }
+
   // Try to get template from Firestore (incl. chunked PDF)
   if(db){
     loadFormTemplateFull(tid).then(function(tpl){
@@ -20132,6 +20140,48 @@ function viewSubmission(subId){
       else showToast('התבנית לא נמצאה');
     }).catch(function(e){console.error(e);showToast('שגיאה בטעינה');});
   }
+}
+
+function viewViolDeclSubmission(sub){
+  var ex=document.getElementById('submission-view-modal');if(ex)ex.remove();
+  var modal=document.createElement('div');
+  modal.id='submission-view-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  var d=sub.submittedAt?new Date(sub.submittedAt):null;
+  var dateStr=d?d.toLocaleDateString('he-IL')+' '+d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}):'';
+  var r=sub.responses||{};
+  var sig=(sub.signatures||{}).main||'';
+  var fv=function(v){return v?('<span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600">'+esc(v)+'</span>'):'<span style="border-bottom:1px solid #ccc;padding:0 20px;color:#aaa">——</span>';};
+  modal.innerHTML='<div style="background:#fff;border-radius:14px;width:100%;max-width:680px;max-height:94vh;overflow:hidden;display:flex;flex-direction:column" onclick="event.stopPropagation()">'+
+    '<div style="background:#1A4A3A;padding:14px 20px;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">'+
+      '<div><div style="font-size:15px;font-weight:600">הצהרת נהג בזמן עבירה</div><div style="font-size:11px;opacity:.7;margin-top:2px">התקבל: '+dateStr+'</div></div>'+
+      '<button onclick="document.getElementById(\'submission-view-modal\').remove()" style="background:rgba(255,255,255,.15);color:#fff;border:none;padding:8px 14px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:13px">סגור</button>'+
+    '</div>'+
+    '<div style="padding:24px 20px;overflow-y:auto;flex:1;background:#f2f5f2">'+
+      '<div style="background:#fff;border-radius:10px;padding:24px;box-shadow:0 1px 8px rgba(0,0,0,.07);font-size:14px;line-height:2;color:#222">'+
+        '<div style="text-align:left;font-size:13px;color:#555;margin-bottom:18px">תאריך: <strong>'+(sub.formDate||'')+'</strong></div>'+
+        '<div style="font-size:15px;font-weight:700;color:#1A4A3A;text-align:center;text-decoration:underline;margin-bottom:20px">הנדון: הצהרת נהג הרכב בזמן ביצוע העבירה</div>'+
+        '<div style="background:#f8faf8;border:1px solid #d1e8d1;border-radius:8px;padding:16px;margin-bottom:16px">'+
+          '<span>אני החתום מטה </span>'+fv(sub.driverName)+' <span>ת.ז מספר</span> '+fv(r.id||'')+
+          '<br><span>בעל רישיון נהיגה מספר </span>'+fv(sub.licNum||'')+'<span> מצהיר בזאת, כי כלי רכב מספר רישוי </span>'+fv(sub.plate||'')+
+          '<br><span>היה ברשותי מתאריך </span>'+fv(sub.since||'')+'<span> ועד ולרבות היום</span>'+
+          '<br><br><span>הנני מתחייב בזאת להופיע בבית משפט או לחילופין לשלם את הקנס/ות אשר הוטל/ו עלי במהלך התקופה הנדונה.</span>'+
+          '<br><br><span>בהמשך לאמור לעיל הנני מאשר בזאת הסבה מידית של דוח תנועה מספר </span>'+fv(sub.reportNum||'')+' <span>על שמי.</span>'+
+        '</div>'+
+        '<div style="font-size:13px;font-weight:600;color:#1A4A3A;margin-bottom:10px">להלן פרטיי:</div>'+
+        '<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;margin-bottom:16px">'+
+          '<span style="color:#666">שם מלא:</span><span style="font-weight:500">'+(r.name||'—')+'</span>'+
+          '<span style="color:#666">מס׳ ת.ז:</span><span style="font-weight:500;direction:ltr;text-align:right">'+(r.id||'—')+'</span>'+
+          '<span style="color:#666">מייל:</span><span style="font-weight:500;direction:ltr;text-align:right">'+(r.email||'—')+'</span>'+
+          '<span style="color:#666">טלפון:</span><span style="font-weight:500;direction:ltr;text-align:right">'+(r.phone||'—')+'</span>'+
+        '</div>'+
+        '<div style="font-size:13px;font-weight:600;color:#1A4A3A;margin-bottom:6px">חתימה:</div>'+
+        (sig?'<div style="border:1px solid #c8d6c8;border-radius:6px;padding:8px;background:#fafef9;display:inline-block"><img src="'+sig+'" style="max-height:80px;max-width:100%;display:block"></div>':'<span style="color:#aaa;font-size:13px">אין חתימה</span>')+
+      '</div>'+
+    '</div>'+
+  '</div>';
+  document.body.appendChild(modal);
 }
 
 function renderSubmissionPdf(template,sub){
