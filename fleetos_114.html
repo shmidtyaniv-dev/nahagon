@@ -19749,7 +19749,7 @@ function openViolDeclModal(){
       '<button onclick="document.getElementById(\'viol-decl-modal\').remove()" style="background:rgba(255,255,255,.15);border:none;width:28px;height:28px;border-radius:6px;color:#fff;cursor:pointer;font-size:16px;line-height:1">✕</button>'+
     '</div>'+
     '<div style="padding:18px">'+
-      '<div style="font-size:12px;color:var(--t3);margin-bottom:14px;background:var(--bg2);padding:8px 10px;border-radius:6px">📅 תאריך הטופס שיוטמע: <strong>'+todayFmt+'</strong></div>'+
+      '<div style="font-size:12px;color:var(--t3);margin-bottom:14px;background:var(--bg2);padding:8px 10px;border-radius:6px">📅 תאריך הטופס: <strong>'+todayFmt+'</strong></div>'+
       '<div style="margin-bottom:10px">'+
         '<label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">בחר נהג *</label>'+
         '<select id="vd-driver-sel" onchange="violDeclSelectDriver(this.value)" style="width:100%;padding:9px 10px;border:1px solid var(--bdr2);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--t1)">'+
@@ -19880,7 +19880,6 @@ function checkViolDeclPage(){
         '<div style="display:grid;gap:10px;margin-bottom:16px">'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">שם מלא *</label>'+inp('vd-f-name',driverName,'שם מלא','')+'</div>'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ ת.ז *</label>'+inp('vd-f-id',driverId,'012345678','ltr')+'</div>'+
-          '<div><label style="font-size:12px;font-weight:600;color:#444">כתובת פרטית *</label>'+inp('vd-f-addr',address,'רחוב ועיר','')+'</div>'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">מייל</label>'+inp('vd-f-email',email,'example@mail.com','ltr')+'</div>'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">טלפון נייד *</label>'+inp('vd-f-phone',phone,'050-0000000','ltr')+'</div>'+
         '</div>'+
@@ -19950,11 +19949,10 @@ function saveVdSig(){
 function submitViolDecl(){
   var name=(id('vd-f-name')||{}).value||'';
   var fid=(id('vd-f-id')||{}).value||'';
-  var addr=(id('vd-f-addr')||{}).value||'';
+  var addr='';
   var phone=(id('vd-f-phone')||{}).value||'';
   if(!name.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא שם מלא</span>';return;}
   if(!fid.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא מס׳ ת.ז</span>';return;}
-  if(!addr.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא כתובת פרטית</span>';return;}
   if(!phone.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא טלפון נייד</span>';return;}
   if(!_violDeclSig){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא לחתום על הטופס</span>';return;}
   id('vd-msg').innerHTML='<span style="color:#666">⏳ שולח...</span>';
