@@ -19797,7 +19797,7 @@ function violDeclGenLink(){
   if(!v)return;
   var modal=document.getElementById('viol-decl-modal');
   var today=modal.dataset.today;
-  var ph=modal.dataset.phone||'';var em=modal.dataset.email||'';var ad=modal.dataset.address||'';
+  var ph=modal.dataset.phone||'';var ad=modal.dataset.address||'';
   var licnum=(id('vd-licnum').value||'').trim();
   var did=(id('vd-did').value||'').trim();
   var base=location.protocol==='file:'?'https://nahagon.vercel.app/fleetos_114.html':(location.origin+location.pathname);
@@ -19810,7 +19810,6 @@ function violDeclGenLink(){
     '&si='+encodeURIComponent(id('vd-since').value||'')+
     '&rn='+encodeURIComponent(report)+
     (ph?'&ph='+encodeURIComponent(ph):'')+
-    (em?'&em='+encodeURIComponent(em):'')+
     (ad?'&ad='+encodeURIComponent(ad):'');
   var waUrl='https://wa.me/?text='+encodeURIComponent('שלום '+v.driver.name+',\nנדרשת חתימתך על הצהרת נהג בזמן עבירה.\nאנא פתח את הקישור וחתום:\n'+url);
   var row=id('vd-link-row');
