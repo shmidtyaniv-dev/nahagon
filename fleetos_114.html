@@ -10629,7 +10629,7 @@ function showAltDriversModal(){
         const sinceHtml = (!fromType&&f?.createdAt)
           ? `<div style="font-size:10px;color:${clr};opacity:.7;margin-top:1px">נמסר ב-${new Date(f.createdAt).toLocaleDateString('he-IL')}</div>`
           : '';
-        return `<div style="background:${bg};border:1.5px solid ${bdr};border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer" onclick="document.getElementById('alt-drivers-modal').remove();openDet('${vid}')">
+        return `<div style="background:${bg};border:1.5px solid ${bdr};border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer" onclick="document.getElementById('alt-drivers-modal').remove();openDet(${vid})">
           <div style="display:flex;align-items:center;gap:10px">
             <div style="font-size:22px">${icn}</div>
             <div style="flex:1">
