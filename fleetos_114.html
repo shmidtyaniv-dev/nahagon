@@ -17561,7 +17561,9 @@ function genViolDeclUrlFromViol(viol,veh){
   var base=location.origin+location.pathname;
   var date=viol.date||'';
   if(date.match(/^\d{4}-\d{2}-\d{2}/)){var pts=date.split('-');date=pts[2]+'.'+pts[1]+'.'+pts[0];}
-  var p=new URLSearchParams({violDecl:'1',rn:viol.num||'',dn:(veh&&veh.driver&&veh.driver.name)||'',pl:(veh&&veh.plate)||'',d:date,ph:(veh&&veh.driver&&veh.driver.phone)||''});
+  var delivery=veh&&veh.delivery||'';
+  if(delivery.match(/^\d{4}-\d{2}-\d{2}/)){var dp=delivery.split('-');delivery=dp[2]+'.'+dp[1]+'.'+dp[0];}
+  var p=new URLSearchParams({violDecl:'1',rn:viol.num||'',dn:(veh&&veh.driver&&veh.driver.name)||'',pl:(veh&&veh.plate)||'',d:date,si:delivery,ph:(veh&&veh.driver&&veh.driver.phone)||''});
   return base+'?'+p.toString();
 }
 
@@ -19983,10 +19985,10 @@ function checkViolDeclPage(){
 
         '<div style="background:#f8faf8;border:1px solid #d1e8d1;border-radius:8px;padding:16px;font-size:14px;line-height:2;color:#222;margin-bottom:16px">'+
           '<span>אני החתום מטה </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600">'+driverName+'</span>'+
-          '<span> ת.ז מספר </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block">'+driverId+'</span><br>'+
-          '<span>בעל רישיון נהיגה מספר </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block">'+licNum+'</span>'+
+          '<span> ת.ז מספר </span><span id="vd-txt-id" style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block;min-width:80px">'+(driverId||'——')+'</span><br>'+
+          '<span>בעל רישיון נהיגה מספר </span><span id="vd-txt-lic" style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block;min-width:80px">'+(licNum||'——')+'</span>'+
           '<span> מצהיר בזאת, כי כלי רכב מספר רישוי </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block">'+plate+'</span><br>'+
-          '<span>היה ברשותי מתאריך </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600">'+since+'</span>'+
+          '<span>היה ברשותי מתאריך </span><span id="vd-txt-since" style="border-bottom:1px solid #555;padding:0 4px;font-weight:600">'+(since||'——')+'</span>'+
           '<span> ועד היום כולל</span><br><br>'+
           '<span>הנני מתחייב בזאת להופיע בבית משפט או לחילופין לשלם את הקנס/ות אשר הוטל/ו עלי</span><br>'+
           '<span>במהלך התקופה הנדונה.</span><br><br>'+
@@ -19997,8 +19999,8 @@ function checkViolDeclPage(){
 
         '<div style="display:grid;gap:10px;margin-bottom:16px">'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">שם מלא *</label>'+inp('vd-f-name',driverName,'שם מלא','')+'</div>'+
-          '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ ת.ז *</label>'+inp('vd-f-id',driverId,'012345678','ltr')+'</div>'+
-          '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ רישיון נהיגה *</label>'+inp('vd-f-license',licNum,'הקלד מספר רישיון','ltr')+'</div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ ת.ז *</label>'+inp('vd-f-id',driverId,'012345678','ltr').replace('style="','oninput="var s=document.getElementById(\'vd-txt-id\');if(s)s.textContent=this.value||\'——\'" style="')+'</div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ רישיון נהיגה *</label>'+inp('vd-f-license',licNum,'הקלד מספר רישיון','ltr').replace('style="','oninput="var s=document.getElementById(\'vd-txt-lic\');if(s)s.textContent=this.value||\'——\'" style="')+'</div>'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">מייל *</label>'+inp('vd-f-email',email,'example@mail.com','ltr')+'</div>'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">טלפון נייד</label>'+inp('vd-f-phone',phone,'050-0000000','ltr')+'</div>'+
         '</div>'+
