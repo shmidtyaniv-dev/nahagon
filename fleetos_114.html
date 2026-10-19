@@ -9609,7 +9609,7 @@ function fRow(v){
     +'<div class="driver-cell">'+checkHtml+'<div class="driver-avatar" style="background:'+avatarColor(v.driver.name)+';color:#fff">'+inits(v.driver.name)+'</div><div class="driver-name-block"><div class="driver-name">'+_esc(v.driver.name||'')+'</div></div>'+altBadge(v.id)+'</div>'
     +'<div>'+renderPlate(v.plate)+'</div>'
     +'<div class="muted">'+v.make+' '+v.model+'</div>'
-    +'<div>'+(v.currentKm||v.curKm?'<span style="font-size:12px;color:var(--t1);font-weight:500">'+Number(v.currentKm||v.curKm).toLocaleString('he-IL')+'</span><span style="font-size:10px;color:var(--t3);margin-right:2px"> ק"מ</span>':'<span style="color:var(--t3)">—</span>')+'</div>'
+    +'<div>'+((v.currentKm!==undefined&&v.currentKm!==null&&v.currentKm!=='')||v.curKm?'<span style="font-size:12px;color:var(--t1);font-weight:500">'+Number(v.currentKm!==undefined&&v.currentKm!==null&&v.currentKm!==''?v.currentKm:v.curKm).toLocaleString('he-IL')+'</span><span style="font-size:10px;color:var(--t3);margin-right:2px"> ק"מ</span>':'<span style="color:var(--t3)">—</span>')+'</div>'
     +'<div><span class="mob-svc-label">טיפול הבא: </span>'+nextSvcCell(v)+'</div>'
     +'<div class="docs-cell">'+docsIcon(v.id)+'</div>'
     +'</div>';
@@ -10620,6 +10620,7 @@ function showAltDriversModal(){
         const driverName = v?.driver?.name || (f&&f.driverName) || '—';
         const plate = v?.plate || '—';
         const vid = v?.id || (f&&f.vehicleId);
+        if(!vid) return '';
         const sinceHtml = (!fromType&&f?.createdAt)
           ? `<div style="font-size:10px;color:${clr};opacity:.7;margin-top:1px">נמסר ב-${new Date(f.createdAt).toLocaleDateString('he-IL')}</div>`
           : '';
@@ -16615,8 +16616,8 @@ function renderViolations(){
     const ini=driverName!=='—'?inits(driverName):'—';
     const logsCount=(v.logs||[]).length;
 
-    // בדוק אם התקבל טופס הצהרה (לפי מספר דוח)
-    const formRec=(formSubmissionsCache||[]).find(function(s){return s.type==='violDecl'&&s.reportNum===v.num;});
+    // בדוק אם התקבל טופס הצהרה (לפי violationId ראשון, fallback לפי מספר דוח)
+    const formRec=(formSubmissionsCache||[]).find(function(s){return s.type==='violDecl'&&(s.violationId&&s.violationId===String(v.id)||((!s.violationId)&&s.reportNum===v.num));});
     // סטטוס תצוגה
     let autoStatus='', autoStyle='', autoDot='';
     if(v.status==='done' || v.transferDoneAt){
@@ -17563,7 +17564,7 @@ function genViolDeclUrlFromViol(viol,veh){
   if(date.match(/^\d{4}-\d{2}-\d{2}/)){var pts=date.split('-');date=pts[2]+'.'+pts[1]+'.'+pts[0];}
   var delivery=veh&&veh.delivery||'';
   if(delivery.match(/^\d{4}-\d{2}-\d{2}/)){var dp=delivery.split('-');delivery=dp[2]+'.'+dp[1]+'.'+dp[0];}
-  var p=new URLSearchParams({violDecl:'1',rn:viol.num||'',dn:(veh&&veh.driver&&veh.driver.name)||'',pl:(veh&&veh.plate)||'',d:date,si:delivery,ph:(veh&&veh.driver&&veh.driver.phone)||''});
+  var p=new URLSearchParams({violDecl:'1',id:viol.id||'',rn:viol.num||'',dn:(veh&&veh.driver&&veh.driver.name)||'',pl:(veh&&veh.plate)||'',d:date,si:delivery,ph:(veh&&veh.driver&&veh.driver.phone)||''});
   return base+'?'+p.toString();
 }
 
@@ -20093,6 +20094,7 @@ function submitViolDecl(){
     licNum:params.get('ln')||'',
     since:params.get('si')||'',
     reportNum:params.get('rn')||'',
+    violationId:params.get('id')||'',
     responses:{name:name,id:fid,licenseNum:flicense,address:addr,email:femail,phone:phone},
     signatures:{main:_violDeclSig},
     submittedAt:new Date().toISOString(),
@@ -20165,7 +20167,7 @@ function startFormSubmissionsListener(){
         var notifId='vd-'+sub.id;
         var vdNotifs=JSON.parse(localStorage.getItem('viol_decl_notifications')||'[]');
         if(!vdNotifs.find(function(n){return n.id===notifId;})){
-          vdNotifs.unshift({id:notifId,driverName:sub.driverName||'נהג',plate:sub.plate||'',reportNum:sub.reportNum||'',submittedAt:sub.submittedAt||new Date().toISOString()});
+          vdNotifs.unshift({id:notifId,driverName:sub.driverName||'נהג',plate:sub.plate||'',reportNum:sub.reportNum||'',violationId:sub.violationId||'',submittedAt:sub.submittedAt||new Date().toISOString()});
           if(vdNotifs.length>50) vdNotifs=vdNotifs.slice(0,50);
           localStorage.setItem('viol_decl_notifications',JSON.stringify(vdNotifs));
           if(typeof updateBellBadge==='function') updateBellBadge();
@@ -26979,8 +26981,9 @@ function clearAllNotifications() {
   if (_clearedNotifications.length > 400) _clearedNotifications = _clearedNotifications.slice(-400);
   localStorage.setItem('trt_cleared_notifications',JSON.stringify(_clearedNotifications));
   _persistNotifState();
-  // התראות ק"מ נשמרות ב-localStorage נפרד — מחיקה בפועל
+  // התראות ק"מ והצהרות נהג נשמרות ב-localStorage נפרד — מחיקה בפועל
   localStorage.setItem('km_update_notifications', '[]');
+  localStorage.setItem('viol_decl_notifications', '[]');
   updateBellBadge();
   renderNotificationsPanel();
 }
