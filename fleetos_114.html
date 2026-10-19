@@ -18943,6 +18943,7 @@ function refresh(){
 }
 // זרימות ציבוריות - פועלות בלי אימות, מזוהות מיד בטעינה
 var _isPublicPage = checkViolApproval()
+  || (typeof checkViolDeclPage==='function' && checkViolDeclPage())
   || (typeof checkFormFillPage==='function' && checkFormFillPage())
   || (typeof checkServiceBooking==='function' && checkServiceBooking())
   || (typeof checkKmRequest==='function' && checkKmRequest())
@@ -19694,30 +19695,296 @@ function renderFormTemplates(){
   const el=id('forms-templates-list');
   if(!el)return;
   const templates=getFormTemplates();
-  id('forms-count').textContent=templates.length;
-  if(!templates.length){
-    el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--t3)"><div style="font-size:36px;margin-bottom:8px">📄</div><div style="font-size:14px;font-weight:500;margin-bottom:4px">אין טפסים עדיין</div><div style="font-size:12px">לחץ "+ טופס חדש" כדי להעלות PDF ולסמן שדות</div></div>';
-    return;
-  }
-  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">'+
-    templates.map(function(t){
-      const fieldsCount=(t.fields||[]).length;
-      const createdStr=t.createdAt?fd(t.createdAt.split('T')[0]):'';
-      return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;transition:box-shadow .15s" onmouseover="this.style.boxShadow=\'0 2px 10px rgba(0,0,0,.06)\'" onmouseout="this.style.boxShadow=\'none\'">'+
-        '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">'+
-          '<div style="font-size:22px;flex-shrink:0">📄</div>'+
-          '<div style="flex:1;min-width:0">'+
-            '<div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:2px">'+(t.name||'ללא שם')+'</div>'+
-            '<div style="font-size:11px;color:var(--t3)">'+fieldsCount+' שדות · נוצר '+createdStr+'</div>'+
+  id('forms-count').textContent=templates.length+1;
+
+  // כרטיס מובנה - הצהרת נהג בזמן עבירה
+  const builtInCard='<div style="background:var(--card);border:1px solid var(--bdr);border-right:3px solid #1A4A3A;border-radius:8px;padding:10px;transition:box-shadow .15s" onmouseover="this.style.boxShadow=\'0 2px 10px rgba(0,0,0,.06)\'" onmouseout="this.style.boxShadow=\'none\'">'+
+    '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">'+
+      '<div style="font-size:22px;flex-shrink:0">🚦</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:2px">הצהרת נהג בזמן עבירה</div>'+
+        '<div style="font-size:11px;color:var(--t3)">תבנית מובנית · מור בית השקעות</div>'+
+      '</div>'+
+      '<span style="font-size:10px;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:999px;font-weight:600;flex-shrink:0">קבוע</span>'+
+    '</div>'+
+    '<button onclick="openViolDeclModal()" style="width:100%;background:var(--gd);color:#fff;border:none;border-radius:6px;padding:7px 10px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500">🔗 שלח לנהג לחתימה</button>'+
+  '</div>';
+
+  const pdfCards=templates.map(function(t){
+    const fieldsCount=(t.fields||[]).length;
+    const createdStr=t.createdAt?fd(t.createdAt.split('T')[0]):'';
+    return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:10px;transition:box-shadow .15s" onmouseover="this.style.boxShadow=\'0 2px 10px rgba(0,0,0,.06)\'" onmouseout="this.style.boxShadow=\'none\'">'+
+      '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">'+
+        '<div style="font-size:22px;flex-shrink:0">📄</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:2px">'+(t.name||'ללא שם')+'</div>'+
+          '<div style="font-size:11px;color:var(--t3)">'+fieldsCount+' שדות · נוצר '+createdStr+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:4px;flex-wrap:wrap">'+
+        '<button onclick="shareFormTemplate(\''+t.id+'\')" style="flex:1;background:var(--gd);color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500">🔗 שלח לנהג</button>'+
+        '<button onclick="editFormTemplate(\''+t.id+'\')" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:inherit">ערוך</button>'+
+        '<button onclick="deleteFormTemplate(\''+t.id+'\')" style="background:none;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:12px">🗑</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">'+builtInCard+pdfCards+'</div>';
+}
+
+/* ─── הצהרת נהג בזמן עבירה – מנהל ─── */
+function openViolDeclModal(){
+  var ex=document.getElementById('viol-decl-modal');if(ex)ex.remove();
+  var modal=document.createElement('div');
+  modal.id='viol-decl-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  var today=new Date();
+  var todayFmt=today.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});
+  var vList=(vehicles||[]).filter(function(v){return v.driver&&v.driver.name;});
+  var opts=vList.map(function(v){return '<option value="'+v.id+'">'+esc(v.driver.name)+' — '+esc(v.plate)+'</option>';}).join('');
+  modal.innerHTML='<div style="background:var(--card);border-radius:12px;width:100%;max-width:480px;overflow:hidden;max-height:95vh;overflow-y:auto" onclick="event.stopPropagation()">'+
+    '<div style="background:var(--gd);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0">'+
+      '<span style="color:#fff;font-size:15px;font-weight:500">שליחת הצהרת נהג בזמן עבירה</span>'+
+      '<button onclick="document.getElementById(\'viol-decl-modal\').remove()" style="background:rgba(255,255,255,.15);border:none;width:28px;height:28px;border-radius:6px;color:#fff;cursor:pointer;font-size:16px;line-height:1">✕</button>'+
+    '</div>'+
+    '<div style="padding:18px">'+
+      '<div style="font-size:12px;color:var(--t3);margin-bottom:14px;background:var(--bg2);padding:8px 10px;border-radius:6px">📅 תאריך הטופס שיוטמע: <strong>'+todayFmt+'</strong></div>'+
+      '<div style="margin-bottom:10px">'+
+        '<label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">בחר נהג *</label>'+
+        '<select id="vd-driver-sel" onchange="violDeclSelectDriver(this.value)" style="width:100%;padding:9px 10px;border:1px solid var(--bdr2);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--t1)">'+
+          '<option value="">— בחר נהג —</option>'+opts+
+        '</select>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'+
+        '<div><label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">מס׳ רישוי רכב</label><input id="vd-plate" readonly style="width:100%;padding:8px 10px;border:1px solid var(--bdr2);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg2);color:var(--t1);box-sizing:border-box" placeholder="יתמלא אוטומטית"></div>'+
+        '<div><label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">ת.ז נהג</label><input id="vd-did" dir="ltr" style="width:100%;padding:8px 10px;border:1px solid var(--bdr2);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--t1);box-sizing:border-box" placeholder="012345678"></div>'+
+        '<div><label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">מס׳ רישיון נהיגה</label><input id="vd-licnum" dir="ltr" style="width:100%;padding:8px 10px;border:1px solid var(--bdr2);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--t1);box-sizing:border-box" placeholder="הקלד ידנית"></div>'+
+        '<div><label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">ברשותי מתאריך</label><input id="vd-since" readonly style="width:100%;padding:8px 10px;border:1px solid var(--bdr2);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg2);color:var(--t1);box-sizing:border-box" placeholder="יתמלא מהמסירה"></div>'+
+      '</div>'+
+      '<div style="margin-bottom:14px">'+
+        '<label style="font-size:12px;font-weight:600;color:var(--t2);display:block;margin-bottom:4px">מס׳ דוח תנועה *</label>'+
+        '<input id="vd-report" dir="ltr" style="width:100%;padding:9px 10px;border:1px solid var(--bdr2);border-radius:6px;font-family:inherit;font-size:13px;background:var(--bg);color:var(--t1);box-sizing:border-box" placeholder="הקלד מספר דוח">'+
+      '</div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="violDeclGenLink()" style="flex:1;background:var(--gd);color:#fff;border:none;border-radius:6px;padding:11px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit">🔗 יצירת לינק לנהג</button>'+
+        '<button onclick="document.getElementById(\'viol-decl-modal\').remove()" style="background:var(--bg2);color:var(--t2);border:1px solid var(--bdr2);border-radius:6px;padding:11px 14px;cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>'+
+      '</div>'+
+      '<div id="vd-link-row" style="display:none;margin-top:14px"></div>'+
+    '</div>'+
+  '</div>';
+  modal.dataset.today=todayFmt;
+  document.body.appendChild(modal);
+}
+
+function violDeclSelectDriver(vid){
+  var v=(vehicles||[]).find(function(v){return String(v.id)===String(vid);});
+  if(!v)return;
+  id('vd-plate').value=v.plate||'';
+  id('vd-did').value=v.driver.id||'';
+  id('vd-since').value=v.delivery?v.delivery.replace(/-/g,'.').split('.').reverse().join('.'):'';
+  // store extra for link
+  var modal=document.getElementById('viol-decl-modal');
+  if(modal){modal.dataset.phone=v.driver.phone||'';modal.dataset.email=v.driver.email||'';modal.dataset.address=v.driver.address||'';}
+}
+
+function violDeclGenLink(){
+  var sel=id('vd-driver-sel').value;
+  if(!sel){showToast('נא לבחור נהג');return;}
+  var report=(id('vd-report').value||'').trim();
+  if(!report){showToast('נא להזין מס׳ דוח תנועה');return;}
+  var v=(vehicles||[]).find(function(v){return String(v.id)===String(sel);});
+  if(!v)return;
+  var modal=document.getElementById('viol-decl-modal');
+  var today=modal.dataset.today;
+  var ph=modal.dataset.phone||'';var em=modal.dataset.email||'';var ad=modal.dataset.address||'';
+  var licnum=(id('vd-licnum').value||'').trim();
+  var did=(id('vd-did').value||'').trim();
+  var base=location.protocol==='file:'?'https://nahagon.vercel.app/fleetos_114.html':(location.origin+location.pathname);
+  var url=base.replace(/[?#].*$/,'')+'?violDecl=1'+
+    '&d='+encodeURIComponent(today)+
+    '&dn='+encodeURIComponent(v.driver.name||'')+
+    '&di='+encodeURIComponent(did)+
+    '&ln='+encodeURIComponent(licnum)+
+    '&pl='+encodeURIComponent(v.plate||'')+
+    '&si='+encodeURIComponent(id('vd-since').value||'')+
+    '&rn='+encodeURIComponent(report)+
+    (ph?'&ph='+encodeURIComponent(ph):'')+
+    (em?'&em='+encodeURIComponent(em):'')+
+    (ad?'&ad='+encodeURIComponent(ad):'');
+  var waUrl='https://wa.me/?text='+encodeURIComponent('שלום '+v.driver.name+',\nנדרשת חתימתך על הצהרת נהג בזמן עבירה.\nאנא פתח את הקישור וחתום:\n'+url);
+  var row=id('vd-link-row');
+  row.style.display='block';
+  row.innerHTML=
+    '<a href="'+waUrl+'" target="_blank" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#E7F5EC;border:1px solid #25D366;border-radius:8px;text-decoration:none;margin-bottom:8px">'+
+      '<span style="font-size:22px">📱</span>'+
+      '<div><div style="font-size:13px;font-weight:600;color:#128C7E">שלח בוואטסאפ</div><div style="font-size:11px;color:#075E54">'+esc(v.driver.name)+'</div></div>'+
+    '</a>'+
+    '<button onclick="(function(){if(navigator.clipboard){navigator.clipboard.writeText(\''+url.replace(/'/g,"\\'")+'\')}else{prompt(\'העתק:\',\''+url.replace(/'/g,"\\'")+'\')}})();showToast(\'הלינק הועתק ✓\')" style="width:100%;padding:9px;background:var(--bg2);border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;color:var(--t2);margin-bottom:6px">📋 העתק לינק</button>'+
+    '<div style="font-size:10px;color:var(--t3);word-break:break-all;direction:ltr;padding:6px;background:var(--bg2);border-radius:4px">'+url+'</div>';
+}
+
+/* ─── הצהרת נהג בזמן עבירה – צד נהג ─── */
+var _violDeclSig=null;
+
+function checkViolDeclPage(){
+  var params=new URLSearchParams(location.search);
+  if(!params.get('violDecl'))return false;
+  document.querySelector('.app').style.display='none';
+  var p=document.createElement('div');
+  p.id='viol-decl-page';
+  p.style.cssText='min-height:100vh;background:#f2f5f2;direction:rtl;font-family:Heebo,Arial,sans-serif;padding:16px';
+  var date=params.get('d')||'';
+  var driverName=params.get('dn')||'';
+  var driverId=params.get('di')||'';
+  var licNum=params.get('ln')||'';
+  var plate=params.get('pl')||'';
+  var since=params.get('si')||'';
+  var report=params.get('rn')||'';
+  var phone=params.get('ph')||'';
+  var email=params.get('em')||'';
+  var address=params.get('ad')||'';
+
+  var inp=function(iid,val,ph,dir){
+    return '<input id="'+iid+'" value="'+val.replace(/"/g,'&quot;')+'" placeholder="'+ph+'"'+(dir?' dir="'+dir+'"':'')+
+      ' style="width:100%;padding:8px 10px;border:1px solid #c8d6c8;border-radius:6px;font-family:inherit;font-size:14px;background:#fff;color:#111;box-sizing:border-box;margin-top:4px">';
+  };
+
+  p.innerHTML=
+    '<div style="max-width:680px;margin:0 auto">'+
+      '<div style="background:#1A4A3A;color:#fff;padding:16px 20px;border-radius:12px 12px 0 0;text-align:center">'+
+        '<div style="color:#7DC242;font-size:18px;font-weight:700">מרכז הרכב של מור</div>'+
+        '<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:2px">מילוי טופס דיגיטלי</div>'+
+      '</div>'+
+      '<div style="background:#fff;border-radius:0 0 12px 12px;padding:24px 20px;box-shadow:0 2px 16px rgba(0,0,0,.08)">'+
+
+        '<div style="text-align:left;font-size:13px;color:#555;margin-bottom:18px">תאריך: <strong>'+date+'</strong></div>'+
+
+        '<div style="font-size:15px;font-weight:700;color:#1A4A3A;text-align:center;text-decoration:underline;margin-bottom:20px">הנדון: הצהרת נהג הרכב בזמן ביצוע העבירה</div>'+
+
+        '<div style="background:#f8faf8;border:1px solid #d1e8d1;border-radius:8px;padding:16px;font-size:14px;line-height:2;color:#222;margin-bottom:16px">'+
+          '<span>אני החתום מטה </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600">'+driverName+'</span>'+
+          '<span> ת.ז מספר </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block">'+driverId+'</span><br>'+
+          '<span>בעל רישיון נהיגה מספר </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block">'+licNum+'</span>'+
+          '<span> מצהיר בזאת, כי כלי רכב מספר רישוי </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block">'+plate+'</span><br>'+
+          '<span>היה ברשותי מתאריך </span><span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600">'+since+'</span>'+
+          '<span> ועד ולרבות היום</span><br><br>'+
+          '<span>הנני מתחייב בזאת להופיע בבית משפט או לחילופין לשלם את הקנס/ות אשר הוטל/ו עלי</span><br>'+
+          '<span>במהלך התקופה הנדונה.</span><br><br>'+
+          '<span>בהמשך לאמור לעיל הנני מאשר בזאת הסבה מידית של דוח תנועה מספר </span>'+
+          '<span style="border-bottom:1px solid #555;padding:0 4px;font-weight:600;direction:ltr;display:inline-block">'+report+'</span>'+
+          '<span> על שמי.</span>'+
+        '</div>'+
+
+        '<div style="font-size:14px;font-weight:600;color:#1A4A3A;margin-bottom:12px">להלן פרטיי:</div>'+
+        '<div style="display:grid;gap:10px;margin-bottom:16px">'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">שם מלא *</label>'+inp('vd-f-name',driverName,'שם מלא','')+'</div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ ת.ז *</label>'+inp('vd-f-id',driverId,'012345678','ltr')+'</div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">כתובת פרטית *</label>'+inp('vd-f-addr',address,'רחוב ועיר','')+'</div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">מייל</label>'+inp('vd-f-email',email,'example@mail.com','ltr')+'</div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">טלפון נייד *</label>'+inp('vd-f-phone',phone,'050-0000000','ltr')+'</div>'+
+        '</div>'+
+
+        '<div style="margin-bottom:16px">'+
+          '<div style="font-size:12px;font-weight:600;color:#444;margin-bottom:6px">חתימה *</div>'+
+          '<div id="vd-sig-box" onclick="openViolDeclSigPad()" style="border:2px dashed #c8d6c8;border-radius:8px;height:90px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fafef9;font-size:13px;color:#888;transition:background .15s" onmouseover="this.style.background=\'#f0faf0\'" onmouseout="this.style.background=\'#fafef9\'">'+
+            '<span id="vd-sig-hint">✍️ לחץ לחתימה</span>'+
+            '<img id="vd-sig-img" src="" style="display:none;max-width:100%;max-height:80px;object-fit:contain">'+
           '</div>'+
+          '<button onclick="openViolDeclSigPad()" style="margin-top:6px;background:none;border:1px solid var(--bdr2);border-radius:5px;padding:4px 10px;font-size:11px;font-family:inherit;cursor:pointer;color:var(--t2)">שנה חתימה</button>'+
         '</div>'+
-        '<div style="display:flex;gap:4px;flex-wrap:wrap">'+
-          '<button onclick="shareFormTemplate(\''+t.id+'\')" style="flex:1;background:var(--gd);color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500">🔗 שלח לנהג</button>'+
-          '<button onclick="editFormTemplate(\''+t.id+'\')" style="background:var(--bg);color:var(--t2);border:1px solid var(--bdr2);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-family:inherit">ערוך</button>'+
-          '<button onclick="deleteFormTemplate(\''+t.id+'\')" style="background:none;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;padding:6px 8px;cursor:pointer;font-size:12px">🗑</button>'+
-        '</div>'+
+
+        '<button onclick="submitViolDecl()" id="vd-submit-btn" style="width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px">✓ שליחת הצהרה</button>'+
+        '<div id="vd-msg" style="margin-top:8px;font-size:13px;text-align:center"></div>'+
+        '<div style="text-align:center;margin-top:16px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(p);
+  return true;
+}
+
+function openViolDeclSigPad(){
+  var ex=document.getElementById('vd-sig-pad-modal');if(ex)ex.remove();
+  var modal=document.createElement('div');
+  modal.id='vd-sig-pad-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML='<div style="background:#fff;border-radius:14px;padding:20px;max-width:500px;width:100%;direction:rtl" onclick="event.stopPropagation()">'+
+    '<div style="font-size:15px;font-weight:600;color:#1A4A3A;margin-bottom:8px">חתימה דיגיטלית</div>'+
+    '<div style="font-size:12px;color:#666;margin-bottom:10px">חתום עם אצבע או עכבר בתוך המסגרת</div>'+
+    '<canvas id="vd-sig-canvas" width="460" height="180" style="background:#fafafa;border:2px solid #ddd;border-radius:8px;width:100%;touch-action:none;cursor:crosshair;display:block"></canvas>'+
+    '<div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">'+
+      '<button onclick="clearVdSig()" style="padding:8px 14px;background:#f2f5f2;border:1px solid #c8d6c8;border-radius:7px;cursor:pointer;font-family:inherit;font-size:13px">נקה</button>'+
+      '<button onclick="document.getElementById(\'vd-sig-pad-modal\').remove()" style="padding:8px 14px;background:#f2f5f2;border:1px solid #c8d6c8;border-radius:7px;cursor:pointer;font-family:inherit;font-size:13px">ביטול</button>'+
+      '<button onclick="saveVdSig()" style="padding:8px 20px;background:#16a34a;color:#fff;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600">שמור חתימה</button>'+
+    '</div></div>';
+  document.body.appendChild(modal);
+  var canvas=document.getElementById('vd-sig-canvas');
+  var ctx=canvas.getContext('2d');
+  ctx.strokeStyle='#1A4A3A';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.lineJoin='round';
+  var drawing=false;
+  var getP=function(e){var r=canvas.getBoundingClientRect();var sx=canvas.width/r.width;var sy=canvas.height/r.height;var t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy};};
+  canvas.addEventListener('mousedown',function(e){drawing=true;var p=getP(e);ctx.beginPath();ctx.moveTo(p.x,p.y);});
+  canvas.addEventListener('mousemove',function(e){if(!drawing)return;var p=getP(e);ctx.lineTo(p.x,p.y);ctx.stroke();});
+  canvas.addEventListener('mouseup',function(){drawing=false;});
+  canvas.addEventListener('touchstart',function(e){e.preventDefault();drawing=true;var p=getP(e);ctx.beginPath();ctx.moveTo(p.x,p.y);},{passive:false});
+  canvas.addEventListener('touchmove',function(e){e.preventDefault();if(!drawing)return;var p=getP(e);ctx.lineTo(p.x,p.y);ctx.stroke();},{passive:false});
+  canvas.addEventListener('touchend',function(){drawing=false;});
+}
+
+function clearVdSig(){
+  var c=document.getElementById('vd-sig-canvas');if(c){var ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}
+}
+
+function saveVdSig(){
+  var c=document.getElementById('vd-sig-canvas');if(!c)return;
+  _violDeclSig=c.toDataURL('image/png');
+  var hint=document.getElementById('vd-sig-hint');
+  var img=document.getElementById('vd-sig-img');
+  var box=document.getElementById('vd-sig-box');
+  if(hint)hint.style.display='none';
+  if(img){img.src=_violDeclSig;img.style.display='block';}
+  if(box){box.style.border='2px solid #16a34a';box.style.background='rgba(134,239,172,.15)';}
+  document.getElementById('vd-sig-pad-modal').remove();
+}
+
+function submitViolDecl(){
+  var name=(id('vd-f-name')||{}).value||'';
+  var fid=(id('vd-f-id')||{}).value||'';
+  var addr=(id('vd-f-addr')||{}).value||'';
+  var phone=(id('vd-f-phone')||{}).value||'';
+  if(!name.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא שם מלא</span>';return;}
+  if(!fid.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא מס׳ ת.ז</span>';return;}
+  if(!addr.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא כתובת פרטית</span>';return;}
+  if(!phone.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא טלפון נייד</span>';return;}
+  if(!_violDeclSig){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא לחתום על הטופס</span>';return;}
+  id('vd-msg').innerHTML='<span style="color:#666">⏳ שולח...</span>';
+  var btn=id('vd-submit-btn');if(btn)btn.disabled=true;
+  var params=new URLSearchParams(location.search);
+  var subId='vd-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  var sub={
+    id:subId,
+    templateId:'viol-decl-builtin',
+    templateName:'הצהרת נהג בזמן עבירה',
+    type:'violDecl',
+    formDate:params.get('d')||'',
+    driverName:params.get('dn')||'',
+    plate:params.get('pl')||'',
+    reportNum:params.get('rn')||'',
+    responses:{name:name,id:fid,address:addr,email:(id('vd-f-email')||{}).value||'',phone:phone},
+    signatures:{main:_violDeclSig},
+    submittedAt:new Date().toISOString(),
+    status:'new'
+  };
+  if(!db){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ אין חיבור לשרת</span>';if(btn)btn.disabled=false;return;}
+  publicWriteWithRetry(function(){return db.collection('formSubmissions').doc(subId).set(sub);}).then(function(){
+    document.getElementById('viol-decl-page').innerHTML=
+      '<div style="max-width:680px;margin:0 auto;background:#fff;border-radius:12px;margin-top:20px;padding:40px 20px;text-align:center;box-shadow:0 2px 16px rgba(0,0,0,.08)">'+
+        '<div style="font-size:64px;margin-bottom:16px">✅</div>'+
+        '<div style="font-size:22px;font-weight:700;color:#166534;margin-bottom:8px">ההצהרה נשלחה בהצלחה!</div>'+
+        '<div style="font-size:14px;color:#888">הטופס התקבל אצל מרכז הרכב ויטופל בהקדם.</div>'+
+        '<div style="font-size:12px;color:#ccc;margin-top:20px">מרכז הרכב של מור בית השקעות</div>'+
       '</div>';
-    }).join('')+'</div>';
+  }).catch(function(e){console.error(e);id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ שגיאה בשליחה - נסה שוב</span>';if(btn)btn.disabled=false;});
 }
 
 function renderFormSubmissions(){
