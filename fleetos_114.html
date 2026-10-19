@@ -19999,8 +19999,8 @@ function checkViolDeclPage(){
 
         '<div style="display:grid;gap:10px;margin-bottom:16px">'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">שם מלא *</label>'+inp('vd-f-name',driverName,'שם מלא','')+'</div>'+
-          '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ ת.ז *</label>'+inp('vd-f-id',driverId,'012345678','ltr').replace('style="','oninput="var s=document.getElementById(\'vd-txt-id\');if(s)s.textContent=this.value||\'——\'" style="')+'</div>'+
-          '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ רישיון נהיגה *</label>'+inp('vd-f-license',licNum,'הקלד מספר רישיון','ltr').replace('style="','oninput="var s=document.getElementById(\'vd-txt-lic\');if(s)s.textContent=this.value||\'——\'" style="')+'</div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ ת.ז *</label><input id="vd-f-id" value="'+driverId.replace(/"/g,'&quot;')+'" placeholder="012345678" dir="ltr" oninput="var el=document.getElementById(\'vd-txt-id\');if(el)el.textContent=this.value||\'——\';" style="width:100%;padding:8px 10px;border:1px solid #c8d6c8;border-radius:6px;font-family:inherit;font-size:14px;background:#fff;color:#111;box-sizing:border-box;margin-top:4px"></div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ רישיון נהיגה *</label><input id="vd-f-license" value="'+licNum.replace(/"/g,'&quot;')+'" placeholder="הקלד מספר רישיון" dir="ltr" oninput="var el=document.getElementById(\'vd-txt-lic\');if(el)el.textContent=this.value||\'——\';" style="width:100%;padding:8px 10px;border:1px solid #c8d6c8;border-radius:6px;font-family:inherit;font-size:14px;background:#fff;color:#111;box-sizing:border-box;margin-top:4px"></div>'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">מייל *</label>'+inp('vd-f-email',email,'example@mail.com','ltr')+'</div>'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">טלפון נייד</label>'+inp('vd-f-phone',phone,'050-0000000','ltr')+'</div>'+
         '</div>'+
