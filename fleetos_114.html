@@ -16586,7 +16586,7 @@ function persistViolationsList(){
 }
 var _violFileCache = {};
 let violIdSeq=10;
-const VIOL_STATUS={sent:'נשלחה הודעה לנהג',done:'טופל - הנהג עודכן על קיום הדוח'};
+const VIOL_STATUS={sent:'שלב 1 — הודעה נשלחה',transferred:'שלב 2 — הוסב לנהג',done:'תהליך הסתיים'};
 const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'};
 
 function renderViolations(){
@@ -16601,8 +16601,9 @@ function renderViolations(){
         <button class="btn btn-p btn-sm" onclick="openViolationModal()" style="border-radius:8px">+ דוח חדש</button>
         <select id="viol-filter" onchange="renderViolations()" style="font-size:13px;padding:6px 12px;border:1px solid var(--bdr2);border-radius:8px;background:var(--card);color:var(--t1);font-family:inherit;cursor:pointer">
           <option value="all"${filter==='all'?' selected':''}>הכל</option>
-          <option value="sent"${filter==='sent'?' selected':''}>נשלחה הודעה לנהג</option>
-          <option value="done"${filter==='done'?' selected':''}>טופל - הנהג עודכן על קיום הדוח</option>
+          <option value="sent"${filter==='sent'?' selected':''}>שלב 1 — הודעה ראשונה נשלחה</option>
+          <option value="transferred"${filter==='transferred'?' selected':''}>שלב 2 — הוסב לנהג</option>
+          <option value="done"${filter==='done'?' selected':''}>תהליך הסתיים</option>
         </select>
       </div>
       <div style="display:flex;align-items:center;gap:8px;justify-content:center">
@@ -16628,24 +16629,26 @@ function renderViolations(){
     const ini=driverName!=='—'?inits(driverName):'—';
     const logsCount=(v.logs||[]).length;
 
-    // סטטוס אחד מאוחד — לפי הסטטוס שנבחר (מתעדכן אוטומטית בשליחה/אישור)
+    // סטטוס אחד מאוחד — תהליך דו-שלבי
     let autoStatus='', autoStyle='', autoDot='';
     if(v.paymentReceipt){
       autoStatus='שולם'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-    } else if(v.transferApprovedAt){
-      autoStatus='נהג אישר הסבה'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-    } else if(v.noticeApprovedAt || v.status==='done'){
-      autoStatus=VIOL_STATUS.done; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
+    } else if(v.transferSentAt || v.transferApprovedAt || v.status==='done' || v.status==='transferred'){
+      autoStatus='תהליך הסתיים'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
     } else if(v.noticeSentAt || v.status==='sent' || v.status==='waiting'){
-      autoStatus=VIOL_STATUS.sent; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
+      autoStatus='שלב 1 — הודעה נשלחה'; autoStyle='background:#fef3c7;color:#92400e'; autoDot='#f59e0b';
     } else {
       autoStatus='טרם נשלח'; autoStyle='background:#F1EFE8;color:#444441'; autoDot='#888780';
     }
 
-    // Workflow button — ההסבה באחריות הנהג, אין יותר שלב הסבה מהמנהל
+    // Workflow buttons — תהליך דו-שלבי
     let workflowBtn='';
-    if(!v.noticeApprovedAt && v.status!=='done'){
-      workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="עדכון על דוח">📢</button>`;
+    if(!v.noticeSentAt && v.status!=='done' && v.status!=='transferred' && !v.transferSentAt){
+      // שלב 1: טרם נשלחה הודעה ראשונה
+      workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="שלב 1: עדכון על קיום הדוח + הסבה">📢</button>`;
+    } else if(v.noticeSentAt && !v.transferSentAt && v.status!=='done' && v.status!=='transferred'){
+      // שלב 2: ההודעה הראשונה נשלחה — עכשיו לשלוח הודעת הסבה סופית
+      workflowBtn=`<button onclick="sendViolTransferToDriver(${v.id})" class="viol-icon-btn v-blue" title="שלב 2: הדוח הוסב — עדכן את הנהג לסגירת תהליך">📩</button>`;
     }
 
     html+=`<div class="viol-row viol-data-row" data-vid="${v.id}" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 1.4fr 1.1fr">
@@ -17302,8 +17305,8 @@ function saveViolation(){
   }
 }
 
-const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nעליך לגשת למחלקת הרכש ולדאוג לביצוע הסבת הדוח על שמך מול הרשות שהוציאה את הדוח.\n⚠️ חשוב: האחריות לביצוע ההסבה על שמך היא באחריותך בלבד.\n\n{קובץ}\nלאישור על קיום הדוח, חובה ללחוץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
-const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} הוסב על שמך.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nבאחריותך לשלם את הדוח.\n{תשלום}\n\nלאישור על הסבת הדוח על שמך, חובה ללחוץ כאן:\n{לינק}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום בקישור למעלה.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_DEFAULT='שלום {נהג},\n\nברצוננו להודיעך כי התקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nהדוח יועבר להסבה על שמך.\n\n{קובץ}\nלאישור קבלת הודעה זו, לחץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} הוסב על שמך.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\n⚠️ באחריותך לגשת ולשלם את הדוח ישירות מול הגורם הרלוונטי.\n\nלאישור קבלת הודעה זו, לחץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const VIOL_MSG_PAYMENT_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nעליך לשלם את הדוח.\n{תשלום}\n\nלאישור על קיום הדוח ותשלומו, חובה ללחוץ כאן:\n{לינק}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום בקישור למעלה.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
 // Payment links - direct URLs for Israeli municipalities
@@ -17515,9 +17518,11 @@ function sendViolToDriver(vid,stage){
   // Auto-add log entry
   if(!v.logs)v.logs=[];
   const logText=stage==='transfer'
-    ?'📤 נשלח עדכון נהג על הסבת הדוח על שמו'
-    :'📤 נשלח עדכון נהג על קיום הדוח';
+    ?'📩 שלב 2 — נשלחה הודעת הסבה סופית לנהג (תהליך הסתיים)'
+    :'📢 שלב 1 — נשלחה הודעה ראשונה על קיום הדוח + הסבה';
   v.logs.push({date:sentDateStr,text:logText});
+  // שלב 2 = תהליך הסתיים
+  if(stage==='transfer'){ v.status='done'; }
   const approveUrl=getViolApproveUrl(v[tokenField]);
 
   // Save token mapping to localStorage (fallback) + Firestore (cross-device)
@@ -17557,9 +17562,14 @@ function sendViolToDriver(vid,stage){
   const previewData={driverName,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine:hasFile&&includeFileDefault?'הקובץ של הדוח מצורף.':'',paymentLine};
   const msgPreview=fillViolMsgTemplate(tpl,previewData);
 
-  const stageTitle=stage==='transfer'?'עדכון הסבת דוח '+v.num+' לנהג':'עדכון ראשוני על דוח '+v.num+' לנהג';
+  const stageTitle=stage==='transfer'?'שלב 2 — עדכון הסבה סופית · דוח '+v.num:'שלב 1 — עדכון קיום הדוח + הסבה · דוח '+v.num;
+  const stageSub=stage==='transfer'
+    ?'<div style="font-size:11px;opacity:.8;margin-top:2px">הדוח הוסב על שם הנהג — לאחר שליחה התהליך נסגר</div>'
+    :'<div style="font-size:11px;opacity:.8;margin-top:2px">הודעה ראשונה: יש דוח + עובר להסבה על שם הנהג</div>';
   modal.innerHTML='<div style="background:#fff;border-radius:14px;padding:0;width:100%;max-width:460px;direction:rtl;overflow:hidden;max-height:92vh;display:flex;flex-direction:column" onclick="event.stopPropagation()">'+
-    '<div style="background:'+(stage==='transfer'?'#991b1b':'#1A4A3A')+';padding:14px 18px;color:#fff;font-size:14px;font-weight:600">'+stageTitle+'</div>'+
+    '<div style="background:'+(stage==='transfer'?'#1e40af':'#1A4A3A')+';padding:14px 18px;color:#fff">'+
+      '<div style="font-size:14px;font-weight:600">'+stageTitle+'</div>'+stageSub+
+    '</div>'+
     '<div style="padding:18px;overflow-y:auto;flex:1">'+
       '<div style="background:#f8f9f8;border-radius:8px;padding:10px 14px;margin-bottom:14px">'+
         '<div style="font-size:12px;color:#888;margin-bottom:4px">פרטי הדוח</div>'+
