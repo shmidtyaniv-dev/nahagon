@@ -16640,7 +16640,7 @@ function renderViolations(){
       workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="שלח לנהג לינק למילוי הצהרת נהג">📢</button>`;
     } else if(!isDone && !isTransferSent && formRec){
       // טופס התקבל — אפשר לסמן נשלח להסבה
-      workflowBtn=`<button onclick="markViolTransferSent(${v.id})" class="viol-icon-btn v-blue" title="סמן: נשלח להסבה">📋</button>`;
+      workflowBtn=`<button onclick="markViolTransferSent(${v.id})" class="viol-icon-btn v-blue" title="סמן: נשלח להסבה">📤</button>`;
     } else if(!isDone && isTransferSent){
       // נשלח להסבה — ממתין לאישור, אז לסמן הוסב + עדכן נהג
       workflowBtn=`<button onclick="openViolDoneModal(${v.id})" class="viol-icon-btn v-green" title="סמן: הדוח הוסב + עדכן נהג">✅</button>`;
