@@ -7709,6 +7709,13 @@ function countDriversOnAlt(){
       if(f.type==='loaner') loaner++; else bridge++;
     }
   });
+  // גם רכבים שסומנו ידנית כרכב גישור (vehicleType==='gishur') — ללא כפילויות
+  (typeof vehicles!=='undefined'?vehicles:[]).forEach(function(v){
+    if(v.vehicleType==='gishur'){
+      const key=v.id+'_bridge';
+      if(!ids.has(key)){ids.add(key);bridge++;}
+    }
+  });
   return { loaner, bridge, total: loaner+bridge };
 }
 let hoCurrentView='front',hoSigCtx=null,hoSigDrawing=false,hoSigEmpty=true,hoLastForm=null;
