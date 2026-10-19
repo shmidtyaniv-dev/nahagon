@@ -19815,12 +19815,14 @@ function violDeclGenLink(){
   var waUrl='https://wa.me/?text='+encodeURIComponent('שלום '+v.driver.name+',\nנדרשת חתימתך על הצהרת נהג בזמן עבירה.\nאנא פתח את הקישור וחתום:\n'+url);
   var row=id('vd-link-row');
   row.style.display='block';
+  var escapedUrl=url.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   row.innerHTML=
     '<a href="'+waUrl+'" target="_blank" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#E7F5EC;border:1px solid #25D366;border-radius:8px;text-decoration:none;margin-bottom:8px">'+
       '<span style="font-size:22px">📱</span>'+
       '<div><div style="font-size:13px;font-weight:600;color:#128C7E">שלח בוואטסאפ</div><div style="font-size:11px;color:#075E54">'+esc(v.driver.name)+'</div></div>'+
     '</a>'+
-    '<button onclick="(function(){if(navigator.clipboard){navigator.clipboard.writeText(\''+url.replace(/'/g,"\\'")+'\')}else{prompt(\'העתק:\',\''+url.replace(/'/g,"\\'")+'\')}})();showToast(\'הלינק הועתק ✓\')" style="width:100%;padding:9px;background:var(--bg2);border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;color:var(--t2);margin-bottom:6px">📋 העתק לינק</button>'+
+    '<button onclick="window.open(\''+escapedUrl+'\',\'_blank\')" style="width:100%;padding:10px;background:#1A4A3A;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;margin-bottom:6px">🔍 פתח טופס לתצוגה</button>'+
+    '<button onclick="(function(){if(navigator.clipboard){navigator.clipboard.writeText(\''+escapedUrl+'\')}else{prompt(\'העתק:\',\''+escapedUrl+'\')}})();showToast(\'הלינק הועתק ✓\')" style="width:100%;padding:9px;background:var(--bg2);border:1px solid var(--bdr2);border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;color:var(--t2);margin-bottom:6px">📋 העתק לינק</button>'+
     '<div style="font-size:10px;color:var(--t3);word-break:break-all;direction:ltr;padding:6px;background:var(--bg2);border-radius:4px">'+url+'</div>';
 }
 
@@ -20011,7 +20013,7 @@ function renderFormSubmissions(){
         '<div style="font-size:22px;flex-shrink:0">📄</div>'+
         '<div style="flex:1;min-width:0">'+
           '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">'+
-            '<span style="font-size:13px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(s.templateName||'ללא שם')+'</span>'+
+            '<span style="font-size:13px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(s.type==='violDecl'?'הצהרת נהג — '+(s.driverName||''):(s.templateName||'ללא שם'))+'</span>'+
             (isNew?'<span style="font-size:10px;background:#dcfce7;color:#166534;padding:1px 7px;border-radius:999px;font-weight:600;flex-shrink:0">חדש</span>':'')+
           '</div>'+
           '<div style="font-size:11px;color:var(--t3);display:flex;gap:8px;flex-wrap:wrap">'+
@@ -20254,17 +20256,75 @@ function renderSubmissionOverlay(template,sub){
 function downloadSubmissionPdf(subId){
   const sub=formSubmissionsCache.find(function(s){return s.id===subId;});
   if(!sub){showToast('התגובה לא נמצאה');return;}
+
+  // טיפול מיוחד בטופס הצהרת נהג (תבנית מובנית)
+  if(sub.templateId==='viol-decl-builtin'){
+    downloadViolDeclPdf(sub);
+    return;
+  }
+
   if(!window.PDFLib){showToast('pdf-lib לא נטען');return;}
-
   showToast('מכין את ה-PDF...');
-
-  // Load template
   if(!db){showToast('אין חיבור לשרת');return;}
   loadFormTemplateFull(sub.templateId).then(function(tpl){
     if(!tpl){showToast('תבנית לא נמצאה');return;}
     if(!tpl.pdfBase64){showToast('קובץ ה-PDF של התבנית חסר');return;}
     return generateFilledPdf(tpl,sub);
   }).catch(function(e){console.error(e);showToast('שגיאה: '+e.message);});
+}
+
+function downloadViolDeclPdf(sub){
+  showToast('מכין PDF...');
+  var r=sub.responses||{};
+  var sig=(sub.signatures||{}).main||'';
+  var fv=function(v){return v||'__________';};
+  var html=
+    '<div style="direction:rtl;font-family:Arial,Helvetica,sans-serif;padding:32px 40px;background:#fff;width:700px;color:#111">'+
+      '<div style="margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid #ddd">'+
+        '<img src="'+MORE_LOGO_B64+'" style="height:50px">'+
+      '</div>'+
+      '<div style="text-align:left;font-size:13px;color:#444;margin-bottom:20px">תאריך: <strong>'+(sub.formDate||'')+'</strong></div>'+
+      '<div style="font-size:16px;font-weight:700;text-align:center;text-decoration:underline;margin-bottom:24px;color:#1A4A3A">הנדון: הצהרת נהג הרכב בזמן ביצוע העבירה</div>'+
+      '<div style="font-size:14px;line-height:2.2;margin-bottom:20px">'+
+        'אני החתום מטה <u><strong>'+fv(sub.driverName)+'</strong></u> ת.ז מספר <u><strong>'+fv(r.id||sub.driverName)+'</strong></u><br>'+
+        'בעל רישיון נהיגה מספר <u><strong>'+fv(sub.licNum)+'</strong></u> מצהיר בזאת, כי כלי רכב מספר רישוי <u><strong>'+fv(sub.plate)+'</strong></u><br>'+
+        'היה ברשותי מתאריך <u><strong>'+fv(sub.since)+'</strong></u> ועד ולרבות היום<br><br>'+
+        'הנני מתחייב בזאת להופיע בבית משפט או לחילופין לשלם את הקנס/ות אשר הוטל/ו עלי<br>'+
+        'במהלך התקופה הנדונה.<br><br>'+
+        'בהמשך לאמור לעיל הנני מאשר בזאת הסבה מידית של דוח תנועה מספר <u><strong>'+fv(sub.reportNum)+'</strong></u> על שמי.'+
+      '</div>'+
+      '<div style="font-size:14px;font-weight:700;color:#1A4A3A;margin-bottom:10px">להלן פרטיי:</div>'+
+      '<table style="font-size:13px;line-height:2;width:auto"><tbody>'+
+        '<tr><td style="color:#555;padding-left:16px">שם מלא:</td><td><strong>'+(r.name||'—')+'</strong></td></tr>'+
+        '<tr><td style="color:#555;padding-left:16px">מס׳ ת.ז:</td><td><strong>'+(r.id||'—')+'</strong></td></tr>'+
+        '<tr><td style="color:#555;padding-left:16px">מייל:</td><td><strong>'+(r.email||'—')+'</strong></td></tr>'+
+        '<tr><td style="color:#555;padding-left:16px">טלפון:</td><td><strong>'+(r.phone||'—')+'</strong></td></tr>'+
+      '</tbody></table>'+
+      '<div style="margin-top:20px;font-size:13px;font-weight:700;color:#1A4A3A">חתימה:</div>'+
+      (sig?'<img src="'+sig+'" style="height:70px;margin-top:6px;border:1px solid #ccc;padding:4px;border-radius:4px">':'<div style="color:#aaa;font-size:12px">—</div>')+
+      '<div style="border-top:1px solid #eee;margin-top:24px;padding-top:8px;font-size:10px;color:#aaa;text-align:center">מרכז הרכב של מור בית השקעות</div>'+
+    '</div>';
+
+  var wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1';
+  wrap.innerHTML=html;
+  document.body.appendChild(wrap);
+
+  loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',function(){
+    loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',function(){
+      html2canvas(wrap.firstChild,{scale:2,useCORS:true,backgroundColor:'#fff',logging:false,allowTaint:true}).then(function(canvas){
+        var jsPDF=window.jspdf.jsPDF;
+        var pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+        var imgW=210;
+        var imgH=Math.min((canvas.height*imgW)/canvas.width,297);
+        pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,imgW,imgH);
+        var fname='הצהרת-נהג-'+(sub.driverName||'').replace(/\s+/g,'-')+'-'+(sub.formDate||'').replace(/\./g,'-')+'.pdf';
+        pdf.save(fname);
+        wrap.remove();
+        showToast('ה-PDF הורד ✓');
+      }).catch(function(e){console.error(e);wrap.remove();showToast('שגיאה: '+e.message);});
+    });
+  });
 }
 
 async function generateFilledPdf(template,sub){
