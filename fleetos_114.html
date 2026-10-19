@@ -4202,6 +4202,7 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
             <h1 class="v-vehicle-model-title" id="vc-hero-vehicle-title"></h1>
             <span class="v-meta-chip" id="vc-hero-year" style="display:none"></span>
             <span class="v-meta-chip" id="vc-hero-fuel" style="display:none"></span>
+            <span class="v-meta-chip" id="vc-hero-vtype" style="display:none"></span>
             <span class="v-code-chip" id="vc-hero-code" style="display:none">
               <span class="v-code-chip-label">קוד:</span>
               <span class="v-code-chip-value" id="vc-code-line"></span>
@@ -5276,6 +5277,13 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
             <div class="ff"><label>דגם</label><input id="ev-model"></div>
             <div class="ff"><label>תאריך מסירה</label><input type="date" id="ev-delivery"></div>
             <div class="ff"><label>תוקף רישיון רכב</label><input type="date" id="ev-lic"></div>
+            <div class="ff" style="grid-column:span 2"><label>סוג רכב</label>
+              <select id="ev-vtype" style="width:100%;padding:7px 10px;border:1px solid var(--bdr2);border-radius:var(--rs);font-size:13px;font-family:inherit;background:var(--bg);color:var(--t1)">
+                <option value="">רגיל</option>
+                <option value="gishur">🔄 רכב גישור</option>
+                <option value="new">✨ רכב חדש</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -11762,6 +11770,13 @@ function openDet(vid){
   // Fuel chip
   const fuelEl=id('vc-hero-fuel');
   if(v.fuel){fuelEl.style.display='';fuelEl.textContent=v.fuel;}else{fuelEl.style.display='none';}
+  // Vehicle type chip
+  const vtypeEl=id('vc-hero-vtype');
+  if(vtypeEl){
+    if(v.vehicleType==='gishur'){vtypeEl.style.display='';vtypeEl.textContent='🔄 רכב גישור';}
+    else if(v.vehicleType==='new'){vtypeEl.style.display='';vtypeEl.textContent='✨ רכב חדש';}
+    else{vtypeEl.style.display='none';}
+  }
   // Status badge
   const sl=slvl(v);
   const statusPill=id('vc-status-pill');
@@ -16026,6 +16041,7 @@ function openEditVehicle(vid){
   const svcInput=id('ev-svc');if(svcInput)svcInput.value=v.lastService||'';
   const svcType=id('ev-svc-type');if(svcType)svcType.value=v.serviceKm?String(v.serviceKm):(v.isNew?'new':'');
   const ckmInput=id('ev-ckm');if(ckmInput)ckmInput.value=v.currentKm||'';
+  const evVtype=id('ev-vtype');if(evVtype)evVtype.value=v.vehicleType||'';
   openModal('edit-ov');
 }
 
@@ -16077,6 +16093,7 @@ function saveEditVehicle(){
   if(svcType){v.isNew=false;v.serviceKm=svcType;const next=svcType+15000;v.nextServiceType=`${next.toLocaleString('he-IL')} ק"מ`;}
   }
   const ckmVal=id('ev-ckm');if(ckmVal)v.currentKm=getRawKm('ev-ckm');
+  const evVtypeSave=id('ev-vtype');if(evVtypeSave)v.vehicleType=evVtypeSave.value||'';
   // Log edit to historyLog
   if(!v.historyLog)v.historyLog=[];
   var editNow=new Date().toISOString();
