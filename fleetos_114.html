@@ -16586,7 +16586,7 @@ function persistViolationsList(){
 }
 var _violFileCache = {};
 let violIdSeq=10;
-const VIOL_STATUS={sent:'שלב 1 — הודעה נשלחה',transferred:'שלב 2 — הוסב לנהג',done:'תהליך הסתיים'};
+const VIOL_STATUS={sent:'הצהרה נשלחה לנהג',form_received:'התקבל טופס הצהרה',transfer_sent:'נשלח להסבה',done:'הדוח הוסב — תהליך הסתיים'};
 const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'};
 
 function renderViolations(){
@@ -16601,9 +16601,10 @@ function renderViolations(){
         <button class="btn btn-p btn-sm" onclick="openViolationModal()" style="border-radius:8px">+ דוח חדש</button>
         <select id="viol-filter" onchange="renderViolations()" style="font-size:13px;padding:6px 12px;border:1px solid var(--bdr2);border-radius:8px;background:var(--card);color:var(--t1);font-family:inherit;cursor:pointer">
           <option value="all"${filter==='all'?' selected':''}>הכל</option>
-          <option value="sent"${filter==='sent'?' selected':''}>שלב 1 — הודעה ראשונה נשלחה</option>
-          <option value="transferred"${filter==='transferred'?' selected':''}>שלב 2 — הוסב לנהג</option>
-          <option value="done"${filter==='done'?' selected':''}>תהליך הסתיים</option>
+          <option value="sent"${filter==='sent'?' selected':''}>הצהרה נשלחה לנהג</option>
+          <option value="form_received"${filter==='form_received'?' selected':''}>התקבל טופס הצהרה</option>
+          <option value="transfer_sent"${filter==='transfer_sent'?' selected':''}>נשלח להסבה</option>
+          <option value="done"${filter==='done'?' selected':''}>הדוח הוסב — הסתיים</option>
         </select>
       </div>
       <div style="display:flex;align-items:center;gap:8px;justify-content:center">
@@ -16629,26 +16630,35 @@ function renderViolations(){
     const ini=driverName!=='—'?inits(driverName):'—';
     const logsCount=(v.logs||[]).length;
 
-    // סטטוס אחד מאוחד — תהליך דו-שלבי
+    // בדוק אם התקבל טופס הצהרה (לפי מספר דוח)
+    const formRec=(formSubmissionsCache||[]).find(function(s){return s.type==='violDecl'&&s.reportNum===v.num;});
+    // סטטוס תצוגה
     let autoStatus='', autoStyle='', autoDot='';
-    if(v.paymentReceipt){
-      autoStatus='שולם'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
-    } else if(v.transferSentAt || v.transferApprovedAt || v.status==='done' || v.status==='transferred'){
-      autoStatus='תהליך הסתיים'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
+    if(v.status==='done' || v.transferDoneAt){
+      autoStatus='הדוח הוסב — תהליך הסתיים'; autoStyle='background:#E1F5EE;color:#0F6E56'; autoDot='#1D9E75';
+    } else if(v.status==='transfer_sent' || v.transferSubmittedAt){
+      autoStatus='נשלח להסבה'; autoStyle='background:#E6F1FB;color:#185FA5'; autoDot='#378ADD';
+    } else if(formRec){
+      autoStatus='התקבל טופס הצהרה ✅'; autoStyle='background:#dcfce7;color:#166534'; autoDot='#16a34a';
     } else if(v.noticeSentAt || v.status==='sent' || v.status==='waiting'){
-      autoStatus='שלב 1 — הודעה נשלחה'; autoStyle='background:#fef3c7;color:#92400e'; autoDot='#f59e0b';
+      autoStatus='הצהרה נשלחה לנהג'; autoStyle='background:#fef3c7;color:#92400e'; autoDot='#f59e0b';
     } else {
       autoStatus='טרם נשלח'; autoStyle='background:#F1EFE8;color:#444441'; autoDot='#888780';
     }
 
-    // Workflow buttons — תהליך דו-שלבי
+    // Workflow buttons
     let workflowBtn='';
-    if(!v.noticeSentAt && v.status!=='done' && v.status!=='transferred' && !v.transferSentAt){
-      // שלב 1: טרם נשלחה הודעה ראשונה
-      workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="שלב 1: עדכון על קיום הדוח + הסבה">📢</button>`;
-    } else if(v.noticeSentAt && !v.transferSentAt && v.status!=='done' && v.status!=='transferred'){
-      // שלב 2: ההודעה הראשונה נשלחה — עכשיו לשלוח הודעת הסבה סופית
-      workflowBtn=`<button onclick="sendViolTransferToDriver(${v.id})" class="viol-icon-btn v-blue" title="שלב 2: הדוח הוסב — עדכן את הנהג לסגירת תהליך">📩</button>`;
+    const isDone=v.status==='done'||v.transferDoneAt;
+    const isTransferSent=v.status==='transfer_sent'||v.transferSubmittedAt;
+    if(!isDone && !isTransferSent && !v.noticeSentAt){
+      // שלב 1: שלח לנהג לינק לטופס הצהרה
+      workflowBtn=`<button onclick="sendViolNoticeToDriver(${v.id})" class="viol-icon-btn v-amber" title="שלח לנהג לינק למילוי הצהרת נהג">📢</button>`;
+    } else if(!isDone && !isTransferSent && formRec){
+      // טופס התקבל — אפשר לסמן נשלח להסבה
+      workflowBtn=`<button onclick="markViolTransferSent(${v.id})" class="viol-icon-btn v-blue" title="סמן: נשלח להסבה">📋</button>`;
+    } else if(!isDone && isTransferSent){
+      // נשלח להסבה — ממתין לאישור, אז לסמן הוסב + עדכן נהג
+      workflowBtn=`<button onclick="openViolDoneModal(${v.id})" class="viol-icon-btn v-green" title="סמן: הדוח הוסב + עדכן נהג">✅</button>`;
     }
 
     html+=`<div class="viol-row viol-data-row" data-vid="${v.id}" style="grid-template-columns:1fr 0.8fr 0.7fr 0.9fr 0.7fr 1.4fr 1.1fr">
@@ -16717,6 +16727,71 @@ function setViolStatusInline(vid,key){
   renderViolations();
   if(_currentVid&&typeof renderVcViolations==='function')renderVcViolations(_currentVid);
   showToast('הסטטוס עודכן');
+}
+
+function markViolTransferSent(vid){
+  var v=violationsList.find(function(x){return x.id===vid;});if(!v)return;
+  var now=new Date();
+  var dateStr=now.toLocaleDateString('he-IL')+' '+now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  v.status='transfer_sent';
+  v.transferSubmittedAt=dateStr;
+  if(!v.logs)v.logs=[];
+  v.logs.push({date:dateStr,text:'📋 סומן כנשלח להסבה'});
+  try{syncPersistItem('violations',v);}catch(e){}
+  try{localStorage.setItem('violationsList',JSON.stringify(violationsList));}catch(e){}
+  renderViolations();
+  if(_currentVid&&typeof renderVcViolations==='function')renderVcViolations(_currentVid);
+  showToast('✅ סומן: נשלח להסבה');
+}
+
+function openViolDoneModal(vid){
+  var v=violationsList.find(function(x){return x.id===vid;});if(!v)return;
+  var veh=vehicles.find(function(x){return x.id===v.vehicleId;});
+  var driverName=(veh&&veh.driver&&veh.driver.name)||v.driverName||'הנהג';
+  var driverPhone=(veh&&veh.driver&&veh.driver.phone)||'';
+  var driverEmail=(veh&&veh.driver&&veh.driver.email)||'';
+  var now=new Date();
+  var dateStr=now.toLocaleDateString('he-IL');
+  var msg='שלום '+driverName+',\n\nברצוננו לעדכנך כי דוח תנועה מספר '+v.num+' הוסב על שמך בהצלחה.\nמתאריך: '+dateStr+'\n\nהטיפול הסתיים.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+  var ex=document.getElementById('viol-done-modal');if(ex)ex.remove();
+  var modal=document.createElement('div');
+  modal.id='viol-done-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.onclick=function(e){if(e.target===modal)modal.remove();};
+  var waPhone=driverPhone.replace(/[^0-9]/g,'');if(waPhone.startsWith('0'))waPhone='972'+waPhone.substring(1);
+  var waLink='https://wa.me/'+waPhone+'?text='+encodeURIComponent(msg);
+  var mailLink='mailto:'+driverEmail+'?subject='+encodeURIComponent('דוח תנועה '+v.num+' — הוסב על שמך')+'&body='+encodeURIComponent(msg);
+  modal.innerHTML='<div style="background:#fff;border-radius:14px;padding:0;width:100%;max-width:440px;direction:rtl;overflow:hidden" onclick="event.stopPropagation()">'+
+    '<div style="background:#166534;padding:14px 18px;color:#fff">'+
+      '<div style="font-size:14px;font-weight:600">סמן הוסב + עדכן נהג — דוח '+esc(v.num)+'</div>'+
+      '<div style="font-size:11px;opacity:.8;margin-top:2px">שלח עדכון לנהג שהדוח הוסב על שמו, התהליך יסתיים</div>'+
+    '</div>'+
+    '<div style="padding:18px">'+
+      '<div style="background:#f0fdf4;border-radius:8px;padding:10px 12px;font-size:12px;white-space:pre-wrap;color:#166534;margin-bottom:14px;max-height:150px;overflow-y:auto">'+msg.replace(/</g,'&lt;')+'</div>'+
+      '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'+
+        (driverPhone?'<button onclick="window.open(\''+waLink+'\',\'_blank\');violMarkDone('+vid+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#25D366;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600"><span style="font-size:20px">📱</span><div><div>שלח בוואטסאפ</div><div style="font-size:10px;opacity:.8">'+driverPhone+'</div></div></button>':'<div style="font-size:12px;color:#888">לא הוגדר טלפון לנהג</div>')+
+        (driverEmail?'<button onclick="window.open(\''+mailLink+'\');violMarkDone('+vid+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#2563eb;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600"><span style="font-size:20px">✉️</span><div><div>שלח במייל</div><div style="font-size:10px;opacity:.8">'+driverEmail+'</div></div></button>':'')+
+        '<button onclick="violMarkDone('+vid+')" style="padding:11px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600">✅ סמן כהוסב ללא שליחה</button>'+
+      '</div>'+
+      '<button onclick="document.getElementById(\'viol-done-modal\').remove()" style="width:100%;padding:9px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--t2)">סגור</button>'+
+    '</div>'+
+  '</div>';
+  document.body.appendChild(modal);
+}
+
+function violMarkDone(vid){
+  var v=violationsList.find(function(x){return x.id===vid;});if(!v)return;
+  var now=new Date();
+  var dateStr=now.toLocaleDateString('he-IL')+' '+now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  v.status='done';v.transferDoneAt=dateStr;
+  if(!v.logs)v.logs=[];
+  v.logs.push({date:dateStr,text:'✅ הדוח הוסב על שם הנהג — תהליך הסתיים'});
+  try{syncPersistItem('violations',v);}catch(e){}
+  try{localStorage.setItem('violationsList',JSON.stringify(violationsList));}catch(e){}
+  document.getElementById('viol-done-modal')?.remove();
+  renderViolations();
+  if(_currentVid&&typeof renderVcViolations==='function')renderVcViolations(_currentVid);
+  showToast('✅ הדוח סומן כהוסב — תהליך הסתיים');
 }
 
 function uploadPaymentReceipt(vid){
@@ -17305,7 +17380,7 @@ function saveViolation(){
   }
 }
 
-const VIOL_MSG_DEFAULT='שלום {נהג},\n\nברצוננו להודיעך כי התקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nהדוח יועבר להסבה על שמך.\n\n{קובץ}\nלאישור קבלת הודעה זו, לחץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+const VIOL_MSG_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nעל מנת להגיש הסבת דוח על שמך, בבקשה למלא הצהרת נהג בזמן ביצוע העבירה.\nלהגשת הבקשה יש ללחוץ כאן:\n{לינק}\n\n{קובץ}\nתודה,\nמרכז הרכב של מור בית השקעות';
 const VIOL_MSG_TRANSFER_DEFAULT='שלום {נהג},\n\nדוח תנועה מספר {מספר_דוח} על רכב {רכב} הוסב על שמך.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\n⚠️ באחריותך לגשת ולשלם את הדוח ישירות מול הגורם הרלוונטי.\n\nלאישור קבלת הודעה זו, לחץ כאן:\n{לינק}\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 const VIOL_MSG_PAYMENT_DEFAULT='שלום {נהג},\n\nהתקבל דוח תנועה מספר {מספר_דוח} על רכב {רכב}.\nתאריך העבירה: {תאריך}\nגורם נותן הדוח: {מקור}\n\nעליך לשלם את הדוח.\n{תשלום}\n\nלאישור על קיום הדוח ותשלומו, חובה ללחוץ כאן:\n{לינק}\n\nלאחר תשלום הדוח, חובה לצרף אישור תשלום בקישור למעלה.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
 
@@ -17497,49 +17572,55 @@ function sendViolTransferToDriver(vid){
   sendViolToDriver(vid,'transfer');
 }
 
+function genViolDeclUrlFromViol(viol,veh){
+  var base=location.origin+location.pathname;
+  var date=viol.date||'';
+  if(date.match(/^\d{4}-\d{2}-\d{2}/)){var pts=date.split('-');date=pts[2]+'.'+pts[1]+'.'+pts[0];}
+  var p=new URLSearchParams({violDecl:'1',rn:viol.num||'',dn:(veh&&veh.driver&&veh.driver.name)||'',pl:(veh&&veh.plate)||'',d:date,ph:(veh&&veh.driver&&veh.driver.phone)||''});
+  return base+'?'+p.toString();
+}
+
 function sendViolToDriver(vid,stage){
   stage=stage||'notice';
   const v=violationsList.find(x=>x.id===vid);if(!v)return;
   const veh=vehicles.find(x=>x.id===v.vehicleId);
   if(!veh){showToast('יש לשייך רכב לדוח');return;}
 
-  // Generate a FRESH token every time, per stage
-  const tokenField=stage==='transfer'?'transferToken':'noticeToken';
-  const approvedField=stage==='transfer'?'transferApprovedAt':'noticeApprovedAt';
   const sentAtField=stage==='transfer'?'transferSentAt':'noticeSentAt';
   const now=new Date();
   const sentDateStr=now.toLocaleDateString('he-IL')+' '+now.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-  v[tokenField]='APR-'+stage+'-'+v.id+'-'+Date.now().toString(36).slice(-4)+Math.random().toString(36).slice(2,4);
-  v[approvedField]=null; // Clear any previous approval for this stage
-  v[sentAtField]=sentDateStr; // Track when we sent the notice
-  // Keep legacy field in sync for backwards compatibility
-  v.approvalToken=v[tokenField];
-  v.approvedAt=null;
-  // Auto-add log entry
+  v[sentAtField]=sentDateStr;
+
+  // שלב 1: לינק לטופס הצהרה | שלב 2: לינק approval
+  var approveUrl;
+  if(stage==='notice'){
+    approveUrl=genViolDeclUrlFromViol(v,veh);
+    v.status='sent';
+    v.noticeSentAt=sentDateStr;
+  } else {
+    const tokenField='transferToken';
+    v[tokenField]='APR-transfer-'+v.id+'-'+Date.now().toString(36).slice(-4)+Math.random().toString(36).slice(2,4);
+    v.transferApprovedAt=null;
+    v.approvalToken=v[tokenField];
+    v.approvedAt=null;
+    v.status='done';
+    approveUrl=getViolApproveUrl(v[tokenField]);
+    // Save token to Firebase
+    const approvalData={violId:v.id,num:v.num,plate:veh.plate,date:v.date,driverName:veh.driver.name,issuer:v.issuer||'—',createdAt:Date.now(),stage:'transfer'};
+    const approvals=JSON.parse(localStorage.getItem('violApprovals')||'{}');
+    approvals[v.approvalToken]=approvalData;
+    localStorage.setItem('violApprovals',JSON.stringify(approvals));
+    if(db){publicWriteWithRetry(function(){return db.collection('approvals').doc(v.approvalToken).set(approvalData);}).catch(function(e){console.error(e);});}
+  }
+
   if(!v.logs)v.logs=[];
   const logText=stage==='transfer'
-    ?'📩 שלב 2 — נשלחה הודעת הסבה סופית לנהג (תהליך הסתיים)'
-    :'📢 שלב 1 — נשלחה הודעה ראשונה על קיום הדוח + הסבה';
+    ?'📩 נשלחה הודעת הסבה סופית לנהג (תהליך הסתיים)'
+    :'📢 נשלח לינק להצהרת נהג';
   v.logs.push({date:sentDateStr,text:logText});
-  // שלב 2 = תהליך הסתיים
-  if(stage==='transfer'){ v.status='done'; }
-  const approveUrl=getViolApproveUrl(v[tokenField]);
 
-  // Save token mapping to localStorage (fallback) + Firestore (cross-device)
-  const approvalData={violId:v.id,num:v.num,plate:veh.plate,date:v.date,driverName:veh.driver.name,issuer:v.issuer||'—',createdAt:Date.now(),stage:stage};
-  const approvals=JSON.parse(localStorage.getItem('violApprovals')||'{}');
-  approvals[v.approvalToken]=approvalData;
-  localStorage.setItem('violApprovals',JSON.stringify(approvals));
-  // Write to Firestore so driver can access from any device
-  if(db){
-    publicWriteWithRetry(function(){
-      return db.collection('approvals').doc(v.approvalToken).set(approvalData);
-    }).then(function(){console.log('✅ אישור נשמר ב-Firebase ('+stage+')');})
-      .catch(function(e){
-        console.error('שגיאה בשמירה ל-Firebase:',e);
-        if(typeof showToast==='function')showToast('⚠️ שגיאה בשמירת הלינק בשרת - הלינק לנהג עלול לא לעבוד. נסה לשלוח שוב.',6000);
-      });
-  }
+  try{syncPersistItem('violations',v);}catch(e){console.error(e);}
+  try{localStorage.setItem('violationsList',JSON.stringify(violationsList));}catch(e){}
 
   const driverName=veh.driver.name;
   const driverPhone=veh.driver.phone||'';
@@ -19932,8 +20013,9 @@ function checkViolDeclPage(){
         '<div style="display:grid;gap:10px;margin-bottom:16px">'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">שם מלא *</label>'+inp('vd-f-name',driverName,'שם מלא','')+'</div>'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ ת.ז *</label>'+inp('vd-f-id',driverId,'012345678','ltr')+'</div>'+
-          '<div><label style="font-size:12px;font-weight:600;color:#444">מייל</label>'+inp('vd-f-email',email,'example@mail.com','ltr')+'</div>'+
-          '<div><label style="font-size:12px;font-weight:600;color:#444">טלפון נייד *</label>'+inp('vd-f-phone',phone,'050-0000000','ltr')+'</div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ רישיון נהיגה *</label>'+inp('vd-f-license',licNum,'הקלד מספר רישיון','ltr')+'</div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">מייל *</label>'+inp('vd-f-email',email,'example@mail.com','ltr')+'</div>'+
+          '<div><label style="font-size:12px;font-weight:600;color:#444">טלפון נייד</label>'+inp('vd-f-phone',phone,'050-0000000','ltr')+'</div>'+
         '</div>'+
 
         '<div style="margin-bottom:16px">'+
@@ -20000,11 +20082,14 @@ function saveVdSig(){
 function submitViolDecl(){
   var name=(id('vd-f-name')||{}).value||'';
   var fid=(id('vd-f-id')||{}).value||'';
-  var addr='';
+  var flicense=(id('vd-f-license')||{}).value||'';
+  var femail=(id('vd-f-email')||{}).value||'';
   var phone=(id('vd-f-phone')||{}).value||'';
+  var addr='';
   if(!name.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא שם מלא</span>';return;}
   if(!fid.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא מס׳ ת.ז</span>';return;}
-  if(!phone.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא טלפון נייד</span>';return;}
+  if(!flicense.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא מס׳ רישיון נהיגה</span>';return;}
+  if(!femail.trim()){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא למלא מייל</span>';return;}
   if(!_violDeclSig){id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ נא לחתום על הטופס</span>';return;}
   id('vd-msg').innerHTML='<span style="color:#666">⏳ שולח...</span>';
   var btn=id('vd-submit-btn');if(btn)btn.disabled=true;
@@ -20021,7 +20106,7 @@ function submitViolDecl(){
     licNum:params.get('ln')||'',
     since:params.get('si')||'',
     reportNum:params.get('rn')||'',
-    responses:{name:name,id:fid,address:addr,email:(id('vd-f-email')||{}).value||'',phone:phone},
+    responses:{name:name,id:fid,licenseNum:flicense,address:addr,email:femail,phone:phone},
     signatures:{main:_violDeclSig},
     submittedAt:new Date().toISOString(),
     status:'new'
