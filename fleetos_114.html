@@ -20157,6 +20157,21 @@ function startFormSubmissionsListener(){
     // Notify on new submissions after initial load
     if(!initial && formSubmissionsCache.length>prev){
       const newOnes=formSubmissionsCache.length-prev;
+      // הוסף התראות פעמון עבור הצהרות נהג חדשות
+      snap.docChanges().forEach(function(ch){
+        if(ch.type!=='added') return;
+        var sub=ch.doc.data();
+        if(sub.type!=='violDecl') return;
+        var notifId='vd-'+sub.id;
+        var vdNotifs=JSON.parse(localStorage.getItem('viol_decl_notifications')||'[]');
+        if(!vdNotifs.find(function(n){return n.id===notifId;})){
+          vdNotifs.unshift({id:notifId,driverName:sub.driverName||'נהג',plate:sub.plate||'',reportNum:sub.reportNum||'',submittedAt:sub.submittedAt||new Date().toISOString()});
+          if(vdNotifs.length>50) vdNotifs=vdNotifs.slice(0,50);
+          localStorage.setItem('viol_decl_notifications',JSON.stringify(vdNotifs));
+          if(typeof updateBellBadge==='function') updateBellBadge();
+          if(typeof renderNotificationsPanel==='function') try{renderNotificationsPanel();}catch(e){}
+        }
+      });
       showToast('📥 '+newOnes+' תגובה חדשה התקבלה!',5000);
       try{
         const AudioCtx=window.AudioContext||window.webkitAudioContext;
@@ -27139,6 +27154,22 @@ function getTreatmentNotifications() {
       actionClass: '',
       actionFn: "openVehicleFromNotifId('" + String(n.id).replace(/'/g, "\\'") + "')",
       time: n.time
+    });
+  });
+
+  // סוג ז: הצהרות נהג בזמן עבירה
+  var vdNotifs=JSON.parse(localStorage.getItem('viol_decl_notifications')||'[]');
+  vdNotifs.forEach(function(n){
+    notifications.push({
+      id:n.id,
+      type:'viol_decl',
+      dotClass:'trt-notif-dot-amber',
+      title:'<b>'+_esc(n.driverName||'נהג')+'</b> שלח הצהרת נהג',
+      detail:(n.plate?n.plate+' · ':'')+(n.reportNum?'דוח '+n.reportNum:''),
+      actionText:'פתח',
+      actionClass:'',
+      actionFn:"go('violations',document.querySelector('[dp=violations]'))",
+      time:n.submittedAt
     });
   });
 
