@@ -19899,7 +19899,6 @@ function checkViolDeclPage(){
 
         '<button onclick="submitViolDecl()" id="vd-submit-btn" style="width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px">✓ שליחת הצהרה</button>'+
         '<div id="vd-msg" style="margin-top:8px;font-size:13px;text-align:center"></div>'+
-        '<div style="text-align:center;margin-top:16px;color:#ccc;font-size:11px">מרכז הרכב של מור בית השקעות</div>'+
       '</div>'+
     '</div>';
   document.body.appendChild(p);
@@ -19986,7 +19985,6 @@ function submitViolDecl(){
         '<div style="font-size:64px;margin-bottom:16px">✅</div>'+
         '<div style="font-size:22px;font-weight:700;color:#166534;margin-bottom:8px">ההצהרה נשלחה בהצלחה!</div>'+
         '<div style="font-size:14px;color:#888">הטופס התקבל אצל מרכז הרכב ויטופל בהקדם.</div>'+
-        '<div style="font-size:12px;color:#ccc;margin-top:20px">מרכז הרכב של מור בית השקעות</div>'+
       '</div>';
   }).catch(function(e){console.error(e);id('vd-msg').innerHTML='<span style="color:#dc2626">⚠ שגיאה בשליחה - נסה שוב</span>';if(btn)btn.disabled=false;});
 }
@@ -20299,7 +20297,6 @@ function downloadViolDeclPdf(sub){
       '</tbody></table>'+
       '<div style="margin-top:20px;font-size:13px;font-weight:700;color:#1A4A3A">חתימה:</div>'+
       (sig?'<img src="'+sig+'" style="height:70px;margin-top:6px;border:1px solid #ccc;padding:4px;border-radius:4px">':'<div style="color:#aaa;font-size:12px">—</div>')+
-      '<div style="border-top:1px solid #eee;margin-top:24px;padding-top:8px;font-size:10px;color:#aaa;text-align:center">מרכז הרכב של מור בית השקעות</div>'+
     '</div>';
 
   var wrap=document.createElement('div');
