@@ -19881,7 +19881,6 @@ function checkViolDeclPage(){
           '<span> על שמי.</span>'+
         '</div>'+
 
-        '<div style="font-size:14px;font-weight:600;color:#1A4A3A;margin-bottom:12px">להלן פרטיי:</div>'+
         '<div style="display:grid;gap:10px;margin-bottom:16px">'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">שם מלא *</label>'+inp('vd-f-name',driverName,'שם מלא','')+'</div>'+
           '<div><label style="font-size:12px;font-weight:600;color:#444">מס׳ ת.ז *</label>'+inp('vd-f-id',driverId,'012345678','ltr')+'</div>'+
@@ -20176,7 +20175,6 @@ function viewViolDeclSubmission(sub){
           '<br><br><span>הנני מתחייב בזאת להופיע בבית משפט או לחילופין לשלם את הקנס/ות אשר הוטל/ו עלי במהלך התקופה הנדונה.</span>'+
           '<br><br><span>בהמשך לאמור לעיל הנני מאשר בזאת הסבה מידית של דוח תנועה מספר </span>'+fv(sub.reportNum||'')+' <span>על שמי.</span>'+
         '</div>'+
-        '<div style="font-size:13px;font-weight:600;color:#1A4A3A;margin-bottom:10px">להלן פרטיי:</div>'+
         '<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;margin-bottom:16px">'+
           '<span style="color:#666">שם מלא:</span><span style="font-weight:500">'+(r.name||'—')+'</span>'+
           '<span style="color:#666">מס׳ ת.ז:</span><span style="font-weight:500;direction:ltr;text-align:right">'+(r.id||'—')+'</span>'+
@@ -20293,7 +20291,6 @@ function downloadViolDeclPdf(sub){
         'במהלך התקופה הנדונה.<br><br>'+
         'בהמשך לאמור לעיל הנני מאשר בזאת הסבה מידית של דוח תנועה מספר <u><strong>'+fv(sub.reportNum)+'</strong></u> על שמי.'+
       '</div>'+
-      '<div style="font-size:14px;font-weight:700;color:#1A4A3A;margin-bottom:10px">להלן פרטיי:</div>'+
       '<table style="font-size:13px;line-height:2;width:auto"><tbody>'+
         '<tr><td style="color:#555;padding-left:16px">שם מלא:</td><td><strong>'+(r.name||'—')+'</strong></td></tr>'+
         '<tr><td style="color:#555;padding-left:16px">מס׳ ת.ז:</td><td><strong>'+(r.id||'—')+'</strong></td></tr>'+
