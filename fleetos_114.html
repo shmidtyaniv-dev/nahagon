@@ -20310,8 +20310,14 @@ function downloadViolDeclPdf(sub){
   wrap.innerHTML=html;
   document.body.appendChild(wrap);
 
-  loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',function(){
-    loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',function(){
+  var _loadLib=function(src,cb){
+    if(document.querySelector('script[src="'+src+'"]')){cb();return;}
+    var s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=function(){showToast('שגיאה בטעינת ספרייה');wrap.remove();};
+    document.head.appendChild(s);
+  };
+
+  _loadLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',function(){
+    _loadLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',function(){
       html2canvas(wrap.firstChild,{scale:2,useCORS:true,backgroundColor:'#fff',logging:false,allowTaint:true}).then(function(canvas){
         var jsPDF=window.jspdf.jsPDF;
         var pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
