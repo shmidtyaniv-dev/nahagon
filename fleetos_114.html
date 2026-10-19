@@ -10600,7 +10600,14 @@ function showAltDriversModal(){
     if(seen.has(key)) return;
     seen.add(key);
     const v = vehicles.find(x=>x.id===f.vehicleId);
-    rows.push({f, v});
+    rows.push({f, v, fromType:false});
+  });
+  // הוסף רכבים שסומנו ידנית כרכב גישור (ללא כפילויות)
+  (typeof vehicles!=='undefined'?vehicles:[]).forEach(function(v){
+    if(v.vehicleType==='gishur'){
+      const key=v.id+'_bridge';
+      if(!seen.has(key)){seen.add(key);rows.push({f:null,v,fromType:true});}
+    }
   });
   const existing = document.getElementById('alt-drivers-modal');
   if(existing) existing.remove();
@@ -10609,23 +10616,26 @@ function showAltDriversModal(){
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
   modal.onclick = (e)=>{ if(e.target===modal) modal.remove(); };
   const body = rows.length
-    ? rows.map(({f,v})=>{
-        const isBridge = f.type==='bridge';
+    ? rows.map(({f,v,fromType})=>{
+        const isBridge = fromType || (f&&f.type==='bridge');
         const bg = isBridge?'#eff6ff':'#fefce8';
         const bdr = isBridge?'#bfdbfe':'#fde68a';
         const clr = isBridge?'#1e40af':'#854d0e';
         const icn = isBridge?'🌉':'🔄';
-        const since = new Date(f.createdAt).toLocaleDateString('he-IL');
         const label = isBridge?'רכב גישור':'רכב חלופי';
-        const driverName = v?.driver?.name || f.driverName || '—';
+        const driverName = v?.driver?.name || (f&&f.driverName) || '—';
         const plate = v?.plate || '—';
-        return `<div style="background:${bg};border:1.5px solid ${bdr};border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer" onclick="document.getElementById('alt-drivers-modal').remove();openDet(${f.vehicleId})">
+        const vid = v?.id || (f&&f.vehicleId);
+        const sinceHtml = (!fromType&&f?.createdAt)
+          ? `<div style="font-size:10px;color:${clr};opacity:.7;margin-top:1px">נמסר ב-${new Date(f.createdAt).toLocaleDateString('he-IL')}</div>`
+          : '';
+        return `<div style="background:${bg};border:1.5px solid ${bdr};border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer" onclick="document.getElementById('alt-drivers-modal').remove();openDet('${vid}')">
           <div style="display:flex;align-items:center;gap:10px">
             <div style="font-size:22px">${icn}</div>
             <div style="flex:1">
               <div style="font-size:13px;font-weight:700;color:${clr}">${esc(driverName)}</div>
-              <div style="font-size:11px;color:${clr};opacity:.85;margin-top:2px">רכב קבוע: ${plate} · ${label}${f.altPlate?' · רישוי: '+f.altPlate:''}</div>
-              <div style="font-size:10px;color:${clr};opacity:.7;margin-top:1px">נמסר ב-${since}</div>
+              <div style="font-size:11px;color:${clr};opacity:.85;margin-top:2px">${esc(plate)} · ${label}${(!fromType&&f?.altPlate)?' · רישוי: '+f.altPlate:''}</div>
+              ${sinceHtml}
             </div>
           </div>
         </div>`;
