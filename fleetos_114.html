@@ -16584,7 +16584,7 @@ var _violFileCache = {};
 // Active send-modal state (set by sendViolToDriver, used by violSendWhatsAppModal/violSendEmailModal)
 var _violModalVid=null, _violModalApproveUrl=null, _violModalStage='notice';
 let violIdSeq=10;
-const VIOL_STATUS={sent:'עדכון נהג ושליחת הצהרה',form_received:'התקבל טופס הצהרה',transfer_sent:'נשלח להסבה',done:'הדוח הוסב — תהליך הסתיים'};
+const VIOL_STATUS={sent:'ממתין לקבלת טופס הצהרה',form_received:'התקבל טופס הצהרה',transfer_sent:'נשלח להסבה',done:'הדוח הוסב — תהליך הסתיים'};
 const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'};
 
 function renderViolations(){
@@ -16630,7 +16630,7 @@ function renderViolations(){
     } else if(formRec){
       autoStatus='התקבל טופס הצהרה ✅'; autoStyle='background:#dcfce7;color:#166534'; autoDot='#16a34a';
     } else if(v.noticeSentAt || v.status==='sent' || v.status==='waiting'){
-      autoStatus='עדכון נהג ושליחת הצהרה'; autoStyle='background:#fef3c7;color:#92400e'; autoDot='#f59e0b';
+      autoStatus='ממתין לקבלת טופס הצהרה'; autoStyle='background:#fef3c7;color:#92400e'; autoDot='#f59e0b';
     } else {
       autoStatus='טרם נשלח'; autoStyle='background:#F1EFE8;color:#444441'; autoDot='#888780';
     }
