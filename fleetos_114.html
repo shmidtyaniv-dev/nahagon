@@ -17578,7 +17578,7 @@ function genViolDeclUrlFromViol(viol,veh){
   return base+'?'+p.toString();
 }
 
-function sendViolToDriver(vid,stage){
+async function sendViolToDriver(vid,stage){
   stage=stage||'notice';
   const v=violationsList.find(x=>x.id===vid);if(!v)return;
   const veh=vehicles.find(x=>x.id===v.vehicleId);
@@ -17592,7 +17592,13 @@ function sendViolToDriver(vid,stage){
   // שלב 1: לינק לטופס הצהרה | שלב 2: לינק approval
   var approveUrl;
   if(stage==='notice'){
-    approveUrl=genViolDeclUrlFromViol(v,veh);
+    const longUrl=genViolDeclUrlFromViol(v,veh);
+    // קצר את הלינק דרך Vercel proxy (TinyURL) — fallback ל-URL המלא אם נכשל
+    try{
+      const r=await fetch('/api/shorten?url='+encodeURIComponent(longUrl));
+      const d=await r.json();
+      approveUrl=d.short||longUrl;
+    }catch(e){approveUrl=longUrl;}
     v.status='sent';
     v.noticeSentAt=sentDateStr;
   } else {
