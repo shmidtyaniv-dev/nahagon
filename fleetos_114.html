@@ -12484,7 +12484,7 @@ function syncPersistItem(name, item){
   try{
     db.collection(name).doc(String(item.id)).set(JSON.parse(JSON.stringify(item))).then(function(){
       console.log('✅ '+name+' synced:', item.id);
-    }).catch(function(e){console.error('❌ '+name+' persist error:',e.message,e);});
+    }).catch(function(e){console.error('❌ '+name+' persist error:',e.message,e);if(typeof showToast==='function')showToast('⚠️ שגיאת שמירה בענן ('+name+') — הנתון לא נשמר. בדוק חיבור אינטרנט.');});
   }catch(e){console.error('❌ '+name+' persist serialize error:',e);}
 }
 
