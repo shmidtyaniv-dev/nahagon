@@ -20225,6 +20225,31 @@ function renderFormSubmissions(){
     '</div>';
 }
 
+// IDs של הצהרות נהג שכבר נרשמו לפעמון — נמנעים מהתראות כפולות גם אחרי "נקה הכל"
+var _vdSeenIds=new Set(JSON.parse(localStorage.getItem('viol_decl_seen_ids')||'[]'));
+
+function _addViolDeclBellNotif(sub, liveEvent){
+  var notifId='vd-'+sub.id;
+  if(_vdSeenIds.has(notifId)) return; // כבר נרשם
+  _vdSeenIds.add(notifId);
+  try{localStorage.setItem('viol_decl_seen_ids',JSON.stringify([..._vdSeenIds]));}catch(e){}
+  var vdNotifs=JSON.parse(localStorage.getItem('viol_decl_notifications')||'[]');
+  if(!vdNotifs.find(function(n){return n.id===notifId;})){
+    vdNotifs.unshift({id:notifId,driverName:sub.driverName||'נהג',plate:sub.plate||'',reportNum:sub.reportNum||'',violationId:sub.violationId||'',submittedAt:sub.submittedAt||new Date().toISOString()});
+    if(vdNotifs.length>50) vdNotifs=vdNotifs.slice(0,50);
+    localStorage.setItem('viol_decl_notifications',JSON.stringify(vdNotifs));
+  }
+  if(typeof updateBellBadge==='function') updateBellBadge();
+  if(typeof renderNotificationsPanel==='function') try{renderNotificationsPanel();}catch(e){}
+  if(liveEvent){
+    showToast('📋 התקבלה הצהרת נהג — '+(sub.driverName||'נהג')+(sub.reportNum?' · דוח '+sub.reportNum:''),6000);
+    try{
+      var AudioCtx=window.AudioContext||window.webkitAudioContext;
+      if(AudioCtx){var ctx=new AudioCtx(),osc=ctx.createOscillator(),g=ctx.createGain();osc.connect(g);g.connect(ctx.destination);osc.frequency.setValueAtTime(880,ctx.currentTime);osc.frequency.setValueAtTime(1100,ctx.currentTime+0.12);g.gain.setValueAtTime(0.12,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.4);}
+    }catch(e){}
+  }
+}
+
 function startFormSubmissionsListener(){
   if(!db||_formSubsListener)return;
   let initial=true;
@@ -20232,38 +20257,16 @@ function startFormSubmissionsListener(){
     const prev=(formSubmissionsCache||[]).length;
     formSubmissionsCache=[];
     snap.forEach(function(doc){formSubmissionsCache.push(doc.data());});
-    // Notify on new submissions after initial load
+    // הוסף התראות פעמון לכל הצהרת נהג — גם בטעינה ראשונית (לטפסים שהגיעו כשהמסך היה סגור)
+    snap.docChanges().forEach(function(ch){
+      if(ch.type!=='added') return;
+      var sub=ch.doc.data();
+      if(sub.type!=='violDecl') return;
+      _addViolDeclBellNotif(sub, !initial); // toast+צליל רק בלייב, לא בטעינה ראשונית
+    });
     if(!initial && formSubmissionsCache.length>prev){
       const newOnes=formSubmissionsCache.length-prev;
-      // הוסף התראות פעמון עבור הצהרות נהג חדשות
-      snap.docChanges().forEach(function(ch){
-        if(ch.type!=='added') return;
-        var sub=ch.doc.data();
-        if(sub.type!=='violDecl') return;
-        var notifId='vd-'+sub.id;
-        var vdNotifs=JSON.parse(localStorage.getItem('viol_decl_notifications')||'[]');
-        if(!vdNotifs.find(function(n){return n.id===notifId;})){
-          vdNotifs.unshift({id:notifId,driverName:sub.driverName||'נהג',plate:sub.plate||'',reportNum:sub.reportNum||'',violationId:sub.violationId||'',submittedAt:sub.submittedAt||new Date().toISOString()});
-          if(vdNotifs.length>50) vdNotifs=vdNotifs.slice(0,50);
-          localStorage.setItem('viol_decl_notifications',JSON.stringify(vdNotifs));
-          if(typeof updateBellBadge==='function') updateBellBadge();
-          if(typeof renderNotificationsPanel==='function') try{renderNotificationsPanel();}catch(e){}
-        }
-      });
-      showToast('📥 '+newOnes+' תגובה חדשה התקבלה!',5000);
-      try{
-        const AudioCtx=window.AudioContext||window.webkitAudioContext;
-        if(AudioCtx){
-          const ctx=new AudioCtx();
-          const osc=ctx.createOscillator();const gain=ctx.createGain();
-          osc.connect(gain);gain.connect(ctx.destination);
-          osc.frequency.setValueAtTime(880,ctx.currentTime);
-          osc.frequency.setValueAtTime(1100,ctx.currentTime+0.1);
-          gain.gain.setValueAtTime(0.1,ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
-          osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.35);
-        }
-      }catch(e){}
+      showToast('📥 '+newOnes+' תגובה חדשה התקבלה!',4000);
     }
     initial=false;
     // Badge removed - cleaner sidebar without numbers
