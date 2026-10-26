@@ -16581,6 +16581,8 @@ function persistViolationsList(){
   _lastViolationIds = currentIds;
 }
 var _violFileCache = {};
+// Active send-modal state (set by sendViolToDriver, used by violSendWhatsAppModal/violSendEmailModal)
+var _violModalVid=null, _violModalApproveUrl=null, _violModalStage='notice';
 let violIdSeq=10;
 const VIOL_STATUS={sent:'עדכון נהג ושליחת הצהרה',form_received:'התקבל טופס הצהרה',transfer_sent:'נשלח להסבה',done:'הדוח הוסב — תהליך הסתיים'};
 const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'};
@@ -17626,6 +17628,9 @@ function sendViolToDriver(vid,stage){
   const includeFileDefault=s.violIncludeFile!==false;
   const hasFile=!!(v.fileData||v._hasFile||_violFileCache[v.id]);
 
+  // Store modal state for button handlers (avoid token mismatch race)
+  _violModalVid=v.id; _violModalApproveUrl=approveUrl; _violModalStage=stage;
+
   // Show send modal
   const ex=document.getElementById('viol-send-modal');if(ex)ex.remove();
   const modal=document.createElement('div');
@@ -17662,13 +17667,13 @@ function sendViolToDriver(vid,stage){
         '<span>צרף קובץ הדוח (פתיחת מייל עם הקובץ)</span></label>':'')+
       '<div style="font-size:12px;color:#666;margin-bottom:10px">בחר אמצעי שליחה:</div>'+
       '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'+
-        '<button onclick="violSendWhatsApp(\''+v.approvalToken+'\')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#25D366;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600">'+
+        '<button onclick="violSendWhatsAppModal()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#25D366;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600">'+
           '<span style="font-size:22px">📱</span><div style="text-align:right"><div>שלח בוואטסאפ</div><div style="font-size:10px;opacity:.8">'+(driverPhone||'לא הוגדר טלפון')+'</div></div></button>'+
-        '<button onclick="violSendEmail(\''+v.approvalToken+'\')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#2563eb;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600">'+
+        '<button onclick="violSendEmailModal()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#2563eb;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600">'+
           '<span style="font-size:22px">✉️</span><div style="text-align:right"><div>שלח במייל</div><div style="font-size:10px;opacity:.8">'+(driverEmail||'לא הוגדר מייל')+'</div></div></button>'+
         (hasFile?'<button onclick="violDownloadFile('+v.id+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg2);color:var(--t1);border:1px solid var(--bdr2);border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500">'+
           '<span style="font-size:20px">📥</span><div style="text-align:right"><div>הורד את קובץ הדוח</div><div style="font-size:10px;color:#888">לצירוף ידני לוואטסאפ/מייל</div></div></button>':'')+
-        '<button onclick="violCopyLink(\''+v.approvalToken+'\')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg);color:var(--t1);border:1.5px solid var(--bdr2);border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500">'+
+        '<button onclick="violCopyLinkModal()" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg);color:var(--t1);border:1.5px solid var(--bdr2);border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500">'+
           '<span style="font-size:22px">🔗</span><div style="text-align:right"><div>העתק לינק אישור</div><div style="font-size:10px;color:#888">להעברה ידנית</div></div></button>'+
       '</div>'+
       '<button onclick="document.getElementById(\'viol-send-modal\').remove()" style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--t2)">סגור</button>'+
@@ -17698,6 +17703,63 @@ function openExternalUrl(url){
     console.error('openExternalUrl error:',e);
     return false;
   }
+}
+
+// Modal-bound send helpers — use _violModalVid/_violModalApproveUrl/_violModalStage
+// so we never rely on token lookup (avoids race with onSnapshot replacing violationsList)
+function violSendWhatsAppModal(){
+  const v=violationsList.find(function(x){return x.id===_violModalVid;});
+  if(!v){showToast('דוח לא נמצא');return;}
+  const veh=vehicles.find(function(x){return x.id===v.vehicleId;});
+  if(!veh){showToast('רכב לא נמצא');return;}
+  const approveUrl=_violModalApproveUrl||'';
+  const stage=_violModalStage||'notice';
+  const s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  const tpl=stage==='transfer'?(s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT):(s.violMsgTemplate||VIOL_MSG_DEFAULT);
+  const attachCb=document.getElementById('viol-send-attach-file');
+  const attachFile=attachCb?attachCb.checked:false;
+  const hasFile=!!(v.fileData||v._hasFile||_violFileCache[v.id]);
+  const fileLine=attachFile&&hasFile?'* קובץ הדוח יישלח בנפרד':'';
+  const msg=fillViolMsgTemplate(tpl,{driverName:veh.driver.name,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine,paymentLine:''});
+  const phone=(veh.driver.phone||'').replace(/[^0-9]/g,'');
+  let waUrl;
+  if(phone){
+    let p=phone;
+    if(!p.startsWith('972'))p=p.startsWith('0')?'972'+p.slice(1):'972'+p;
+    waUrl='https://wa.me/'+p+'?text='+encodeURIComponent(msg);
+  }else{waUrl='https://wa.me/?text='+encodeURIComponent(msg);}
+  document.getElementById('viol-send-modal')?.remove();
+  openExternalUrl(waUrl);
+  showToast('נפתח וואטסאפ');
+  if(attachFile&&hasFile){setTimeout(function(){violDownloadFile(v.id);showToast('📥 קובץ הדוח הורד — צרף אותו בוואצאפ');},800);}
+}
+function violSendEmailModal(){
+  const v=violationsList.find(function(x){return x.id===_violModalVid;});
+  if(!v){showToast('דוח לא נמצא');return;}
+  const veh=vehicles.find(function(x){return x.id===v.vehicleId;});
+  if(!veh){showToast('רכב לא נמצא');return;}
+  const email=veh.driver.email||'';
+  if(!email){showToast('⚠ אין מייל לנהג - הגדר מייל בכרטיס הרכב');return;}
+  const approveUrl=_violModalApproveUrl||'';
+  const stage=_violModalStage||'notice';
+  const s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  const tpl=stage==='transfer'?(s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT):(s.violMsgTemplate||VIOL_MSG_DEFAULT);
+  const attachCb=document.getElementById('viol-send-attach-file');
+  const attachFile=attachCb?attachCb.checked:false;
+  const hasFileE=!!(v.fileData||v._hasFile||_violFileCache[v.id]);
+  const fileLine=attachFile&&hasFileE?'* אנא צרף/י את קובץ הדוח המצורף למייל זה':'';
+  const body=fillViolMsgTemplate(tpl,{driverName:veh.driver.name,num:v.num,plate:veh.plate,date:v.date,issuer:v.issuer||'—',link:approveUrl,fileLine,paymentLine:''});
+  const subjectStr=stage==='transfer'?('הסבת דוח תנועה '+v.num+' על שמך — נדרש אישור'):('הודעה על דוח תנועה '+v.num+' — נדרש אישור קבלה');
+  const mailUrl='mailto:'+email+'?subject='+encodeURIComponent(subjectStr)+'&body='+encodeURIComponent(body);
+  document.getElementById('viol-send-modal')?.remove();
+  const a=document.createElement('a');a.href=mailUrl;a.style.display='none';document.body.appendChild(a);a.click();setTimeout(function(){try{document.body.removeChild(a);}catch(e){}},100);
+  showToast('נפתח לקוח מייל');
+  if(attachFile&&hasFileE){setTimeout(function(){violDownloadFile(v.id);showToast('📥 קובץ הדוח הורד — צרף אותו למייל');},800);}
+}
+function violCopyLinkModal(){
+  const approveUrl=_violModalApproveUrl||'';
+  navigator.clipboard.writeText(approveUrl).then(function(){showToast('הלינק הועתק ללוח');}).catch(function(){prompt('העתק את הלינק:',approveUrl);});
+  document.getElementById('viol-send-modal')?.remove();
 }
 
 function violSendWhatsApp(token){
