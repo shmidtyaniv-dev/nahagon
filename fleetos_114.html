@@ -6891,11 +6891,13 @@ function renderVcMissions(vid){
 
 /* מעדכן את מונה הדוחות בכרטיס "נתוני נהג" + הבאדג' על לשונית דוחות תנועה */
 function refreshVehicleViolCounters(vid){
-  var n=violationsList.filter(function(x){return x.vehicleId===vid;}).length;
+  var all=violationsList.filter(function(x){return x.vehicleId===vid;});
+  var openCount=all.filter(function(x){return x.status!=='done'&&!x.transferDoneAt;}).length;
   var vb=id('vc-viol-badge');
-  if(vb){if(n){vb.style.display='inline';vb.textContent=n;}else{vb.style.display='none';}}
+  if(vb){if(openCount){vb.style.display='inline';vb.textContent=openCount;}else{vb.style.display='none';}}
+  // נתוני נהג — מציג את כל הדוחות (כולל הוסבו)
   var st=document.getElementById('vc-stat-viol-count');
-  if(st)st.textContent=n;
+  if(st)st.textContent=all.length;
 }
 
 function renderVcViolations(vid){
@@ -11868,10 +11870,11 @@ function openDet(vid){
       </button>`;
   }
 
-  // violations badge
+  // violations badge — מציג רק דוחות פתוחים (לא כאלו שהוסבו)
   const vViolations=violationsList.filter(x=>x.vehicleId===v.id);
+  const vViolOpen=vViolations.filter(x=>x.status!=='done'&&!x.transferDoneAt);
   const vb=id('vc-viol-badge');
-  if(vViolations.length){vb.style.display='inline';vb.textContent=vViolations.length}else{vb.style.display='none'}
+  if(vViolOpen.length){vb.style.display='inline';vb.textContent=vViolOpen.length}else{vb.style.display='none'}
 
   // כרטיס נתוני נהג
   const driverStatsEl = id('vc-hero-driver-stats');
@@ -16606,7 +16609,7 @@ const VIOL_COLORS={sent:'var(--blue)',waiting:'var(--amber)',done:'var(--green)'
 
 function renderViolations(){
   const list=violationsList;
-  const totalCount=violationsList.length;
+  const totalCount=violationsList.filter(function(x){return x.status!=='done'&&!x.transferDoneAt;}).length;
 
   let html=`<div class="viol-container">
     <div class="viol-top-bar" style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:18px 22px;border-bottom:1px solid var(--bdr);gap:20px">
