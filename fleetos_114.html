@@ -26447,6 +26447,22 @@ function openApproveModal(treatmentId) {
   var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
   if (!t) return;
 
+  // רענן טלפון/מייל מהרכב הנוכחי — ייתכן שהנהג עדכן פרטים אחרי יצירת הטיפול
+  var freshVehicle = (typeof vehiclesList !== 'undefined' ? vehiclesList : []).find(function(v){ return String(v.id) === String(t.vehicleId); });
+  if (freshVehicle && freshVehicle.driver) {
+    var freshPhone = freshVehicle.driver.phone || t.driverPhone || '';
+    var freshEmail = freshVehicle.driver.email || t.driverEmail || '';
+    if (freshPhone !== t.driverPhone || freshEmail !== t.driverEmail) {
+      t.driverPhone = freshPhone;
+      t.driverEmail = freshEmail;
+      // עדכן גם ב-Firestore כדי שיישאר מסונכרן
+      if (typeof db !== 'undefined') {
+        db.collection('treatments').doc(t.id).update({ driverPhone: freshPhone, driverEmail: freshEmail })
+          .catch(function(e){ console.warn('[Treatments] לא ניתן לעדכן טלפון:', e); });
+      }
+    }
+  }
+
   TREATMENT_STATE.currentApproveContext = t;
   TREATMENT_STATE.selectedChannel = 'whatsapp';
 
@@ -26694,6 +26710,22 @@ async function rejectDate(treatmentId) {
 function openReminderModal(treatmentId) {
   var t = TREATMENT_STATE.treatments.find(function(x) { return x.id === treatmentId; });
   if (!t) return;
+
+  // רענן טלפון/מייל מהרכב הנוכחי
+  var freshVehicle = (typeof vehiclesList !== 'undefined' ? vehiclesList : []).find(function(v){ return String(v.id) === String(t.vehicleId); });
+  if (freshVehicle && freshVehicle.driver) {
+    var freshPhone = freshVehicle.driver.phone || t.driverPhone || '';
+    var freshEmail = freshVehicle.driver.email || t.driverEmail || '';
+    if (freshPhone !== t.driverPhone || freshEmail !== t.driverEmail) {
+      t.driverPhone = freshPhone;
+      t.driverEmail = freshEmail;
+      if (typeof db !== 'undefined') {
+        db.collection('treatments').doc(t.id).update({ driverPhone: freshPhone, driverEmail: freshEmail })
+          .catch(function(e){ console.warn('[Treatments] לא ניתן לעדכן טלפון:', e); });
+      }
+    }
+  }
+
   TREATMENT_STATE.currentReminderContext = t;
 
   var isScheduled = t.status === 'scheduled';
