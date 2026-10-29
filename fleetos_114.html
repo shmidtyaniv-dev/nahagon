@@ -18214,12 +18214,14 @@ function renderVehicleViolations(){
     return;
   }
 
-  // Compute auto-status same as main list
+  // Compute auto-status — identical logic to renderViolations
   function getAutoStatus(viol){
     if(viol.paymentReceipt) return {label:'שולם',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
-    if(viol.transferApprovedAt) return {label:'נהג אישר הסבה',style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
-    if(viol.noticeApprovedAt||viol.status==='done') return {label:VIOL_STATUS.done,style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
-    if(viol.noticeSentAt||viol.status==='sent'||viol.status==='waiting') return {label:VIOL_STATUS.sent,style:'background:#E6F1FB;color:#185FA5',dot:'#378ADD'};
+    if(viol.status==='done'||viol.transferDoneAt) return {label:VIOL_STATUS.done,style:'background:#E1F5EE;color:#0F6E56',dot:'#1D9E75'};
+    if(viol.status==='transfer_sent'||viol.transferSubmittedAt) return {label:'נשלח להסבה',style:'background:#E6F1FB;color:#185FA5',dot:'#378ADD'};
+    var formRec=(typeof formSubmissionsCache!=='undefined'?formSubmissionsCache:[]).find(function(s){return s.type==='violDecl'&&(s.violationId&&s.violationId===String(viol.id)||((!s.violationId)&&s.reportNum===viol.num));});
+    if(viol.status==='form_received'||viol.noticeApprovedAt||viol.transferApprovedAt||formRec) return {label:'התקבל טופס הצהרה ✅',style:'background:#dcfce7;color:#166534',dot:'#16a34a'};
+    if(viol.noticeSentAt||viol.status==='sent'||viol.status==='waiting') return {label:VIOL_STATUS.sent,style:'background:#fef3c7;color:#92400e',dot:'#f59e0b'};
     return {label:'טרם נשלח',style:'background:#F1EFE8;color:#444441',dot:'#888780'};
   }
 
