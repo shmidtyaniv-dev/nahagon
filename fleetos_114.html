@@ -3720,10 +3720,19 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
             <div class="settings-template-item">
               <div class="settings-template-item-header">
                 <div class="settings-template-item-title">
-                  הודעה לנהג על קיום הדוח (ההסבה באחריות הנהג)
+                  שלב 1 — הודעה לנהג על קיום הדוח (שליחת לינק להצהרה)
                 </div>
               </div>
               <textarea id="viol-msg-template" class="settings-template-textarea" rows="9" placeholder="שלום {נהג}..."></textarea>
+            </div>
+
+            <div class="settings-template-item" style="margin-top:14px">
+              <div class="settings-template-item-header">
+                <div class="settings-template-item-title">
+                  שלב 2 — הודעה לנהג על סיום תהליך ההסבה (הדוח על שמו)
+                </div>
+              </div>
+              <textarea id="viol-msg-transfer-template" class="settings-template-textarea" rows="8" placeholder="שלום {נהג}..."></textarea>
             </div>
 
             <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
@@ -16754,33 +16763,53 @@ function openViolDoneModal(vid){
   var driverName=(veh&&veh.driver&&veh.driver.name)||v.driverName||'הנהג';
   var driverPhone=(veh&&veh.driver&&veh.driver.phone)||'';
   var driverEmail=(veh&&veh.driver&&veh.driver.email)||'';
-  var now=new Date();
-  var dateStr=now.toLocaleDateString('he-IL');
-  var msg='שלום '+driverName+',\n\nברצוננו לעדכנך כי דוח תנועה מספר '+v.num+' הוסב על שמך בהצלחה.\nמתאריך: '+dateStr+'\n\nהטיפול הסתיים.\n\nתודה,\nמרכז הרכב של מור בית השקעות';
+  var s=JSON.parse(localStorage.getItem('fleetSettings')||'{}');
+  var tpl=s.violMsgTransferTemplate||VIOL_MSG_TRANSFER_DEFAULT;
+  var msg=fillViolMsgTemplate(tpl,{driverName:driverName,num:v.num,plate:veh?veh.plate:'',date:v.date,issuer:v.issuer||'—',link:'',fileLine:''});
   var ex=document.getElementById('viol-done-modal');if(ex)ex.remove();
   var modal=document.createElement('div');
   modal.id='viol-done-modal';
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
   modal.onclick=function(e){if(e.target===modal)modal.remove();};
-  var waPhone=driverPhone.replace(/[^0-9]/g,'');if(waPhone.startsWith('0'))waPhone='972'+waPhone.substring(1);
-  var waLink='https://wa.me/'+waPhone+'?text='+encodeURIComponent(msg);
-  var mailLink='mailto:'+driverEmail+'?subject='+encodeURIComponent('דוח תנועה '+v.num+' — הוסב על שמך')+'&body='+encodeURIComponent(msg);
-  modal.innerHTML='<div style="background:#fff;border-radius:14px;padding:0;width:100%;max-width:440px;direction:rtl;overflow:hidden" onclick="event.stopPropagation()">'+
+  var taId='viol-done-msg-ta';
+  modal.innerHTML='<div style="background:#fff;border-radius:14px;padding:0;width:100%;max-width:460px;direction:rtl;overflow:hidden;max-height:92vh;display:flex;flex-direction:column" onclick="event.stopPropagation()">'+
     '<div style="background:#166534;padding:14px 18px;color:#fff">'+
       '<div style="font-size:14px;font-weight:600">סמן הוסב + עדכן נהג — דוח '+esc(v.num)+'</div>'+
       '<div style="font-size:11px;opacity:.8;margin-top:2px">שלח עדכון לנהג שהדוח הוסב על שמו, התהליך יסתיים</div>'+
     '</div>'+
-    '<div style="padding:18px">'+
-      '<div style="background:#f0fdf4;border-radius:8px;padding:10px 12px;font-size:12px;white-space:pre-wrap;color:#166534;margin-bottom:14px;max-height:150px;overflow-y:auto">'+msg.replace(/</g,'&lt;')+'</div>'+
+    '<div style="padding:18px;overflow-y:auto;flex:1">'+
+      '<div style="font-size:12px;color:#666;margin-bottom:6px">הודעה לנהג (ניתן לערוך לפני שליחה):</div>'+
+      '<textarea id="'+taId+'" style="width:100%;box-sizing:border-box;min-height:140px;border:1px solid var(--bdr2);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:13px;color:var(--t1);direction:rtl;resize:vertical;margin-bottom:14px">'+msg.replace(/</g,'&lt;')+'</textarea>'+
       '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'+
-        (driverPhone?'<button onclick="window.open(\''+waLink+'\',\'_blank\');violMarkDone('+vid+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#25D366;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600"><span style="font-size:20px">📱</span><div><div>שלח בוואטסאפ</div><div style="font-size:10px;opacity:.8">'+driverPhone+'</div></div></button>':'<div style="font-size:12px;color:#888">לא הוגדר טלפון לנהג</div>')+
-        (driverEmail?'<button onclick="window.open(\''+mailLink+'\');violMarkDone('+vid+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#2563eb;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600"><span style="font-size:20px">✉️</span><div><div>שלח במייל</div><div style="font-size:10px;opacity:.8">'+driverEmail+'</div></div></button>':'')+
+        (driverPhone?'<button onclick="violDoneSendWA('+vid+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#25D366;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600"><span style="font-size:20px">📱</span><div style="text-align:right"><div>שלח בוואטסאפ</div><div style="font-size:10px;opacity:.8">'+driverPhone+'</div></div></button>':'<div style="font-size:12px;color:#888">לא הוגדר טלפון לנהג</div>')+
+        (driverEmail?'<button onclick="violDoneSendMail('+vid+')" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#2563eb;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600"><span style="font-size:20px">✉️</span><div style="text-align:right"><div>שלח במייל</div><div style="font-size:10px;opacity:.8">'+driverEmail+'</div></div></button>':'')+
         '<button onclick="violMarkDone('+vid+')" style="padding:11px;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:600">✅ סמן כהוסב ללא שליחה</button>'+
       '</div>'+
       '<button onclick="document.getElementById(\'viol-done-modal\').remove()" style="width:100%;padding:9px;background:var(--bg);border:1px solid var(--bdr2);border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--t2)">סגור</button>'+
     '</div>'+
   '</div>';
   document.body.appendChild(modal);
+}
+
+function violDoneSendWA(vid){
+  var v=violationsList.find(function(x){return x.id===vid;});if(!v)return;
+  var veh=vehicles.find(function(x){return x.id===v.vehicleId;});
+  var driverPhone=(veh&&veh.driver&&veh.driver.phone)||'';
+  var ta=document.getElementById('viol-done-msg-ta');
+  var msg=ta?ta.value:'';
+  var waPhone=driverPhone.replace(/[^0-9]/g,'');if(waPhone.startsWith('0'))waPhone='972'+waPhone.substring(1);
+  window.open('https://wa.me/'+waPhone+'?text='+encodeURIComponent(msg),'_blank');
+  violMarkDone(vid);
+}
+
+function violDoneSendMail(vid){
+  var v=violationsList.find(function(x){return x.id===vid;});if(!v)return;
+  var veh=vehicles.find(function(x){return x.id===v.vehicleId;});
+  var driverEmail=(veh&&veh.driver&&veh.driver.email)||'';
+  var ta=document.getElementById('viol-done-msg-ta');
+  var msg=ta?ta.value:'';
+  window.open('mailto:'+driverEmail+'?subject='+encodeURIComponent('דוח תנועה '+v.num+' — הוסב על שמך')+'&body='+encodeURIComponent(msg));
+  violMarkDone(vid);
 }
 
 function violMarkDone(vid){
