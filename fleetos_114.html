@@ -5226,6 +5226,7 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
         <div class="fg">
           <div class="ff"><label>שם נהג חדש *</label><input id="upd-dname" placeholder="ישראל ישראלי"></div>
           <div class="ff"><label>תעודת זהות</label><input id="upd-did" placeholder="012345678" dir="ltr"></div>
+          <div class="ff"><label>מספר רישיון נהיגה</label><input id="upd-dlicnum" placeholder="12345678" dir="ltr"></div>
           <div class="ff"><label>טלפון</label><input id="upd-dphone" placeholder="050-0000000" dir="ltr"></div>
           <div class="ff"><label>מייל</label><input id="upd-demail" placeholder="name@co.il" dir="ltr"></div>
           <div class="ff"><label>תוקף רישיון נהיגה</label><input type="date" id="upd-dlic"></div>
@@ -5292,6 +5293,7 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
           <div class="fg">
             <div class="ff"><label>שם מלא</label><input id="ev-dname"></div>
             <div class="ff"><label>תעודת זהות</label><input id="ev-did" dir="ltr"></div>
+            <div class="ff"><label>מספר רישיון נהיגה</label><input id="ev-dlicnum" dir="ltr" placeholder="12345678"></div>
             <div class="ff"><label>טלפון</label><input id="ev-dphone" dir="ltr"></div>
             <div class="ff"><label>מייל</label><input id="ev-demail" dir="ltr"></div>
             <div class="ff"><label>תוקף רישיון נהיגה</label><input type="date" id="ev-dlic"></div>
@@ -5458,6 +5460,7 @@ body.notif-open, body.notif-open .content { overflow: hidden !important; }
       <div class="fg">
         <div class="ff"><label>שם מלא *</label><input id="fa-dname" placeholder="ישראל ישראלי" autocomplete="off"></div>
         <div class="ff"><label>תעודת זהות</label><input id="fa-did" placeholder="012345678" dir="ltr" autocomplete="off"></div>
+        <div class="ff"><label>מספר רישיון נהיגה</label><input id="fa-dlicnum" placeholder="12345678" dir="ltr" autocomplete="off"></div>
         <div class="ff"><label>טלפון</label><input id="fa-dphone" placeholder="050-0000000" dir="ltr" autocomplete="off"></div>
         <div class="ff"><label>מייל</label><input id="fa-demail" placeholder="name@co.il" dir="ltr" autocomplete="off"></div>
         <div class="ff"><label>תוקף רישיון נהיגה</label><input type="date" id="fa-dlic" dir="ltr" autocomplete="off"></div>
@@ -9038,6 +9041,7 @@ function openUpdateModal(vid){
   renderTollCheckboxes('upd-tolls-container','upd',v.tolls||[]);
   const dn=document.getElementById('upd-driver-name');if(dn)dn.textContent=v.driver.name;
   id('upd-dname').value=v.driver.name||'';id('upd-did').value=v.driver.id||'';
+  const _updLicNum=document.getElementById('upd-dlicnum');if(_updLicNum)_updLicNum.value=v.driver.licenseNum||'';
   id('upd-dphone').value=v.driver.phone||'';id('upd-demail').value=v.driver.email||'';
   id('upd-dlic').value=v.driver.licenseExp||'';
   const da=document.getElementById('upd-daddress');if(da)da.value=v.driver.address||'';
@@ -9123,6 +9127,7 @@ function saveUpdate(){
     // Update driver
     v.driver.name=newName;
     v.driver.id=id('upd-did')?.value.trim()||'';
+    v.driver.licenseNum=id('upd-dlicnum')?.value.trim()||'';
     v.driver.phone=id('upd-dphone')?.value.trim()||'';
     v.driver.email=id('upd-demail')?.value.trim()||'';
     v.driver.licenseExp=id('upd-dlic')?.value||'';
@@ -12138,6 +12143,7 @@ function openDet(vid){
     </div>
     <div>
       <div class="ir-vc"><span class="lb">ת.ז.</span><span class="vl" dir="ltr">${v.driver.id||'—'}</span></div>
+      ${v.driver.licenseNum?`<div class="ir-vc"><span class="lb">רישיון נהיגה</span><span class="vl" dir="ltr">${esc(v.driver.licenseNum)}</span></div>`:''}
       <div class="ir-vc"><span class="lb">טלפון</span><span class="vl" dir="ltr">${v.driver.phone||'—'}</span></div>
       <div class="ir-vc"><span class="lb">אימייל</span><span class="vl" dir="ltr">${v.driver.email||'—'}</span></div>
       <div class="ir-vc"><span class="lb">תוקף רישיון נהיגה</span><span class="vl"${dLc?` style="color:${dLc}"`:''}>${fd(v.driver.licenseExp)||'—'}</span></div>
@@ -15646,7 +15652,7 @@ async function scanDriverDoc(input){
   const file=input.files[0];if(!file)return;
   const zone=id('scan-driver-zone'),st=id('scan-d-status'),sp=id('scan-d-spinner');
   sp.style.display='block';st.textContent='סורק...';st.style.color='var(--t2)';
-  id('fa-dname').value='';id('fa-did').value='';id('fa-dlic').value='';
+  id('fa-dname').value='';id('fa-did').value='';id('fa-dlicnum').value='';id('fa-dlic').value='';
   try{
     const reader = new FileReader();
     reader.onload = e => { _pendingScannedDriverDoc = { name:file.name, type:file.type, data:e.target.result }; };
@@ -15714,7 +15720,7 @@ function addVehicle(){
     isNew,lastService,serviceKm,currentKm,
     nextServiceType,nextSvcDate,tolls,
     dealEnd:delivery?addY(delivery,3):'',
-    driver:{name:dname,id:id('fa-did').value.trim(),phone:id('fa-dphone').value.trim(),email:id('fa-demail').value.trim(),licenseExp:id('fa-dlic').value,address:id('fa-daddress').value.trim(),company:id('fa-dcompany').value},
+    driver:{name:dname,id:id('fa-did').value.trim(),licenseNum:id('fa-dlicnum').value.trim(),phone:id('fa-dphone').value.trim(),email:id('fa-demail').value.trim(),licenseExp:id('fa-dlic').value,address:id('fa-daddress').value.trim(),company:id('fa-dcompany').value},
     family:[],history:histEntry,historyLog:hLog,docs:false,
     photo:_pendingVehiclePhoto||null
   });
@@ -16051,6 +16057,7 @@ function openEditVehicle(vid){
   renderTollCheckboxes('ev-tolls-container','ev',v.tolls||[]);
   id('ev-dname').value=v.driver.name||'';
   id('ev-did').value=v.driver.id||'';
+  id('ev-dlicnum').value=v.driver.licenseNum||'';
   id('ev-dphone').value=v.driver.phone||'';
   id('ev-demail').value=v.driver.email||'';
   id('ev-dlic').value=v.driver.licenseExp||'';
@@ -16079,6 +16086,7 @@ function saveEditVehicle(){
   v.tolls=getTollsFromCheckboxes('ev');
   v.driver.name=id('ev-dname').value.trim()||v.driver.name;
   v.driver.id=id('ev-did').value.trim();
+  v.driver.licenseNum=id('ev-dlicnum').value.trim();
   v.driver.phone=id('ev-dphone').value.trim();
   v.driver.email=id('ev-demail').value.trim();
   v.driver.licenseExp=id('ev-dlic').value;
