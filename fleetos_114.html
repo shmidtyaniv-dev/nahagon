@@ -26448,7 +26448,7 @@ function openApproveModal(treatmentId) {
   if (!t) return;
 
   // רענן טלפון/מייל מהרכב הנוכחי — ייתכן שהנהג עדכן פרטים אחרי יצירת הטיפול
-  var freshVehicle = (typeof vehiclesList !== 'undefined' ? vehiclesList : []).find(function(v){ return String(v.id) === String(t.vehicleId); });
+  var freshVehicle = (typeof vehicles !== 'undefined' ? vehicles : []).find(function(v){ return String(v.id) === String(t.vehicleId); });
   if (freshVehicle && freshVehicle.driver) {
     var freshPhone = freshVehicle.driver.phone || t.driverPhone || '';
     var freshEmail = freshVehicle.driver.email || t.driverEmail || '';
@@ -26712,7 +26712,7 @@ function openReminderModal(treatmentId) {
   if (!t) return;
 
   // רענן טלפון/מייל מהרכב הנוכחי
-  var freshVehicle = (typeof vehiclesList !== 'undefined' ? vehiclesList : []).find(function(v){ return String(v.id) === String(t.vehicleId); });
+  var freshVehicle = (typeof vehicles !== 'undefined' ? vehicles : []).find(function(v){ return String(v.id) === String(t.vehicleId); });
   if (freshVehicle && freshVehicle.driver) {
     var freshPhone = freshVehicle.driver.phone || t.driverPhone || '';
     var freshEmail = freshVehicle.driver.email || t.driverEmail || '';
