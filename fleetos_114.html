@@ -25166,11 +25166,14 @@ var TREATMENT_STATE = {
 // 3. אתחול
 // ============================================================
 
-// Promise שנפתר ברגע שה-snapshot הראשון של treatments מגיע מהענן.
-// משמש ל-(א) המתנה ב-initTreatmentsSystem לפני הסריקה הראשונה,
-// ו-(ב) ה-debounced scan מ-vehicles listener שמחכה שהנתונים יהיו מוכנים.
+// Promise שנפתר (resolve) כשה-snapshot הראשון של treatments מגיע,
+// ונדחה (reject) אם המאזין נכשל — כך initTreatmentsSystem אף פעם לא נתקעת.
 var _treatmentsReadyResolve = null;
-var _treatmentsReady = new Promise(function(resolve) { _treatmentsReadyResolve = resolve; });
+var _treatmentsReadyReject  = null;
+var _treatmentsReady = new Promise(function(resolve, reject) {
+  _treatmentsReadyResolve = resolve;
+  _treatmentsReadyReject  = reject;
+});
 
 // debounce 5 שניות: מריץ performLocalScan רק אחרי שה-snapshot הראשון הגיע
 // ורק 5 שניות אחרי השינוי האחרון ברכבים — מונע סריקות מרובות בטעינה ראשונית
@@ -25192,8 +25195,13 @@ async function initTreatmentsSystem() {
   subscribeToVehicles();
   subscribeToTreatments();
   setupTreatmentFilterButtons();
-  await _treatmentsReady; // ממתין ל-snapshot הראשון של treatments לפני הסריקה
-  performLocalScan();
+  try {
+    await _treatmentsReady; // ממתין ל-snapshot הראשון של treatments לפני הסריקה
+    performLocalScan();
+  } catch(e) {
+    // המאזין נכשל — לא מריצים סריקה, שאר המערכת (לוח, רשימות) ממשיכה לעבוד
+    console.error('[Treatments] אתחול: המאזין נכשל, הסריקה בוטלה', e);
+  }
   console.log('[Treatments] מערכת מוכנה');
 }
 
@@ -25239,6 +25247,10 @@ function subscribeToTreatments() {
     // פותר את ה-Promise בפעם הראשונה שה-snapshot מגיע (מאפשר ל-performLocalScan להתחיל)
     if (_treatmentsReadyResolve) { _treatmentsReadyResolve(); _treatmentsReadyResolve = null; }
     renderTreatments();
+  }, function(err) {
+    // שגיאה ב-listener — דוחים את ה-Promise כדי ש-initTreatmentsSystem תמשיך (ותדלג על הסריקה)
+    console.error('[Treatments] שגיאה במאזין treatments:', err);
+    if (_treatmentsReadyReject) { _treatmentsReadyReject(err); _treatmentsReadyReject = null; _treatmentsReadyResolve = null; }
   });
 }
 
