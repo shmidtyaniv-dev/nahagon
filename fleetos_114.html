@@ -12435,8 +12435,9 @@ function startVehiclesListener(){
         if(f && v.plate && f!==v.plate){ v.plate=f; if(typeof persistVehicle==='function') persistVehicle(v); }
       });
     }
-    // Hook: sync vehicles array to treatments state (scan runs on startup and user actions only)
+    // Hook: sync vehicles array to treatments state + debounced scan (5 s after last change)
     if(typeof TREATMENT_STATE!=='undefined'){ TREATMENT_STATE.vehicles=vehicles||[]; }
+    if(typeof _debouncedScan==='function') _debouncedScan();
     var _vcPage=document.getElementById('page-vehicle-card');
     if(_currentVid && _vcPage && _vcPage.classList.contains('active')){
       const stillExists=vehicles.find(function(v){return v.id===_currentVid;});
@@ -25164,12 +25165,34 @@ var TREATMENT_STATE = {
 // ============================================================
 // 3. אתחול
 // ============================================================
+
+// Promise שנפתר ברגע שה-snapshot הראשון של treatments מגיע מהענן.
+// משמש ל-(א) המתנה ב-initTreatmentsSystem לפני הסריקה הראשונה,
+// ו-(ב) ה-debounced scan מ-vehicles listener שמחכה שהנתונים יהיו מוכנים.
+var _treatmentsReadyResolve = null;
+var _treatmentsReady = new Promise(function(resolve) { _treatmentsReadyResolve = resolve; });
+
+// debounce 5 שניות: מריץ performLocalScan רק אחרי שה-snapshot הראשון הגיע
+// ורק 5 שניות אחרי השינוי האחרון ברכבים — מונע סריקות מרובות בטעינה ראשונית
+var _scanDebounceTimer = null;
+function _debouncedScan() {
+  if (typeof performLocalScan !== 'function') return;
+  if (_scanDebounceTimer) clearTimeout(_scanDebounceTimer);
+  _scanDebounceTimer = setTimeout(function() {
+    _scanDebounceTimer = null;
+    _treatmentsReady.then(function() {
+      try { performLocalScan(); } catch(e) { console.error('[Treatments] debounced scan error:', e); }
+    });
+  }, 5000);
+}
+
 async function initTreatmentsSystem() {
   console.log('[Treatments] מאתחל מערכת טיפולים וטסטים...');
   await loadTreatmentSettings();
   subscribeToVehicles();
   subscribeToTreatments();
   setupTreatmentFilterButtons();
+  await _treatmentsReady; // ממתין ל-snapshot הראשון של treatments לפני הסריקה
   performLocalScan();
   console.log('[Treatments] מערכת מוכנה');
 }
@@ -25213,6 +25236,8 @@ function subscribeToTreatments() {
     TREATMENT_STATE.treatments = snapshot.docs.map(function(doc) {
       return Object.assign({ id: doc.id }, doc.data());
     });
+    // פותר את ה-Promise בפעם הראשונה שה-snapshot מגיע (מאפשר ל-performLocalScan להתחיל)
+    if (_treatmentsReadyResolve) { _treatmentsReadyResolve(); _treatmentsReadyResolve = null; }
     renderTreatments();
   });
 }
