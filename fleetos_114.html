@@ -12371,8 +12371,6 @@ function startVehiclesListener(){
       loadVehicleDocsStore();
       // Run once after initial load to fix any garbled data from iOS rotation bug
       setTimeout(cleanGarbledDriverData,500);
-      // סנכרן lastKmUpdate מ-kmUpdates — מונע race condition עם startKmUpdatesListener
-      setTimeout(syncKmUpdateDates,800);
       // חדש אוטומטית רישיון רכב שתוקפו עבר
       setTimeout(autoRenewLicenseExps,1000);
       // תקן race condition: עדכוני רישיון שהגיעו לפני שהרכבים נטענו
@@ -12437,9 +12435,8 @@ function startVehiclesListener(){
         if(f && v.plate && f!==v.plate){ v.plate=f; if(typeof persistVehicle==='function') persistVehicle(v); }
       });
     }
-    // Hook: refresh treatments system when vehicles change
+    // Hook: sync vehicles array to treatments state (scan runs on startup and user actions only)
     if(typeof TREATMENT_STATE!=='undefined'){ TREATMENT_STATE.vehicles=vehicles||[]; }
-    if(typeof performLocalScan==='function'){ try{performLocalScan();}catch(e){console.error('[Treatments] scan error:',e);} }
     var _vcPage=document.getElementById('page-vehicle-card');
     if(_currentVid && _vcPage && _vcPage.classList.contains('active')){
       const stillExists=vehicles.find(function(v){return v.id===_currentVid;});
@@ -12643,34 +12640,6 @@ function autoRenewLicenseExps(){
     try{renderV();}catch(e){}
     try{if(_currentVid) openDet(_currentVid);}catch(e){}
   }
-}
-
-// סנכרן lastKmUpdate מ-kmUpdates — רץ פעם אחת אחרי טעינת הרכבים
-// פותר race condition: kmUpdates listener עשוי לירות לפני שהרכבים נטענו
-function syncKmUpdateDates(){
-  if(!db||!_vehiclesLoaded) return;
-  db.collection('kmUpdates').get().then(function(snap){
-    var changed=false;
-    snap.forEach(function(doc){
-      var d=doc.data();
-      if(!d.km||!d.vid||!d.updatedAt) return;
-      var newDate=d.updatedAt.split('T')[0];
-      var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
-      if(!v) return;
-      // עדכן רק אם תאריך העדכון חדש יותר מהשמור
-      if(!v.lastKmUpdate||newDate>v.lastKmUpdate){
-        v.lastKmUpdate=newDate;
-        // עדכן גם km אם גבוה יותר
-        if(d.km>v.currentKm) v.currentKm=d.km;
-        changed=true;
-        try{persistVehicle(v);}catch(e){}
-      }
-    });
-    if(changed){
-      try{renderV();}catch(e){}
-      try{if(_currentVid){var v2=vehicles.find(function(x){return x.id===_currentVid;});if(v2)openDet(_currentVid);}}catch(e){}
-    }
-  }).catch(function(e){console.error('syncKmUpdateDates error:',e);});
 }
 
 function startKmUpdatesListener(){
@@ -25256,25 +25225,22 @@ var _scanInProgress = false;
 // סגירה אוטומטית של טיפול פתוח כשהרכב כבר טופל (הטיפול הבא רחוק)
 async function autoCloseRenewedTestTreatments(vehicle, newDueDate) {
   try {
-    var snap = await db.collection('treatments')
-      .where('vehicleId', '==', String(vehicle.id))
-      .where('kind', '==', 'test')
-      .get();
     var newDateDay = newDueDate.toISOString().slice(0, 10);
-    for(var _i=0;_i<snap.docs.length;_i++){
-      var _doc=snap.docs[_i];
-      var d=_doc.data();
-      if(d.status === 'closed') continue;
-      var storedDateDay = (d.dueDate || '').slice(0, 10);
+    var localDocs = (TREATMENT_STATE.treatments||[]).filter(function(t){
+      return String(t.vehicleId)===String(vehicle.id) && t.kind==='test';
+    });
+    for(var _i=0;_i<localDocs.length;_i++){
+      var t=localDocs[_i];
+      if(t.status === 'closed') continue;
+      var storedDateDay = (t.dueDate || '').slice(0, 10);
       if (storedDateDay !== newDateDay) {
-        await db.collection('treatments').doc(_doc.id).update({
+        await db.collection('treatments').doc(t.id).update({
           status: 'closed',
           closedReason: 'auto_renewed',
           closedAt: new Date().toISOString()
         });
-        var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === _doc.id; });
-        if (local) local.status = 'closed';
-        console.log('[Treatments] סגירה אוטומטית — טסט חודש:', _doc.id);
+        t.status = 'closed';
+        console.log('[Treatments] סגירה אוטומטית — טסט חודש:', t.id);
       }
     }
   } catch(err) {
@@ -25284,27 +25250,24 @@ async function autoCloseRenewedTestTreatments(vehicle, newDueDate) {
 
 async function autoCloseServicedTreatments(vehicle, lastSvcDate) {
   try {
-    var snap = await db.collection('treatments')
-      .where('vehicleId', '==', String(vehicle.id))
-      .where('kind', '==', 'treatment')
-      .get();
     var lastSvc = new Date(lastSvcDate);
-    for(var _i=0;_i<snap.docs.length;_i++){
-      var _doc=snap.docs[_i];
-      var d=_doc.data();
-      if(d.status === 'closed') continue;
+    var localDocs = (TREATMENT_STATE.treatments||[]).filter(function(t){
+      return String(t.vehicleId)===String(vehicle.id) && t.kind==='treatment';
+    });
+    for(var _i=0;_i<localDocs.length;_i++){
+      var t=localDocs[_i];
+      if(t.status === 'closed') continue;
       // אם תאריך הטיפול האחרון חדש יותר מתאריך יצירת הרשומה — הרכב טופל אחרי שנשלחה הבקשה
       // משתמשים ב-createdAt האמיתי; lastEmailSentAt מתעדכן בכל תזכורת ידנית ולכן לא אמין כאן
-      var createdAt = d.createdAt ? new Date(d.createdAt) : (d.lastEmailSentAt ? new Date(d.lastEmailSentAt) : null);
+      var createdAt = t.createdAt ? new Date(t.createdAt) : (t.lastEmailSentAt ? new Date(t.lastEmailSentAt) : null);
       if (!createdAt || lastSvc >= createdAt) {
-        await db.collection('treatments').doc(_doc.id).update({
+        await db.collection('treatments').doc(t.id).update({
           status: 'closed',
           closedReason: 'auto_serviced',
           closedAt: new Date().toISOString()
         });
-        var local=(TREATMENT_STATE.treatments||[]).find(function(t){return t.id===_doc.id;});
-        if(local) local.status='closed';
-        console.log('[Treatments] סגירה אוטומטית — טיפול בוצע:', _doc.id);
+        t.status = 'closed';
+        console.log('[Treatments] סגירה אוטומטית — טיפול בוצע:', t.id);
       }
     }
   } catch (err) {
@@ -25317,29 +25280,26 @@ async function autoCloseServicedTreatments(vehicle, lastSvcDate) {
 async function autoCloseNotDueTreatments(vehicle, kind) {
   kind = kind || 'treatment';
   try {
-    var snap = await db.collection('treatments')
-      .where('vehicleId', '==', String(vehicle.id))
-      .where('kind', '==', kind)
-      .get();
     var _today = new Date(); _today.setHours(0, 0, 0, 0);
     var _s = TREATMENT_STATE.settings || {};
     var _range = (kind === 'test' ? (_s.scanRangeDaysTest || _s.scanRangeDays) : (_s.scanRangeDaysTreatment || _s.scanRangeDays)) || 20;
-    for(var _i=0;_i<snap.docs.length;_i++){
-      var _doc=snap.docs[_i];
-      var d=_doc.data();
-      if(d.status !== 'awaiting_choice') continue;
-      if(d.dueDate){
-        var _du=daysBetween(_today,parseTreatmentDate(d.dueDate));
+    var localDocs = (TREATMENT_STATE.treatments||[]).filter(function(t){
+      return String(t.vehicleId)===String(vehicle.id) && t.kind===kind;
+    });
+    for(var _i=0;_i<localDocs.length;_i++){
+      var t=localDocs[_i];
+      if(t.status !== 'awaiting_choice') continue;
+      if(t.dueDate){
+        var _du=daysBetween(_today,parseTreatmentDate(t.dueDate));
         if(_du>=-30&&_du<=_range) continue;
       }
-      await db.collection('treatments').doc(_doc.id).update({
+      await db.collection('treatments').doc(t.id).update({
         status: 'closed',
         closedReason: 'auto_not_due',
         closedAt: new Date().toISOString()
       });
-      var local=(TREATMENT_STATE.treatments||[]).find(function(t){return t.id===_doc.id;});
-      if(local) local.status='closed';
-      console.log('[Treatments] סגירה אוטומטית — הבקשה אינה רלוונטית עוד:',_doc.id);
+      t.status = 'closed';
+      console.log('[Treatments] סגירה אוטומטית — הבקשה אינה רלוונטית עוד:',t.id);
     }
   } catch (err) {
     console.error('[Treatments] שגיאה בסגירת בקשה לא רלוונטית:', err);
@@ -25353,22 +25313,19 @@ async function autoCloseNotDueTreatments(vehicle, kind) {
 async function autoCloseMonthlyModeTests(vehicle, reason) {
   reason = reason || 'monthly_mode';
   try {
-    var snap = await db.collection('treatments')
-      .where('vehicleId', '==', String(vehicle.id))
-      .where('kind', '==', 'test')
-      .get();
-    for(var _i=0;_i<snap.docs.length;_i++){
-      var _doc=snap.docs[_i];
-      var d=_doc.data();
-      if(d.status !== 'awaiting_choice') continue; // לא נוגעים במועדים שכבר נבחרו/אושרו
-      await db.collection('treatments').doc(_doc.id).update({
+    var localDocs = (TREATMENT_STATE.treatments||[]).filter(function(t){
+      return String(t.vehicleId)===String(vehicle.id) && t.kind==='test';
+    });
+    for(var _i=0;_i<localDocs.length;_i++){
+      var t=localDocs[_i];
+      if(t.status !== 'awaiting_choice') continue; // לא נוגעים במועדים שכבר נבחרו/אושרו
+      await db.collection('treatments').doc(t.id).update({
         status: 'closed',
         closedReason: reason,
         closedAt: new Date().toISOString()
       });
-      var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === _doc.id; });
-      if (local) local.status = 'closed';
-      console.log('[Treatments] בקשת טסט נסגרה (' + reason + '):', _doc.id);
+      t.status = 'closed';
+      console.log('[Treatments] בקשת טסט נסגרה (' + reason + '):', t.id);
     }
   } catch (err) {
     console.error('[Treatments] שגיאה בסגירת טסט (מצב חודשי):', err);
@@ -25606,51 +25563,43 @@ async function performLocalScan() {
   }
 }
 
-// בדיקה ב-Firestore ישירות לפני יצירה (מונע כפילויות)
+// בדיקה מזיכרון (TREATMENT_STATE.treatments) לפני יצירה (מונע כפילויות + חוסך קריאות Firestore)
 async function createTreatmentIfNotExists(vehicle, kind, dueDate) {
   try {
-    // הגנת עומק לפטור שנה ראשונה: גם אם עותק הרכב בטאב הזה ישן (בלי דגל isNew),
-    // בודקים מול נתוני הרכב העדכניים בענן לפני יצירת בקשת טסט — רכב פטור לעולם
-    // לא מקבל בקשה ולא נשלחת הודעה לנהג (יניב מעדכן את הרישיון בעצמו)
+    // הגנת עומק לפטור שנה ראשונה: בודקים מול הרכב שבזיכרון — מסונכרן real-time ע"י startVehiclesListener
     if (kind === 'test' && typeof isFirstYearTestExempt === 'function') {
       if (isFirstYearTestExempt(vehicle)) return;
-      try {
-        var _vSnap = await db.collection('vehicles').doc(String(vehicle.id)).get();
-        if (_vSnap.exists && isFirstYearTestExempt(_vSnap.data())) return;
-      } catch (e) { console.error('[Treatments] בדיקת פטור מול הענן נכשלה:', e); }
+      var _vLocal = (vehicles||[]).find(function(x){ return String(x.id)===String(vehicle.id); });
+      if (_vLocal && isFirstYearTestExempt(_vLocal)) return;
     }
-    var existingQuery = await db.collection('treatments')
-      .where('vehicleId', '==', String(vehicle.id))
-      .where('kind', '==', kind)
-      .get();
+    var existingDocs = (TREATMENT_STATE.treatments||[]).filter(function(t){
+      return String(t.vehicleId)===String(vehicle.id) && t.kind===kind;
+    });
 
     var hasActive = false;
     var newDateDay = dueDate.toISOString().slice(0, 10);
 
-    existingQuery.forEach(function(doc) {
-      var d = doc.data();
-      if (d.status === 'closed') return;
+    existingDocs.forEach(function(t) {
+      if (t.status === 'closed') return;
       hasActive = true;
       // סנכרון הרשומה הקיימת עם כרטיס הרכב: תאריך יעד, ק"מ נוכחי, ק"מ טיפול הבא
       var updates = {};
-      var existingDateDay = (d.dueDate || '').slice(0, 10);
+      var existingDateDay = (t.dueDate || '').slice(0, 10);
       if (existingDateDay !== newDateDay) updates.dueDate = dueDate.toISOString();
       var curKm = vehicle.currentKm || vehicle.curKm || 0;
-      if (curKm && d.currentMileage !== curKm) updates.currentMileage = curKm;
+      if (curKm && t.currentMileage !== curKm) updates.currentMileage = curKm;
       if (kind === 'treatment' && typeof calcNextSvc === 'function') {
         var nx = calcNextSvc(vehicle);
         if (nx && nx.km) {
-          if (d.nextServiceKm !== nx.km) updates.nextServiceKm = nx.km;
+          if (t.nextServiceKm !== nx.km) updates.nextServiceKm = nx.km;
           var tt = 'טיפול ' + nx.km.toLocaleString('he-IL') + ' ק"מ';
-          if (d.treatmentType !== tt) updates.treatmentType = tt;
+          if (t.treatmentType !== tt) updates.treatmentType = tt;
         }
       }
       if (Object.keys(updates).length) {
-        db.collection('treatments').doc(doc.id).update(updates)
+        db.collection('treatments').doc(t.id).update(updates)
           .catch(function(e) { console.error('[Treatments] שגיאה בסנכרון רשומה:', e); });
-        // עדכן גם ב-local state
-        var local = (TREATMENT_STATE.treatments || []).find(function(t){ return t.id === doc.id; });
-        if (local) Object.assign(local, updates);
+        Object.assign(t, updates);
       }
     });
 
