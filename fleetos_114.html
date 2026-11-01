@@ -25613,12 +25613,35 @@ async function createTreatmentIfNotExists(vehicle, kind, dueDate) {
       return String(t.vehicleId)===String(vehicle.id) && t.kind===kind;
     });
 
-    var hasActive = false;
+    // הפרד בין פעילים (לא closed) לסגורים
+    var activeDocs = existingDocs.filter(function(t){ return t.status !== 'closed'; });
+
+    // ── ניקוי כפילויות: יותר מרשומה פעילה אחת ← שמור את המועדפת, סגור את השאר ──
+    // עדיפות: scheduled > pending_approval > awaiting_choice; שוויון — החדשה יותר (createdAt גדול יותר)
+    if (activeDocs.length > 1) {
+      var statusPriority = { scheduled: 3, pending_approval: 2, awaiting_choice: 1 };
+      activeDocs.sort(function(a, b) {
+        var pa = statusPriority[a.status] || 0, pb = statusPriority[b.status] || 0;
+        if (pb !== pa) return pb - pa;                      // עדיפות סטטוס יורדת
+        return (b.createdAt || '') > (a.createdAt || '') ? 1 : -1; // חדש יותר קודם
+      });
+      // activeDocs[0] = המנצח; כל השאר — סגור
+      for (var _di = 1; _di < activeDocs.length; _di++) {
+        var _dup = activeDocs[_di];
+        _dup.status = 'closed';
+        db.collection('treatments').doc(_dup.id).update({
+          status: 'closed', closedReason: 'duplicate', closedAt: new Date().toISOString()
+        }).catch(function(e){ console.error('[Treatments] סגירת כפילות:', e); });
+        console.warn('[Treatments] כפילות נסגרה:', _dup.id, '(נהג:', _dup.driverName, ')');
+      }
+      activeDocs = [activeDocs[0]]; // נשאר רק המנצח
+    }
+
+    var hasActive = activeDocs.length > 0;
     var newDateDay = dueDate.toISOString().slice(0, 10);
 
-    existingDocs.forEach(function(t) {
-      if (t.status === 'closed') return;
-      hasActive = true;
+    if (hasActive) {
+      var t = activeDocs[0];
       // סנכרון הרשומה הקיימת עם כרטיס הרכב: תאריך יעד, ק"מ נוכחי, ק"מ טיפול הבא
       var updates = {};
       var existingDateDay = (t.dueDate || '').slice(0, 10);
@@ -25638,9 +25661,8 @@ async function createTreatmentIfNotExists(vehicle, kind, dueDate) {
           .catch(function(e) { console.error('[Treatments] שגיאה בסנכרון רשומה:', e); });
         Object.assign(t, updates);
       }
-    });
-
-    if (hasActive) return;
+      return; // יש מסמך פעיל — לא יוצרים חדש
+    }
 
     await createTreatmentRecord(vehicle, kind, dueDate);
   } catch (err) {
