@@ -6199,15 +6199,20 @@ function plateInputFmt(el){
 
 // Auto-calculate next service. Prefer historyLog over lastService field.
 // זיקר X: כל 20,000 ק"מ או שנתיים (במקום 15,000 ק"מ / שנה)
+// טסלה: כל 20,000 ק"מ או שנה
 function isZikarVehicle(v){
   return v && typeof (v.make||'') === 'string' && /זיקר|zikar/i.test(v.make);
+}
+function isTeslaVehicle(v){
+  return v && typeof (v.make||'') === 'string' && /טסלה|tesla/i.test(v.make);
 }
 function calcNextSvc(v){
   if(!v) return {km:null,date:null,type:null};
   // קביעת מרווח הטיפול לפי סוג הרכב
   const zikar = isZikarVehicle(v);
-  const svcIntervalKm    = zikar ? 20000 : 15000;
-  const svcIntervalYears = zikar ? 2     : 1;
+  const tesla = isTeslaVehicle(v);
+  const svcIntervalKm    = (zikar || tesla) ? 20000 : 15000;
+  const svcIntervalYears = zikar ? 2 : 1;
   // Try historyLog first (most recent service entry)
   let lastSvcDate = null;
   let lastSvcKm = v.serviceKm || 0;
@@ -6243,12 +6248,13 @@ function calcNextSvc(v){
   }
   if(!lastSvcDate || !lastSvcKm) return {km:null,date:null,type:null};
   // הטיפול הבא במדרגה עגולה לפי מרווח הרכב.
-  // זיקר: ceil — כי serviceKm עשוי להיות מעט מתחת לאבן הדרך האמיתית (למשל 45k → אבן 60k → הבא 80k)
+  // זיקר/טסלה: ceil — כי serviceKm עשוי להיות מעט מתחת לאבן הדרך האמיתית
   // רגיל: round — מגן מרישום ק"מ שגוי
-  const roundedSvcKm = zikar
+  const use20k = zikar || tesla;
+  const roundedSvcKm = use20k
     ? Math.ceil(lastSvcKm / svcIntervalKm) * svcIntervalKm
     : Math.round(lastSvcKm / svcIntervalKm) * svcIntervalKm;
-  const nextKm = zikar
+  const nextKm = use20k
     ? roundedSvcKm + svcIntervalKm
     : Math.max(lastSvcTypeKm, roundedSvcKm) + svcIntervalKm;
   const d = new Date(lastSvcDate);
