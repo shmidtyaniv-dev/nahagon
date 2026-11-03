@@ -9616,7 +9616,8 @@ function _dashKmCell(v){
   var raw=v.currentKm||v.curKm;
   var km=raw?parseInt(String(raw).replace(/[^0-9]/g,''))||0:0;
   if(!km)return'<div class="muted">—</div>';
-  var upd=v.lastKmUpdate?'<div style="font-size:11px;color:var(--t2)">עודכן: '+fd(v.lastKmUpdate)+'</div>':'';
+  var _bkd2=_bestKmDate(v);
+  var upd=_bkd2?'<div style="font-size:11px;color:var(--t2)">עודכן: '+fd(_bkd2)+'</div>':'';
   return'<div><div style="font-weight:600">'+km.toLocaleString()+' ק"מ</div>'+upd+'</div>';
 }
 function dRow(v){
@@ -10466,7 +10467,8 @@ function showNoKmUpdateModal(){
     ? '<div style="text-align:center;padding:24px;color:var(--t3)">כל הנהגים עדכנו ק"מ החודש ✓</div>'
     : noKm.map(function(v){
         var dn=v.driverName||(v.driver&&v.driver.name)||'';
-        var last=v.lastKmUpdate ? new Date(v.lastKmUpdate).toLocaleDateString('he-IL') : 'מעולם לא';
+        var _bkd=_bestKmDate(v);
+        var last=_bkd ? new Date(_bkd).toLocaleDateString('he-IL') : 'מעולם לא';
         var km=v.currentKm ? Number(v.currentKm).toLocaleString('he-IL')+' ק"מ' : '—';
         var vid=String(v.id);
         return '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bdr)">'+
