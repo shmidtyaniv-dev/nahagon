@@ -12375,6 +12375,8 @@ function startVehiclesListener(){
       setTimeout(autoRenewLicenseExps,1000);
       // תקן race condition: עדכוני רישיון שהגיעו לפני שהרכבים נטענו
       setTimeout(_applyPendingLicUpdates,1200);
+      // תקן race condition: עדכוני ק"מ (מלינק אישי) שהגיעו לפני שהרכבים נטענו
+      setTimeout(_applyPendingKmUpdates,1400);
     }else{
       // Subsequent updates - merge carefully (only apply changes from other devices)
       snap.docChanges().forEach(function(change){
@@ -12643,6 +12645,9 @@ function autoRenewLicenseExps(){
   }
 }
 
+// בופר לעדכוני ק"מ שהגיעו לפני שהרכבים נטענו (race condition)
+var _kmPendingUpdates = [];
+
 function startKmUpdatesListener(){
   if(!db) return;
   var _kmInitialLoad = true;
@@ -12654,7 +12659,7 @@ function startKmUpdatesListener(){
         var d=change.doc.data();
         if(!d.km||!d.vid) return;
         var v=vehicles.find(function(x){return String(x.id)===String(d.vid);});
-        if(!v) return;
+        if(!v){ if(isFirst) _kmPendingUpdates.push({vid:d.vid, km:d.km, updatedAt:d.updatedAt, docId:change.doc.id}); return; }
         // רשום גם בעמוד "עדכוני ק"מ" (kmReports) - עם ID קבוע למניעת כפילויות
         // כתוב רשומת kmReports — תמיד (גם בטעינה ראשונה), merge:true מונע דריסת מידע קיים
         try{
@@ -12720,6 +12725,25 @@ function startKmUpdatesListener(){
       }
     });
   });
+}
+
+// מחיל עדכוני ק"מ שנאספו בבופר לפני שהרכבים נטענו
+function _applyPendingKmUpdates(){
+  if(!_vehiclesLoaded || !_kmPendingUpdates.length) return;
+  var changed = false;
+  _kmPendingUpdates.forEach(function(d){
+    var v = vehicles.find(function(x){ return String(x.id)===String(d.vid); });
+    if(!v) return;
+    var newDate = d.updatedAt ? d.updatedAt.split('T')[0] : localDateStr();
+    if(!v.lastKmUpdate || newDate > v.lastKmUpdate){
+      v.lastKmUpdate = newDate;
+      if(d.km > (v.currentKm||0)) v.currentKm = d.km;
+      changed = true;
+      try{ if(typeof persistVehicle==='function') persistVehicle(v); }catch(e){}
+    }
+  });
+  _kmPendingUpdates = [];
+  if(changed){ try{ renderV(); }catch(e){} }
 }
 
 // בופר לעדכוני רישיון שהגיעו לפני שהרכבים נטענו (race condition)
