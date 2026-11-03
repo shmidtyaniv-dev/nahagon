@@ -26171,6 +26171,9 @@ function renderAwaitingRow(t) {
 // ביטול ידני של בקשה ממתינה
 function cancelAwaitingTreatment(tid, driverName) {
   if (!confirm('לבטל את הבקשה של ' + (driverName || 'הנהג') + '?')) return;
+  // עדכון מיידי בזיכרון — מונע שהסריקה תיצור כפילות לפני שהסנאפשוט חוזר
+  var _localT = (TREATMENT_STATE.treatments||[]).find(function(t){return t.id===tid;});
+  if (_localT) _localT.status = 'closed';
   db.collection('treatments').doc(tid).update({
     status: 'closed',
     closedReason: 'manual_cancel',
@@ -26179,6 +26182,7 @@ function cancelAwaitingTreatment(tid, driverName) {
     showToast('הבקשה בוטלה');
   }).catch(function(e) {
     console.error('[Treatments] שגיאה בביטול:', e);
+    if (_localT) _localT.status = 'awaiting_choice'; // rollback
     showToast('שגיאה בביטול הבקשה');
   });
 }
