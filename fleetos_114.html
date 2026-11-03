@@ -7177,10 +7177,25 @@ function kmBatchUpdateCount(){
   var el=document.getElementById('km-batch-count');
   if(el)el.textContent=_kmBatchSelected.size;
 }
+// מחזיר את תאריך עדכון ק"מ הכי עדכני — מהרכב עצמו או מ-kmReports cache
+function _bestKmDate(v){
+  var best=v.lastKmUpdate||'';
+  try{
+    if(Array.isArray(_kmReportsCache)){
+      _kmReportsCache.forEach(function(r){
+        if(String(r.matchedVehicleId)!==String(v.id)) return;
+        var d=r.submittedAt?r.submittedAt.split('T')[0]:'';
+        if(d>best) best=d;
+      });
+    }
+  }catch(e){}
+  return best;
+}
 function kmVehicleIsStale(v){
   // לא עדכן ק"מ חודש ומעלה (או מעולם לא)
-  if(!v.lastKmUpdate)return true;
-  var d=new Date(v.lastKmUpdate);
+  var last=_bestKmDate(v);
+  if(!last)return true;
+  var d=new Date(last);
   if(isNaN(d.getTime()))return true;
   return (Date.now()-d.getTime())>=30*86400000;
 }
@@ -7210,7 +7225,8 @@ function kmBatchOpenModal(){
   var rows=sel.map(function(v){
     var name=v.driverName||v.driver?.name||'';
     var phone=(v.driverPhone||v.driver?.phone||'').replace(/[^0-9]/g,'');
-    var last=v.lastKmUpdate?new Date(v.lastKmUpdate).toLocaleDateString('he-IL'):'מעולם לא';
+    var _lastKmBest=_bestKmDate(v);
+    var last=_lastKmBest?new Date(_lastKmBest).toLocaleDateString('he-IL'):'מעולם לא';
     var btn=phone
       ?'<button onclick="kmBatchSendOne(\''+v.id+'\',this)" style="background:#25d366;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap">💬 שלח</button>'
       :'<span style="font-size:11px;color:var(--red-dark)">אין טלפון</span>';
