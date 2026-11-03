@@ -10440,16 +10440,19 @@ function startKmResetListener(){
     }
   });
 }
-function showNoKmUpdateModal(){
+function showNoKmUpdateModal(filterMode){
+  filterMode = filterMode || 'monthly'; // 'monthly' | 'stale30'
   var resetDate=_kmReportsLastReset?_kmReportsLastReset.split('T')[0]:null;
   var _kmCacheMap={};
   try{if(Array.isArray(_kmReportsCache)){_kmReportsCache.forEach(function(r){var vid=String(r.matchedVehicleId||'');if(!vid)return;var d=r.submittedAt?r.submittedAt.split('T')[0]:'';if(d&&(!_kmCacheMap[vid]||d>_kmCacheMap[vid]))_kmCacheMap[vid]=d;});}}catch(e){}
+  var thirtyDaysAgo=new Date(Date.now()-30*86400000).toISOString().split('T')[0];
   var noKm=(vehicles||[]).filter(function(v){
     var dn=v.driverName||(v.driver&&v.driver.name)||'';
     if(!dn) return false;
     var last=v.lastKmUpdate||'';
     var fromCache=_kmCacheMap[String(v.id)]||'';
     if(fromCache>last) last=fromCache;
+    if(filterMode==='stale30') return !last || last < thirtyDaysAgo;
     if(resetDate) return !last || last < resetDate;
     return !last;
   }).sort(function(a,b){
@@ -10464,7 +10467,7 @@ function showNoKmUpdateModal(){
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;direction:rtl';
   ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
   var rows=noKm.length===0
-    ? '<div style="text-align:center;padding:24px;color:var(--t3)">כל הנהגים עדכנו ק"מ החודש ✓</div>'
+    ? '<div style="text-align:center;padding:24px;color:var(--t3)">'+(filterMode==='stale30'?'אין נהגים שלא עדכנו 30 יום ומעלה ✓':'כל הנהגים עדכנו ק"מ החודש ✓')+'</div>'
     : noKm.map(function(v){
         var dn=v.driverName||(v.driver&&v.driver.name)||'';
         var _bkd=_bestKmDate(v);
@@ -10480,15 +10483,18 @@ function showNoKmUpdateModal(){
           '<button onclick="event.stopPropagation();sendKmRequest('+v.id+')" style="flex-shrink:0;padding:7px 12px;border:1px solid #25d366;border-radius:8px;background:#f0fdf4;color:#166534;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap">💬 בקש עדכון</button>'+
         '</div>';
       }).join('');
+  var btnMonthly='<button onclick="showNoKmUpdateModal(\'monthly\')" style="padding:5px 12px;border-radius:20px;border:1.5px solid '+(filterMode==='monthly'?'#7c3aed':'#e5e7eb')+';background:'+(filterMode==='monthly'?'#7c3aed':'#fff')+';color:'+(filterMode==='monthly'?'#fff':'var(--t2)')+';font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap">מאז האיפוס</button>';
+  var btnStale='<button onclick="showNoKmUpdateModal(\'stale30\')" style="padding:5px 12px;border-radius:20px;border:1.5px solid '+(filterMode==='stale30'?'#dc2626':'#e5e7eb')+';background:'+(filterMode==='stale30'?'#dc2626':'#fff')+';color:'+(filterMode==='stale30'?'#fff':'var(--t2)')+';font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap">מעל 30 יום</button>';
   ov.innerHTML=
     '<div style="background:#fff;border-radius:16px;width:100%;max-width:440px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">'+
       '<div style="padding:16px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">'+
         '<div>'+
           '<div style="font-size:16px;font-weight:700;color:var(--t1)">נהגים שלא עדכנו ק"מ</div>'+
-          '<div style="font-size:12px;color:var(--t3);margin-top:2px">מתאפס כל 1 בחודש · '+noKm.length+' נהגים לא עדכנו החודש</div>'+
+          '<div style="font-size:12px;color:var(--t3);margin-top:2px">'+noKm.length+' נהגים</div>'+
         '</div>'+
         '<button onclick="document.getElementById(\'no-km-modal\').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3);padding:4px">✕</button>'+
       '</div>'+
+      '<div style="padding:10px 16px;border-bottom:1px solid var(--bdr);display:flex;gap:8px">'+btnMonthly+btnStale+'</div>'+
       '<div style="overflow-y:auto;flex:1">'+rows+'</div>'+
     '</div>';
   document.body.appendChild(ov);
