@@ -26163,8 +26163,24 @@ function renderAwaitingRow(t) {
     + '<div class="trt-driver-meta">נשלח: ' + formatTreatmentDate(t.lastEmailSentAt) + (t.treatmentType ? ' · ' + t.treatmentType : '') + _trtTestDeadline(t) + '</div>'
     + '</div>'
     + '<div class="trt-driver-actions" onclick="event.stopPropagation()">'
+    + '<button class="trt-btn-action trt-btn-action-danger" onclick="cancelAwaitingTreatment(\'' + t.id + '\',\'' + _esc(t.driverName||'') + '\')" title="בטל בקשה זו">בטל</button>'
     + '<button class="trt-btn-action" onclick="openReminderModal(\'' + t.id + '\')">קביעת מועד ↗</button>'
     + '</div></div>';
+}
+
+// ביטול ידני של בקשה ממתינה
+function cancelAwaitingTreatment(tid, driverName) {
+  if (!confirm('לבטל את הבקשה של ' + (driverName || 'הנהג') + '?')) return;
+  db.collection('treatments').doc(tid).update({
+    status: 'closed',
+    closedReason: 'manual_cancel',
+    closedAt: new Date().toISOString()
+  }).then(function() {
+    showToast('הבקשה בוטלה');
+  }).catch(function(e) {
+    console.error('[Treatments] שגיאה בביטול:', e);
+    showToast('שגיאה בביטול הבקשה');
+  });
 }
 
 // בטסט — תוקף רישיון הרכב = המועד האחרון לקביעת הטסט
