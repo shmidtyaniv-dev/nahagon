@@ -13686,25 +13686,34 @@ function kmrConfirmMatch(reportId){
 function _applyKmReportToVehicle(reportId, vehicle, km, navigateAfter){
   if(!db||!vehicle||!vehicle.id||!km) return;
   var now=new Date().toISOString();
+  var nowDate=now.split('T')[0];
   var vid=String(vehicle.id);
-  // הוסף לhistoryLog (מוצג בציר הזמן)
-  var historyLog=(vehicle.historyLog||[]).slice();
+  // השתמש תמיד בנתוני הרכב העדכניים מהמערך — לא בעותק מהדיווח (שעלול להיות ישן)
+  var _vi0=vehicles.findIndex(function(v){return String(v.id)===vid;});
+  var _vObj=_vi0>=0?vehicles[_vi0]:vehicle;
+  // אם הרכב כבר מציג ק"מ גבוה יותר — אל תדרוס (עלול לקרות אם שני דיווחים מגיעים ביחד)
+  if(_vObj.currentKm && Number(_vObj.currentKm) > Number(km)){
+    // עדיין סגור את הדיווח כ-matched
+    db.collection('kmReports').doc(reportId).update({status:'matched',matchedVehicleId:vid,matchedPlate:vehicle.plate||'',matchedAt:now}).catch(function(){});
+    return;
+  }
+  // הוסף לhistoryLog (מוצג בציר הזמן) — מהמערך הנוכחי, לא מהעותק הישן
+  var historyLog=(_vObj.historyLog||[]).slice();
   historyLog.push({
     id:'h'+Date.now(), kind:'km',
     desc:'עדכון ק"מ עצמי: '+Number(km).toLocaleString('he-IL')+' ק"מ',
     createdAt: now, source:'driver'
   });
   // חובה להעלות את מונה הגרסה (_rev) — אחרת ההגנה מדריסה בטאבים אחרים תבטל את העדכון
-  var _vi0=vehicles.findIndex(function(v){return String(v.id)===vid;});
-  var _vObj=_vi0>=0?vehicles[_vi0]:vehicle;
   _vObj._rev=(Number(_vObj._rev)||0)+1;
   db.collection('vehicles').doc(vid).update({
     currentKm: km,
+    lastKmUpdate: nowDate,
     historyLog: historyLog,
     _rev: _vObj._rev
   }).then(function(){
     var vi=vehicles.findIndex(function(v){return String(v.id)===vid;});
-    if(vi>=0){ vehicles[vi].currentKm=km; vehicles[vi].historyLog=historyLog; }
+    if(vi>=0){ vehicles[vi].currentKm=km; vehicles[vi].lastKmUpdate=nowDate; vehicles[vi].historyLog=historyLog; }
     if(typeof renderV==='function') try{renderV();}catch(e){}
     showToast('ק"מ עודכן בכרטיס '+(vehicle.plate||'')+' ✓');
     if(navigateAfter && typeof openDet==='function') try{openDet(vehicle.id);}catch(e){}
