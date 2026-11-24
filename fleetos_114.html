@@ -9133,6 +9133,9 @@ function saveUpdate(){
       v.nextServiceType='טיפול ראשון';
       v.serviceKm=0;
       v.currentKm=0;
+      v.lastService='';
+      // ניקוי היסטוריית טיפולים של הרכב הישן — רכב חדש מתחיל מאפס
+      if(v.historyLog) v.historyLog=v.historyLog.filter(function(h){return h.kind!=='service';});
       if(v.delivery){var nd=new Date(v.delivery);nd.setFullYear(nd.getFullYear()+1);v.nextSvcDate=localDateStr(nd);}
     } else {
       var svcType=parseInt(id('upd-svc-type')?.value)||0;
@@ -9141,7 +9144,7 @@ function saveUpdate(){
       var ckmEl=id('upd-ckm');if(ckmEl&&ckmEl.value)v.currentKm=parseInt(ckmEl.value.replace(/[^0-9]/g,''))||0;
     }
     // Log
-    v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'החלפת רכב: '+v.make+' '+v.model+' ('+newPlate+') ← '+oldMake+' '+oldModel+' ('+oldPlate+')',createdAt:now,source:'auto'});
+    v.historyLog.push({id:'h'+Date.now(),kind:'note',desc:'החלפת רכב: '+oldMake+' '+oldModel+' ('+oldPlate+') ← '+v.make+' '+v.model+' ('+newPlate+')',createdAt:now,source:'auto'});
   } else {
     // Scenario 2: Transfer vehicle to different driver
     const newName=id('upd-dname')?.value.trim();
